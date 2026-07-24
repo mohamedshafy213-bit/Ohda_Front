@@ -1,0 +1,53 @@
+
+setting up Vue project using vite:
+npm create vite@latest Correspondence
+
+installing tailwind v4 and it's vite plugin:
+npm install tailwindcss @tailwindcss/vite
+adding plugin to vite.config.js
+adding @import "tailwindcss" to main.css
+
+installing tailwindcss integration for Volt/primevue:
+npm i tailwindcss-primeui                                                               
+npm i tailwind-merge
+adding @import "tailwindcss-primeui" to main.css
+
+
+
+instaling primevue:
+npm install primevue
+add import PrimeVue from 'primevue/config' to main.js
+add app.use(PrimeVue, {
+    unstyled: true
+}) to main.js
+
+install volt components:
+npx volt-vue add Button                                                                 
+npx volt-vue add DataTable
+npx volt-vue add Dialog
+npx volt-vue add DatePicker
+npx volt-vue add toast
+
+install plugins for auto-import and auto-components:
+npm i unplugin-auto-import -D
+npm i unplugin-vue-components -D
+add import AutoImport from "unplugin-auto-import/vite" to vite.config.js
+add import Components from "unplugin-vue-components/vite" to vite.config.js
+
+installing vee-validate:
+npm i vee-validate --save
+
+installing axois:
+npm i axios
+
+configuring api client
+
+installing eslint and vue plugin for eslint:
+npm install eslint --save-dev
+npm install --save-dev eslint-plugin-vue 
+configuring eslint.config.js
+
+installing i18n plugin for vue:
+npm install vue-i18n@11
+configuring i18n config
+adding app.use(i18n) to main.js

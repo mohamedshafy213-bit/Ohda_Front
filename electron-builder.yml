@@ -1,0 +1,16 @@
+appId: com.sis.app
+productName: sis
+directories:
+    output: dist-electron
+files:
+    - dist/**/*
+    - main.js
+    - package.json
+win:
+    icon: public/favicon/android-chrome-512x512.png
+    target:
+        - target: nsis
+          arch: x64
+nsis:
+    oneClick: false
+    allowToChangeInstallationDirectory: true

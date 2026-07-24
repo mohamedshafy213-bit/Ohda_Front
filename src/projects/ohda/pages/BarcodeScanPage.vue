@@ -1,0 +1,212 @@
+<template>
+  <div class="space-y-6">
+    <!-- Header Title Bar -->
+    <div class="bg-slate-800/60 p-6 rounded-2xl border border-slate-700/60 backdrop-blur">
+      <h1 class="text-2xl font-bold text-white flex items-center gap-3">
+        <Barcode class="w-7 h-7 text-emerald-400" />
+        {{ $t('ohda.scan.title') }}
+      </h1>
+      <p class="text-xs text-slate-400 mt-1">
+        {{ $t('ohda.scan.subTitle') }}
+      </p>
+    </div>
+
+    <!-- Scanner Input Card -->
+    <div class="bg-slate-800/60 border border-slate-700/60 p-6 rounded-2xl backdrop-blur space-y-4">
+      <label class="block text-xs font-semibold text-slate-300">
+        {{ $t('ohda.scan.inputPlaceholder') }}
+      </label>
+      <div class="flex items-center gap-3">
+        <div class="relative flex-1">
+          <Barcode class="w-5 h-5 absolute start-3.5 top-3 text-emerald-400 z-10" />
+          <InputText
+            v-model="barcodeInput"
+            @keyup.enter="handleScan"
+            class="w-full !bg-slate-900 !border-slate-700 focus:!border-emerald-500 !py-2.5 !ps-11 !pe-4 text-sm font-mono !text-emerald-300"
+            placeholder="629110001001"
+          />
+        </div>
+        <Button
+          @click="handleScan"
+          class="!bg-emerald-500 hover:!bg-emerald-400 !text-slate-950 !font-bold !rounded-xl !px-6 !py-2.5 !text-xs flex items-center gap-2 shadow-lg shadow-emerald-500/20"
+        >
+          <Search class="w-4 h-4" />
+          {{ $t('ohda.scan.scanBtn') }}
+        </Button>
+      </div>
+
+      <!-- Quick Preset Barcode Chips -->
+      <div class="pt-2">
+        <span class="text-[11px] font-medium text-slate-400 block mb-2">أكواد باركود سريعة للتجربة:</span>
+        <div class="flex flex-wrap gap-2">
+          <Button
+            v-for="p in inventoryStore.products"
+            :key="p.id"
+            @click="quickScan(p.barcode)"
+            class="!px-3 !py-1.5 !bg-slate-900/60 hover:!bg-slate-700/80 !border !border-slate-700 !rounded-lg !text-xs font-mono !text-slate-300 hover:!text-emerald-300"
+          >
+            {{ p.barcode }} ({{ p.name.slice(0, 15) }}...)
+          </Button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Scanned Product Display Result -->
+    <div v-if="scannedProduct" class="bg-gradient-to-br from-slate-800/90 to-slate-900/90 border border-emerald-500/40 rounded-2xl p-6 shadow-xl backdrop-blur space-y-6">
+      <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-700/60 pb-4">
+        <div class="flex items-center gap-3">
+          <div class="w-12 h-12 bg-emerald-500/20 rounded-xl flex items-center justify-center text-emerald-400 border border-emerald-500/30">
+            <Check class="w-6 h-6" />
+          </div>
+          <div>
+            <span class="text-[10px] font-bold uppercase tracking-wider text-emerald-400 block">
+              {{ $t('ohda.scan.foundProduct') }}
+            </span>
+            <h2 class="text-xl font-bold text-white">{{ scannedProduct.name }}</h2>
+          </div>
+        </div>
+
+        <div class="flex items-center gap-4 text-xs font-mono">
+          <div class="bg-slate-900/80 px-3 py-1.5 rounded-lg border border-slate-700">
+            <span class="text-slate-400 text-[10px] block">SKU</span>
+            <span class="text-slate-200 font-bold">{{ scannedProduct.sku }}</span>
+          </div>
+          <div class="bg-slate-900/80 px-3 py-1.5 rounded-lg border border-slate-700">
+            <span class="text-slate-400 text-[10px] block">BARCODE</span>
+            <span class="text-emerald-400 font-bold">{{ scannedProduct.barcode }}</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Details Grid -->
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-xs">
+        <div class="bg-slate-900/40 p-3 rounded-xl border border-slate-700/40">
+          <span class="text-slate-400 text-[11px] block mb-1">{{ $t('ohda.dashboard.category') }}</span>
+          <span class="font-semibold text-slate-200">{{ scannedProduct.categoryName }}</span>
+        </div>
+        <div class="bg-slate-900/40 p-3 rounded-xl border border-slate-700/40">
+          <span class="text-slate-400 text-[11px] block mb-1">{{ $t('ohda.dashboard.supplier') }}</span>
+          <span class="font-semibold text-slate-200">{{ scannedProduct.supplierName }}</span>
+        </div>
+        <div class="bg-slate-900/40 p-3 rounded-xl border border-slate-700/40">
+          <span class="text-slate-400 text-[11px] block mb-1">{{ $t('ohda.products.unitPrice') }}</span>
+          <span class="font-bold text-emerald-400">{{ scannedProduct.unitPrice }} ر.س</span>
+        </div>
+        <div class="bg-slate-900/40 p-3 rounded-xl border border-slate-700/40">
+          <span class="text-slate-400 text-[11px] block mb-1">{{ $t('ohda.dashboard.currentQty') }}</span>
+          <span class="font-bold text-xl text-white">{{ scannedProduct.quantity }}</span>
+        </div>
+      </div>
+
+      <!-- Quick Action Controls -->
+      <div class="bg-slate-900/60 p-5 rounded-xl border border-slate-700/60 space-y-4">
+        <h3 class="text-xs font-bold text-slate-200 uppercase tracking-wider flex items-center gap-2">
+          <Zap class="w-4 h-4 text-amber-400" />
+          {{ $t('ohda.scan.quickAction') }}
+        </h3>
+
+        <div class="flex flex-col sm:flex-row items-center gap-4">
+          <div class="flex items-center gap-2 w-full sm:w-auto">
+            <label class="text-xs font-semibold text-slate-300 shrink-0">{{ $t('ohda.scan.qtyLabel') }}:</label>
+            <InputText
+              v-model.number="actionQty"
+              type="number"
+              min="1"
+              class="w-24 !bg-slate-800 !border-slate-700 !text-center !text-white font-bold !text-xs"
+            />
+          </div>
+
+          <div class="flex items-center gap-3 w-full sm:w-auto">
+            <Button
+              @click="quickExit"
+              class="flex-1 sm:flex-initial !px-5 !py-2.5 !bg-red-500/20 hover:!bg-red-500/30 !text-red-300 !border !border-red-500/40 !rounded-xl !text-xs !font-bold flex items-center justify-center gap-2"
+            >
+              <ArrowUpRight class="w-4 h-4" />
+              {{ $t('ohda.scan.quickExit') }}
+            </Button>
+
+            <Button
+              @click="quickEntry"
+              class="flex-1 sm:flex-initial !px-5 !py-2.5 !bg-emerald-500/20 hover:!bg-emerald-500/30 !text-emerald-300 !border !border-emerald-500/40 !rounded-xl !text-xs !font-bold flex items-center justify-center gap-2"
+            >
+              <ArrowDownLeft class="w-4 h-4" />
+              {{ $t('ohda.scan.quickEntry') }}
+            </Button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Scanned Not Found Alert -->
+    <div v-else-if="scanAttempted" class="bg-red-500/10 border border-red-500/30 text-red-300 p-6 rounded-2xl text-center space-y-2">
+      <AlertTriangle class="w-8 h-8 mx-auto text-red-400" />
+      <h3 class="font-bold text-base">لم يتم العثور على أي منتج</h3>
+      <p class="text-xs text-red-400/80">الباركود "{{ barcodeInput }}" غير مسجل في قاعدة البيانات</p>
+    </div>
+  </div>
+</template>
+
+<script setup>
+import { ref, onMounted } from "vue";
+import { useOhdaInventoryStore } from "../stores/useOhdaInventoryStore";
+
+const inventoryStore = useOhdaInventoryStore();
+
+onMounted(() => {
+  inventoryStore.fetchProducts();
+});
+
+const barcodeInput = ref("629110001001");
+const scannedProduct = ref(null);
+const scanAttempted = ref(false);
+const actionQty = ref(1);
+
+function handleScan() {
+  scanAttempted.value = true;
+  const prod = inventoryStore.findProductByBarcode(barcodeInput.value);
+  scannedProduct.value = prod || null;
+}
+
+function quickScan(code) {
+  barcodeInput.value = code;
+  handleScan();
+}
+
+async function quickExit() {
+  if (!scannedProduct.value) return;
+  if (scannedProduct.value.quantity < actionQty.value) {
+    alert("الرصيد المتاح غير كافٍ لصرف هذه الكمية!");
+    return;
+  }
+
+  const payload = {
+    ...scannedProduct.value,
+    quantity: scannedProduct.value.quantity - actionQty.value
+  };
+  const res = await inventoryStore.updateProduct(scannedProduct.value.id, payload);
+  if (res.success) {
+    const updated = inventoryStore.products.find(p => p.id === scannedProduct.value.id);
+    if (updated) scannedProduct.value = updated;
+    alert(`تم صرف ${actionQty.value} قطعة من "${scannedProduct.value.name}" وتحديث الرصيد بنجاح.`);
+  } else {
+    alert(res.message || "فشل تحديث الرصيد عبر الخادم");
+  }
+}
+
+async function quickEntry() {
+  if (!scannedProduct.value) return;
+
+  const payload = {
+    ...scannedProduct.value,
+    quantity: scannedProduct.value.quantity + actionQty.value
+  };
+  const res = await inventoryStore.updateProduct(scannedProduct.value.id, payload);
+  if (res.success) {
+    const updated = inventoryStore.products.find(p => p.id === scannedProduct.value.id);
+    if (updated) scannedProduct.value = updated;
+    alert(`تم إضافة ${actionQty.value} قطعة إلى رصيد "${scannedProduct.value.name}" بنجاح.`);
+  } else {
+    alert(res.message || "فشل تحديث الرصيد عبر الخادم");
+  }
+}
+</script>

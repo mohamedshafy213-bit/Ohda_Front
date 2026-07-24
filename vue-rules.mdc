@@ -1,0 +1,496 @@
+---
+alwaysApply: true
+---
+
+# Vue 3 Project Rules - Correspondence Management System
+
+## Project Overview
+This is a Vue 3 correspondence management system with modular architecture, internationalization (Arabic/English), and enterprise-grade features.
+
+## Tech Stack & Architecture
+
+### Core Technologies
+- **Vue 3** with Composition API and `<script setup>` syntax
+- **Vite** as build tool with hot module replacement
+- **Pinia** for state management
+- **Vue Router** for routing
+- **PrimeVue** (unstyled mode) + **Tailwind CSS v4** for UI
+- **Vue I18n** for internationalization (Arabic RTL / English LTR)
+- **VeeValidate + Yup** for form validation
+- **Axios** for HTTP requests with interceptors
+
+### Project Structure
+```
+src/
+├── assets/           # Static assets, icons, images
+├── components/       # Shared UI components
+├── i18n/            # Internationalization setup
+├── layouts/         # Layout components (main, nav, sidebar, topbar)
+├── projects/        # Feature modules (domain-driven)
+│   ├── authentication/
+│   ├── correspondence/
+│   └── employeeCenter/
+├── router/          # Vue Router configuration
+├── stores/          # Pinia stores
+├── utilities/       # Shared utilities (API, validations)
+└── volt/            # Custom UI component library
+```
+
+## Coding Standards & Patterns
+
+### Component Structure
+- **Always use `<script setup>`** syntax for all Vue components
+- **Use TypeScript** for Volt components (custom UI library)
+- **Template structure**: `<template>` → `<script setup>` → `<style scoped>`
+- **Single file components** with `.vue` extension
+
+### Naming Conventions
+- **Files**: PascalCase for components (`InboxPage.vue`), camelCase for utilities (`apiClient.js`)
+- **Components**: PascalCase (`InboxTable`, `DateRangeSelector`)
+- **Stores**: camelCase with `use` prefix (`useIncomingStore`, `useBaseStore`)
+- **Functions**: camelCase (`getUserPages`, `checkPageExists`)
+- **Variables**: camelCase (`incomingFiltered`, `dateRange`)
+
+### Auto-imports Configuration
+The project uses `unplugin-auto-import` with these auto-imported modules:
+- Vue Composition API (`ref`, `computed`, `watch`, etc.)
+- Vue Router (`useRouter`, `useRoute`)
+- VeeValidate utilities
+- Pinia stores from `src/stores/`
+- Utilities from `src/utilities/`
+- Volt components from `src/volt/`
+- PrimeVue `useToast`
+
+### State Management (Pinia)
+- **Store naming**: `use[Feature]Store` pattern
+- **State structure**: Use `state: () => ({})` function syntax
+- **Actions**: Async functions for API calls, sync functions for state mutations
+- **Getters**: Use `computed` properties for derived state
+- **Store files**: Located in `src/stores/` or project-specific `stores/` folders
+
+### API Integration
+- **Base client**: `src/utilities/apiClient.js` with Axios interceptors
+- **Wrapper functions**: `src/utilities/fetchApi.js` for common HTTP methods
+- **Authentication**: Bearer token injection via interceptors
+- **Error handling**: Global toast notifications for success/error responses
+- **Environment variables**: `VITE_ROOT_URL`, `VITE_IDENTITY_URL`, `VITE_SEC_URL`
+
+### Internationalization (i18n)
+- **Supported locales**: Arabic (`ar` - RTL, default) and English (`en` - LTR)
+- **Translation structure**: Modular with project-specific catalogs
+- **RTL support**: Automatic `dir` attribute switching on `<html>`
+- **Locale persistence**: Saved in `localStorage` as `selectedLocale`
+- **Translation files**: Located in `src/i18n/` and project `translations/` folders
+
+### Styling & UI
+- **Tailwind CSS v4** with Vite plugin
+- **PrimeVue unstyled mode**: All styling comes from Tailwind classes
+- **Dark mode**: VueUse `useDark` with Tailwind class-based theming
+- **Custom components**: Volt library wraps PrimeVue with Tailwind styles
+- **Responsive design**: Mobile-first approach with Tailwind breakpoints
+
+### Form Validation
+- **VeeValidate + Yup** for form validation
+- **Validation schemas**: Defined in `src/utilities/validations.js`
+- **Error handling**: Automatic error display with toast notifications
+- **Form components**: Custom validation components in `src/components/validationFields/`
+
+### Routing
+- **Modular routes**: Each project has its own `router.js` file
+- **Route guards**: Authentication and authorization checks
+- **Lazy loading**: Components loaded on demand
+- **Route structure**: Organized by feature modules
+
+## Specific Patterns
+
+### Component Props & Events
+- **Props**: Use `defineProps<Props>()` with TypeScript interfaces
+- **Events**: Use `defineEmits<Emits>()` for type-safe event definitions
+- **Slots**: Use `$slots` for dynamic slot rendering
+- **Expose**: Use `defineExpose()` when parent needs access to child methods
+
+### Reactive Data
+- **Refs**: Use `ref()` for primitive values and objects
+- **Reactive**: Use `reactive()` for complex objects (rarely used)
+- **Computed**: Use `computed()` for derived state
+- **Watch**: Use `watch()` or `watchEffect()` for side effects
+
+### Lifecycle Hooks
+- **onMounted**: For DOM access and initial setup
+- **onUnmounted**: For cleanup (timers, event listeners)
+- **onBeforeUnmount**: For cleanup before component destruction
+
+### Error Handling
+- **API errors**: Handled by Axios interceptors with toast notifications
+- **Component errors**: Use try-catch blocks for async operations
+- **Validation errors**: Displayed inline with form fields
+
+### Performance Optimization
+- **Lazy loading**: Routes and components loaded on demand
+- **Tree shaking**: Icons imported from `src/assets/icons/icons.js`
+- **Code splitting**: Automatic with Vite
+- **Memoization**: Use `computed()` for expensive calculations
+
+## File Organization Rules
+
+### Component Files
+- **Location**: `src/components/` for shared, `src/projects/[module]/` for specific
+- **Structure**: Single responsibility principle
+- **Reusability**: Create reusable components in `src/volt/` or `src/components/`
+
+### Store Files
+- **Location**: `src/stores/` for global, project-specific in module folders
+- **Naming**: `[feature]Store.js` (e.g., `incomingStore.js`)
+- **Exports**: Named exports with `use[Feature]Store` pattern
+
+### Utility Files
+- **Location**: `src/utilities/` for shared utilities
+- **Purpose**: Pure functions, API clients, validations, helpers
+- **Exports**: Named exports for better tree shaking
+
+### Translation Files
+- **Location**: `src/i18n/` for global, project-specific in `translations/`
+- **Structure**: Object with locale keys (`en`, `ar`)
+- **Naming**: `[feature]Translations.js`
+
+## Development Guidelines
+
+### Code Quality
+- **ESLint**: Configured with Vue-specific rules
+- **Formatting**: Prettier integration (if configured)
+- **TypeScript**: Use for Volt components and complex logic
+- **Comments**: JSDoc for complex functions
+
+### Testing
+- **Unit tests**: Component testing with Vue Test Utils
+- **Integration tests**: API integration testing
+- **E2E tests**: End-to-end testing for critical flows
+
+### Security
+- **Authentication**: Token-based with localStorage persistence
+- **Authorization**: Route guards and API-level checks
+- **XSS prevention**: Proper data binding and sanitization
+- **CSRF protection**: Axios with proper headers
+
+### Accessibility
+- **ARIA labels**: Proper labeling for screen readers
+- **Keyboard navigation**: Tab order and focus management
+- **RTL support**: Proper text direction and layout
+- **Color contrast**: WCAG compliance
+
+## Common Patterns
+
+### API Calls
+```javascript
+// In stores
+async fetchData() {
+    const response = await apiGet('/endpoint');
+    this.data = response.data;
+}
+
+// In components
+const { data, loading, error } = await apiGet('/endpoint');
+```
+
+### Form Handling
+```javascript
+const { handleSubmit, errors } = useForm({
+    validationSchema: validationSchema
+});
+
+const onSubmit = handleSubmit(async (values) => {
+    await apiPost('/endpoint', values);
+});
+```
+
+### State Management
+```javascript
+export const useFeatureStore = defineStore('feature', {
+    state: () => ({
+        data: [],
+        loading: false
+    }),
+    actions: {
+        async fetchData() {
+            this.loading = true;
+            const response = await apiGet('/endpoint');
+            this.data = response.data;
+            this.loading = false;
+        }
+    }
+});
+```
+
+### Internationalization
+```javascript
+// In templates
+{{ $t('key') }}
+
+// In scripts
+const { t } = useI18n();
+const message = t('key');
+```
+
+## Environment Configuration
+- **Development**: `npm run dev` for Vite dev server
+- **Build**: `npm run build` for production build
+- **Preview**: `npm run preview` for build preview
+- **Node version**: ^20.19.0 || >=22.12.0
+
+## Best Practices
+1. **Always use Composition API** with `<script setup>`
+2. **Keep components small** and focused on single responsibility
+3. **Use TypeScript** for complex components and utilities
+4. **Follow naming conventions** consistently
+5. **Handle errors gracefully** with proper user feedback
+6. **Optimize for performance** with lazy loading and memoization
+7. **Maintain accessibility** standards
+8. **Write clean, readable code** with proper documentation
+9. **Use auto-imports** effectively to reduce boilerplate
+10. **Follow the modular architecture** for better maintainability
+11. **Prefer defineModel over watch** for two-way binding and prop synchronization# Vue 3 Project Rules - Correspondence Management System
+
+## Project Overview
+This is a Vue 3 correspondence management system with modular architecture, internationalization (Arabic/English), and enterprise-grade features.
+
+## Tech Stack & Architecture
+
+### Core Technologies
+- **Vue 3** with Composition API and `<script setup>` syntax
+- **Vite** as build tool with hot module replacement
+- **Pinia** for state management
+- **Vue Router** for routing
+- **PrimeVue** (unstyled mode) + **Tailwind CSS v4** for UI
+- **Vue I18n** for internationalization (Arabic RTL / English LTR)
+- **VeeValidate + Yup** for form validation
+- **Axios** for HTTP requests with interceptors
+
+### Project Structure
+```
+src/
+├── assets/           # Static assets, icons, images
+├── components/       # Shared UI components
+├── i18n/            # Internationalization setup
+├── layouts/         # Layout components (main, nav, sidebar, topbar)
+├── projects/        # Feature modules (domain-driven)
+│   ├── authentication/
+│   ├── correspondence/
+│   └── employeeCenter/
+├── router/          # Vue Router configuration
+├── stores/          # Pinia stores
+├── utilities/       # Shared utilities (API, validations)
+└── volt/            # Custom UI component library
+```
+
+## Coding Standards & Patterns
+
+### Component Structure
+- **Always use `<script setup>`** syntax for all Vue components
+- **Use TypeScript** for Volt components (custom UI library)
+- **Template structure**: `<template>` → `<script setup>` → `<style scoped>`
+- **Single file components** with `.vue` extension
+
+### Naming Conventions
+- **Files**: PascalCase for components (`InboxPage.vue`), camelCase for utilities (`apiClient.js`)
+- **Components**: PascalCase (`InboxTable`, `DateRangeSelector`)
+- **Stores**: camelCase with `use` prefix (`useIncomingStore`, `useBaseStore`)
+- **Functions**: camelCase (`getUserPages`, `checkPageExists`)
+- **Variables**: camelCase (`incomingFiltered`, `dateRange`)
+
+### Auto-imports Configuration
+The project uses `unplugin-auto-import` with these auto-imported modules:
+- Vue Composition API (`ref`, `computed`, `watch`, etc.)
+- Vue Router (`useRouter`, `useRoute`)
+- VeeValidate utilities
+- Pinia stores from `src/stores/`
+- Utilities from `src/utilities/`
+- Volt components from `src/volt/`
+- PrimeVue `useToast`
+
+### State Management (Pinia)
+- **Store naming**: `use[Feature]Store` pattern
+- **State structure**: Use `state: () => ({})` function syntax
+- **Actions**: Async functions for API calls, sync functions for state mutations
+- **Getters**: Use `computed` properties for derived state
+- **Store files**: Located in `src/stores/` or project-specific `stores/` folders
+
+### API Integration
+- **Base client**: `src/utilities/apiClient.js` with Axios interceptors
+- **Wrapper functions**: `src/utilities/fetchApi.js` for common HTTP methods
+- **Authentication**: Bearer token injection via interceptors
+- **Error handling**: Global toast notifications for success/error responses
+- **Environment variables**: `VITE_ROOT_URL`, `VITE_IDENTITY_URL`, `VITE_SEC_URL`
+
+### Internationalization (i18n)
+- **Supported locales**: Arabic (`ar` - RTL, default) and English (`en` - LTR)
+- **Translation structure**: Modular with project-specific catalogs
+- **RTL support**: Automatic `dir` attribute switching on `<html>`
+- **Locale persistence**: Saved in `localStorage` as `selectedLocale`
+- **Translation files**: Located in `src/i18n/` and project `translations/` folders
+
+### Styling & UI
+- **Tailwind CSS v4** with Vite plugin
+- **PrimeVue unstyled mode**: All styling comes from Tailwind classes
+- **Dark mode**: VueUse `useDark` with Tailwind class-based theming
+- **Custom components**: Volt library wraps PrimeVue with Tailwind styles
+- **Responsive design**: Mobile-first approach with Tailwind breakpoints
+
+### Form Validation
+- **VeeValidate + Yup** for form validation
+- **Validation schemas**: Defined in `src/utilities/validations.js`
+- **Error handling**: Automatic error display with toast notifications
+- **Form components**: Custom validation components in `src/components/validationFields/`
+
+### Routing
+- **Modular routes**: Each project has its own `router.js` file
+- **Route guards**: Authentication and authorization checks
+- **Lazy loading**: Components loaded on demand
+- **Route structure**: Organized by feature modules
+
+## Specific Patterns
+
+### Component Props & Events
+- **Props**: Use `defineProps<Props>()` with TypeScript interfaces
+- **Events**: Use `defineEmits<Emits>()` for type-safe event definitions
+- **Slots**: Use `$slots` for dynamic slot rendering
+- **Expose**: Use `defineExpose()` when parent needs access to child methods
+
+### Reactive Data
+- **Refs**: Use `ref()` for primitive values and objects
+- **Reactive**: Use `reactive()` for complex objects (rarely used)
+- **Computed**: Use `computed()` for derived state
+- **Watch**: Use `watch()` or `watchEffect()` for side effects
+
+### Lifecycle Hooks
+- **onMounted**: For DOM access and initial setup
+- **onUnmounted**: For cleanup (timers, event listeners)
+- **onBeforeUnmount**: For cleanup before component destruction
+
+### Error Handling
+- **API errors**: Handled by Axios interceptors with toast notifications
+- **Component errors**: Use try-catch blocks for async operations
+- **Validation errors**: Displayed inline with form fields
+
+### Performance Optimization
+- **Lazy loading**: Routes and components loaded on demand
+- **Tree shaking**: Icons imported from `src/assets/icons/icons.js`
+- **Code splitting**: Automatic with Vite
+- **Memoization**: Use `computed()` for expensive calculations
+
+## File Organization Rules
+
+### Component Files
+- **Location**: `src/components/` for shared, `src/projects/[module]/` for specific
+- **Structure**: Single responsibility principle
+- **Reusability**: Create reusable components in `src/volt/` or `src/components/`
+
+### Store Files
+- **Location**: `src/stores/` for global, project-specific in module folders
+- **Naming**: `[feature]Store.js` (e.g., `incomingStore.js`)
+- **Exports**: Named exports with `use[Feature]Store` pattern
+
+### Utility Files
+- **Location**: `src/utilities/` for shared utilities
+- **Purpose**: Pure functions, API clients, validations, helpers
+- **Exports**: Named exports for better tree shaking
+
+### Translation Files
+- **Location**: `src/i18n/` for global, project-specific in `translations/`
+- **Structure**: Object with locale keys (`en`, `ar`)
+- **Naming**: `[feature]Translations.js`
+
+## Development Guidelines
+
+### Code Quality
+- **ESLint**: Configured with Vue-specific rules
+- **Formatting**: Prettier integration (if configured)
+- **TypeScript**: Use for Volt components and complex logic
+- **Comments**: JSDoc for complex functions
+
+### Testing
+- **Unit tests**: Component testing with Vue Test Utils
+- **Integration tests**: API integration testing
+- **E2E tests**: End-to-end testing for critical flows
+
+### Security
+- **Authentication**: Token-based with localStorage persistence
+- **Authorization**: Route guards and API-level checks
+- **XSS prevention**: Proper data binding and sanitization
+- **CSRF protection**: Axios with proper headers
+
+### Accessibility
+- **ARIA labels**: Proper labeling for screen readers
+- **Keyboard navigation**: Tab order and focus management
+- **RTL support**: Proper text direction and layout
+- **Color contrast**: WCAG compliance
+
+## Common Patterns
+
+### API Calls
+```javascript
+// In stores
+async fetchData() {
+    const response = await apiGet('/endpoint');
+    this.data = response.data;
+}
+
+// In components
+const { data, loading, error } = await apiGet('/endpoint');
+```
+
+### Form Handling
+```javascript
+const { handleSubmit, errors } = useForm({
+    validationSchema: validationSchema
+});
+
+const onSubmit = handleSubmit(async (values) => {
+    await apiPost('/endpoint', values);
+});
+```
+
+### State Management
+```javascript
+export const useFeatureStore = defineStore('feature', {
+    state: () => ({
+        data: [],
+        loading: false
+    }),
+    actions: {
+        async fetchData() {
+            this.loading = true;
+            const response = await apiGet('/endpoint');
+            this.data = response.data;
+            this.loading = false;
+        }
+    }
+});
+```
+
+### Internationalization
+```javascript
+// In templates
+{{ $t('key') }}
+
+// In scripts
+const { t } = useI18n();
+const message = t('key');
+```
+
+## Environment Configuration
+- **Development**: `npm run dev` for Vite dev server
+- **Build**: `npm run build` for production build
+- **Preview**: `npm run preview` for build preview
+- **Node version**: ^20.19.0 || >=22.12.0
+
+## Best Practices
+1. **Always use Composition API** with `<script setup>`
+2. **Keep components small** and focused on single responsibility
+3. **Use TypeScript** for complex components and utilities
+4. **Follow naming conventions** consistently
+5. **Handle errors gracefully** with proper user feedback
+6. **Optimize for performance** with lazy loading and memoization
+7. **Maintain accessibility** standards
+8. **Write clean, readable code** with proper documentation
+9. **Use auto-imports** effectively to reduce boilerplate
+10. **Follow the modular architecture** for better maintainability

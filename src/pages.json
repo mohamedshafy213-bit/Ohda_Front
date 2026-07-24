@@ -1,0 +1,49 @@
+{
+  "Inbox": [
+    {"en":"inbox", "ar":"الوارد"},
+    {"en":"draft", "ar":"المسودة"},
+    {"en":"incoming tasks", "ar":"التكاليف الواردة"},
+    {"en":"follow-ups", "ar":"متابعات التكاليف"},
+    {"en":"add inbox", "ar":"إضافة وارد"}
+  ],
+  "Outbox": [
+    {"en":"outbox", "ar":"الصادر"},
+    {"en":"draft", "ar":"المسودة"},
+    {"en":"awaiting approval", "ar":"منتظر التصديق"},
+    {"en":"requiring approval", "ar":"مطلوب التصديق"},
+    {"en":"requiring changes", "ar":"مطلوب التعديل"},
+    {"en":"add outbox", "ar":"إضافة صادر"}
+  ],
+  "Confreneces": [
+    {"en":"conferences", "ar":"المؤتمرات"},
+    {"en":"add conference", "ar":"إضافة مؤتمر"},
+    {"en":"Confrence Tasks", "ar":"تكاليف المؤتمر"}
+  ],
+  "Memos": [
+    {"en":"memos", "ar":"مذكرات"},
+    {"en":"add memo", "ar":"إضافة مذكرة"},
+    {"en":"draft", "ar":"المسودة"},
+    {"en":"awaiting approval", "ar":"منتظر التصديق"},
+    {"en":"requiring approval", "ar":"مطلوب التصديق"},
+    {"en":"requiring changes", "ar":"مطلوب التعديل"}
+  ],
+  "Structure": [
+    {"en":"departments", "ar":"الأقسام"},
+    {"en":"employees", "ar":"الموظفين"},
+    {"en":"jobs", "ar":"الوظائف"}
+  ],
+  "Auth": [
+    {"en":"login", "ar":"تسجيل الدخول"},
+    {"en":"users", "ar":"المستخدمين"},
+    {"en":"roles", "ar":"الأدوار"},
+    {"en":"pages", "ar":"الصفحات"}
+  ],
+  "Calendar": [
+    {"en":"calendar", "ar":"التقويم"}
+  ],
+  "Settings": [
+    {"en":"settings", "ar":"الإعدادات"},
+    {"en":"base values", "ar":"القيم الأساسية"}
+  ]
+}
+
