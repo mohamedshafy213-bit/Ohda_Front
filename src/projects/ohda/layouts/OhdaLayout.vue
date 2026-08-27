@@ -179,13 +179,14 @@ const navItems = computed(() => {
           if (!p || typeof p !== "object") return false;
           const pPath = p.path || p.route;
           if (!pPath) return false;
-          const norm = pPath.startsWith("/ohda") ? pPath : `/ohda${pPath}`;
-          const normalizedPath = norm === "/ohda/entry-request"
+          const norm = pPath.toLowerCase().startsWith("/ohda") ? pPath : `/ohda${pPath}`;
+          const lower = norm.toLowerCase();
+          const normalizedPath = (lower === "/ohda/orders" || lower === "/ohda/order" || lower === "/ohda/entry-request" || lower === "/ohda/entry-requests")
             ? "/ohda/entry-requests"
-            : norm === "/ohda/exit-request"
+            : (lower === "/ohda/exit-request" || lower === "/ohda/exit-requests")
               ? "/ohda/exit-requests"
-              : norm;
-          return normalizedPath === path;
+              : lower;
+          return normalizedPath === path.toLowerCase();
         });
         if (found) {
           const rawIcon = found.icon || found.Icon;

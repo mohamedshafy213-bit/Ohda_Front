@@ -179,7 +179,7 @@
         <div class="grid grid-cols-2 gap-3">
           <div>
             <label class="block font-semibold text-brand-dark mb-1">{{ $t('ohda.products.qty') }}</label>
-            <InputText v-model.number="form.quantity" type="number" required class="w-full !bg-brand-light !border-brand-gray/25 focus:!border-brand-accent !text-brand-dark" />
+            <InputText v-model.number="form.amount" type="number" required class="w-full !bg-brand-light !border-brand-gray/25 focus:!border-brand-accent !text-brand-dark" />
           </div>
           <div>
             <label class="block font-semibold text-brand-dark mb-1">{{ $t('ohda.products.minThreshold') }}</label>
@@ -326,6 +326,7 @@ const form = ref({
   purchasePrice: 0,
   assetValue: 0,
   unitPrice: 0,
+  amount: 1,
   quantity: 1,
   minThreshold: 5
 });
@@ -354,6 +355,7 @@ function openAddModal() {
     purchasePrice: 100,
     assetValue: 0,
     unitPrice: 150,
+    amount: 10,
     quantity: 10,
     minThreshold: 5
   };
@@ -363,11 +365,16 @@ function openAddModal() {
 function editProduct(product) {
   isEditing.value = true;
   editingId.value = product.id;
-  form.value = { ...product };
+  form.value = {
+    ...product,
+    amount: product.amount || product.quantity || 0
+  };
   showModal.value = true;
 }
 
 async function saveProduct() {
+  // Sync both values for API/UI compatibility
+  form.value.quantity = form.value.amount;
   if (isEditing.value) {
     await inventoryStore.updateProduct(editingId.value, form.value);
   } else {

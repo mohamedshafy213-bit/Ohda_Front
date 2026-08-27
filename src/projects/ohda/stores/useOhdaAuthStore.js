@@ -51,14 +51,15 @@ export const useOhdaAuthStore = defineStore("ohdaAuth", {
         return pageMap[page] || null;
       }).map(path => {
         if (!path) return null;
-        let normalized = path.startsWith("/ohda") ? path : `/ohda${path}`;
-        if (normalized === "/ohda/entry-request") {
-          normalized = "/ohda/entry-requests";
+        let normalized = path.toLowerCase().startsWith("/ohda") ? path : `/ohda${path}`;
+        const lower = normalized.toLowerCase();
+        if (lower === "/ohda/orders" || lower === "/ohda/order" || lower === "/ohda/entry-request" || lower === "/ohda/entry-requests") {
+          return "/ohda/entry-requests";
         }
-        if (normalized === "/ohda/exit-request") {
-          normalized = "/ohda/exit-requests";
+        if (lower === "/ohda/exit-request" || lower === "/ohda/exit-requests") {
+          return "/ohda/exit-requests";
         }
-        return normalized;
+        return lower;
       }).filter(Boolean);
     }
   },

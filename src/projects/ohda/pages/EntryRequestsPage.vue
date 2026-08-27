@@ -166,7 +166,16 @@
       <form @submit.prevent="handleCreateEntry" class="space-y-4 text-xs">
         <div>
           <label class="block font-semibold text-brand-dark mb-1">{{ $t('ohda.exitRequests.selectProduct') }}</label>
-          <Select v-model="createForm.productId" :options="inventoryStore.products" optionLabel="name" optionValue="id" class="w-full !bg-brand-light !border-brand-gray/25 focus:!border-brand-accent !text-brand-dark" />
+          <Select v-model="createForm.productId" :options="inventoryStore.products" optionLabel="name" optionValue="id" class="w-full !bg-brand-light !border-brand-gray/25 focus:!border-brand-accent !text-brand-dark">
+            <template #option="slotProps">
+              <div class="flex justify-between items-center w-full text-xs">
+                <span>{{ slotProps.option.name }}</span>
+                <span class="px-2 py-0.5 rounded bg-brand-soft text-brand-accent font-mono font-bold text-[10px]">
+                  الرصيد: {{ slotProps.option.quantity || slotProps.option.amount || 0 }}
+                </span>
+              </div>
+            </template>
+          </Select>
         </div>
 
         <div class="grid grid-cols-2 gap-3">
