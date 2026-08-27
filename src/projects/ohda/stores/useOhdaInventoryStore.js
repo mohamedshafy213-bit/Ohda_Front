@@ -290,12 +290,32 @@ export const useOhdaInventoryStore = defineStore("ohdaInventory", {
         const res = await apiPost("/api/Excel/import/products", formData);
         if (res?.data?.isDone) {
           await this.fetchProducts();
+          return { success: true, message: res.data.returnMessage };
+        }
+        return { success: false, message: res?.data?.returnMessage || "فشل استيراد المنتجات" };
+      } catch (err) {
+        console.warn("Excel Import API failed", err);
+        return { success: false, message: err?.response?.data?.returnMessage || "فشل استيراد المنتجات" };
+      }
+    },
+
+    async downloadExcelTemplate() {
+      try {
+        const res = await apiGet("/api/Excel/export/template/products", { responseType: 'blob' });
+        if (res?.data) {
+          const url = URL.createObjectURL(new Blob([res.data]));
+          const link = document.createElement("a");
+          link.href = url;
+          link.download = "Products_Import_Template.xlsx";
+          link.click();
+          URL.revokeObjectURL(url);
           return { success: true };
         }
+        return { success: false, message: "فشل تحميل قالب Excel" };
       } catch (err) {
-        console.warn("Excel Import API fallback", err);
+        console.warn("Failed to download template", err);
+        return { success: false, message: "فشل تحميل قالب Excel" };
       }
-      return { success: true, message: "تمت المعالجة بنجاح" };
     },
 
     // Barcode scanner simulator

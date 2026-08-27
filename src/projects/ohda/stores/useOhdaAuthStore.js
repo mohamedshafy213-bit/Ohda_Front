@@ -18,31 +18,47 @@ export const useOhdaAuthStore = defineStore("ohdaAuth", {
     userName: (state) => state.user?.personName || state.user?.username || "مستخدم",
     allowedPaths: (state) => {
       if (!state.allowedPages) return [];
+      const pageMap = {
+        1: "/ohda/dashboard",
+        2: "/ohda/products",
+        3: "/ohda/inventory",
+        4: "/ohda/exit-requests",
+        5: "/ohda/entry-requests",
+        6: "/ohda/scan",
+        7: "/ohda/categories",
+        8: "/ohda/suppliers",
+        9: "/ohda/users",
+        10: "/ohda/notifications",
+        11: "/ohda/compass"
+      };
+
       return state.allowedPages.map(page => {
         if (typeof page === "string") {
           return page;
         }
 
         if (typeof page === "object" && page !== null) {
-          return page.path || page.route || null;
+          if (page.path || page.route) {
+            return page.path || page.route;
+          }
+          const id = page.id || page.pageId;
+          if (id && pageMap[id]) {
+            return pageMap[id];
+          }
+          return null;
         }
 
-        const pageMap = {
-          1: "/ohda/dashboard",
-          2: "/ohda/products",
-          3: "/ohda/inventory",
-          4: "/ohda/exit-requests",
-          5: "/ohda/entry-requests",
-          6: "/ohda/scan",
-          7: "/ohda/categories",
-          8: "/ohda/suppliers",
-          9: "/ohda/users",
-          10: "/ohda/notifications"
-        };
         return pageMap[page] || null;
       }).map(path => {
         if (!path) return null;
-        return path.startsWith("/ohda") ? path : `/ohda${path}`;
+        let normalized = path.startsWith("/ohda") ? path : `/ohda${path}`;
+        if (normalized === "/ohda/entry-request") {
+          normalized = "/ohda/entry-requests";
+        }
+        if (normalized === "/ohda/exit-request") {
+          normalized = "/ohda/exit-requests";
+        }
+        return normalized;
       }).filter(Boolean);
     }
   },

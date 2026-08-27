@@ -59,52 +59,44 @@ html[dir="rtl"] *:not(.pi):not(.pi *) {
     --p-content-border-radius: 6px;
 } */
 
+@theme {
+    --color-brand-light: #F7F9FC;
+    --color-brand-white: #FFFFFF;
+    --color-brand-dark: #101828;
+    --color-brand-accent: #21C87A;
+    --color-brand-soft: #DDF8EA;
+    --color-brand-gray: #667085;
+}
+
+/* Primary and Surface Palettes */
 :root {
     --p-primary-0: #eff6ff;
-    --p-primary-50: #eff6ff;
-    --p-primary-100: #dbeafe;
-    --p-primary-200: #bfdbfe;
-    --p-primary-300: #93c5fd;
-    --p-primary-400: #60a5fa;
-    --p-primary-500: #3b82f6;
-    --p-primary-600: #2563eb;
-    --p-primary-700: #1d4ed8;
-    --p-primary-800: #1e40af;
-    --p-primary-900: #1e3a8a;
-    --p-primary-950: #172554;
-    --p-surface-0: #ffffff;
-    --p-surface-50: #fafafa;
-    --p-surface-100: #f4f4f5;
-    --p-surface-200: #e4e4e7;
-    --p-surface-300: #d4d4d8;
-    --p-surface-400: #a1a1aa;
-    --p-surface-500: #71717a;
-    --p-surface-600: #52525b;
-    --p-surface-700: #3f3f46;
-    --p-surface-800: #27272a;
-    --p-surface-900: #18181b;
-    --p-surface-950: #09090b;
-    --p-content-border-radius: 6px;
-}
+    --p-primary-50: #DDF8EA;
+    --p-primary-100: #b5f2cf;
+    --p-primary-200: #8cecb3;
+    --p-primary-300: #5fe399;
+    --p-primary-400: #3ee08b;
+    --p-primary-500: #21C87A;
+    --p-primary-600: #1cb56c;
+    --p-primary-700: #179b5c;
+    --p-primary-800: #12824c;
+    --p-primary-900: #0d683c;
+    --p-primary-950: #074e2d;
 
-/* Light */
-/* :root {
-    --p-primary-color: var(--p-primary-500);
-    --p-primary-contrast-color: var(--p-surface-0);
-    --p-primary-hover-color: var(--p-primary-600);
-    --p-primary-active-color: var(--p-primary-700);
-    --p-content-border-color: var(--p-surface-200);
-    --p-content-hover-background: var(--p-surface-100);
-    --p-content-hover-color: var(--p-surface-800);
-    --p-highlight-background: var(--p-primary-50);
-    --p-highlight-color: var(--p-primary-700);
-    --p-highlight-focus-background: var(--p-primary-100);
-    --p-highlight-focus-color: var(--p-primary-800);
-    --p-text-color: var(--p-surface-700);
-    --p-text-hover-color: var(--p-surface-800);
-    --p-text-muted-color: var(--p-surface-500);
-    --p-text-hover-muted-color: var(--p-surface-600);
-} */
+    --p-surface-0: #ffffff;
+    --p-surface-50: #F7F9FC;
+    --p-surface-100: #EEF2F6;
+    --p-surface-200: #E2E8F0;
+    --p-surface-300: #CBD5E1;
+    --p-surface-400: #94A3B8;
+    --p-surface-500: #667085;
+    --p-surface-600: #4B5563;
+    --p-surface-700: #374151;
+    --p-surface-800: #1F2937;
+    --p-surface-900: #101828;
+    --p-surface-950: #0B0F19;
+    --p-content-border-radius: 8px;
+}
 
 :root {
     --p-primary-color: var(--p-primary-500);
@@ -112,54 +104,55 @@ html[dir="rtl"] *:not(.pi):not(.pi *) {
     --p-primary-hover-color: var(--p-primary-600);
     --p-primary-active-color: var(--p-primary-700);
     --p-content-border-color: var(--p-surface-200);
-    --p-content-hover-background: var(--p-surface-100);
-    --p-content-hover-color: var(--p-surface-800);
+    --p-content-hover-background: var(--p-surface-50);
+    --p-content-hover-color: var(--p-surface-900);
     --p-highlight-background: var(--p-primary-50);
     --p-highlight-color: var(--p-primary-700);
     --p-highlight-focus-background: var(--p-primary-100);
     --p-highlight-focus-color: var(--p-primary-800);
-    --p-text-color: var(--p-surface-700);
-    --p-text-hover-color: var(--p-surface-800);
+    --p-text-color: var(--p-surface-900);
+    --p-text-hover-color: var(--p-surface-950);
     --p-text-muted-color: var(--p-surface-500);
     --p-text-hover-muted-color: var(--p-surface-600);
-    /* calendar styles */
-    --p-card-background: var(--p-surface-200);
+    --p-card-background: var(--p-surface-0);
 }
 
-/* :root[class="dark"] {
-    --p-primary-color: var(--p-primary-400);
-    --p-primary-contrast-color: var(--p-surface-900);
-    --p-primary-hover-color: var(--p-primary-300);
-    --p-primary-active-color: var(--p-primary-200);
-    --p-content-border-color: var(--p-surface-700);
-    --p-content-hover-background: var(--p-surface-800);
-    --p-content-hover-color: var(--p-surface-0);
-    --p-highlight-background: color-mix(
-        in srgb,
-        var(--p-primary-400),
-        transparent 84%
-    );
-    --p-highlight-color: rgba(255, 255, 255, 0.87);
-    --p-highlight-focus-background: color-mix(
-        in srgb,
-        var(--p-primary-400),
-        transparent 76%
-    );
-    --p-highlight-focus-color: rgba(255, 255, 255, 0.87);
-    --p-text-color: var(--p-surface-0);
-    --p-text-hover-color: var(--p-surface-0);
-    --p-text-muted-color: var(--p-surface-400);
-    --p-text-hover-muted-color: var(--p-surface-300);
-} */
+:root[class="dark"] {
+    --p-primary-0: #074e2d;
+    --p-primary-50: #0d683c;
+    --p-primary-100: #12824c;
+    --p-primary-200: #179b5c;
+    --p-primary-300: #1cb56c;
+    --p-primary-400: #21C87A;
+    --p-primary-500: #3ee08b;
+    --p-primary-600: #5fe399;
+    --p-primary-700: #8cecb3;
+    --p-primary-800: #b5f2cf;
+    --p-primary-900: #DDF8EA;
+    --p-primary-950: #eff6ff;
+
+    --p-surface-0: #152238;
+    --p-surface-50: #101828;
+    --p-surface-100: #1C2A42;
+    --p-surface-200: #25354E;
+    --p-surface-300: #3A4D6B;
+    --p-surface-400: #5C7191;
+    --p-surface-500: #8FA2C2;
+    --p-surface-600: #CBD5E1;
+    --p-surface-700: #E2E8F0;
+    --p-surface-800: #F1F5F9;
+    --p-surface-900: #FFFFFF;
+    --p-surface-950: #F8FAFC;
+}
 
 :root[class="dark"] {
     --p-primary-color: var(--p-primary-500);
     --p-primary-contrast-color: var(--p-surface-0);
     --p-primary-hover-color: var(--p-primary-400);
     --p-primary-active-color: var(--p-primary-300);
-    --p-content-border-color: var(--p-surface-700);
-    --p-content-hover-background: var(--p-surface-800);
-    --p-content-hover-color: var(--p-surface-0);
+    --p-content-border-color: var(--p-surface-200);
+    --p-content-hover-background: var(--p-surface-100);
+    --p-content-hover-color: var(--p-surface-900);
     --p-highlight-background: color-mix(
         in srgb,
         var(--p-primary-500),
@@ -172,17 +165,15 @@ html[dir="rtl"] *:not(.pi):not(.pi *) {
         transparent 76%
     );
     --p-highlight-focus-color: rgba(255, 255, 255, 0.87);
-    --p-text-color: var(--p-surface-0);
-    --p-text-hover-color: var(--p-surface-0);
-    --p-text-muted-color: var(--p-surface-400);
-    --p-text-hover-muted-color: var(--p-surface-300);
-    /* calendar styles */
-    --p-card-background: var(--p-surface-700);
+    --p-text-color: var(--p-surface-900);
+    --p-text-hover-color: var(--p-surface-950);
+    --p-text-muted-color: var(--p-surface-500);
+    --p-text-hover-muted-color: var(--p-surface-400);
+    --p-card-background: var(--p-surface-0);
 }
 
 /* Required field asterisk */
 .required::after {
     content: " *";
     color: #ef4444;
-    /* text-red-500 */
 }

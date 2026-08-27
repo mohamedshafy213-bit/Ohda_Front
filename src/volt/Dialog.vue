@@ -110,7 +110,7 @@ const theme = ref<DialogPassThroughOptions>({
     headerActions: `flex items-center gap-2`,
     content: `overflow-y-auto pt-0 px-5 pb-5 p-maximized:grow`,
     footer: `shrink-0 pt-0 px-5 pb-5 flex justify-end gap-2`,
-    mask: `p-modal:bg-black/50 p-modal:fixed p-modal:top-0 p-modal:start-0 p-modal:w-full p-modal:h-full`,
+    mask: `p-modal:bg-brand-dark/20 p-modal:backdrop-blur-xs p-modal:fixed p-modal:top-0 p-modal:start-0 p-modal:w-full p-modal:h-full`,
     transition: {
         enterFromClass: "opacity-0 scale-75",
         enterActiveClass:

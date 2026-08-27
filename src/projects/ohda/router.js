@@ -55,6 +55,31 @@ export default [
         path: "users",
         name: "OhdaUserManagement",
         component: () => import("./pages/UserManagementPage.vue")
+      },
+      {
+        path: "departments",
+        name: "OhdaDepartments",
+        component: () => import("./pages/DepartmentManagementPage.vue")
+      },
+      {
+        path: "product-states",
+        name: "OhdaProductStates",
+        component: () => import("./pages/ProductStatePage.vue")
+      },
+      {
+        path: "approval-config",
+        name: "OhdaApprovalConfig",
+        component: () => import("./pages/ApprovalConfigPage.vue")
+      },
+      {
+        path: "approval-requests",
+        name: "OhdaApprovalRequests",
+        component: () => import("./pages/ApprovalRequestsPage.vue")
+      },
+      {
+        path: "compass",
+        name: "OhdaCompass",
+        component: () => import("./pages/CompassPage.vue")
       }
     ]
   }

@@ -8,11 +8,16 @@ export default {
         inventory: "رصيد المخزون",
         exitRequests: "طلبات صرف العهدة",
         entryRequests: "طلبات إدخال المخزون",
+        approvalRequests: "طلبات الموافقة",
         scan: "ماسح الباركود",
         categories: "الفئات",
         suppliers: "الموردين",
         users: "إدارة المستخدمين والصلاحيات",
+        departments: "الأقسام",
+        productStates: "حالات المنتجات",
+        approvalConfig: "إعدادات الموافقات",
         notifications: "الإشعارات",
+        compass: "بوصلة العهد والأجهزة",
         logout: "تسجيل الخروج"
       },
       common: {
@@ -82,6 +87,16 @@ export default {
         invoiceNumber: "رقم الفاتورة / السند",
         notes: "ملاحظات الشحنة",
         enteredQty: "الكمية الموردة"
+      },
+      approvalRequests: {
+        title: "طلبات الموافقة",
+        subTitle: "متابعة الطلبات المعلقة في مراحل الاعتماد",
+        pending: "معلقة",
+        total: "الإجمالي",
+        exitRequests: "طلبات الصرف",
+        entryRequests: "طلبات الإدخال",
+        summary: "ملخص الاعتمادات",
+        emptyState: "لا توجد طلبات معلقة في هذا الوقت. سيتم عرض أي طلبات تحتاج إلى اعتماد هنا."
       },
       products: {
         title: "إدارة المنتجات والأصناف",
@@ -178,11 +193,16 @@ export default {
         inventory: "Stock Inventory",
         exitRequests: "Exit Requests",
         entryRequests: "Stock-In Requests",
+        approvalRequests: "Approval Requests",
         scan: "Barcode Scanner",
         categories: "Categories",
         suppliers: "Suppliers",
         users: "Users & Permissions",
+        departments: "Departments",
+        productStates: "Product States",
+        approvalConfig: "Acceptance Settings",
         notifications: "Notifications",
+        compass: "Compass Log",
         logout: "Logout"
       },
       common: {
@@ -252,6 +272,16 @@ export default {
         invoiceNumber: "Invoice / Document No.",
         notes: "Shipment Notes",
         enteredQty: "Entered Quantity"
+      },
+      approvalRequests: {
+        title: "Approval Requests",
+        subTitle: "Track pending approvals across the workflow",
+        pending: "Pending",
+        total: "Total",
+        exitRequests: "Exit Requests",
+        entryRequests: "Entry Requests",
+        summary: "Approval Summary",
+        emptyState: "There are no pending requests right now. Any item awaiting approval will appear here."
       },
       products: {
         title: "Products & SKU Catalog",

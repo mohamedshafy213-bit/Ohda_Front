@@ -108,6 +108,8 @@ import {
     AlertOctagon,
     Stethoscope,
     Thermometer,
+    Compass,
+
     Bus,
     Book,
     BookOpen,
@@ -182,7 +184,10 @@ import {
     Barcode,
     Zap,
     ArrowUpRight,
-    ArrowDownLeft
+    ArrowDownLeft,
+    Boxes,
+    QrCode,
+    Truck
 } from "lucide-vue-next";
 
 export const importIcons = (app) => {
@@ -370,4 +375,10 @@ export const importIcons = (app) => {
     app.component("Link2", Link2);
     app.component("FolderClosed", FolderClosed);
     app.component("Dices", Dices);
+    app.component("Compass", Compass);
+    app.component("explore", Compass);
+    app.component("Explore", Compass);
+    app.component("Boxes", Boxes);
+    app.component("QrCode", QrCode);
+    app.component("Truck", Truck);
 };

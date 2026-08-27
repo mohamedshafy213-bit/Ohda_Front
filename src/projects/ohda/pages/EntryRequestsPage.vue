@@ -1,20 +1,20 @@
 <template>
   <div class="space-y-6">
     <!-- Header Title & Action -->
-    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-slate-800/60 p-6 rounded-2xl border border-slate-700/60 backdrop-blur">
+    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-brand-white p-6 rounded-2xl border border-brand-gray/10 shadow-sm">
       <div>
-        <h1 class="text-2xl font-bold text-white flex items-center gap-3">
-          <Download class="w-7 h-7 text-emerald-400" />
+        <h1 class="text-2xl font-bold text-brand-dark flex items-center gap-3">
+          <Download class="w-7 h-7 text-brand-accent" />
           {{ $t('ohda.entryRequests.title') }}
         </h1>
-        <p class="text-xs text-slate-400 mt-1">
+        <p class="text-xs text-brand-gray mt-1">
           {{ $t('ohda.entryRequests.subTitle') }}
         </p>
       </div>
 
       <Button
         @click="showCreateModal = true"
-        class="!bg-emerald-500 hover:!bg-emerald-400 !text-slate-950 !font-bold !rounded-xl !px-4 !py-2.5 !text-xs flex items-center gap-2 shadow-lg shadow-emerald-500/20"
+        class="!bg-brand-accent hover:!bg-brand-accent/90 !text-brand-dark !font-bold !rounded-xl !px-4 !py-2.5 !text-xs flex items-center gap-2 shadow-md shadow-brand-accent/10"
       >
         <Plus class="w-4 h-4" />
         {{ $t('ohda.entryRequests.createRequest') }}
@@ -22,60 +22,72 @@
     </div>
 
     <!-- Status Filter Tabs -->
-    <div class="flex items-center gap-2 border-b border-slate-700/60 pb-3 overflow-x-auto">
+    <div class="flex items-center gap-2 border-b border-brand-gray/10 pb-3 overflow-x-auto">
       <button
         v-for="tab in tabs"
         :key="tab.id"
         @click="activeTab = tab.id"
         class="px-4 py-2 rounded-xl text-xs font-semibold whitespace-nowrap transition-all cursor-pointer flex items-center gap-2"
-        :class="activeTab === tab.id ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40' : 'bg-slate-800/40 text-slate-400 border border-slate-700/40 hover:text-slate-200'"
+        :class="activeTab === tab.id ? 'bg-brand-soft text-brand-accent border border-brand-accent/30' : 'bg-brand-white text-brand-gray border border-brand-gray/10 hover:text-brand-dark shadow-sm'"
       >
         <span>{{ tab.name }}</span>
-        <span class="px-2 py-0.5 rounded-full text-[10px] bg-slate-900/60 text-slate-300">
+        <span class="px-2 py-0.5 rounded-full text-[10px] bg-brand-light text-brand-dark font-bold">
           {{ tab.count }}
         </span>
       </button>
     </div>
 
     <!-- Entry Requests Volt DataTable (No raw tr/td) -->
-    <div class="bg-slate-800/60 border border-slate-700/60 rounded-2xl overflow-hidden backdrop-blur">
+    <div class="bg-brand-white border border-brand-gray/10 rounded-2xl overflow-hidden shadow-sm">
       <DataTable :value="filteredRequests" class="w-full text-xs">
         <Column field="id" :header="$t('ohda.exitRequests.requestID')">
           <template #body="{ data }">
-            <span class="font-mono text-emerald-400 font-bold">#{{ data.id }}</span>
+            <span class="font-mono text-brand-accent font-bold">#{{ data.id }}</span>
           </template>
         </Column>
 
         <Column field="productName" :header="$t('ohda.dashboard.productName')">
           <template #body="{ data }">
             <div>
-              <div class="font-semibold text-white">{{ data.productName }}</div>
-              <div class="text-[10px] text-slate-400 font-mono">{{ data.productSKU }}</div>
+              <div class="font-semibold text-brand-dark">{{ data.productName }}</div>
+              <div class="text-[10px] text-brand-gray font-mono">{{ data.productSKU }}</div>
             </div>
           </template>
         </Column>
 
         <Column field="enteredQuantity" :header="$t('ohda.entryRequests.enteredQty')">
           <template #body="{ data }">
-            <span class="font-bold text-emerald-400 text-sm">+{{ data.enteredQuantity }}</span>
+            <span class="font-bold text-brand-accent text-sm">+{{ data.enteredQuantity }}</span>
           </template>
         </Column>
 
         <Column field="fromSource" :header="$t('ohda.entryRequests.fromSource')">
           <template #body="{ data }">
-            <span class="font-semibold text-slate-200">{{ data.fromSource }}</span>
+            <span class="font-semibold text-brand-dark">{{ data.fromSource }}</span>
           </template>
         </Column>
 
         <Column field="invoiceNumber" :header="$t('ohda.entryRequests.invoiceNumber')">
           <template #body="{ data }">
-            <span class="font-mono text-slate-300">{{ data.invoiceNumber }}</span>
+            <span class="font-mono text-brand-dark">{{ data.invoiceNumber }}</span>
+          </template>
+        </Column>
+
+        <Column field="departmentName" :header="'القسم'">
+          <template #body="{ data }">
+            <span class="text-brand-dark">{{ data.departmentName || '-' }}</span>
+          </template>
+        </Column>
+
+        <Column field="productStateName" :header="'حالة المنتج'">
+          <template #body="{ data }">
+            <span class="text-brand-gray">{{ data.productStateName || '-' }}</span>
           </template>
         </Column>
 
         <Column field="notes" :header="$t('ohda.entryRequests.notes')">
           <template #body="{ data }">
-            <span class="text-slate-400 max-w-xs truncate block">{{ data.notes || '-' }}</span>
+            <span class="text-brand-gray max-w-xs truncate block">{{ data.notes || '-' }}</span>
           </template>
         </Column>
 
@@ -83,21 +95,21 @@
           <template #body="{ data }">
             <div class="flex flex-col gap-1 items-center">
               <div class="flex items-center gap-1.5 text-[11px]">
-                <span class="text-slate-400">{{ $t('ohda.exitRequests.step1Manager') }}</span>
-                <span v-if="data.managerApprove" class="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 flex items-center gap-1">
+                <span class="text-brand-gray">{{ $t('ohda.exitRequests.step1Manager') }}</span>
+                <span v-if="data.managerApprove" class="px-2 py-0.5 rounded text-[10px] font-bold bg-brand-soft text-brand-accent border border-brand-accent/20 flex items-center gap-1">
                   <Check class="w-3 h-3" /> {{ data.managerUsername || 'Manager' }}
                 </span>
-                <span v-else-if="data.status === 4" class="text-red-400 font-bold text-[10px]">❌</span>
-                <span v-else class="text-slate-500 italic text-[10px]">بانتظار الاعتماد</span>
+                <span v-else-if="data.status === 4" class="text-red-500 font-bold text-[10px]">❌</span>
+                <span v-else class="text-brand-gray italic text-[10px]">بانتظار الاعتماد</span>
               </div>
 
               <div class="flex items-center gap-1.5 text-[11px]">
-                <span class="text-slate-400">{{ $t('ohda.exitRequests.step2Supervisor') }}</span>
-                <span v-if="data.supervisorApprove" class="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 flex items-center gap-1">
+                <span class="text-brand-gray">{{ $t('ohda.exitRequests.step2Supervisor') }}</span>
+                <span v-if="data.supervisorApprove" class="px-2 py-0.5 rounded text-[10px] font-bold bg-brand-soft text-brand-accent border border-brand-accent/20 flex items-center gap-1">
                   <Check class="w-3 h-3" /> {{ data.supervisorUsername || 'Supervisor' }}
                 </span>
-                <span v-else-if="data.status === 4" class="text-red-400 font-bold text-[10px]">❌</span>
-                <span v-else class="text-slate-500 italic text-[10px]">بانتظار التوثيق</span>
+                <span v-else-if="data.status === 4" class="text-red-500 font-bold text-[10px]">❌</span>
+                <span v-else class="text-brand-gray italic text-[10px]">بانتظار التوثيق</span>
               </div>
             </div>
           </template>
@@ -118,27 +130,27 @@
           <template #body="{ data }">
             <div class="flex flex-col gap-1.5 items-center justify-center">
               <Button
-                v-if="(authStore.isManager || authStore.isAdmin) && data.status === 1"
+                v-if="canApproveAsManager && data.status === 1"
                 @click="approveManager(data.id)"
-                class="!w-full !px-3 !py-1 !bg-amber-500/20 hover:!bg-amber-500/30 !text-amber-300 !border !border-amber-500/40 !rounded-lg !text-[11px] !font-bold flex items-center justify-center gap-1"
+                class="!w-full !px-3 !py-1 !bg-amber-500/10 hover:!bg-amber-500/20 !text-amber-700 !border !border-amber-500/30 !rounded-lg !text-[11px] !font-bold flex items-center justify-center gap-1"
               >
                 <Check class="w-3 h-3" />
                 {{ $t('ohda.exitRequests.managerApproveBtn') }}
               </Button>
 
               <Button
-                v-if="(authStore.isSupervisor || authStore.isAdmin) && data.status === 3"
+                v-if="canApproveAsSupervisor && data.status === 3"
                 @click="approveSupervisor(data.id)"
-                class="!w-full !px-3 !py-1 !bg-emerald-500/20 hover:!bg-emerald-500/30 !text-emerald-300 !border !border-emerald-500/40 !rounded-lg !text-[11px] !font-bold flex items-center justify-center gap-1"
+                class="!w-full !px-3 !py-1 !bg-brand-soft hover:!bg-brand-accent/20 !text-brand-accent !border !border-brand-accent/20 !rounded-lg !text-[11px] !font-bold flex items-center justify-center gap-1"
               >
                 <Check class="w-3 h-3" />
                 {{ $t('ohda.exitRequests.supervisorApproveBtn') }}
               </Button>
 
               <Button
-                v-if="(authStore.isManager || authStore.isSupervisor || authStore.isAdmin) && (data.status === 1 || data.status === 3)"
+                v-if="canReject && (data.status === 1 || data.status === 3)"
                 @click="openRejectModal(data.id)"
-                class="!w-full !px-3 !py-1 !bg-red-500/10 hover:!bg-red-500/20 !text-red-400 !border !border-red-500/30 !rounded-lg !text-[11px] !font-semibold flex items-center justify-center gap-1"
+                class="!w-full !px-3 !py-1 !bg-red-500/10 hover:!bg-red-500/20 !text-red-600 !border !border-red-500/30 !rounded-lg !text-[11px] !font-semibold flex items-center justify-center gap-1"
               >
                 <X class="w-3 h-3" />
                 {{ $t('ohda.exitRequests.rejectBtn') }}
@@ -150,39 +162,50 @@
     </div>
 
     <!-- Create Entry Request Volt Dialog -->
-    <Dialog v-model:visible="showCreateModal" modal :header="$t('ohda.entryRequests.createRequest')" class="!bg-slate-800 !border-slate-700 max-w-lg w-full">
+    <Dialog v-model:visible="showCreateModal" modal :header="$t('ohda.entryRequests.createRequest')" class="!bg-brand-white !border-brand-gray/15 max-w-lg w-full !text-brand-dark">
       <form @submit.prevent="handleCreateEntry" class="space-y-4 text-xs">
         <div>
-          <label class="block font-semibold text-slate-300 mb-1">{{ $t('ohda.exitRequests.selectProduct') }}</label>
-          <Select v-model="createForm.productId" :options="inventoryStore.products" optionLabel="name" optionValue="id" class="w-full !bg-slate-900 !border-slate-700 !text-white" />
+          <label class="block font-semibold text-brand-dark mb-1">{{ $t('ohda.exitRequests.selectProduct') }}</label>
+          <Select v-model="createForm.productId" :options="inventoryStore.products" optionLabel="name" optionValue="id" class="w-full !bg-brand-light !border-brand-gray/25 focus:!border-brand-accent !text-brand-dark" />
         </div>
 
         <div class="grid grid-cols-2 gap-3">
           <div>
-            <label class="block font-semibold text-slate-300 mb-1">{{ $t('ohda.entryRequests.enteredQty') }}</label>
-            <InputText v-model.number="createForm.enteredQuantity" type="number" min="1" required class="w-full !bg-slate-900 !border-slate-700 !text-white" />
+            <label class="block font-semibold text-brand-dark mb-1">{{ $t('ohda.entryRequests.enteredQty') }}</label>
+            <InputText v-model.number="createForm.enteredQuantity" type="number" min="1" required class="w-full !bg-brand-light !border-brand-gray/25 focus:!border-brand-accent !text-brand-dark" />
           </div>
           <div>
-            <label class="block font-semibold text-slate-300 mb-1">{{ $t('ohda.entryRequests.fromSource') }}</label>
-            <InputText v-model="createForm.fromSource" required class="w-full !bg-slate-900 !border-slate-700 !text-white" placeholder="مؤسسة التوريدات الحديثة" />
+            <label class="block font-semibold text-brand-dark mb-1">{{ $t('ohda.entryRequests.fromSource') }}</label>
+            <InputText v-model="createForm.fromSource" required class="w-full !bg-brand-light !border-brand-gray/25 focus:!border-brand-accent !text-brand-dark" placeholder="مؤسسة التوريدات الحديثة" />
           </div>
         </div>
 
         <div>
-          <label class="block font-semibold text-slate-300 mb-1">{{ $t('ohda.entryRequests.invoiceNumber') }}</label>
-          <InputText v-model="createForm.invoiceNumber" required class="w-full !bg-slate-900 !border-slate-700 !text-white" placeholder="INV-2026-881" />
+          <label class="block font-semibold text-brand-dark mb-1">{{ $t('ohda.entryRequests.invoiceNumber') }}</label>
+          <InputText v-model="createForm.invoiceNumber" required class="w-full !bg-brand-light !border-brand-gray/25 focus:!border-brand-accent !text-brand-dark" placeholder="INV-2026-881" />
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block font-semibold text-brand-dark mb-1">القسم (اختياري)</label>
+            <Select v-model="createForm.departmentId" :options="departments" optionLabel="name" optionValue="id" class="w-full" showClear />
+          </div>
+          <div>
+            <label class="block font-semibold text-brand-dark mb-1">حالة المنتج (اختياري)</label>
+            <Select v-model="createForm.productStateId" :options="productStates" optionLabel="name" optionValue="id" class="w-full" showClear />
+          </div>
         </div>
 
         <div>
-          <label class="block font-semibold text-slate-300 mb-1">{{ $t('ohda.entryRequests.notes') }}</label>
-          <Textarea v-model="createForm.notes" rows="3" class="w-full !bg-slate-900 !border-slate-700 !text-white" placeholder="ملاحظات حول أرقام الشحنة والمستندات..." />
+          <label class="block font-semibold text-brand-dark mb-1">{{ $t('ohda.entryRequests.notes') }}</label>
+          <Textarea v-model="createForm.notes" rows="3" class="w-full !bg-brand-light !border-brand-gray/25 focus:!border-brand-accent !text-brand-dark" placeholder="ملاحظات حول أرقام الشحنة والمستندات..." />
         </div>
 
-        <div class="flex items-center justify-end gap-3 pt-4 border-t border-slate-700/60">
+        <div class="flex items-center justify-end gap-3 pt-4 border-t border-brand-gray/10">
           <SecondaryButton type="button" @click="showCreateModal = false">
             {{ $t('ohda.common.cancel') }}
           </SecondaryButton>
-          <Button type="submit" class="!bg-emerald-500 !text-slate-950 !font-bold">
+          <Button type="submit" class="!bg-brand-accent hover:!bg-brand-accent/90 !text-brand-dark !font-bold">
             {{ $t('ohda.entryRequests.createRequest') }}
           </Button>
         </div>
@@ -190,18 +213,18 @@
     </Dialog>
 
     <!-- Rejection Reason Volt Dialog -->
-    <Dialog v-model:visible="showRejectModal" modal :header="$t('ohda.exitRequests.rejectBtn')" class="!bg-slate-800 !border-slate-700 max-w-md w-full">
+    <Dialog v-model:visible="showRejectModal" modal :header="$t('ohda.exitRequests.rejectBtn')" class="!bg-brand-white !border-brand-gray/15 max-w-md w-full !text-brand-dark">
       <form @submit.prevent="confirmRejection" class="space-y-4 text-xs">
         <div>
-          <label class="block font-semibold text-slate-300 mb-1">{{ $t('ohda.exitRequests.rejectionReason') }}</label>
-          <Textarea v-model="rejectionReason" required rows="3" class="w-full !bg-slate-900 !border-slate-700 !text-white" placeholder="أدخل سبب الرفض بالتفصيل..." />
+          <label class="block font-semibold text-brand-dark mb-1">{{ $t('ohda.exitRequests.rejectionReason') }}</label>
+          <Textarea v-model="rejectionReason" required rows="3" class="w-full !bg-brand-light !border-brand-gray/25 focus:!border-brand-accent !text-brand-dark" placeholder="أدخل سبب الرفض بالتفصيل..." />
         </div>
 
-        <div class="flex items-center justify-end gap-3 pt-3 border-t border-slate-700/60">
+        <div class="flex items-center justify-end gap-3 pt-3 border-t border-brand-gray/10">
           <SecondaryButton type="button" @click="showRejectModal = false">
             {{ $t('ohda.common.cancel') }}
           </SecondaryButton>
-          <Button type="submit" class="!bg-red-500 !text-white !font-bold">
+          <Button type="submit" class="!bg-red-500 hover:!bg-red-600 !text-white !font-bold">
             {{ $t('ohda.exitRequests.confirmRejection') }}
           </Button>
         </div>
@@ -215,14 +238,32 @@ import { ref, computed, onMounted } from "vue";
 import { useOhdaAuthStore } from "../stores/useOhdaAuthStore";
 import { useOhdaInventoryStore } from "../stores/useOhdaInventoryStore";
 import { useOhdaRequestsStore } from "../stores/useOhdaRequestsStore";
+import { useOhdaApprovalConfigStore } from "../stores/useOhdaApprovalConfigStore";
+import { apiGet } from '@/utilities/fetchApi';
 
 const authStore = useOhdaAuthStore();
 const inventoryStore = useOhdaInventoryStore();
 const requestsStore = useOhdaRequestsStore();
+const approvalConfigStore = useOhdaApprovalConfigStore();
 
-onMounted(() => {
-  requestsStore.fetchEntryRequests();
-  inventoryStore.fetchProducts();
+onMounted(async () => {
+  await Promise.all([
+    requestsStore.fetchEntryRequests(),
+    inventoryStore.fetchProducts(),
+    approvalConfigStore.fetchApprovalConfigs(),
+    (async () => {
+      try {
+        const d = await apiGet('/api/Department');
+        departments.value = d?.data?.objects || d?.data?.singleObject || [];
+      } catch (e) { console.warn('Departments load failed', e); }
+    })(),
+    (async () => {
+      try {
+        const s = await apiGet('/api/ProductState');
+        productStates.value = s?.data?.objects || s?.data?.singleObject || [];
+      } catch (e) { console.warn('ProductStates load failed', e); }
+    })()
+  ]);
 });
 
 const activeTab = ref("all");
@@ -231,12 +272,17 @@ const showRejectModal = ref(false);
 const rejectingId = ref(null);
 const rejectionReason = ref("");
 
+const departments = ref([]);
+const productStates = ref([]);
+
 const createForm = ref({
   productId: inventoryStore.products[0]?.id || 1,
   enteredQuantity: 10,
   fromSource: "",
   invoiceNumber: "",
-  notes: ""
+  notes: "",
+  departmentId: null,
+  productStateId: null
 });
 
 const tabs = computed(() => [
@@ -256,11 +302,11 @@ const filteredRequests = computed(() => {
 });
 
 function getStatusClass(status) {
-  if (status === 1) return "bg-purple-500/20 text-purple-300 border-purple-500/30";
-  if (status === 3) return "bg-amber-500/20 text-amber-300 border-amber-500/30";
-  if (status === 2) return "bg-emerald-500/20 text-emerald-300 border-emerald-500/30";
-  if (status === 4) return "bg-red-500/20 text-red-300 border-red-500/30";
-  return "bg-slate-700 text-slate-300";
+  if (status === 1) return "bg-brand-light text-brand-gray border-brand-gray/20";
+  if (status === 3) return "bg-amber-500/10 text-amber-700 border-amber-500/20";
+  if (status === 2) return "bg-brand-soft text-brand-accent border-brand-accent/25";
+  if (status === 4) return "bg-red-500/10 text-red-700 border-red-500/20";
+  return "bg-brand-light text-brand-gray";
 }
 
 function getStatusLabel(status) {
@@ -307,4 +353,22 @@ async function confirmRejection() {
     showRejectModal.value = false;
   }
 }
+
+const canApproveAsManager = computed(() => {
+  if (authStore.isAdmin) return true;
+  const userGroupId = authStore.user?.userGroupId || authStore.user?.userGroup?.id;
+  if (!userGroupId) return false;
+  return approvalConfigStore.configs.some(c => c.isActive && c.requestType === 1 && c.userGroupId === userGroupId && c.workflowRole === 2);
+});
+
+const canApproveAsSupervisor = computed(() => {
+  if (authStore.isAdmin) return true;
+  const userGroupId = authStore.user?.userGroupId || authStore.user?.userGroup?.id;
+  if (!userGroupId) return false;
+  return approvalConfigStore.configs.some(c => c.isActive && c.requestType === 1 && c.userGroupId === userGroupId && c.workflowRole === 3);
+});
+
+const canReject = computed(() => {
+  return canApproveAsManager.value || canApproveAsSupervisor.value;
+});
 </script>

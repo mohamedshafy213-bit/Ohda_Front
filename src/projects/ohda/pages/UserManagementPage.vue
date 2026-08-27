@@ -1,13 +1,13 @@
 <template>
   <div class="space-y-6">
     <!-- Header Title Bar with Navigation Tabs -->
-    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-slate-800/60 p-6 rounded-2xl border border-slate-700/60 backdrop-blur">
+    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-brand-white p-6 rounded-2xl border border-brand-gray/10 shadow-sm">
       <div>
-        <h1 class="text-2xl font-bold text-white flex items-center gap-3">
-          <Shield class="w-7 h-7 text-emerald-400" />
+        <h1 class="text-2xl font-bold text-brand-dark flex items-center gap-3">
+          <Shield class="w-7 h-7 text-brand-accent" />
           {{ $t('ohda.users.title') }}
         </h1>
-        <p class="text-xs text-slate-400 mt-1">
+        <p class="text-xs text-brand-gray mt-1">
           إدارة حسابات المستخدمين، مجموعات الصلاحيات (User Groups)، وصفحات النظام Dynamically
         </p>
       </div>
@@ -17,7 +17,7 @@
         <Button
           v-if="activeTab === 'users'"
           @click="openRegisterModal"
-          class="!bg-emerald-500 hover:!bg-emerald-400 !text-slate-950 !font-bold !rounded-xl !px-4 !py-2 !text-xs flex items-center gap-2 shadow-lg shadow-emerald-500/20"
+          class="!bg-brand-accent hover:!bg-brand-accent/90 !text-brand-dark !font-bold !rounded-xl !px-4 !py-2 !text-xs flex items-center gap-2 shadow-md shadow-brand-accent/10"
         >
           <UserPlus class="w-4 h-4" />
           {{ $t('ohda.users.registerUser') }}
@@ -26,7 +26,7 @@
         <Button
           v-if="activeTab === 'groups'"
           @click="openCreateGroupModal"
-          class="!bg-purple-500 hover:!bg-purple-400 !text-white !font-bold !rounded-xl !px-4 !py-2 !text-xs flex items-center gap-2 shadow-lg shadow-purple-500/20"
+          class="!bg-brand-accent hover:!bg-brand-accent/90 !text-brand-dark !font-bold !rounded-xl !px-4 !py-2 !text-xs flex items-center gap-2 shadow-md shadow-brand-accent/10"
         >
           <Plus class="w-4 h-4" />
           إنشاء مجموعة جديدة
@@ -35,68 +35,86 @@
         <Button
           v-if="activeTab === 'pages'"
           @click="openCreatePageModal"
-          class="!bg-teal-500 hover:!bg-teal-400 !text-slate-950 !font-bold !rounded-xl !px-4 !py-2 !text-xs flex items-center gap-2 shadow-lg shadow-teal-500/20"
+          class="!bg-brand-accent hover:!bg-brand-accent/90 !text-brand-dark !font-bold !rounded-xl !px-4 !py-2 !text-xs flex items-center gap-2 shadow-md shadow-brand-accent/10"
         >
           <Plus class="w-4 h-4" />
           إضافة صفحة نظام جديدة
+        </Button>
+
+        <Button
+          v-if="activeTab === 'approvalConfigs'"
+          @click="openCreateApprovalConfigModal"
+          class="!bg-brand-accent hover:!bg-brand-accent/90 !text-brand-dark !font-bold !rounded-xl !px-4 !py-2 !text-xs flex items-center gap-2 shadow-md shadow-brand-accent/10"
+        >
+          <Plus class="w-4 h-4" />
+          إضافة إعداد اعتماد جديد
         </Button>
       </div>
     </div>
 
     <!-- Navigation Tabs Switcher -->
-    <div class="flex items-center gap-2 border-b border-slate-700/80 pb-3">
+    <div class="flex items-center gap-2 border-b border-brand-gray/10 pb-3">
       <button
         @click="activeTab = 'users'"
-        class="px-4 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center gap-2 cursor-pointer"
-        :class="activeTab === 'users' ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40' : 'text-slate-400 hover:text-white hover:bg-slate-800/40'"
+        class="px-4 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center gap-2 cursor-pointer border"
+        :class="activeTab === 'users' ? 'bg-brand-soft text-brand-accent border-brand-accent/30 shadow-sm' : 'text-brand-gray border-transparent hover:text-brand-dark hover:bg-brand-light'"
       >
-        <Users class="w-4 h-4 text-emerald-400" />
+        <Users class="w-4 h-4 text-brand-accent" />
         المستخدمين ({{ userStore.users.length }})
       </button>
 
       <button
         @click="activeTab = 'groups'"
-        class="px-4 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center gap-2 cursor-pointer"
-        :class="activeTab === 'groups' ? 'bg-purple-500/20 text-purple-300 border border-purple-500/40' : 'text-slate-400 hover:text-white hover:bg-slate-800/40'"
+        class="px-4 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center gap-2 cursor-pointer border"
+        :class="activeTab === 'groups' ? 'bg-brand-soft text-brand-accent border-brand-accent/30 shadow-sm' : 'text-brand-gray border-transparent hover:text-brand-dark hover:bg-brand-light'"
       >
-        <ShieldCheck class="w-4 h-4 text-purple-400" />
+        <ShieldCheck class="w-4 h-4 text-brand-accent" />
         مجموعات الصلاحيات ({{ groupStore.groups.length }})
       </button>
 
       <button
         @click="activeTab = 'pages'"
-        class="px-4 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center gap-2 cursor-pointer"
-        :class="activeTab === 'pages' ? 'bg-teal-500/20 text-teal-300 border border-teal-500/40' : 'text-slate-400 hover:text-white hover:bg-slate-800/40'"
+        class="px-4 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center gap-2 cursor-pointer border"
+        :class="activeTab === 'pages' ? 'bg-brand-soft text-brand-accent border-brand-accent/30 shadow-sm' : 'text-brand-gray border-transparent hover:text-brand-dark hover:bg-brand-light'"
       >
-        <FileText class="w-4 h-4 text-teal-400" />
+        <FileText class="w-4 h-4 text-brand-accent" />
         صفحات النظام ({{ groupStore.pages.length }})
+      </button>
+
+      <button
+        @click="activeTab = 'approvalConfigs'"
+        class="px-4 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center gap-2 cursor-pointer border"
+        :class="activeTab === 'approvalConfigs' ? 'bg-brand-soft text-brand-accent border-brand-accent/30 shadow-sm' : 'text-brand-gray border-transparent hover:text-brand-dark hover:bg-brand-light'"
+      >
+        <Sliders class="w-4 h-4 text-brand-accent" />
+        إعدادات الاعتماد ({{ approvalConfigStore.configs.length }})
       </button>
     </div>
 
     <!-- TAB 1: USERS DATATABLE & MODALS -->
-    <div v-if="activeTab === 'users'" class="bg-slate-800/60 border border-slate-700/60 rounded-2xl overflow-hidden backdrop-blur">
+    <div v-if="activeTab === 'users'" class="bg-brand-white border border-brand-gray/10 rounded-2xl overflow-hidden shadow-sm">
       <DataTable :value="userStore.users" class="w-full text-xs">
         <Column field="id" header="#">
           <template #body="{ data }">
-            <span class="font-mono text-slate-400">{{ data.id }}</span>
+            <span class="font-mono text-brand-gray">{{ data.id }}</span>
           </template>
         </Column>
 
         <Column field="username" :header="$t('ohda.users.username')">
           <template #body="{ data }">
-            <span class="font-mono font-bold text-white">{{ data.username }}</span>
+            <span class="font-mono font-bold text-brand-dark">{{ data.username }}</span>
           </template>
         </Column>
 
         <Column field="personName" :header="$t('ohda.users.personName')">
           <template #body="{ data }">
-            <span class="font-semibold text-slate-200">{{ data.personName }}</span>
+            <span class="font-semibold text-brand-dark">{{ data.personName }}</span>
           </template>
         </Column>
 
         <Column field="email" :header="$t('ohda.users.email')">
           <template #body="{ data }">
-            <span class="font-mono text-slate-400">{{ data.email }}</span>
+            <span class="font-mono text-brand-gray">{{ data.email }}</span>
           </template>
         </Column>
 
@@ -113,13 +131,11 @@
 
         <Column header="مجموعة الصلاحيات (User Group)">
           <template #body="{ data }">
-            <span class="px-2.5 py-1 bg-purple-500/10 text-purple-300 border border-purple-500/30 rounded-lg text-[11px] font-bold font-mono">
+            <span class="px-2.5 py-1 bg-brand-soft text-brand-accent border border-brand-accent/20 rounded-lg text-[11px] font-bold font-mono">
               {{ data.userGroupName || getUserGroupName(data.userGroupId) }}
             </span>
           </template>
         </Column>
-
-     
 
         <Column :header="$t('ohda.common.actions')">
           <template #body="{ data }">
@@ -133,23 +149,23 @@
     </div>
 
     <!-- TAB 2: USER GROUPS DATATABLE & MODALS -->
-    <div v-if="activeTab === 'groups'" class="bg-slate-800/60 border border-slate-700/60 rounded-2xl overflow-hidden backdrop-blur">
+    <div v-if="activeTab === 'groups'" class="bg-brand-white border border-brand-gray/10 rounded-2xl overflow-hidden shadow-sm">
       <DataTable :value="groupStore.groups" class="w-full text-xs">
         <Column field="id" header="#">
           <template #body="{ data }">
-            <span class="font-mono text-slate-400">{{ data.id }}</span>
+            <span class="font-mono text-brand-gray">{{ data.id }}</span>
           </template>
         </Column>
 
         <Column field="name" header="اسم المجموعة">
           <template #body="{ data }">
-            <span class="font-bold text-white text-sm">{{ data.name }}</span>
+            <span class="font-bold text-brand-dark text-sm">{{ data.name }}</span>
           </template>
         </Column>
 
         <Column field="description" header="الوصف">
           <template #body="{ data }">
-            <span class="text-slate-300">{{ data.description || 'لا يوجد وصف' }}</span>
+            <span class="text-brand-gray">{{ data.description || 'لا يوجد وصف' }}</span>
           </template>
         </Column>
 
@@ -157,7 +173,7 @@
           <template #body="{ data }">
             <Button
               @click="openGroupPermissionsModal(data)"
-              class="!px-3 !py-1 !bg-purple-500/10 hover:!bg-purple-500/20 !text-purple-300 !border !border-purple-500/30 !rounded-lg !text-xs !font-bold flex items-center gap-1"
+              class="!px-3 !py-1 !bg-brand-soft hover:!bg-brand-accent/20 !text-brand-accent !border !border-brand-accent/20 !rounded-lg !text-xs !font-bold flex items-center gap-1"
             >
               <Lock class="w-3.5 h-3.5" />
               إدارة صلاحيات الصفحات للمجموعة
@@ -177,39 +193,37 @@
     </div>
 
     <!-- TAB 3: SYSTEM PAGES DATATABLE & MODALS -->
-    <div v-if="activeTab === 'pages'" class="bg-slate-800/60 border border-slate-700/60 rounded-2xl overflow-hidden backdrop-blur">
+    <div v-if="activeTab === 'pages'" class="bg-brand-white border border-brand-gray/10 rounded-2xl overflow-hidden shadow-sm">
       <DataTable :value="groupStore.pages" class="w-full text-xs">
         <Column field="id" header="#">
           <template #body="{ data }">
-            <span class="font-mono text-slate-400">{{ data.id }}</span>
+            <span class="font-mono text-brand-gray">{{ data.id }}</span>
           </template>
         </Column>
 
         <Column field="title" header="عنوان الصفحة">
           <template #body="{ data }">
-            <span class="font-bold text-white">{{ data.title || data.name }}</span>
+            <span class="font-bold text-brand-dark">{{ data.title || data.name }}</span>
           </template>
         </Column>
 
         <Column field="path" header="المسار (Path)">
           <template #body="{ data }">
-            <span class="font-mono text-emerald-400 font-semibold">{{ data.path }}</span>
+            <span class="font-mono text-brand-accent font-semibold">{{ data.path }}</span>
           </template>
         </Column>
 
         <Column field="icon" header="الأيقونة">
           <template #body="{ data }">
-            <span class="font-mono text-amber-300">{{ data.icon }}</span>
+            <span class="font-mono text-brand-gray">{{ data.icon }}</span>
           </template>
         </Column>
 
         <Column field="sortOrder" header="الترتيب">
           <template #body="{ data }">
-            <span class="font-mono text-slate-400">{{ data.sortOrder }}</span>
+            <span class="font-mono text-brand-gray">{{ data.sortOrder }}</span>
           </template>
         </Column>
-
-
 
         <Column :header="$t('ohda.common.actions')">
           <template #body="{ data }">
@@ -222,46 +236,133 @@
       </DataTable>
     </div>
 
-    <!-- ================= DIALOGS ================= -->
+    <!-- TAB 4: APPROVAL CONFIGS DATATABLE -->
+    <div v-if="activeTab === 'approvalConfigs'" class="bg-brand-white border border-brand-gray/10 rounded-2xl overflow-hidden shadow-sm">
+      <DataTable :value="approvalConfigStore.configs" class="w-full text-xs">
+        <Column field="id" header="#">
+          <template #body="{ data }">
+            <span class="font-mono text-brand-gray">{{ data.id }}</span>
+          </template>
+        </Column>
+
+        <Column field="requestType" header="نوع الطلب">
+          <template #body="{ data }">
+            <span class="px-2 py-0.5 rounded border text-[11px] font-bold inline-block"
+                  :class="data.requestType === 1 ? 'bg-blue-500/10 text-blue-700 border-blue-500/20' : 'bg-amber-500/10 text-amber-700 border-amber-500/20'">
+              {{ data.requestType === 1 ? 'إدخال (Entry)' : 'صرف (Exit)' }}
+            </span>
+          </template>
+        </Column>
+
+        <Column header="المجموعة المستهدفة (User Group)">
+          <template #body="{ data }">
+            <span class="font-semibold text-brand-dark">
+              {{ data.userGroupName || getUserGroupName(data.userGroupId) }}
+            </span>
+          </template>
+        </Column>
+
+        <Column field="workflowRole" header="دور الاعتماد">
+          <template #body="{ data }">
+            <span class="px-2 py-0.5 rounded border text-[11px] font-bold inline-block"
+                  :class="data.workflowRole === 1 ? 'bg-slate-500/10 text-slate-700 border-slate-500/20' : data.workflowRole === 2 ? 'bg-teal-500/10 text-teal-700 border-teal-500/20' : 'bg-purple-500/10 text-purple-700 border-purple-500/20'">
+              {{ data.workflowRole === 1 ? 'مقدم الطلب (Requester)' : data.workflowRole === 2 ? 'مراجع/مدير (Reviewer)' : 'معتمد/مشرف (Approver)' }}
+            </span>
+          </template>
+        </Column>
+
+        <Column header="حالة التفعيل">
+          <template #body="{ data }">
+            <span class="px-2.5 py-1 rounded-lg text-[11px] font-bold inline-block"
+                  :class="data.isActive ? 'bg-brand-soft text-brand-accent border border-brand-accent/20' : 'bg-red-500/10 text-red-700 border border-red-500/20'">
+              {{ data.isActive ? 'نشط' : 'معطل' }}
+            </span>
+          </template>
+        </Column>
+
+        <Column :header="$t('ohda.common.actions')">
+          <template #body="{ data }">
+            <div class="flex items-center justify-center gap-2">
+              <editButton @click="openEditApprovalConfigModal(data)" />
+              <deleteButton @click="deleteApprovalConfig(data.id)" />
+            </div>
+          </template>
+        </Column>
+      </DataTable>
+    </div>
+
+    <!-- Create/Edit Approval Config Dialog -->
+    <Dialog v-model:visible="showApprovalConfigModal" modal :header="isEditingApprovalConfig ? 'تعديل إعداد الاعتماد' : 'إضافة إعداد اعتماد جديد'" class="!bg-brand-white !border-brand-gray/15 max-w-md w-full !text-brand-dark">
+      <form @submit.prevent="saveApprovalConfig" class="space-y-4 text-xs">
+        <div>
+          <label class="block font-semibold text-brand-dark mb-1">نوع الطلب</label>
+          <Select v-model="approvalConfigForm.requestType" :options="requestTypeOptions" optionLabel="label" optionValue="value" class="w-full !bg-brand-light !border-brand-gray/25 focus:!border-brand-accent !text-brand-dark" />
+        </div>
+
+        <div>
+          <label class="block font-semibold text-brand-dark mb-1">المجموعة المستهدفة (User Group)</label>
+          <Select v-model="approvalConfigForm.userGroupId" :options="groupOptions" optionLabel="label" optionValue="value" class="w-full !bg-brand-light !border-brand-gray/25 focus:!border-brand-accent !text-brand-dark" />
+        </div>
+
+        <div>
+          <label class="block font-semibold text-brand-dark mb-1">دور الاعتماد (Workflow Role)</label>
+          <Select v-model="approvalConfigForm.workflowRole" :options="workflowRoleOptions" optionLabel="label" optionValue="value" class="w-full !bg-brand-light !border-brand-gray/25 focus:!border-brand-accent !text-brand-dark" />
+        </div>
+
+        <div class="flex items-center gap-2 py-2">
+          <Checkbox v-model="approvalConfigForm.isActive" :binary="true" inputId="configIsActive" class="w-5 h-5" />
+          <label for="configIsActive" class="font-semibold text-brand-dark select-none cursor-pointer">نشط ومفعل</label>
+        </div>
+
+        <div class="flex items-center justify-end gap-3 pt-3 border-t border-brand-gray/10">
+          <SecondaryButton type="button" @click="showApprovalConfigModal = false">
+            {{ $t('ohda.common.cancel') }}
+          </SecondaryButton>
+          <Button type="submit" class="!bg-brand-accent hover:!bg-brand-accent/90 !text-brand-dark !font-bold">
+            {{ $t('ohda.common.save') }}
+          </Button>
+        </div>
+      </form>
+    </Dialog>
 
     <!-- Register User Dialog -->
-    <Dialog v-model:visible="showRegisterModal" modal :header="$t('ohda.users.registerUser')" class="!bg-slate-800 !border-slate-700 max-w-md w-full">
+    <Dialog v-model:visible="showRegisterModal" modal :header="$t('ohda.users.registerUser')" class="!bg-brand-white !border-brand-gray/15 max-w-md w-full !text-brand-dark">
       <form @submit.prevent="handleRegisterUser" class="space-y-4 text-xs">
         <div>
-          <label class="block font-semibold text-slate-300 mb-1">{{ $t('ohda.users.username') }}</label>
-          <InputText v-model="registerForm.username" required class="w-full !bg-slate-900 !border-slate-700 !text-white" />
+          <label class="block font-semibold text-brand-dark mb-1">{{ $t('ohda.users.username') }}</label>
+          <InputText v-model="registerForm.username" required class="w-full !bg-brand-light !border-brand-gray/25 focus:!border-brand-accent !text-brand-dark" />
         </div>
 
         <div>
-          <label class="block font-semibold text-slate-300 mb-1">{{ $t('ohda.users.personName') }}</label>
-          <InputText v-model="registerForm.personName" required class="w-full !bg-slate-900 !border-slate-700 !text-white" />
+          <label class="block font-semibold text-brand-dark mb-1">{{ $t('ohda.users.personName') }}</label>
+          <InputText v-model="registerForm.personName" required class="w-full !bg-brand-light !border-brand-gray/25 focus:!border-brand-accent !text-brand-dark" />
         </div>
 
         <div>
-          <label class="block font-semibold text-slate-300 mb-1">{{ $t('ohda.users.email') }}</label>
-          <InputText v-model="registerForm.email" type="email" required class="w-full !bg-slate-900 !border-slate-700 !text-white font-mono" />
+          <label class="block font-semibold text-brand-dark mb-1">{{ $t('ohda.users.email') }}</label>
+          <InputText v-model="registerForm.email" type="email" required class="w-full !bg-brand-light !border-brand-gray/25 focus:!border-brand-accent !text-brand-dark font-mono" />
         </div>
 
         <div>
-          <label class="block font-semibold text-slate-300 mb-1">كلمة المرور</label>
-          <InputText v-model="registerForm.password" type="password" required class="w-full !bg-slate-900 !border-slate-700 !text-white font-mono" />
+          <label class="block font-semibold text-brand-dark mb-1">كلمة المرور</label>
+          <InputText v-model="registerForm.password" type="password" required class="w-full !bg-brand-light !border-brand-gray/25 focus:!border-brand-accent !text-brand-dark font-mono" />
         </div>
 
         <div>
-          <label class="block font-semibold text-slate-300 mb-1">{{ $t('ohda.users.role') }}</label>
-          <Select v-model="registerForm.role" :options="roleOptions" optionLabel="label" optionValue="value" class="w-full !bg-slate-900 !border-slate-700 !text-white" />
+          <label class="block font-semibold text-brand-dark mb-1">{{ $t('ohda.users.role') }}</label>
+          <Select v-model="registerForm.role" :options="roleOptions" optionLabel="label" optionValue="value" class="w-full !bg-brand-light !border-brand-gray/25 focus:!border-brand-accent !text-brand-dark" />
         </div>
 
         <div>
-          <label class="block font-semibold text-slate-300 mb-1">مجموعة الصلاحيات (User Group)</label>
-          <Select v-model="registerForm.userGroupId" :options="groupOptions" optionLabel="label" optionValue="value" class="w-full !bg-slate-900 !border-slate-700 !text-white" />
+          <label class="block font-semibold text-brand-dark mb-1">مجموعة الصلاحيات (User Group)</label>
+          <Select v-model="registerForm.userGroupId" :options="groupOptions" optionLabel="label" optionValue="value" class="w-full !bg-brand-light !border-brand-gray/25 focus:!border-brand-accent !text-brand-dark" />
         </div>
 
-        <div class="flex items-center justify-end gap-3 pt-3 border-t border-slate-700/60">
+        <div class="flex items-center justify-end gap-3 pt-3 border-t border-brand-gray/10">
           <SecondaryButton type="button" @click="showRegisterModal = false">
             {{ $t('ohda.common.cancel') }}
           </SecondaryButton>
-          <Button type="submit" class="!bg-emerald-500 !text-slate-950 !font-bold">
+          <Button type="submit" class="!bg-brand-accent hover:!bg-brand-accent/90 !text-brand-dark !font-bold">
             {{ $t('ohda.users.registerUser') }}
           </Button>
         </div>
@@ -269,43 +370,43 @@
     </Dialog>
 
     <!-- Edit User Dialog -->
-    <Dialog v-model:visible="showEditModal" modal header="تعديل بيانات المستخدم ومجموعة الصلاحيات" class="!bg-slate-800 !border-slate-700 max-w-md w-full">
+    <Dialog v-model:visible="showEditModal" modal header="تعديل بيانات المستخدم ومجموعة الصلاحيات" class="!bg-brand-white !border-brand-gray/15 max-w-md w-full !text-brand-dark">
       <form @submit.prevent="handleUpdateUser" class="space-y-4 text-xs">
         <div>
-          <label class="block font-semibold text-slate-300 mb-1">{{ $t('ohda.users.username') }}</label>
-          <InputText v-model="editForm.username" required class="w-full !bg-slate-900 !border-slate-700 !text-white font-mono" />
+          <label class="block font-semibold text-brand-dark mb-1">{{ $t('ohda.users.username') }}</label>
+          <InputText v-model="editForm.username" required class="w-full !bg-brand-light !border-brand-gray/25 focus:!border-brand-accent !text-brand-dark font-mono" />
         </div>
 
         <div>
-          <label class="block font-semibold text-slate-300 mb-1">{{ $t('ohda.users.personName') }}</label>
-          <InputText v-model="editForm.personName" required class="w-full !bg-slate-900 !border-slate-700 !text-white" />
+          <label class="block font-semibold text-brand-dark mb-1">{{ $t('ohda.users.personName') }}</label>
+          <InputText v-model="editForm.personName" required class="w-full !bg-brand-light !border-brand-gray/25 focus:!border-brand-accent !text-brand-dark" />
         </div>
 
         <div>
-          <label class="block font-semibold text-slate-300 mb-1">{{ $t('ohda.users.email') }}</label>
-          <InputText v-model="editForm.email" type="email" required class="w-full !bg-slate-900 !border-slate-700 !text-white font-mono" />
+          <label class="block font-semibold text-brand-dark mb-1">{{ $t('ohda.users.email') }}</label>
+          <InputText v-model="editForm.email" type="email" required class="w-full !bg-brand-light !border-brand-gray/25 focus:!border-brand-accent !text-brand-dark font-mono" />
         </div>
 
         <div>
-          <label class="block font-semibold text-slate-300 mb-1">تحديث كلمة المرور (اختياري)</label>
-          <InputText v-model="editForm.password" type="password" placeholder="أدخل كلمة مرور جديدة..." class="w-full !bg-slate-900 !border-slate-700 !text-white font-mono" />
+          <label class="block font-semibold text-brand-dark mb-1">تحديث كلمة المرور (اختياري)</label>
+          <InputText v-model="editForm.password" type="password" placeholder="أدخل كلمة مرور جديدة..." class="w-full !bg-brand-light !border-brand-gray/25 focus:!border-brand-accent !text-brand-dark font-mono" />
         </div>
 
         <div>
-          <label class="block font-semibold text-slate-300 mb-1">{{ $t('ohda.users.role') }}</label>
-          <Select v-model="editForm.role" :options="roleOptions" optionLabel="label" optionValue="value" class="w-full !bg-slate-900 !border-slate-700 !text-white" />
+          <label class="block font-semibold text-brand-dark mb-1">{{ $t('ohda.users.role') }}</label>
+          <Select v-model="editForm.role" :options="roleOptions" optionLabel="label" optionValue="value" class="w-full !bg-brand-light !border-brand-gray/25 focus:!border-brand-accent !text-brand-dark" />
         </div>
 
         <div>
-          <label class="block font-semibold text-slate-300 mb-1">مجموعة الصلاحيات (User Group)</label>
-          <Select v-model="editForm.userGroupId" :options="groupOptions" optionLabel="label" optionValue="value" class="w-full !bg-slate-900 !border-slate-700 !text-white" />
+          <label class="block font-semibold text-brand-dark mb-1">مجموعة الصلاحيات (User Group)</label>
+          <Select v-model="editForm.userGroupId" :options="groupOptions" optionLabel="label" optionValue="value" class="w-full !bg-brand-light !border-brand-gray/25 focus:!border-brand-accent !text-brand-dark" />
         </div>
 
-        <div class="flex items-center justify-end gap-3 pt-3 border-t border-slate-700/60">
+        <div class="flex items-center justify-end gap-3 pt-3 border-t border-brand-gray/10">
           <SecondaryButton type="button" @click="showEditModal = false">
             {{ $t('ohda.common.cancel') }}
           </SecondaryButton>
-          <Button type="submit" class="!bg-emerald-500 !text-slate-950 !font-bold">
+          <Button type="submit" class="!bg-brand-accent hover:!bg-brand-accent/90 !text-brand-dark !font-bold">
             {{ $t('ohda.common.save') }}
           </Button>
         </div>
@@ -313,27 +414,27 @@
     </Dialog>
 
     <!-- User Direct Permissions Modal -->
-    <Dialog v-model:visible="showUserPermissionsModal" modal :header="$t('ohda.users.permissionsModal')" class="!bg-slate-800 !border-slate-700 max-w-lg w-full">
+    <Dialog v-model:visible="showUserPermissionsModal" modal :header="$t('ohda.users.permissionsModal')" class="!bg-brand-white !border-brand-gray/15 max-w-lg w-full !text-brand-dark">
       <div v-if="selectedUser" class="space-y-4 text-xs">
-        <p class="text-slate-400">
-          للمستخدم: <span class="font-bold text-white">{{ selectedUser.personName }}</span> (@{{ selectedUser.username }})
+        <p class="text-brand-gray">
+          للمستخدم: <span class="font-bold text-brand-dark">{{ selectedUser.personName }}</span> (@{{ selectedUser.username }})
         </p>
 
         <div class="space-y-2 max-h-96 overflow-y-auto pr-1">
           <div
             v-for="page in groupStore.pages"
             :key="page.id"
-            class="flex items-center justify-between p-3 rounded-xl border border-slate-700/60 bg-slate-900/60"
+            class="flex items-center justify-between p-3 rounded-xl border border-brand-gray/10 bg-brand-light"
           >
             <div>
-              <div class="font-semibold text-slate-200 text-xs">{{ page.title || page.name }}</div>
-              <div class="font-mono text-[10px] text-slate-400">{{ page.path }}</div>
+              <div class="font-semibold text-brand-dark text-xs">{{ page.title || page.name }}</div>
+              <div class="font-mono text-[10px] text-brand-gray">{{ page.path }}</div>
             </div>
 
             <Button
               v-if="isPageAllowedForUser(selectedUser, page.id)"
               @click="toggleUserPageAccess(selectedUser.id, page.id, false)"
-              class="!px-3 !py-1 !bg-red-500/20 hover:!bg-red-500/30 !text-red-300 !border !border-red-500/30 !rounded-lg !text-xs !font-bold flex items-center gap-1"
+              class="!px-3 !py-1 !bg-red-500/10 hover:!bg-red-500/20 !text-red-600 !border !border-red-500/30 !rounded-lg !text-xs !font-bold flex items-center gap-1"
             >
               <X class="w-3.5 h-3.5" />
               {{ $t('ohda.users.revokePage') }}
@@ -341,7 +442,7 @@
             <Button
               v-else
               @click="toggleUserPageAccess(selectedUser.id, page.id, true)"
-              class="!px-3 !py-1 !bg-emerald-500/20 hover:!bg-emerald-500/30 !text-emerald-300 !border !border-emerald-500/30 !rounded-lg !text-xs !font-bold flex items-center gap-1"
+              class="!px-3 !py-1 !bg-brand-soft hover:!bg-brand-accent/20 !text-brand-accent !border !border-brand-accent/30 !rounded-lg !text-xs !font-bold flex items-center gap-1"
             >
               <Check class="w-3.5 h-3.5" />
               {{ $t('ohda.users.grantPage') }}
@@ -349,7 +450,7 @@
           </div>
         </div>
 
-        <div class="flex justify-end pt-3 border-t border-slate-700/60">
+        <div class="flex justify-end pt-3 border-t border-brand-gray/10">
           <SecondaryButton @click="showUserPermissionsModal = false">
             {{ $t('ohda.common.close') }}
           </SecondaryButton>
@@ -358,23 +459,23 @@
     </Dialog>
 
     <!-- Create Group Dialog -->
-    <Dialog v-model:visible="showCreateGroupModal" modal header="إنشاء مجموعة مستخدمين جديدة" class="!bg-slate-800 !border-slate-700 max-w-md w-full">
+    <Dialog v-model:visible="showCreateGroupModal" modal header="إنشاء مجموعة مستخدمين جديدة" class="!bg-brand-white !border-brand-gray/15 max-w-md w-full !text-brand-dark">
       <form @submit.prevent="handleCreateGroup" class="space-y-4 text-xs">
         <div>
-          <label class="block font-semibold text-slate-300 mb-1">اسم المجموعة</label>
-          <InputText v-model="groupForm.name" required class="w-full !bg-slate-900 !border-slate-700 !text-white" placeholder="مثال: Warehouse Supervisors" />
+          <label class="block font-semibold text-brand-dark mb-1">اسم المجموعة</label>
+          <InputText v-model="groupForm.name" required class="w-full !bg-brand-light !border-brand-gray/25 focus:!border-brand-accent !text-brand-dark" placeholder="مثال: Warehouse Supervisors" />
         </div>
 
         <div>
-          <label class="block font-semibold text-slate-300 mb-1">الوصف</label>
-          <Textarea v-model="groupForm.description" rows="3" class="w-full !bg-slate-900 !border-slate-700 !text-white" placeholder="وصف الصلاحيات والمجموعة..." />
+          <label class="block font-semibold text-brand-dark mb-1">الوصف</label>
+          <Textarea v-model="groupForm.description" rows="3" class="w-full !bg-brand-light !border-brand-gray/25 focus:!border-brand-accent !text-brand-dark" placeholder="وصف الصلاحيات والمجموعة..." />
         </div>
 
-        <div class="flex items-center justify-end gap-3 pt-3 border-t border-slate-700/60">
+        <div class="flex items-center justify-end gap-3 pt-3 border-t border-brand-gray/10">
           <SecondaryButton type="button" @click="showCreateGroupModal = false">
             {{ $t('ohda.common.cancel') }}
           </SecondaryButton>
-          <Button type="submit" class="!bg-purple-500 !text-white !font-bold">
+          <Button type="submit" class="!bg-brand-accent hover:!bg-brand-accent/90 !text-brand-dark !font-bold">
             حفظ المجموعة
           </Button>
         </div>
@@ -382,23 +483,23 @@
     </Dialog>
 
     <!-- Edit Group Dialog -->
-    <Dialog v-model:visible="showEditGroupModal" modal header="تعديل بيانات المجموعة" class="!bg-slate-800 !border-slate-700 max-w-md w-full">
+    <Dialog v-model:visible="showEditGroupModal" modal header="تعديل بيانات المجموعة" class="!bg-brand-white !border-brand-gray/15 max-w-md w-full !text-brand-dark">
       <form @submit.prevent="handleUpdateGroup" class="space-y-4 text-xs">
         <div>
-          <label class="block font-semibold text-slate-300 mb-1">اسم المجموعة</label>
-          <InputText v-model="groupForm.name" required class="w-full !bg-slate-900 !border-slate-700 !text-white" />
+          <label class="block font-semibold text-brand-dark mb-1">اسم المجموعة</label>
+          <InputText v-model="groupForm.name" required class="w-full !bg-brand-light !border-brand-gray/25 focus:!border-brand-accent !text-brand-dark" />
         </div>
 
         <div>
-          <label class="block font-semibold text-slate-300 mb-1">الوصف</label>
-          <Textarea v-model="groupForm.description" rows="3" class="w-full !bg-slate-900 !border-slate-700 !text-white" />
+          <label class="block font-semibold text-brand-dark mb-1">الوصف</label>
+          <Textarea v-model="groupForm.description" rows="3" class="w-full !bg-brand-light !border-brand-gray/25 focus:!border-brand-accent !text-brand-dark" />
         </div>
 
-        <div class="flex items-center justify-end gap-3 pt-3 border-t border-slate-700/60">
+        <div class="flex items-center justify-end gap-3 pt-3 border-t border-brand-gray/10">
           <SecondaryButton type="button" @click="showEditGroupModal = false">
             {{ $t('ohda.common.cancel') }}
           </SecondaryButton>
-          <Button type="submit" class="!bg-purple-500 !text-white !font-bold">
+          <Button type="submit" class="!bg-brand-accent hover:!bg-brand-accent/90 !text-brand-dark !font-bold">
             {{ $t('ohda.common.save') }}
           </Button>
         </div>
@@ -406,15 +507,15 @@
     </Dialog>
 
     <!-- Group Page Permissions Modal -->
-    <Dialog v-model:visible="showGroupPermissionsModal" modal header="إدارة صلاحيات الصفحات للمجموعة" class="!bg-slate-800 !border-slate-700 max-w-lg w-full">
+    <Dialog v-model:visible="showGroupPermissionsModal" modal header="إدارة صلاحيات الصفحات للمجموعة" class="!bg-brand-white !border-brand-gray/15 max-w-lg w-full !text-brand-dark">
       <div v-if="selectedGroup" class="space-y-4 text-xs">
         <div class="flex items-center justify-between">
-          <p class="text-slate-400">
-            للمجموعة: <span class="font-bold text-white">{{ selectedGroup.name }}</span>
+          <p class="text-brand-gray">
+            للمجموعة: <span class="font-bold text-brand-dark">{{ selectedGroup.name }}</span>
           </p>
           <Button
             @click="grantAllToGroup(selectedGroup.id)"
-            class="!px-3 !py-1 !bg-emerald-500/20 hover:!bg-emerald-500/30 !text-emerald-300 !border !border-emerald-500/30 !rounded-lg !text-xs !font-bold flex items-center gap-1"
+            class="!px-3 !py-1 !bg-brand-soft hover:!bg-brand-accent/20 !text-brand-accent !border !border-brand-accent/30 !rounded-lg !text-xs !font-bold flex items-center gap-1"
           >
             <CheckCheck class="w-3.5 h-3.5" />
             منح جميع الصفحات
@@ -425,17 +526,17 @@
           <div
             v-for="page in groupStore.pages"
             :key="page.id"
-            class="flex items-center justify-between p-3 rounded-xl border border-slate-700/60 bg-slate-900/60"
+            class="flex items-center justify-between p-3 rounded-xl border border-brand-gray/10 bg-brand-light"
           >
             <div>
-              <div class="font-semibold text-slate-200 text-xs">{{ page.title || page.name }}</div>
-              <div class="font-mono text-[10px] text-slate-400">{{ page.path }}</div>
+              <div class="font-semibold text-brand-dark text-xs">{{ page.title || page.name }}</div>
+              <div class="font-mono text-[10px] text-brand-gray">{{ page.path }}</div>
             </div>
 
             <Button
               v-if="isPageAllowedForGroup(selectedGroup.id, page.id)"
               @click="toggleGroupPageAccess(selectedGroup.id, page.id, false)"
-              class="!px-3 !py-1 !bg-red-500/20 hover:!bg-red-500/30 !text-red-300 !border !border-red-500/30 !rounded-lg !text-xs !font-bold flex items-center gap-1"
+              class="!px-3 !py-1 !bg-red-500/10 hover:!bg-red-500/20 !text-red-600 !border !border-red-500/30 !rounded-lg !text-xs !font-bold flex items-center gap-1"
             >
               <X class="w-3.5 h-3.5" />
               إلغاء الصلاحية
@@ -443,7 +544,7 @@
             <Button
               v-else
               @click="toggleGroupPageAccess(selectedGroup.id, page.id, true)"
-              class="!px-3 !py-1 !bg-emerald-500/20 hover:!bg-emerald-500/30 !text-emerald-300 !border !border-emerald-500/30 !rounded-lg !text-xs !font-bold flex items-center gap-1"
+              class="!px-3 !py-1 !bg-brand-soft hover:!bg-brand-accent/20 !text-brand-accent !border !border-brand-accent/30 !rounded-lg !text-xs !font-bold flex items-center gap-1"
             >
               <Check class="w-3.5 h-3.5" />
               منح الصلاحية
@@ -451,7 +552,7 @@
           </div>
         </div>
 
-        <div class="flex justify-end pt-3 border-t border-slate-700/60">
+        <div class="flex justify-end pt-3 border-t border-brand-gray/10">
           <SecondaryButton @click="showGroupPermissionsModal = false">
             {{ $t('ohda.common.close') }}
           </SecondaryButton>
@@ -460,35 +561,33 @@
     </Dialog>
 
     <!-- Create System Page Dialog -->
-    <Dialog v-model:visible="showCreatePageModal" modal header="إضافة صفحة نظام جديدة" class="!bg-slate-800 !border-slate-700 max-w-md w-full">
+    <Dialog v-model:visible="showCreatePageModal" modal header="إضافة صفحة نظام جديدة" class="!bg-brand-white !border-brand-gray/15 max-w-md w-full !text-brand-dark">
       <form @submit.prevent="handleCreatePage" class="space-y-4 text-xs">
         <div>
-          <label class="block font-semibold text-slate-300 mb-1">عنوان الصفحة</label>
-          <InputText v-model="pageForm.title" required class="w-full !bg-slate-900 !border-slate-700 !text-white" placeholder="مثال: التقارير والإحصائيات" />
+          <label class="block font-semibold text-brand-dark mb-1">عنوان الصفحة</label>
+          <InputText v-model="pageForm.title" required class="w-full !bg-brand-light !border-brand-gray/25 focus:!border-brand-accent !text-brand-dark" placeholder="مثال: التقارير والإحصائيات" />
         </div>
 
         <div>
-          <label class="block font-semibold text-slate-300 mb-1">المسار (Path)</label>
-          <InputText v-model="pageForm.path" required class="w-full !bg-slate-900 !border-slate-700 !text-white font-mono" placeholder="/ohda/reports" />
+          <label class="block font-semibold text-brand-dark mb-1">المسار (Path)</label>
+          <InputText v-model="pageForm.path" required class="w-full !bg-brand-light !border-brand-gray/25 focus:!border-brand-accent !text-brand-dark font-mono" placeholder="/ohda/reports" />
         </div>
 
         <div>
-          <label class="block font-semibold text-slate-300 mb-1">الأيقونة (Lucide Icon Name)</label>
-          <InputText v-model="pageForm.icon" required class="w-full !bg-slate-900 !border-slate-700 !text-white font-mono" placeholder="FileText" />
+          <label class="block font-semibold text-brand-dark mb-1">الأيقونة (Lucide Icon Name)</label>
+          <InputText v-model="pageForm.icon" required class="w-full !bg-brand-light !border-brand-gray/25 focus:!border-brand-accent !text-brand-dark font-mono" placeholder="FileText" />
         </div>
 
         <div>
-          <label class="block font-semibold text-slate-300 mb-1">ترتيب العرض</label>
-          <InputText v-model.number="pageForm.sortOrder" type="number" required class="w-full !bg-slate-900 !border-slate-700 !text-white font-mono" />
+          <label class="block font-semibold text-brand-dark mb-1">ترتيب العرض</label>
+          <InputText v-model.number="pageForm.sortOrder" type="number" required class="w-full !bg-brand-light !border-brand-gray/25 focus:!border-brand-accent !text-brand-dark font-mono" />
         </div>
 
-
-
-        <div class="flex items-center justify-end gap-3 pt-3 border-t border-slate-700/60">
+        <div class="flex items-center justify-end gap-3 pt-3 border-t border-brand-gray/10">
           <SecondaryButton type="button" @click="showCreatePageModal = false">
             {{ $t('ohda.common.cancel') }}
           </SecondaryButton>
-          <Button type="submit" class="!bg-teal-500 !text-slate-950 !font-bold">
+          <Button type="submit" class="!bg-brand-accent hover:!bg-brand-accent/90 !text-brand-dark !font-bold">
             حفظ الصفحة
           </Button>
         </div>
@@ -496,35 +595,33 @@
     </Dialog>
 
     <!-- Edit System Page Dialog -->
-    <Dialog v-model:visible="showEditPageModal" modal header="تعديل صفحة النظام" class="!bg-slate-800 !border-slate-700 max-w-md w-full">
+    <Dialog v-model:visible="showEditPageModal" modal header="تعديل صفحة النظام" class="!bg-brand-white !border-brand-gray/15 max-w-md w-full !text-brand-dark">
       <form @submit.prevent="handleUpdatePage" class="space-y-4 text-xs">
         <div>
-          <label class="block font-semibold text-slate-300 mb-1">عنوان الصفحة</label>
-          <InputText v-model="pageForm.title" required class="w-full !bg-slate-900 !border-slate-700 !text-white" />
+          <label class="block font-semibold text-brand-dark mb-1">عنوان الصفحة</label>
+          <InputText v-model="pageForm.title" required class="w-full !bg-brand-light !border-brand-gray/25 focus:!border-brand-accent !text-brand-dark" />
         </div>
 
         <div>
-          <label class="block font-semibold text-slate-300 mb-1">المسار (Path)</label>
-          <InputText v-model="pageForm.path" required class="w-full !bg-slate-900 !border-slate-700 !text-white font-mono" />
+          <label class="block font-semibold text-brand-dark mb-1">المسار (Path)</label>
+          <InputText v-model="pageForm.path" required class="w-full !bg-brand-light !border-brand-gray/25 focus:!border-brand-accent !text-brand-dark font-mono" />
         </div>
 
         <div>
-          <label class="block font-semibold text-slate-300 mb-1">الأيقونة (Lucide Icon Name)</label>
-          <InputText v-model="pageForm.icon" required class="w-full !bg-slate-900 !border-slate-700 !text-white font-mono" />
+          <label class="block font-semibold text-brand-dark mb-1">الأيقونة (Lucide Icon Name)</label>
+          <InputText v-model="pageForm.icon" required class="w-full !bg-brand-light !border-brand-gray/25 focus:!border-brand-accent !text-brand-dark font-mono" />
         </div>
 
         <div>
-          <label class="block font-semibold text-slate-300 mb-1">ترتيب العرض</label>
-          <InputText v-model.number="pageForm.sortOrder" type="number" required class="w-full !bg-slate-900 !border-slate-700 !text-white font-mono" />
+          <label class="block font-semibold text-brand-dark mb-1">ترتيب العرض</label>
+          <InputText v-model.number="pageForm.sortOrder" type="number" required class="w-full !bg-brand-light !border-brand-gray/25 focus:!border-brand-accent !text-brand-dark font-mono" />
         </div>
 
-
-
-        <div class="flex items-center justify-end gap-3 pt-3 border-t border-slate-700/60">
+        <div class="flex items-center justify-end gap-3 pt-3 border-t border-brand-gray/10">
           <SecondaryButton type="button" @click="showEditPageModal = false">
             {{ $t('ohda.common.cancel') }}
           </SecondaryButton>
-          <Button type="submit" class="!bg-teal-500 !text-slate-950 !font-bold">
+          <Button type="submit" class="!bg-brand-accent hover:!bg-brand-accent/90 !text-brand-dark !font-bold">
             {{ $t('ohda.common.save') }}
           </Button>
         </div>
@@ -538,9 +635,11 @@ import { ref, computed, onMounted } from "vue";
 import { useI18n } from "vue-i18n";
 import { useOhdaUserPermissionStore } from "../stores/useOhdaUserPermissionStore";
 import { useOhdaGroupStore } from "../stores/useOhdaGroupStore";
+import { useOhdaApprovalConfigStore } from "../stores/useOhdaApprovalConfigStore";
 
 const userStore = useOhdaUserPermissionStore();
 const groupStore = useOhdaGroupStore();
+const approvalConfigStore = useOhdaApprovalConfigStore();
 const { t } = useI18n();
 
 const activeTab = ref("users");
@@ -549,7 +648,8 @@ onMounted(async () => {
   await Promise.all([
     userStore.fetchUsers(),
     groupStore.fetchUserGroups(),
-    groupStore.fetchPages()
+    groupStore.fetchPages(),
+    approvalConfigStore.fetchApprovalConfigs()
   ]);
 });
 
@@ -658,11 +758,11 @@ async function deleteUser(id) {
 }
 
 function getRoleBadgeClass(role) {
-  if (role === 1) return "bg-purple-500/20 text-purple-300 border-purple-500/30";
-  if (role === 2) return "bg-blue-500/20 text-blue-300 border-blue-500/30";
-  if (role === 3) return "bg-emerald-500/20 text-emerald-300 border-emerald-500/30";
-  if (role === 4) return "bg-amber-500/20 text-amber-300 border-amber-500/30";
-  return "bg-slate-700 text-slate-300";
+  if (role === 1) return "bg-purple-500/10 text-purple-700 border-purple-500/20";
+  if (role === 2) return "bg-blue-500/10 text-blue-700 border-blue-500/20";
+  if (role === 3) return "bg-brand-soft text-brand-accent border-brand-accent/25";
+  if (role === 4) return "bg-amber-500/10 text-amber-700 border-amber-500/20";
+  return "bg-brand-light text-brand-gray border-brand-gray/20";
 }
 
 function getRoleName(role) {
@@ -775,6 +875,68 @@ async function handleUpdatePage() {
 async function deletePage(id) {
   if (confirm("هل أنت تأكد من حذف صفحة النظام هذه؟")) {
     await groupStore.deletePage(id);
+  }
+}
+
+// --- Tab 4: Approval Configurations Logic ---
+const showApprovalConfigModal = ref(false);
+const isEditingApprovalConfig = ref(false);
+const editingApprovalConfigId = ref(null);
+
+const approvalConfigForm = ref({
+  requestType: 1,
+  userGroupId: null,
+  workflowRole: 1,
+  isActive: true
+});
+
+const requestTypeOptions = computed(() => [
+  { value: 1, label: "إدخال (Entry)" },
+  { value: 2, label: "صرف (Exit)" }
+]);
+
+const workflowRoleOptions = computed(() => [
+  { value: 1, label: "مقدم الطلب (Requester)" },
+  { value: 2, label: "مراجع/مدير (Reviewer)" },
+  { value: 3, label: "معتمد/مشرف (Approver)" }
+]);
+
+function openCreateApprovalConfigModal() {
+  isEditingApprovalConfig.value = false;
+  editingApprovalConfigId.value = null;
+  approvalConfigForm.value = {
+    requestType: 1,
+    userGroupId: groupStore.groups[0]?.id || null,
+    workflowRole: 1,
+    isActive: true
+  };
+  showApprovalConfigModal.value = true;
+}
+
+function openEditApprovalConfigModal(config) {
+  isEditingApprovalConfig.value = true;
+  editingApprovalConfigId.value = config.id;
+  approvalConfigForm.value = {
+    requestType: config.requestType,
+    userGroupId: config.userGroupId,
+    workflowRole: config.workflowRole,
+    isActive: config.isActive
+  };
+  showApprovalConfigModal.value = true;
+}
+
+async function saveApprovalConfig() {
+  if (isEditingApprovalConfig.value) {
+    await approvalConfigStore.updateApprovalConfig(editingApprovalConfigId.value, approvalConfigForm.value);
+  } else {
+    await approvalConfigStore.createApprovalConfig(approvalConfigForm.value);
+  }
+  showApprovalConfigModal.value = false;
+}
+
+async function deleteApprovalConfig(id) {
+  if (confirm("هل أنت متأكد من رغبتك في حذف إعداد الاعتماد هذا؟")) {
+    await approvalConfigStore.deleteApprovalConfig(id);
   }
 }
 </script>

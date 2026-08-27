@@ -1,61 +1,61 @@
 <template>
-  <div class="min-h-screen bg-slate-900 flex flex-col justify-center items-center p-4 relative overflow-hidden text-slate-100">
-    <div class="absolute top-10 start-10 w-96 h-96 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none"></div>
-    <div class="absolute bottom-10 end-10 w-96 h-96 bg-blue-500/10 rounded-full blur-3xl pointer-events-none"></div>
+  <div class="min-h-screen bg-brand-light flex flex-col justify-center items-center p-4 relative overflow-hidden text-brand-dark">
+    <div class="absolute top-10 start-10 w-96 h-96 bg-brand-accent/5 rounded-full blur-3xl pointer-events-none"></div>
+    <div class="absolute bottom-10 end-10 w-96 h-96 bg-brand-gray/5 rounded-full blur-3xl pointer-events-none"></div>
 
     <!-- Language Toggle Button using Volt Button -->
     <div class="absolute top-6 end-6 flex items-center gap-3">
       <Button
         @click="toggleLanguage"
-        class="!bg-slate-800/80 hover:!bg-slate-700 !text-slate-200 !border !border-slate-700/60 !rounded-xl !px-4 !py-2 flex items-center gap-2 text-sm backdrop-blur"
+        class="!bg-brand-white hover:!bg-brand-light !text-brand-dark !border !border-brand-gray/20 !rounded-xl !px-4 !py-2 flex items-center gap-2 text-sm backdrop-blur shadow-sm"
       >
-        <Globe class="w-4 h-4 text-emerald-400" />
+        <Globe class="w-4 h-4 text-brand-accent" />
         <span>{{ currentLocale === 'ar' ? 'English (LTR)' : 'العربية (RTL)' }}</span>
       </Button>
     </div>
 
     <!-- Login Card -->
-    <div class="w-full max-w-md bg-slate-800/80 backdrop-blur-xl border border-slate-700/60 rounded-3xl p-8 shadow-2xl z-10">
+    <div class="w-full max-w-md bg-brand-white border border-brand-gray/10 rounded-3xl p-8 shadow-xl z-10">
       <div class="text-center mb-8">
-        <div class="w-16 h-16 bg-gradient-to-tr from-emerald-500 to-teal-400 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg shadow-emerald-500/20">
-          <Box class="w-8 h-8 text-slate-950" />
+        <div class="w-16 h-16 bg-brand-accent rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg shadow-brand-accent/20">
+          <Box class="w-8 h-8 text-brand-dark" />
         </div>
-        <h1 class="text-2xl font-bold tracking-tight text-white mb-2">
+        <h1 class="text-2xl font-bold tracking-tight text-brand-dark mb-2">
           {{ $t('ohda.systemTitle') }}
         </h1>
-        <p class="text-xs text-slate-400">
+        <p class="text-xs text-brand-gray">
           {{ $t('ohda.auth.subTitle') }}
         </p>
       </div>
 
       <form @submit.prevent="handleLogin" class="space-y-5">
         <div>
-          <label class="block text-xs font-semibold text-slate-300 mb-2">
+          <label class="block text-xs font-semibold text-brand-dark mb-2">
             {{ $t('ohda.auth.username') }}
           </label>
           <div class="relative">
-            <User class="w-4 h-4 absolute start-3 top-3.5 text-slate-400 z-10" />
+            <User class="w-4 h-4 absolute start-3 top-3.5 text-brand-gray z-10" />
             <InputText
               v-model="form.username"
               type="text"
               required
-              class="w-full !bg-slate-900/60 !border-slate-700 focus:!border-emerald-500 !rounded-xl !py-2.5 !ps-10 !pe-4 text-sm !text-slate-100 placeholder-slate-500"
+              class="w-full !bg-brand-light !border-brand-gray/25 focus:!border-brand-accent !rounded-xl !py-2.5 !ps-10 !pe-4 text-sm !text-brand-dark placeholder-brand-gray/60"
               placeholder="أدخل اسم المستخدم"
             />
           </div>
         </div>
 
         <div>
-          <label class="block text-xs font-semibold text-slate-300 mb-2">
+          <label class="block text-xs font-semibold text-brand-dark mb-2">
             {{ $t('ohda.auth.password') }}
           </label>
           <div class="relative">
-            <Lock class="w-4 h-4 absolute start-3 top-3.5 text-slate-400 z-10" />
+            <Lock class="w-4 h-4 absolute start-3 top-3.5 text-brand-gray z-10" />
             <InputText
               v-model="form.password"
               type="password"
               required
-              class="w-full !bg-slate-900/60 !border-slate-700 focus:!border-emerald-500 !rounded-xl !py-2.5 !ps-10 !pe-4 text-sm !text-slate-100 placeholder-slate-500"
+              class="w-full !bg-brand-light !border-brand-gray/25 focus:!border-brand-accent !rounded-xl !py-2.5 !ps-10 !pe-4 text-sm !text-brand-dark placeholder-brand-gray/60"
               placeholder="••••••••"
             />
           </div>
@@ -64,7 +64,7 @@
         <Button
           type="submit"
           :disabled="authStore.loading"
-          class="w-full !py-3 !px-4 !bg-gradient-to-r !from-emerald-500 !to-teal-500 hover:!from-emerald-400 hover:!to-teal-400 !text-slate-950 !font-bold !rounded-xl shadow-lg shadow-emerald-500/25 flex items-center justify-center gap-2"
+          class="w-full !py-3 !px-4 !bg-brand-accent hover:!bg-brand-accent/90 !text-brand-dark !font-bold !rounded-xl shadow-md shadow-brand-accent/20 flex items-center justify-center gap-2"
         >
           <span v-if="!authStore.loading">{{ $t('ohda.auth.loginBtn') }}</span>
           <span v-else>{{ $t('ohda.common.loading') }}</span>
