@@ -78,9 +78,9 @@
     <!-- TAB 1: USERS DATATABLE & MODALS -->
     <div v-if="activeTab === 'users'" class="bg-brand-white border border-brand-gray/10 rounded-2xl overflow-hidden shadow-sm">
       <DataTable :value="userStore.users" class="w-full text-xs">
-        <Column field="id" header="#">
+        <Column field="militaryNumber" header="الرقم العسكري">
           <template #body="{ data }">
-            <span class="font-mono text-brand-gray">{{ data.id }}</span>
+            <span class="font-mono font-bold text-brand-accent">{{ data.militaryNumber }}</span>
           </template>
         </Column>
 
@@ -125,7 +125,7 @@
           <template #body="{ data }">
             <div class="flex items-center justify-center gap-2">
               <editButton @click="openEditModal(data)" />
-              <deleteButton @click="deleteUser(data.id)" />
+              <deleteButton @click="deleteUser(data.militaryNumber)" />
             </div>
           </template>
         </Column>
@@ -224,6 +224,11 @@
     <Dialog v-model:visible="showRegisterModal" modal :header="$t('ohda.users.registerUser')" class="!bg-brand-white !border-brand-gray/15 max-w-md w-full !text-brand-dark">
       <form @submit.prevent="handleRegisterUser" class="space-y-4 text-xs">
         <div>
+          <label class="block font-semibold text-brand-dark mb-1">الرقم العسكري *</label>
+          <InputText v-model.number="registerForm.militaryNumber" type="number" required class="w-full !bg-brand-light !border-brand-gray/25 focus:!border-brand-accent !text-brand-dark font-mono" />
+        </div>
+
+        <div>
           <label class="block font-semibold text-brand-dark mb-1">{{ $t('ohda.users.username') }}</label>
           <InputText v-model="registerForm.username" required class="w-full !bg-brand-light !border-brand-gray/25 focus:!border-brand-accent !text-brand-dark" />
         </div>
@@ -267,6 +272,11 @@
     <!-- Edit User Dialog -->
     <Dialog v-model:visible="showEditModal" modal header="تعديل بيانات المستخدم ومجموعة الصلاحيات" class="!bg-brand-white !border-brand-gray/15 max-w-md w-full !text-brand-dark">
       <form @submit.prevent="handleUpdateUser" class="space-y-4 text-xs">
+        <div>
+          <label class="block font-semibold text-brand-dark mb-1">الرقم العسكري (غير قابل للتعديل)</label>
+          <InputText :value="editingUserId" disabled class="w-full !bg-brand-light/50 !border-brand-gray/25 !text-brand-gray font-mono font-bold" />
+        </div>
+
         <div>
           <label class="block font-semibold text-brand-dark mb-1">{{ $t('ohda.users.username') }}</label>
           <InputText v-model="editForm.username" required class="w-full !bg-brand-light !border-brand-gray/25 focus:!border-brand-accent !text-brand-dark font-mono" />
@@ -553,6 +563,7 @@ const selectedUser = ref(null);
 const editingUserId = ref(null);
 
 const registerForm = ref({
+  militaryNumber: null,
   username: "",
   personName: "",
   email: "",
@@ -562,6 +573,7 @@ const registerForm = ref({
 });
 
 const editForm = ref({
+  militaryNumber: null,
   username: "",
   personName: "",
   email: "",
@@ -592,6 +604,7 @@ function getUserGroupName(groupId) {
 
 function openRegisterModal() {
   registerForm.value = {
+    militaryNumber: null,
     username: "",
     personName: "",
     email: "",
@@ -608,8 +621,9 @@ async function handleRegisterUser() {
 }
 
 function openEditModal(user) {
-  editingUserId.value = user.id;
+  editingUserId.value = user.militaryNumber;
   editForm.value = {
+    militaryNumber: user.militaryNumber,
     username: user.username || "",
     personName: user.personName || "",
     email: user.email || "",
@@ -627,7 +641,7 @@ async function handleUpdateUser() {
 
 async function openUserPermissionsModal(user) {
   selectedUser.value = user;
-  await userStore.fetchUserPermissions(user.id);
+  await userStore.fetchUserPermissions(user.militaryNumber);
   showUserPermissionsModal.value = true;
 }
 

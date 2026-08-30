@@ -42,7 +42,7 @@ export const useOhdaUserPermissionStore = defineStore("ohdaUserPermission", {
         const res = await apiGet(`/api/UserPagePermission/user/${userId}`);
         const data = res?.data?.objects || res?.data?.singleObject;
         if (res?.data?.isDone && data) {
-          const user = this.users.find(u => u.id === userId);
+          const user = this.users.find(u => u.militaryNumber === userId);
           if (user) {
             user.allowedPages = data.map(p => p.id);
           }
@@ -56,8 +56,13 @@ export const useOhdaUserPermissionStore = defineStore("ohdaUserPermission", {
       this.loading = true;
       try {
         const res = await apiPost("/api/Auth/register", payload);
-        if (res?.data?.isDone && res?.data?.singleObject) {
-          this.users.push(res.data.singleObject);
+        if (res?.data?.isDone) {
+          if (res?.data?.singleObject) {
+            this.users.push(res.data.singleObject);
+          } else {
+            // Fallback: re-fetch all users to ensure list is up to date
+            await this.fetchUsers();
+          }
           return { success: true };
         }
         return { success: false, message: res?.data?.returnMessage || "فشل إنشاء المستخدم" };
@@ -73,7 +78,7 @@ export const useOhdaUserPermissionStore = defineStore("ohdaUserPermission", {
       try {
         const res = await apiPut(`/api/Auth/${id}`, payload);
         if (res?.data?.isDone && res?.data?.singleObject) {
-          const idx = this.users.findIndex(u => u.id === id);
+          const idx = this.users.findIndex(u => u.militaryNumber === id);
           if (idx !== -1) {
             this.users[idx] = res.data.singleObject;
           }
@@ -90,7 +95,7 @@ export const useOhdaUserPermissionStore = defineStore("ohdaUserPermission", {
       try {
         const res = await apiDelete(`/api/Auth/${id}`);
         if (res?.data?.isDone) {
-          this.users = this.users.filter(u => u.id !== id);
+          this.users = this.users.filter(u => u.militaryNumber !== id);
           return { success: true };
         }
         return { success: false, message: res?.data?.returnMessage || "فشل حذف المستخدم" };
@@ -104,7 +109,7 @@ export const useOhdaUserPermissionStore = defineStore("ohdaUserPermission", {
       try {
         const res = await apiPost("/api/UserPagePermission/grant", { userId, pageId }, false);
         if (res?.data?.isDone) {
-          const user = this.users.find(u => u.id === userId);
+          const user = this.users.find(u => u.militaryNumber === userId);
           if (user) {
             if (!user.allowedPages) user.allowedPages = [];
             if (!user.allowedPages.includes(pageId)) {
@@ -124,7 +129,7 @@ export const useOhdaUserPermissionStore = defineStore("ohdaUserPermission", {
       try {
         const res = await apiDelete(`/api/UserPagePermission/revoke/${userId}/${pageId}`, {}, false);
         if (res?.data?.isDone) {
-          const user = this.users.find(u => u.id === userId);
+          const user = this.users.find(u => u.militaryNumber === userId);
           if (user && user.allowedPages) {
             user.allowedPages = user.allowedPages.filter(pId => pId !== pageId);
           }

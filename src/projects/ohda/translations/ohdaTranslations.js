@@ -35,7 +35,19 @@ export default {
         details: "التفاصيل",
         confirm: "تأكيد",
         close: "إغلاق",
-        refresh: "تحديث"
+        refresh: "تحديث",
+        multiItem: "متعدد الأصناف",
+        viewDetails: "عرض التفاصيل",
+        requestedItems: "الأصناف المطلوبة",
+        enteredItems: "الأصناف المرجعة",
+        department: "القسم",
+        addedItems: "أصناف الطلب المضافة",
+        addManualItem: "إضافة صنف يدوياً",
+        rejectEntireRequest: "رفض كلي للطلب",
+        approve: "موافق",
+        reject: "مرفوض",
+        itemStatus: "حالة العنصر",
+        partialDecision: "قرار الاعتماد (جزئي)"
       },
       dashboard: {
         totalStock: "إجمالي المنتجات بالمخزن",
@@ -77,16 +89,20 @@ export default {
         rejected: "مرفوض",
         rejectionReason: "سبب الرفض",
         confirmRejection: "تأكيد الرفض",
-        selectProduct: "اختر المنتج"
+        selectProduct: "اختر المنتج",
+        detailsTitle: "تفاصيل طلب صرف العهدة",
+        submitManagerDecisions: "تقديم قرارات المدير",
+        submitSupervisorDecisions: "تقديم قرارات المشرف"
       },
       entryRequests: {
-        title: "طلبات إدخال وتوريد المخزون",
-        subTitle: "دورة الاعتماد المزدوجة لإدخال البضائع إلى المخزن",
-        createRequest: "إنشاء طلب توريد جديد",
-        fromSource: "جهة التوريد / المورد",
-        invoiceNumber: "رقم الفاتورة / السند",
-        notes: "ملاحظات الشحنة",
-        enteredQty: "الكمية الموردة"
+        title: "طلبات إرجاع وإدخال العهد للمستودع",
+        subTitle: "دورة الاعتماد لإعادة الأجهزة والعهد من الأقسام إلى المستودع",
+        createRequest: "إنشاء طلب إرجاع عهدة",
+        fromSource: "الجهة المرجعة / القسم المرجع",
+        invoiceNumber: "رقم السند / المستند",
+        notes: "ملاحظات الإرجاع",
+        enteredQty: "الكمية المرجعة",
+        detailsTitle: "تفاصيل طلب إرجاع العهدة"
       },
       approvalRequests: {
         title: "طلبات الموافقة",
@@ -133,7 +149,11 @@ export default {
         quickAction: "إجراء سريع",
         quickExit: "صرف عهدة سريع (Stock-Out)",
         quickEntry: "إدخال شحنة سريعة (Stock-In)",
-        qtyLabel: "الكمية المعالجة"
+        qtyLabel: "الكمية المعالجة",
+        continuousScanner: "ماسح الباركود / QR المستمر",
+        startCamera: "تشغيل الكاميرا",
+        stopCamera: "إيقاف الكاميرا",
+        scannerReady: "الماسح جاهز! وجه العدسة نحو الباركود"
       },
       categories: {
         title: "إدارة فئات المنتجات",
@@ -220,7 +240,19 @@ export default {
         details: "Details",
         confirm: "Confirm",
         close: "Close",
-        refresh: "Refresh"
+        refresh: "Refresh",
+        multiItem: "Multi-item",
+        viewDetails: "View Details",
+        requestedItems: "Requested Items",
+        enteredItems: "Entered Items",
+        department: "Department",
+        addedItems: "Added Items",
+        addManualItem: "Add Manual Item",
+        rejectEntireRequest: "Reject Entire Request",
+        approve: "Approve",
+        reject: "Reject",
+        itemStatus: "Item Status",
+        partialDecision: "Approval Decision (Partial)"
       },
       dashboard: {
         totalStock: "Total Warehouse Products",
@@ -262,16 +294,20 @@ export default {
         rejected: "Rejected",
         rejectionReason: "Rejection Reason",
         confirmRejection: "Confirm Rejection",
-        selectProduct: "Select Product"
+        selectProduct: "Select Product",
+        detailsTitle: "Exit Request Details",
+        submitManagerDecisions: "Submit Manager Decisions",
+        submitSupervisorDecisions: "Submit Supervisor Decisions"
       },
       entryRequests: {
-        title: "Stock-In & Receiving Requests",
-        subTitle: "2-Step Approval Pipeline for Goods Receiving",
-        createRequest: "Create Entry Request",
-        fromSource: "Supplier / Source Entity",
-        invoiceNumber: "Invoice / Document No.",
-        notes: "Shipment Notes",
-        enteredQty: "Entered Quantity"
+        title: "Custody Return & Entry Requests",
+        subTitle: "2-Step Approval Pipeline for Returning Custody & Devices",
+        createRequest: "Create Return Request",
+        fromSource: "Returning Department / Source",
+        invoiceNumber: "Receipt / Document No.",
+        notes: "Return Notes",
+        enteredQty: "Returned Quantity",
+        detailsTitle: "Return Request Details"
       },
       approvalRequests: {
         title: "Approval Requests",
@@ -318,7 +354,11 @@ export default {
         quickAction: "Quick Action",
         quickExit: "Quick Exit (Stock-Out)",
         quickEntry: "Quick Entry (Stock-In)",
-        qtyLabel: "Processed Quantity"
+        qtyLabel: "Processed Quantity",
+        continuousScanner: "Continuous Barcode / QR Scanner",
+        startCamera: "Start Camera",
+        stopCamera: "Stop Camera",
+        scannerReady: "Scanner ready! Direct your lens at a barcode"
       },
       categories: {
         title: "Product Categories",

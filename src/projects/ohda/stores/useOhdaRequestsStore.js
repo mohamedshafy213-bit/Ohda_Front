@@ -81,9 +81,9 @@ export const useOhdaRequestsStore = defineStore("ohdaRequests", {
     },
 
     // Manager Step 1 Approval for Exit
-    async managerApproveExit(id, managerUserObj) {
+    async managerApproveExit(id, managerUserObj, approvalDto = null) {
       try {
-        const res = await apiPut(`/api/ProductExitRequest/${id}/manager-approve`, {}, false);
+        const res = await apiPut(`/api/ProductExitRequest/${id}/manager-approve`, approvalDto || {}, false);
         if (res?.data?.isDone) {
           const req = this.exitRequests.find(r => r.id === id);
           if (req) {
@@ -118,9 +118,9 @@ export const useOhdaRequestsStore = defineStore("ohdaRequests", {
     },
 
     // Supervisor Step 2 Approval for Exit (Deducts Stock!)
-    async supervisorApproveExit(id, supervisorUserObj) {
+    async supervisorApproveExit(id, supervisorUserObj, approvalDto = null) {
       try {
-        const res = await apiPut(`/api/ProductExitRequest/${id}/supervisor-approve`, {}, false);
+        const res = await apiPut(`/api/ProductExitRequest/${id}/supervisor-approve`, approvalDto || {}, false);
         if (res?.data?.isDone) {
           const req = this.exitRequests.find(r => r.id === id);
           if (req) {
@@ -129,15 +129,15 @@ export const useOhdaRequestsStore = defineStore("ohdaRequests", {
             req.supervisorUsername = supervisorUserObj?.username || req.supervisorUsername;
             req.supervisorApprove = true;
 
-            // Auto-Deduct inventory stock!
+            // Auto-Refresh inventory stock!
             const inventoryStore = useOhdaInventoryStore();
-            inventoryStore.adjustStockQuantity(req.productId, -req.requestedQuantity);
+            await inventoryStore.fetchProducts();
 
             // Notify requesting employee
             const notifStore = useOhdaNotificationStore();
             notifStore.addNotification({
               title: `تم توثيق واكتمال طلب الصرف #${req.id}`,
-              message: `تم اعتماد صرف الكمية (${req.requestedQuantity}) لـ ${req.productName} وتسليمها إلى ${req.recipientName}.`,
+              message: `تم اعتماد صرف الكمية لطلب الصرف #${req.id} وتسليمها إلى ${req.recipientName}.`,
               userId: req.requestedByUserId
             });
           }
@@ -211,9 +211,9 @@ export const useOhdaRequestsStore = defineStore("ohdaRequests", {
     },
 
     // Manager Step 1 Approval for Entry
-    async managerApproveEntry(id, managerUserObj) {
+    async managerApproveEntry(id, managerUserObj, approvalDto = null) {
       try {
-        const res = await apiPut(`/api/ProductEntryRequest/${id}/manager-approve`, {}, false);
+        const res = await apiPut(`/api/ProductEntryRequest/${id}/manager-approve`, approvalDto || {}, false);
         if (res?.data?.isDone) {
           const req = this.entryRequests.find(r => r.id === id);
           if (req) {
@@ -248,9 +248,9 @@ export const useOhdaRequestsStore = defineStore("ohdaRequests", {
     },
 
     // Supervisor Step 2 Approval for Entry (Adds Stock!)
-    async supervisorApproveEntry(id, supervisorUserObj) {
+    async supervisorApproveEntry(id, supervisorUserObj, approvalDto = null) {
       try {
-        const res = await apiPut(`/api/ProductEntryRequest/${id}/supervisor-approve`, {}, false);
+        const res = await apiPut(`/api/ProductEntryRequest/${id}/supervisor-approve`, approvalDto || {}, false);
         if (res?.data?.isDone) {
           const req = this.entryRequests.find(r => r.id === id);
           if (req) {
@@ -259,15 +259,15 @@ export const useOhdaRequestsStore = defineStore("ohdaRequests", {
             req.supervisorUsername = supervisorUserObj?.username || req.supervisorUsername;
             req.supervisorApprove = true;
 
-            // Auto-Add inventory stock!
+            // Auto-Refresh inventory stock!
             const inventoryStore = useOhdaInventoryStore();
-            inventoryStore.adjustStockQuantity(req.productId, req.enteredQuantity);
+            await inventoryStore.fetchProducts();
 
             // Notify receiving employee
             const notifStore = useOhdaNotificationStore();
             notifStore.addNotification({
               title: `تم اعتماد وتوثيق توريد المخزون #${req.id}`,
-              message: `تمت إضافة الكمية الموردة (${req.enteredQuantity}) لـ ${req.productName} إلى الرصيد المتاح.`,
+              message: `تمت إضافة الكمية الموردة لطلب التوريد #${req.id} إلى الرصيد المتاح.`,
               userId: req.receivedByUserId
             });
           }

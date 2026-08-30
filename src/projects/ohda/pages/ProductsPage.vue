@@ -148,8 +148,8 @@
             <Select v-model="form.categoryId" :options="inventoryStore.categories" optionLabel="name" optionValue="id" class="w-full !bg-brand-light !border-brand-gray/25 focus:!border-brand-accent !text-brand-dark" />
           </div>
           <div>
-            <label class="block font-semibold text-brand-dark mb-1">{{ $t('ohda.products.supplier') }}</label>
-            <Select v-model="form.supplierId" :options="inventoryStore.suppliers" optionLabel="companyName" optionValue="id" class="w-full !bg-brand-light !border-brand-gray/25 focus:!border-brand-accent !text-brand-dark" />
+            <label class="block font-semibold text-brand-dark mb-1">{{ $t('ohda.products.supplier') }} (اختياري)</label>
+            <Select v-model="form.supplierId" :options="inventoryStore.suppliers" optionLabel="companyName" optionValue="id" showClear placeholder="اختر المورد (اختياري)" class="w-full !bg-brand-light !border-brand-gray/25 focus:!border-brand-accent !text-brand-dark" />
           </div>
         </div>
 
@@ -321,7 +321,7 @@ const form = ref({
   sku: "",
   barcode: "",
   categoryId: 1,
-  supplierId: 1,
+  supplierId: null,
   inventoryType: 1,
   purchasePrice: 0,
   assetValue: 0,
@@ -350,7 +350,7 @@ function openAddModal() {
     sku: `SKU-${Math.floor(1000 + Math.random() * 9000)}`,
     barcode: `629${Math.floor(100000000 + Math.random() * 900000000)}`,
     categoryId: inventoryStore.categories[0]?.id || 1,
-    supplierId: inventoryStore.suppliers[0]?.id || 1,
+    supplierId: null,
     inventoryType: 1,
     purchasePrice: 100,
     assetValue: 0,
