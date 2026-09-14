@@ -148,17 +148,23 @@
             <Select v-model="form.categoryId" :options="inventoryStore.categories" optionLabel="name" optionValue="id" class="w-full !bg-brand-light !border-brand-gray/25 focus:!border-brand-accent !text-brand-dark" />
           </div>
           <div>
-            <label class="block font-semibold text-brand-dark mb-1">{{ $t('ohda.products.supplier') }} (اختياري)</label>
-            <Select v-model="form.supplierId" :options="inventoryStore.suppliers" optionLabel="companyName" optionValue="id" showClear placeholder="اختر المورد (اختياري)" class="w-full !bg-brand-light !border-brand-gray/25 focus:!border-brand-accent !text-brand-dark" />
+            <label class="block font-semibold text-brand-dark mb-1">حالة المنتج (اختياري)</label>
+            <Select v-model="form.productStateId" :options="productStates" optionLabel="name" optionValue="id" showClear placeholder="اختر حالة المنتج (اختياري)" class="w-full !bg-brand-light !border-brand-gray/25 focus:!border-brand-accent !text-brand-dark" />
           </div>
         </div>
 
-        <div>
-          <label class="block font-semibold text-brand-dark mb-1">نوع المخزون</label>
-          <Select v-model="form.inventoryType" :options="[
-            { value: 1, label: 'شراء (Purchase)' },
-            { value: 2, label: 'أصل ثابت (Asset)' }
-          ]" optionLabel="label" optionValue="value" class="w-full !bg-brand-light !border-brand-gray/25 focus:!border-brand-accent !text-brand-dark" />
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block font-semibold text-brand-dark mb-1">{{ $t('ohda.products.supplier') }} (اختياري)</label>
+            <Select v-model="form.supplierId" :options="inventoryStore.suppliers" optionLabel="companyName" optionValue="id" showClear placeholder="اختر المورد (اختياري)" class="w-full !bg-brand-light !border-brand-gray/25 focus:!border-brand-accent !text-brand-dark" />
+          </div>
+          <div>
+            <label class="block font-semibold text-brand-dark mb-1">نوع المخزون</label>
+            <Select v-model="form.inventoryType" :options="[
+              { value: 1, label: 'شراء (Purchase)' },
+              { value: 2, label: 'أصل ثابت (Asset)' }
+            ]" optionLabel="label" optionValue="value" class="w-full !bg-brand-light !border-brand-gray/25 focus:!border-brand-accent !text-brand-dark" />
+          </div>
         </div>
 
         <div class="grid grid-cols-2 gap-3">
@@ -303,11 +309,18 @@ const showSerialsModal = ref(false);
 const loadingSerials = ref(false);
 const productSerials = ref([]);
 const selectedProductForSerials = ref(null);
+const productStates = ref([]);
 
-onMounted(() => {
+onMounted(async () => {
   inventoryStore.fetchProducts();
   inventoryStore.fetchCategories();
   inventoryStore.fetchSuppliers();
+  try {
+    const res = await apiGet("/api/ProductState");
+    productStates.value = res?.data?.objects || res?.data?.singleObject || [];
+  } catch (err) {
+    console.warn("Failed to fetch product states", err);
+  }
 });
 
 const searchQuery = ref("");
@@ -322,6 +335,7 @@ const form = ref({
   barcode: "",
   categoryId: 1,
   supplierId: null,
+  productStateId: null,
   inventoryType: 1,
   purchasePrice: 0,
   assetValue: 0,
@@ -351,6 +365,7 @@ function openAddModal() {
     barcode: `629${Math.floor(100000000 + Math.random() * 900000000)}`,
     categoryId: inventoryStore.categories[0]?.id || 1,
     supplierId: null,
+    productStateId: null,
     inventoryType: 1,
     purchasePrice: 100,
     assetValue: 0,

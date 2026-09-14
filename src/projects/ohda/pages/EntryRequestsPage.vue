@@ -143,41 +143,45 @@
         <!-- Left Column: Form & Items Table -->
         <div class="lg:col-span-8 space-y-4">
           <!-- Request Header Info -->
-          <div class="grid grid-cols-2 gap-3 bg-brand-light p-4 rounded-xl border border-brand-gray/10">
+          <div class="grid grid-cols-2 sm:grid-cols-3 gap-3 bg-brand-light p-4 rounded-xl border border-brand-gray/10">
             <div>
-              <label class="block font-semibold text-brand-dark mb-1">القسم المسترجع منه *</label>
-              <Select v-model="createForm.departmentId" :options="departments" optionLabel="name" optionValue="id" class="w-full !bg-brand-white" placeholder="حدد القسم المسترجع منه" required />
+              <label class="block font-semibold text-brand-dark mb-1">مصدر التوريد / اسم المسترجع *</label>
+              <InputText v-model="createForm.fromSource" required class="w-full !bg-brand-white !border-brand-gray/25 focus:!border-brand-accent !text-brand-dark" placeholder="اسم المورد أو الشخص المرجع" />
             </div>
 
             <div>
-              <label class="block font-semibold text-brand-dark mb-1">اسم الشخص مقدم طلب الإرجاع *</label>
-              <InputText v-model="createForm.fromSource" required class="w-full !bg-brand-white !border-brand-gray/25 focus:!border-brand-accent !text-brand-dark" placeholder="اسم الشخص المرجع" />
+              <label class="block font-semibold text-brand-dark mb-1">القسم المسترجع منه (اختياري)</label>
+              <Select v-model="createForm.departmentId" :options="departments" optionLabel="name" optionValue="id" showClear class="w-full !bg-brand-white" placeholder="حدد القسم (اختياري)" />
             </div>
 
             <div>
-              <label class="block font-semibold text-brand-dark mb-1">رقم سند الصرف الأصلي *</label>
+              <label class="block font-semibold text-brand-dark mb-1">رقم الفاتورة / المستند (اختياري)</label>
+              <InputText v-model="createForm.invoiceNumber" class="w-full !bg-brand-white !border-brand-gray/25 focus:!border-brand-accent !text-brand-dark font-mono" placeholder="يولد تلقائياً إذا ترك فارغاً" />
+            </div>
+
+            <div class="sm:col-span-2">
+              <label class="block font-semibold text-brand-dark mb-1">سند الصرف الأصلي (في حال إرجاع عهدة سابقة)</label>
               <Select
                 v-model="selectedExitRequestId"
                 :options="availableExitRequests"
                 optionValue="id"
+                showClear
                 class="w-full !bg-brand-white"
-                placeholder="حدد سند الصرف الأصلي لتحميل أجهزته"
-                :disabled="!createForm.departmentId"
-                required
+                placeholder="اختر سند الصرف لتحميل الأجهزة المنصرفة (اختياري)"
               >
                 <template #option="slotProps">
                   <span class="text-xs">سند صرف #{{ slotProps.option.id }} - المستلم: {{ slotProps.option.recipientName }} ({{ formatDate(slotProps.option.insertDate) }})</span>
                 </template>
                 <template #value="slotProps">
                   <span class="text-xs font-bold text-brand-dark" v-if="slotProps.value">سند صرف #{{ slotProps.value }}</span>
-                  <span class="text-xs text-brand-gray" v-else>حدد سند الصرف الأصلي</span>
+                  <span class="text-xs text-brand-gray" v-else>اختر سند الصرف لتحميل الأجهزة المنصرفة (اختياري)</span>
                 </template>
               </Select>
             </div>
 
-            <div>
+            <div class="sm:col-span-1">
               <label class="block font-semibold text-brand-dark mb-1">الملاحظات</label>
-              <InputText v-model="createForm.notes" class="w-full !bg-brand-white !border-brand-gray/25 focus:!border-brand-accent !text-brand-dark" placeholder="ملاحظات حول الإرجاع" />
+              <InputText v-model="createForm.notes" class="w-full !bg-brand-white !border-brand-gray/25 focus:!border-brand-accent !text-brand-dark" placeholder="ملاحظات حول التوريد / المشاكل" />
             </div>
           </div>
 
@@ -230,7 +234,29 @@
                   <span class="font-bold text-brand-dark">{{ data.quantity }}</span>
                 </template>
               </Column>
-              <Column field="productStateName" header="الحالة"></Column>
+              <Column header="حالة الصنف (اختياري)">
+                <template #body="{ data }">
+                  <div class="flex items-center gap-1.5 min-w-[170px]">
+                    <Select
+                      v-model="data.productStateId"
+                      :options="productStates"
+                      optionLabel="name"
+                      optionValue="id"
+                      showClear
+                      placeholder="سليم / افتراضي"
+                      class="w-full !text-[11px] !bg-brand-white !py-1 !border-brand-gray/25"
+                      @change="(e) => onRowStateChange(data, e.value)"
+                    />
+                    <span
+                      v-if="getStateBadge(data.productStateId)"
+                      class="px-1.5 py-0.5 rounded text-[9px] font-bold whitespace-nowrap"
+                      :class="getStateBadgeClass(data.productStateId)"
+                    >
+                      {{ getStateBadge(data.productStateId) }}
+                    </span>
+                  </div>
+                </template>
+              </Column>
               <Column header="إجراء">
                 <template #body="{ index }">
                   <Button @click="removeRequestItem(index)" class="!p-1.5 !bg-red-500/10 hover:!bg-red-500/20 !text-red-600 !border-0 !rounded-lg">
@@ -310,8 +336,19 @@
             </div>
 
             <div>
-              <label class="block text-brand-gray mb-1">حالة المنتج</label>
-              <Select v-model="manualItem.productStateId" :options="productStates" optionLabel="name" optionValue="id" class="w-full !bg-white" placeholder="حدد الحالة (جديد/مستعمل)" />
+              <div class="flex items-center justify-between mb-1">
+                <label class="text-brand-gray font-semibold">حالة المنتج (اختياري)</label>
+                <span class="text-[10px] text-brand-gray/80">حدد إذا به مشكلة</span>
+              </div>
+              <Select
+                v-model="manualItem.productStateId"
+                :options="productStates"
+                optionLabel="name"
+                optionValue="id"
+                showClear
+                class="w-full !bg-white"
+                placeholder="سليم / افتراضي (اختياري)"
+              />
             </div>
 
             <div class="grid grid-cols-2 gap-2">
@@ -560,12 +597,33 @@ const manualItem = ref({
   quantity: 1
 });
 
-// Watch product selection to prefill new state (default to first available state)
-watch(() => manualItem.value.productId, () => {
-  if (productStates.value.length > 0 && !manualItem.value.productStateId) {
-    manualItem.value.productStateId = productStates.value[0].id;
-  }
-});
+// Helpers for dynamic row state badges
+function onRowStateChange(item, stateId) {
+  item.productStateId = stateId || null;
+  const state = productStates.value.find(s => s.id === stateId);
+  item.productStateName = state ? state.name : "سليم / افتراضي";
+}
+
+function getStateBadge(stateId) {
+  if (!stateId) return null;
+  const state = productStates.value.find(s => s.id === stateId);
+  if (!state) return null;
+  const code = (state.code || "").toUpperCase();
+  if (code === "DAMAGED" || state.name.includes("تالف")) return "تالف";
+  if (code === "MAINT" || state.name.includes("صيانة")) return "صيانة";
+  if (code === "RETIRED" || state.name.includes("رجيع")) return "رجيع";
+  return null;
+}
+
+function getStateBadgeClass(stateId) {
+  const state = productStates.value.find(s => s.id === stateId);
+  if (!state) return "";
+  const code = (state.code || "").toUpperCase();
+  if (code === "DAMAGED" || state.name.includes("تالف")) return "bg-red-500/10 text-red-600 border border-red-500/20";
+  if (code === "MAINT" || state.name.includes("صيانة")) return "bg-amber-500/10 text-amber-600 border border-amber-500/20";
+  if (code === "RETIRED" || state.name.includes("رجيع")) return "bg-gray-500/10 text-gray-600 border border-gray-500/20";
+  return "bg-brand-soft text-brand-accent";
+}
 
 function openCreateModal() {
   selectedDeptSerials.value = [];
@@ -580,7 +638,7 @@ function openCreateModal() {
   };
   manualItem.value = {
     productId: null,
-    productStateId: productStates.value[0]?.id || null,
+    productStateId: null, // optional!
     quantity: 1
   };
   showCreateModal.value = true;
@@ -664,12 +722,8 @@ const onCodeScanned = (decodedText) => {
   // Search product catalog by barcode/SKU
   const product = inventoryStore.products.find(p => p.barcode === decodedText || p.sku === decodedText);
   if (product) {
-    // Default to New product state
-    const defaultStateId = productStates.value[0]?.id || null;
-    const defaultStateName = productStates.value[0]?.name || "جديد";
-
     const existing = createForm.value.items.find(
-      i => i.productId === product.id && i.productStateId === defaultStateId
+      i => i.productId === product.id && i.productStateId === null
     );
 
     if (existing) {
@@ -678,8 +732,8 @@ const onCodeScanned = (decodedText) => {
       createForm.value.items.push({
         productId: product.id,
         productName: product.name,
-        productStateId: defaultStateId,
-        productStateName: defaultStateName,
+        productStateId: null,
+        productStateName: "سليم / افتراضي",
         quantity: 1,
         notes: "مضاف عبر مسح الباركود"
       });
@@ -697,12 +751,12 @@ function addManualItem() {
     return;
   }
   const product = inventoryStore.products.find(p => p.id === manualItem.value.productId);
-  const state = productStates.value.find(s => s.id === manualItem.value.productStateId);
   if (!product) return;
 
   const requested = manualItem.value.quantity;
   const stateId = manualItem.value.productStateId || null;
-  const stateName = state ? state.name : "جديد";
+  const state = productStates.value.find(s => s.id === stateId);
+  const stateName = state ? state.name : "سليم / افتراضي";
 
   // Check duplicate and merge
   const existing = createForm.value.items.find(
@@ -725,7 +779,7 @@ function addManualItem() {
   // Reset manual form inputs
   manualItem.value = {
     productId: null,
-    productStateId: productStates.value[0]?.id || null,
+    productStateId: null,
     quantity: 1
   };
 }
@@ -739,9 +793,11 @@ async function handleCreateEntry() {
     alert("يرجى إضافة صنف واحد على الأقل للمتابعة.");
     return;
   }
-  if (!createForm.value.fromSource || !createForm.value.invoiceNumber) {
-    alert("يرجى ملء مصدر التوريد ورقم الفاتورة.");
-    return;
+  if (!createForm.value.fromSource) {
+    createForm.value.fromSource = "توريد مستودع مباشر";
+  }
+  if (!createForm.value.invoiceNumber) {
+    createForm.value.invoiceNumber = "INV-" + new Date().toISOString().slice(0, 10).replace(/-/g, "") + "-" + Math.floor(1000 + Math.random() * 9000);
   }
 
   // Format selected serial numbers into item notes
@@ -826,8 +882,8 @@ function addSerialToFormItems(item) {
     createForm.value.items.push({
       productId: item.productId,
       productName: item.productName || item.product?.name || "Unknown Product",
-      productStateId: item.productStateId || productStates.value[0]?.id || null,
-      productStateName: item.productStateName || productStates.value[0]?.name || "جديد",
+      productStateId: item.productStateId || null,
+      productStateName: item.productStateName || "سليم / افتراضي",
       quantity: 1,
       selectedSerials: [item.serialNumber],
       notes: ""
@@ -872,7 +928,7 @@ async function handleHardwareScan() {
   );
   if (product) {
     manualItem.value.productId = product.id;
-    manualItem.value.productStateId = productStates.value[0]?.id || null;
+    manualItem.value.productStateId = null;
     manualItem.value.quantity = 1;
     playBeep();
   } else {
