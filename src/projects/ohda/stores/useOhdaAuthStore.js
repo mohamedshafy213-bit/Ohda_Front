@@ -29,8 +29,14 @@ export const useOhdaAuthStore = defineStore("ohdaAuth", {
         8: "/ohda/suppliers",
         9: "/ohda/users",
         10: "/ohda/notifications",
-        11: "/ohda/compass"
+        11: "/ohda/compass",
+        15: "/ohda/warehouse-bins"
       };
+      
+      // If user is Admin, ensure warehouse-bins is always available
+      if (state.user?.role === 1 && !state.allowedPages.some(p => (p.path || p) === "/ohda/warehouse-bins" || p.id === 15)) {
+        state.allowedPages.push({ id: 15, name: "أماكن وأرفف التخزين", path: "/ohda/warehouse-bins" });
+      }
 
       return state.allowedPages.map(page => {
         if (typeof page === "string") {

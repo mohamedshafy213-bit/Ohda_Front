@@ -22,6 +22,16 @@
 
       <!-- Right Header Tools: Language Switcher, Notifications, Profile & Logout -->
       <div class="flex items-center gap-3">
+        <!-- Page Help Guide Button -->
+        <button
+          @click="showPageHelp = true"
+          class="px-3 py-1.5 bg-brand-accent/20 hover:bg-brand-accent/30 text-brand-accent border border-brand-accent/40 rounded-xl text-xs flex items-center gap-1.5 transition-all cursor-pointer font-bold shadow-sm"
+          :title="currentLocale === 'ar' ? 'دليل استخدام الصفحة (F1)' : 'Page Help Guide (F1)'"
+        >
+          <HelpCircle class="w-4 h-4 text-brand-accent" />
+          <span class="hidden sm:inline">{{ currentLocale === 'ar' ? 'دليل الصفحة' : 'Page Guide' }}</span>
+        </button>
+
         <!-- Language Switcher -->
         <button
           @click="toggleLanguage"
@@ -126,6 +136,9 @@
         <router-view />
       </main>
     </div>
+
+    <!-- Global Interactive Page Help Drawer -->
+    <PageHelpDrawer v-model="showPageHelp" />
   </div>
 </template>
 
@@ -137,6 +150,7 @@ import { useOhdaAuthStore } from "../stores/useOhdaAuthStore";
 import { useOhdaNotificationStore } from "../stores/useOhdaNotificationStore";
 import { useOhdaRequestsStore } from "../stores/useOhdaRequestsStore";
 import { useI18n } from "vue-i18n";
+import PageHelpDrawer from "../components/PageHelpDrawer.vue";
 
 const router = useRouter();
 const authStore = useOhdaAuthStore();
@@ -146,12 +160,14 @@ const { t } = useI18n();
 
 const sidebarOpen = ref(false);
 const showNotifications = ref(false);
+const showPageHelp = ref(false);
 
 const currentLocale = computed(() => getCurrentLocale());
 
 const pageMeta = {
   "/ohda/dashboard": { labelKey: "ohda.nav.dashboard", icon: "LayoutDashboard" },
   "/ohda/products": { labelKey: "ohda.nav.products", icon: "Package" },
+  "/ohda/warehouse-bins": { labelKey: "ohda.nav.warehouseBins", icon: "Layers" },
   "/ohda/inventory": { labelKey: "ohda.nav.inventory", icon: "Boxes" },
   "/ohda/exit-requests": { labelKey: "ohda.nav.exitRequests", icon: "ArrowUpRight", getBadge: () => requestsStore.pendingExitRequestsCount || null },
   "/ohda/entry-requests": { labelKey: "ohda.nav.entryRequests", icon: "ArrowDownLeft", getBadge: () => requestsStore.pendingEntryRequestsCount || null },

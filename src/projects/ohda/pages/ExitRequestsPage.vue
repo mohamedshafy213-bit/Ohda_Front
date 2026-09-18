@@ -343,6 +343,15 @@
             <DataTable :value="selectedRequest.items" class="text-xs">
               <Column field="productName" header="اسم الصنف"></Column>
               <Column field="productSKU" header="SKU" class="font-mono"></Column>
+              <Column header="مكان التخزين (الرف)">
+                <template #body="{ data }">
+                  <span v-if="data.binCode" class="px-2 py-0.5 rounded-lg bg-brand-soft text-brand-accent font-mono font-bold text-[10px] border border-brand-accent/30 inline-flex items-center gap-1">
+                    <Layers class="w-3 h-3" />
+                    {{ data.binCode }}
+                  </span>
+                  <span v-else class="text-brand-gray text-[10px]">-</span>
+                </template>
+              </Column>
               <Column field="quantity" header="الكمية المطلوبة">
                 <template #body="{ data }">
                   <span class="font-bold text-brand-dark text-sm">{{ data.quantity }}</span>

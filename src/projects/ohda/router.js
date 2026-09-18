@@ -22,6 +22,11 @@ export default [
         component: () => import("./pages/ProductsPage.vue")
       },
       {
+        path: "warehouse-bins",
+        name: "OhdaWarehouseBins",
+        component: () => import("./pages/WarehouseBinsPage.vue")
+      },
+      {
         path: "inventory",
         name: "OhdaInventory",
         component: () => import("./pages/InventoryPage.vue")

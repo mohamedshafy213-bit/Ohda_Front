@@ -5,6 +5,7 @@ export default {
       nav: {
         dashboard: "لوحة التحكم",
         products: "المنتجات والأصناف",
+        warehouseBins: "أماكن وأرفف التخزين",
         inventory: "رصيد المخزون",
         exitRequests: "طلبات صرف العهدة",
         entryRequests: "طلبات إدخال المخزون",
@@ -210,6 +211,7 @@ export default {
       nav: {
         dashboard: "Dashboard",
         products: "Products & Items",
+        warehouseBins: "Storage Bins",
         inventory: "Stock Inventory",
         exitRequests: "Exit Requests",
         entryRequests: "Stock-In Requests",

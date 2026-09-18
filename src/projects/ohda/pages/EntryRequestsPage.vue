@@ -257,6 +257,24 @@
                   </div>
                 </template>
               </Column>
+              <Column header="رف التخزين (اختياري)">
+                <template #body="{ data }">
+                  <Select
+                    v-model="data.binId"
+                    :options="warehouseBins"
+                    optionLabel="code"
+                    optionValue="id"
+                    showClear
+                    placeholder="اختر الرف"
+                    class="w-full !text-[11px] !bg-brand-white !py-1 !border-brand-gray/25 min-w-[140px]"
+                  >
+                    <template #option="slotProps">
+                      <span class="text-xs font-mono font-bold">{{ slotProps.option.code }}</span>
+                      <span class="text-[10px] text-brand-gray ms-1">({{ slotProps.option.name }})</span>
+                    </template>
+                  </Select>
+                </template>
+              </Column>
               <Column header="إجراء">
                 <template #body="{ index }">
                   <Button @click="removeRequestItem(index)" class="!p-1.5 !bg-red-500/10 hover:!bg-red-500/20 !text-red-600 !border-0 !rounded-lg">
@@ -349,6 +367,24 @@
                 class="w-full !bg-white"
                 placeholder="سليم / افتراضي (اختياري)"
               />
+            </div>
+
+            <div>
+              <label class="text-brand-gray font-semibold mb-1 block">رف التخزين (اختياري)</label>
+              <Select
+                v-model="manualItem.binId"
+                :options="warehouseBins"
+                optionLabel="code"
+                optionValue="id"
+                showClear
+                class="w-full !bg-white"
+                placeholder="حدد الرف بالمستودع (اختياري)"
+              >
+                <template #option="slotProps">
+                  <span class="text-xs font-mono font-bold">{{ slotProps.option.code }}</span>
+                  <span class="text-[10px] text-brand-gray ms-1">({{ slotProps.option.name }})</span>
+                </template>
+              </Select>
             </div>
 
             <div class="grid grid-cols-2 gap-2">
@@ -514,6 +550,7 @@ const approvalConfigStore = useOhdaApprovalConfigStore();
 
 const departments = ref([]);
 const productStates = ref([]);
+const warehouseBins = ref([]);
 
 // Scanning states
 const html5Qrcode = ref(null);
@@ -530,7 +567,8 @@ onMounted(async () => {
     inventoryStore.fetchProducts(),
     approvalConfigStore.fetchApprovalConfigs(),
     loadDepartments(),
-    loadProductStates()
+    loadProductStates(),
+    loadWarehouseBins()
   ]);
 
   pollInterval = setInterval(async () => {
@@ -559,6 +597,15 @@ async function loadProductStates() {
     productStates.value = s?.data?.objects || s?.data?.singleObject || [];
   } catch (e) {
     console.warn('ProductStates load failed', e);
+  }
+}
+
+async function loadWarehouseBins() {
+  try {
+    const res = await apiGet('/api/WarehouseBin/list');
+    warehouseBins.value = res?.data?.singleObject || res?.data?.objects || [];
+  } catch (e) {
+    console.warn('WarehouseBins load failed', e);
   }
 }
 
@@ -639,6 +686,7 @@ function openCreateModal() {
   manualItem.value = {
     productId: null,
     productStateId: null, // optional!
+    binId: null,
     quantity: 1
   };
   showCreateModal.value = true;
@@ -755,12 +803,13 @@ function addManualItem() {
 
   const requested = manualItem.value.quantity;
   const stateId = manualItem.value.productStateId || null;
+  const binId = manualItem.value.binId || null;
   const state = productStates.value.find(s => s.id === stateId);
   const stateName = state ? state.name : "سليم / افتراضي";
 
   // Check duplicate and merge
   const existing = createForm.value.items.find(
-    i => i.productId === product.id && i.productStateId === stateId
+    i => i.productId === product.id && i.productStateId === stateId && i.binId === binId
   );
 
   if (existing) {
@@ -771,6 +820,7 @@ function addManualItem() {
       productName: product.name,
       productStateId: stateId,
       productStateName: stateName,
+      binId: binId,
       quantity: requested,
       notes: "إدخال يدوي"
     });
@@ -780,6 +830,7 @@ function addManualItem() {
   manualItem.value = {
     productId: null,
     productStateId: null,
+    binId: null,
     quantity: 1
   };
 }
