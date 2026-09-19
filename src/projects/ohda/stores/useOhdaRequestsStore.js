@@ -46,9 +46,9 @@ export const useOhdaRequestsStore = defineStore("ohdaRequests", {
   },
 
   actions: {
-    // API Fetch Exit Requests
-    async fetchExitRequests() {
-      this.loading = true;
+    // API Fetch Exit Requests (silent = true prevents UI loading flicker on background polls)
+    async fetchExitRequests({ silent = false } = {}) {
+      if (!silent) this.loading = true;
       try {
         const res = await apiGet("/api/ProductExitRequest");
         const data = res?.data?.objects || res?.data?.singleObject;
@@ -58,7 +58,7 @@ export const useOhdaRequestsStore = defineStore("ohdaRequests", {
       } catch (err) {
         console.warn("ProductExitRequest API failed", err);
       } finally {
-        this.loading = false;
+        if (!silent) this.loading = false;
       }
     },
 
@@ -176,9 +176,9 @@ export const useOhdaRequestsStore = defineStore("ohdaRequests", {
       }
     },
 
-    // API Fetch Entry Requests
-    async fetchEntryRequests() {
-      this.loading = true;
+    // API Fetch Entry Requests (silent = true prevents UI loading flicker on background polls)
+    async fetchEntryRequests({ silent = false } = {}) {
+      if (!silent) this.loading = true;
       try {
         const res = await apiGet("/api/ProductEntryRequest");
         const data = res?.data?.objects || res?.data?.singleObject;
@@ -188,7 +188,7 @@ export const useOhdaRequestsStore = defineStore("ohdaRequests", {
       } catch (err) {
         console.warn("ProductEntryRequest API failed", err);
       } finally {
-        this.loading = false;
+        if (!silent) this.loading = false;
       }
     },
 

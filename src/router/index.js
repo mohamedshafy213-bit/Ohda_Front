@@ -40,10 +40,9 @@ router.beforeEach(async (to, from, next) => {
             await authStore.fetchMyPages();
         }
 
-        const allowedPaths = authStore.allowedPaths;
-
-        if (!allowedPaths.includes(to.path)) {
+        if (!authStore.isRouteAllowed(to.path)) {
             console.warn(`Blocked access to unauthorized route: ${to.path}`);
+            const allowedPaths = authStore.allowedPaths;
             if (allowedPaths.includes("/ohda/dashboard")) {
                 return next("/ohda/dashboard");
             } else if (allowedPaths.length > 0) {
@@ -55,6 +54,27 @@ router.beforeEach(async (to, from, next) => {
     }
 
     next();
+});
+
+// Handle lazy-route chunk load failures (e.g. after Dokploy redeployments when hashed files change)
+router.onError((error, to) => {
+    const isChunkLoadFailed =
+        error?.message?.includes("Failed to fetch dynamically imported module") ||
+        error?.message?.includes("Importing a module script failed") ||
+        error?.name === "ChunkLoadError";
+
+    if (isChunkLoadFailed && to?.fullPath) {
+        const reloadKey = `chunk_reload_${to.fullPath}`;
+        const hasReloaded = sessionStorage.getItem(reloadKey);
+
+        if (!hasReloaded) {
+            sessionStorage.setItem(reloadKey, "true");
+            window.location.assign(to.fullPath);
+        } else {
+            console.error("Chunk failed to load even after reload:", error);
+            sessionStorage.removeItem(reloadKey);
+        }
+    }
 });
 
 export default router;

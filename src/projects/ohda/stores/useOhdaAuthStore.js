@@ -10,63 +10,97 @@ export const useOhdaAuthStore = defineStore("ohdaAuth", {
   }),
   getters: {
     isAuthenticated: (state) => !!state.token || !!state.user,
-    currentRole: (state) => state.user?.role || 2,
-    isAdmin: (state) => state.user?.role === 1,
-    isEmployee: (state) => state.user?.role === 2,
-    isSupervisor: (state) => state.user?.role === 3,
-    isManager: (state) => state.user?.role === 4,
+    currentRole: (state) => state.user?.role ?? 2,
+    isSuperAdmin: (state) => state.user?.role === 0 || state.user?.role === "SuperAdmin" || state.user?.role === "0",
+    isAdmin: (state) => state.user?.role === 1 || state.user?.role === "Admin" || state.user?.role === "1",
+    isEmployee: (state) => state.user?.role === 2 || state.user?.role === "Employee" || state.user?.role === "2",
+    isSupervisor: (state) => state.user?.role === 3 || state.user?.role === "Supervisor" || state.user?.role === "3",
+    isManager: (state) => state.user?.role === 4 || state.user?.role === "Manager" || state.user?.role === "4",
     userName: (state) => state.user?.personName || state.user?.username || "مستخدم",
+    branchId: (state) => state.user?.branchId || 1,
+    branchName: (state) => state.user?.branchName || "",
     allowedPaths: (state) => {
-      if (!state.allowedPages) return [];
-      const pageMap = {
-        1: "/ohda/dashboard",
-        2: "/ohda/products",
-        3: "/ohda/inventory",
-        4: "/ohda/exit-requests",
-        5: "/ohda/entry-requests",
-        6: "/ohda/scan",
-        7: "/ohda/categories",
-        8: "/ohda/suppliers",
-        9: "/ohda/users",
-        10: "/ohda/notifications",
-        11: "/ohda/compass",
-        15: "/ohda/warehouse-bins"
-      };
-      
-      // If user is Admin, ensure warehouse-bins is always available
-      if (state.user?.role === 1 && !state.allowedPages.some(p => (p.path || p) === "/ohda/warehouse-bins" || p.id === 15)) {
-        state.allowedPages.push({ id: 15, name: "أماكن وأرفف التخزين", path: "/ohda/warehouse-bins" });
+      const isSuper = state.user?.role === 0 || state.user?.role === "SuperAdmin" || state.user?.role === "0";
+      const pages = state.allowedPages || [];
+
+      if (!pages.length) {
+        if (isSuper) {
+          return [
+            "/ohda/dashboard",
+            "/ohda/branches-dashboard",
+            "/ohda/branches",
+            "/ohda/products",
+            "/ohda/warehouse-bins",
+            "/ohda/inventory",
+            "/ohda/exit-requests",
+            "/ohda/entry-requests",
+            "/ohda/scan",
+            "/ohda/categories",
+            "/ohda/suppliers",
+            "/ohda/users",
+            "/ohda/departments",
+            "/ohda/product-states",
+            "/ohda/approval-config",
+            "/ohda/compass"
+          ];
+        }
+        return ["/ohda/dashboard"];
       }
 
-      return state.allowedPages.map(page => {
-        if (typeof page === "string") {
-          return page;
+      // Map whatever pages are assigned to this user to standardized routes
+      const paths = pages.map(page => {
+        if (!page) return null;
+        const raw = typeof page === "string" ? page : (page.path || page.route || page.Path || page.Route);
+        if (!raw) return null;
+        let norm = raw.toLowerCase().trim();
+        if (!norm.startsWith("/ohda")) {
+          norm = `/ohda${norm}`;
         }
-
-        if (typeof page === "object" && page !== null) {
-          if (page.path || page.route) {
-            return page.path || page.route;
-          }
-          const id = page.id || page.pageId;
-          if (id && pageMap[id]) {
-            return pageMap[id];
-          }
-          return null;
+        if (norm.length > 5 && norm.endsWith("/")) {
+          norm = norm.slice(0, -1);
         }
-
-        return pageMap[page] || null;
-      }).map(path => {
-        if (!path) return null;
-        let normalized = path.toLowerCase().startsWith("/ohda") ? path : `/ohda${path}`;
-        const lower = normalized.toLowerCase();
-        if (lower === "/ohda/orders" || lower === "/ohda/order" || lower === "/ohda/entry-request" || lower === "/ohda/entry-requests") {
-          return "/ohda/entry-requests";
+        if (norm === "/ohda/orders" || norm === "/ohda/order") {
+          norm = "/ohda/entry-requests";
         }
-        if (lower === "/ohda/exit-request" || lower === "/ohda/exit-requests") {
-          return "/ohda/exit-requests";
-        }
-        return lower;
+        return norm;
       }).filter(Boolean);
+
+      // SuperAdmin platform routes
+      if (isSuper) {
+        if (!paths.includes("/ohda/branches-dashboard")) paths.push("/ohda/branches-dashboard");
+        if (!paths.includes("/ohda/branches")) paths.push("/ohda/branches");
+      }
+
+      // Ensure dashboard is always present as base landing
+      if (!paths.includes("/ohda/dashboard")) {
+        paths.unshift("/ohda/dashboard");
+      }
+
+      return [...new Set(paths)];
+    },
+
+    isRouteAllowed: (state) => (routePath) => {
+      if (!routePath) return false;
+      let path = routePath.toLowerCase().trim();
+      if (!path.startsWith("/ohda")) {
+        path = `/ohda${path}`;
+      }
+      if (path.length > 5 && path.endsWith("/")) {
+        path = path.slice(0, -1);
+      }
+
+      // SuperAdmin has full access
+      const isSuper = state.user?.role === 0 || state.user?.role === "SuperAdmin" || state.user?.role === "0";
+      if (isSuper) return true;
+
+      // Platform branches management is strictly SuperAdmin only
+      if (path === "/ohda/branches" || path === "/ohda/branches-dashboard") {
+        return false;
+      }
+
+      // Filter purely based on the pages assigned to this user!
+      const allowed = state.allowedPaths || [];
+      return allowed.includes(path);
     }
   },
   actions: {

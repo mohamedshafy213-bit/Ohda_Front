@@ -17,7 +17,10 @@
         <Button
           v-if="activeTab === 'users'"
           @click="openRegisterModal"
-          class="!bg-brand-accent hover:!bg-brand-accent/90 !text-brand-dark !font-bold !rounded-xl !px-4 !py-2 !text-xs flex items-center gap-2 shadow-md shadow-brand-accent/10"
+          :disabled="branchStore.myQuota?.isUserQuotaExceeded && !authStore.isSuperAdmin"
+          class="!bg-brand-accent hover:!bg-brand-accent/90 !text-brand-dark !font-bold !rounded-xl !px-4 !py-2 !text-xs flex items-center gap-2 shadow-md shadow-brand-accent/10 transition-opacity"
+          :class="{ '!opacity-50 !cursor-not-allowed': branchStore.myQuota?.isUserQuotaExceeded && !authStore.isSuperAdmin }"
+          :title="branchStore.myQuota?.isUserQuotaExceeded && !authStore.isSuperAdmin ? $t('ohda.quotas.usersLimitReached') : $t('ohda.users.registerUser')"
         >
           <UserPlus class="w-4 h-4" />
           {{ $t('ohda.users.registerUser') }}
@@ -41,6 +44,53 @@
           إضافة صفحة نظام جديدة
         </Button>
 
+      </div>
+    </div>
+
+    <!-- Branch Users Quota Consumption Banner -->
+    <div
+      v-if="branchStore.myQuota"
+      class="p-4 rounded-2xl border flex flex-col sm:flex-row sm:items-center justify-between gap-3 transition-all"
+      :class="branchStore.myQuota.isUserQuotaExceeded
+        ? 'bg-red-500/10 border-red-500/30 text-red-700 dark:text-red-300'
+        : (branchStore.myQuota.remainingUsers <= 2)
+          ? 'bg-amber-500/10 border-amber-500/30 text-amber-700 dark:text-amber-300'
+          : 'bg-brand-soft border-brand-accent/20 text-brand-dark'"
+    >
+      <div class="flex items-center gap-3">
+        <div
+          class="w-10 h-10 rounded-xl flex items-center justify-center shrink-0 border"
+          :class="branchStore.myQuota.isUserQuotaExceeded ? 'bg-red-500/20 border-red-500/30 text-red-500' : 'bg-brand-accent/20 border-brand-accent/30 text-brand-accent'"
+        >
+          <Users class="w-5 h-5" />
+        </div>
+        <div>
+          <div class="text-xs font-bold flex items-center gap-2">
+            <span>سعة مستخدمي الفرع ({{ branchStore.myQuota.branchName || 'الفرع الحالي' }}):</span>
+            <span class="font-mono font-bold">{{ branchStore.myQuota.currentUserCount }} / {{ branchStore.myQuota.maxUsers }} مستخدم</span>
+            <span class="text-[10px] font-semibold">({{ branchStore.myQuota.remainingUsers }} متبقي)</span>
+          </div>
+          <p class="text-[11px] opacity-80 mt-0.5">
+            {{ branchStore.myQuota.isUserQuotaExceeded
+              ? $t('ohda.quotas.usersLimitReached')
+              : 'الحد الأقصى لعدد مستخدمي الفرع محدد ومضبوط حصرياً من قِبل مدير المنصة العام (SuperAdmin).' }}
+          </p>
+        </div>
+      </div>
+
+      <!-- Quota Progress Bar -->
+      <div class="w-full sm:w-48 space-y-1">
+        <div class="flex items-center justify-between text-[10px] font-bold">
+          <span>الاستهلاك</span>
+          <span>{{ Math.round((branchStore.myQuota.currentUserCount / (branchStore.myQuota.maxUsers || 1)) * 100) }}%</span>
+        </div>
+        <div class="w-full bg-black/10 dark:bg-white/10 h-2 rounded-full overflow-hidden">
+          <div
+            class="h-full rounded-full transition-all"
+            :class="branchStore.myQuota.isUserQuotaExceeded ? 'bg-red-500' : (branchStore.myQuota.remainingUsers <= 2 ? 'bg-amber-500' : 'bg-brand-accent')"
+            :style="{ width: Math.min(100, Math.round((branchStore.myQuota.currentUserCount / (branchStore.myQuota.maxUsers || 1)) * 100)) + '%' }"
+          ></div>
+        </div>
       </div>
     </div>
 
@@ -76,65 +126,124 @@
     </div>
 
     <!-- TAB 1: USERS DATATABLE & MODALS -->
-    <div v-if="activeTab === 'users'" class="bg-brand-white border border-brand-gray/10 rounded-2xl overflow-hidden shadow-sm">
-      <DataTable :value="userStore.users" class="w-full text-xs">
-        <Column field="militaryNumber" header="الرقم العسكري">
-          <template #body="{ data }">
-            <span class="font-mono font-bold text-brand-accent">{{ data.militaryNumber }}</span>
-          </template>
-        </Column>
+    <div v-if="activeTab === 'users'" class="space-y-4">
+      <!-- Users Filter & Search Toolbar -->
+      <div class="bg-brand-white border border-brand-gray/10 rounded-2xl p-4 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <!-- Branch Selector (SuperAdmin) or Branch Scope (Branch Admin) -->
+        <div class="flex flex-wrap items-center gap-3">
+          <div v-if="authStore.isSuperAdmin" class="flex items-center gap-2">
+            <Building2 class="w-4 h-4 text-brand-accent shrink-0" />
+            <span class="text-xs font-bold text-brand-dark shrink-0">{{ $t('ohda.users.filterByBranch') }}:</span>
+            <Select
+              v-model="selectedBranchFilter"
+              :options="branchFilterOptions"
+              optionLabel="label"
+              optionValue="value"
+              @change="handleBranchFilterChange"
+              class="w-56 md:w-64 !bg-brand-light !border-brand-gray/25 focus:!border-brand-accent !text-brand-dark text-xs !rounded-xl"
+            />
+          </div>
 
-        <Column field="username" :header="$t('ohda.users.username')">
-          <template #body="{ data }">
-            <span class="font-mono font-bold text-brand-dark">{{ data.username }}</span>
-          </template>
-        </Column>
+          <!-- Non-SuperAdmin Branch Badge Scope -->
+          <div v-else class="flex items-center gap-2 px-3 py-1.5 bg-brand-soft text-brand-dark rounded-xl border border-brand-accent/25 text-xs font-semibold">
+            <Building2 class="w-4 h-4 text-brand-accent shrink-0" />
+            <span>{{ $t('ohda.users.branchScope') }}:</span>
+            <span class="font-bold text-brand-accent font-mono">{{ authStore.user?.branchName || branchStore.myQuota?.branchName || 'فرعك الحالي' }}</span>
+            <span class="text-[10px] text-brand-gray mr-1">(عرض وإنشاء لمستخدمي هذا الفرع فقط)</span>
+          </div>
 
-        <Column field="personName" :header="$t('ohda.users.personName')">
-          <template #body="{ data }">
-            <span class="font-semibold text-brand-dark">{{ data.personName }}</span>
-          </template>
-        </Column>
+          <!-- Fast Count indicator -->
+          <span class="text-[11px] font-bold text-brand-gray bg-brand-light px-2.5 py-1 rounded-lg border border-brand-gray/15">
+            {{ filteredUsers.length }} مستخدم
+          </span>
+        </div>
 
-        <Column field="email" :header="$t('ohda.users.email')">
-          <template #body="{ data }">
-            <span class="font-mono text-brand-gray">{{ data.email }}</span>
-          </template>
-        </Column>
+        <!-- Search Input -->
+        <div class="relative w-full md:w-64">
+          <InputText
+            v-model="searchQuery"
+            placeholder="بحث بالاسم، الرقم، أو البريد..."
+            class="w-full !bg-brand-light !border-brand-gray/25 focus:!border-brand-accent !text-brand-dark text-xs !rounded-xl pr-8 pl-3 py-2"
+          />
+          <Search class="w-4 h-4 text-brand-gray absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+        </div>
+      </div>
 
-        <Column field="role" :header="$t('ohda.users.role')">
-          <template #body="{ data }">
-            <span
-              class="px-3 py-1 rounded-full text-[10px] font-bold border inline-block"
-              :class="getRoleBadgeClass(data.role)"
-            >
-              {{ getRoleName(data.role) }}
-            </span>
-          </template>
-        </Column>
+      <!-- Users Table -->
+      <div class="bg-brand-white border border-brand-gray/10 rounded-2xl overflow-hidden shadow-sm">
+        <DataTable :value="filteredUsers" paginator :rows="10" :rowsPerPageOptions="[5, 10, 20, 50]" class="w-full text-xs">
+          <Column field="militaryNumber" header="الرقم العسكري">
+            <template #body="{ data }">
+              <span class="font-mono font-bold text-brand-accent">{{ data.militaryNumber }}</span>
+            </template>
+          </Column>
 
-        <Column header="مجموعة الصلاحيات (User Group)">
-          <template #body="{ data }">
-            <span class="px-2.5 py-1 bg-brand-soft text-brand-accent border border-brand-accent/20 rounded-lg text-[11px] font-bold font-mono">
-              {{ data.userGroupName || getUserGroupName(data.userGroupId) }}
-            </span>
-          </template>
-        </Column>
+          <Column field="username" :header="$t('ohda.users.username')">
+            <template #body="{ data }">
+              <span class="font-mono font-bold text-brand-dark">{{ data.username }}</span>
+            </template>
+          </Column>
 
-        <Column :header="$t('ohda.common.actions')">
-          <template #body="{ data }">
-            <div class="flex items-center justify-center gap-2">
-              <editButton @click="openEditModal(data)" />
-              <deleteButton @click="deleteUser(data.militaryNumber)" />
-            </div>
-          </template>
-        </Column>
-      </DataTable>
+          <Column field="personName" :header="$t('ohda.users.personName')">
+            <template #body="{ data }">
+              <span class="font-semibold text-brand-dark">{{ data.personName }}</span>
+            </template>
+          </Column>
+
+          <Column header="الفرع" field="branchName">
+            <template #body="{ data }">
+              <div class="flex items-center gap-1.5">
+                <Building2 class="w-3.5 h-3.5 text-brand-accent shrink-0" />
+                <span
+                  class="px-2.5 py-0.5 rounded-lg text-[10px] font-bold border inline-block"
+                  :class="getBranchBadgeClass(data.branchId)"
+                >
+                  {{ data.branchName || getBranchName(data.branchId) }}
+                </span>
+              </div>
+            </template>
+          </Column>
+
+          <Column field="email" :header="$t('ohda.users.email')">
+            <template #body="{ data }">
+              <span class="font-mono text-brand-gray">{{ data.email }}</span>
+            </template>
+          </Column>
+
+          <Column field="role" :header="$t('ohda.users.role')">
+            <template #body="{ data }">
+              <span
+                class="px-3 py-1 rounded-full text-[10px] font-bold border inline-block"
+                :class="getRoleBadgeClass(data.role)"
+              >
+                {{ getRoleName(data.role) }}
+              </span>
+            </template>
+          </Column>
+
+          <Column header="مجموعة الصلاحيات (User Group)">
+            <template #body="{ data }">
+              <span class="px-2.5 py-1 bg-brand-soft text-brand-accent border border-brand-accent/20 rounded-lg text-[11px] font-bold font-mono">
+                {{ data.userGroupName || getUserGroupName(data.userGroupId) }}
+              </span>
+            </template>
+          </Column>
+
+          <Column :header="$t('ohda.common.actions')">
+            <template #body="{ data }">
+              <div class="flex items-center justify-center gap-2">
+                <editButton @click="openEditModal(data)" />
+                <deleteButton v-if="data.role !== 0" @click="deleteUser(data.militaryNumber)" />
+              </div>
+            </template>
+          </Column>
+        </DataTable>
+      </div>
     </div>
 
     <!-- TAB 2: USER GROUPS DATATABLE & MODALS -->
     <div v-if="activeTab === 'groups'" class="bg-brand-white border border-brand-gray/10 rounded-2xl overflow-hidden shadow-sm">
-      <DataTable :value="groupStore.groups" class="w-full text-xs">
+      <DataTable :value="groupStore.groups" paginator :rows="10" :rowsPerPageOptions="[5, 10, 20, 50]" class="w-full text-xs">
         <Column field="id" header="#">
           <template #body="{ data }">
             <span class="font-mono text-brand-gray">{{ data.id }}</span>
@@ -178,7 +287,7 @@
 
     <!-- TAB 3: SYSTEM PAGES DATATABLE & MODALS -->
     <div v-if="activeTab === 'pages'" class="bg-brand-white border border-brand-gray/10 rounded-2xl overflow-hidden shadow-sm">
-      <DataTable :value="groupStore.pages" class="w-full text-xs">
+      <DataTable :value="groupStore.pages" paginator :rows="10" :rowsPerPageOptions="[5, 10, 20, 50]" class="w-full text-xs">
         <Column field="id" header="#">
           <template #body="{ data }">
             <span class="font-mono text-brand-gray">{{ data.id }}</span>
@@ -238,6 +347,28 @@
           <InputText v-model="registerForm.personName" required class="w-full !bg-brand-light !border-brand-gray/25 focus:!border-brand-accent !text-brand-dark" />
         </div>
 
+        <!-- Branch Selection (for SuperAdmin) or Branch Lock (for Branch Admin) -->
+        <div v-if="authStore.isSuperAdmin">
+          <label class="block font-semibold text-brand-dark mb-1">{{ $t('ohda.users.assignedBranch') }} *</label>
+          <Select
+            v-model="registerForm.branchId"
+            :options="branchOptions"
+            optionLabel="label"
+            optionValue="value"
+            required
+            class="w-full !bg-brand-light !border-brand-gray/25 focus:!border-brand-accent !text-brand-dark"
+            placeholder="اختر الفرع..."
+          />
+        </div>
+        <div v-else>
+          <label class="block font-semibold text-brand-dark mb-1">{{ $t('ohda.users.branch') }}</label>
+          <div class="flex items-center gap-2 p-2.5 rounded-xl bg-brand-light border border-brand-gray/20 text-brand-dark">
+            <Building2 class="w-4 h-4 text-brand-accent shrink-0" />
+            <span class="font-bold">{{ authStore.user?.branchName || branchStore.myQuota?.branchName || 'فرعك الحالي' }}</span>
+            <span class="text-[10px] text-brand-gray mr-auto">(محدد تلقائياً ومقيد بفرعك)</span>
+          </div>
+        </div>
+
         <div>
           <label class="block font-semibold text-brand-dark mb-1">{{ $t('ohda.users.email') }}</label>
           <InputText v-model="registerForm.email" type="email" required class="w-full !bg-brand-light !border-brand-gray/25 focus:!border-brand-accent !text-brand-dark font-mono" />
@@ -285,6 +416,26 @@
         <div>
           <label class="block font-semibold text-brand-dark mb-1">{{ $t('ohda.users.personName') }}</label>
           <InputText v-model="editForm.personName" required class="w-full !bg-brand-light !border-brand-gray/25 focus:!border-brand-accent !text-brand-dark" />
+        </div>
+
+        <!-- Branch Selection (for SuperAdmin) or Branch Display (for Branch Admin) -->
+        <div v-if="authStore.isSuperAdmin">
+          <label class="block font-semibold text-brand-dark mb-1">{{ $t('ohda.users.assignedBranch') }}</label>
+          <Select
+            v-model="editForm.branchId"
+            :options="branchOptions"
+            optionLabel="label"
+            optionValue="value"
+            class="w-full !bg-brand-light !border-brand-gray/25 focus:!border-brand-accent !text-brand-dark"
+            placeholder="اختر الفرع..."
+          />
+        </div>
+        <div v-else>
+          <label class="block font-semibold text-brand-dark mb-1">{{ $t('ohda.users.branch') }}</label>
+          <div class="flex items-center gap-2 p-2.5 rounded-xl bg-brand-light border border-brand-gray/20 text-brand-dark">
+            <Building2 class="w-4 h-4 text-brand-accent shrink-0" />
+            <span class="font-bold">{{ getBranchName(editForm.branchId) || authStore.user?.branchName || 'فرعك الحالي' }}</span>
+          </div>
         </div>
 
         <div>
@@ -540,20 +691,92 @@ import { ref, computed, onMounted } from "vue";
 import { useI18n } from "vue-i18n";
 import { useOhdaUserPermissionStore } from "../stores/useOhdaUserPermissionStore";
 import { useOhdaGroupStore } from "../stores/useOhdaGroupStore";
+import { useOhdaBranchStore } from "../stores/useOhdaBranchStore";
+import { useOhdaAuthStore } from "../stores/useOhdaAuthStore";
 
 const userStore = useOhdaUserPermissionStore();
 const groupStore = useOhdaGroupStore();
+const branchStore = useOhdaBranchStore();
+const authStore = useOhdaAuthStore();
 const { t } = useI18n();
 
 const activeTab = ref("users");
 
 onMounted(async () => {
-  await Promise.all([
+  const promises = [
     userStore.fetchUsers(),
     groupStore.fetchUserGroups(),
-    groupStore.fetchPages()
-  ]);
+    groupStore.fetchPages(),
+    branchStore.fetchMyQuota()
+  ];
+  if (authStore.isSuperAdmin) {
+    promises.push(branchStore.fetchBranches());
+  }
+  await Promise.all(promises);
 });
+
+// --- Filter & Search State ---
+const selectedBranchFilter = ref(0);
+const searchQuery = ref("");
+
+const branchOptions = computed(() => {
+  return branchStore.branches.map(b => ({
+    value: b.id,
+    label: `${b.name} (${b.code})`
+  }));
+});
+
+const branchFilterOptions = computed(() => {
+  return [
+    { value: 0, label: t('ohda.users.allBranches') || "جميع الفروع (الكل)" },
+    ...branchStore.branches.map(b => ({
+      value: b.id,
+      label: `${b.name} (${b.code})`
+    }))
+  ];
+});
+
+const filteredUsers = computed(() => {
+  let list = userStore.users || [];
+  if (authStore.isSuperAdmin && selectedBranchFilter.value > 0) {
+    list = list.filter(u => u.branchId === selectedBranchFilter.value);
+  }
+  if (searchQuery.value && searchQuery.value.trim() !== "") {
+    const q = searchQuery.value.trim().toLowerCase();
+    list = list.filter(u =>
+      (u.username && u.username.toLowerCase().includes(q)) ||
+      (u.personName && u.personName.toLowerCase().includes(q)) ||
+      (u.militaryNumber && u.militaryNumber.toString().includes(q)) ||
+      (u.email && u.email.toLowerCase().includes(q)) ||
+      (u.branchName && u.branchName.toLowerCase().includes(q))
+    );
+  }
+  return list;
+});
+
+async function handleBranchFilterChange() {
+  if (authStore.isSuperAdmin) {
+    await userStore.fetchUsers(selectedBranchFilter.value);
+  }
+}
+
+function getBranchName(branchId) {
+  if (!branchId) return "المنصة العامة (SuperAdmin)";
+  const b = branchStore.branches.find(x => x.id === branchId);
+  return b ? b.name : `فرع #${branchId}`;
+}
+
+function getBranchBadgeClass(branchId) {
+  if (!branchId) return "bg-slate-100 text-slate-700 border-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700";
+  const colors = [
+    "bg-emerald-500/10 text-emerald-700 border-emerald-500/20",
+    "bg-sky-500/10 text-sky-700 border-sky-500/20",
+    "bg-indigo-500/10 text-indigo-700 border-indigo-500/20",
+    "bg-teal-500/10 text-teal-700 border-teal-500/20",
+    "bg-cyan-500/10 text-cyan-700 border-cyan-500/20"
+  ];
+  return colors[branchId % colors.length] || "bg-brand-soft text-brand-accent border-brand-accent/20";
+}
 
 // --- Tab 1: Users Logic ---
 const showRegisterModal = ref(false);
@@ -569,6 +792,7 @@ const registerForm = ref({
   email: "",
   password: "User@123",
   role: 2,
+  branchId: null,
   userGroupId: null
 });
 
@@ -579,6 +803,7 @@ const editForm = ref({
   email: "",
   password: "",
   role: 2,
+  branchId: null,
   userGroupId: null
 });
 
@@ -603,6 +828,10 @@ function getUserGroupName(groupId) {
 }
 
 function openRegisterModal() {
+  const defaultBranchId = authStore.isSuperAdmin
+    ? (selectedBranchFilter.value > 0 ? selectedBranchFilter.value : (branchStore.branches[0]?.id || 1))
+    : (authStore.user?.branchId || branchStore.myQuota?.branchId || 1);
+
   registerForm.value = {
     militaryNumber: null,
     username: "",
@@ -610,6 +839,7 @@ function openRegisterModal() {
     email: "",
     password: "User@123",
     role: 2,
+    branchId: defaultBranchId,
     userGroupId: groupStore.groups[0]?.id || null
   };
   showRegisterModal.value = true;
@@ -628,7 +858,8 @@ function openEditModal(user) {
     personName: user.personName || "",
     email: user.email || "",
     password: "",
-    role: user.role || 2,
+    role: user.role ?? 2,
+    branchId: user.branchId || null,
     userGroupId: user.userGroupId || user.userGroup?.id || null
   };
   showEditModal.value = true;
@@ -658,21 +889,22 @@ async function toggleUserPageAccess(userId, pageId, grant) {
 }
 
 async function deleteUser(id) {
-  if (confirm("هل أنت تأكد من إلغاء حساب هذا المستخدم؟")) {
+  if (confirm("هل أنت متأكد من إلغاء حساب هذا المستخدم؟")) {
     await userStore.deleteUser(id);
   }
 }
 
 function getRoleBadgeClass(role) {
-  if (role === 1) return "bg-purple-500/10 text-purple-700 border-purple-500/20";
+  if (role === 0) return "bg-red-500/10 text-red-700 border-red-500/20";
+  if (role === 1) return "bg-amber-500/10 text-amber-700 border-amber-500/20";
   if (role === 2) return "bg-blue-500/10 text-blue-700 border-blue-500/20";
-  if (role === 3) return "bg-brand-soft text-brand-accent border-brand-accent/25";
-  if (role === 4) return "bg-amber-500/10 text-amber-700 border-amber-500/20";
+  if (role === 3) return "bg-emerald-500/10 text-emerald-700 border-emerald-500/20";
+  if (role === 4) return "bg-brand-soft text-brand-accent border-brand-accent/25";
   return "bg-brand-light text-brand-gray border-brand-gray/20";
 }
 
 function getRoleName(role) {
-  const map = { 1: "Admin (مسؤول)", 2: "Employee (موظف)", 3: "Supervisor (مشرف)", 4: "Manager (مدير)" };
+  const map = { 0: "SuperAdmin (مدير المنصة)", 1: "Admin (مسؤول الفرع)", 2: "Employee (موظف)", 3: "Supervisor (مشرف)", 4: "Manager (مدير)" };
   return map[role] || "User";
 }
 

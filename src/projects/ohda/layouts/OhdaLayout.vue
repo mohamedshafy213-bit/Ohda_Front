@@ -88,7 +88,10 @@
           <User class="w-4 h-4 text-brand-accent" />
           <div class="text-start">
             <span class="text-xs font-bold text-white block">{{ authStore.userName }}</span>
-            <span class="text-[10px] text-slate-400 block">{{ authStore.user?.roleName || 'Role' }}</span>
+            <div class="flex items-center gap-1.5">
+              <span class="text-[10px] text-slate-400 block">{{ authStore.isSuperAdmin ? 'SuperAdmin (Platform)' : (authStore.user?.roleName || 'Role') }}</span>
+              <span v-if="authStore.user?.branchName" class="text-[9px] text-brand-accent font-semibold block">({{ authStore.user.branchName }})</span>
+            </div>
           </div>
         </div>
 
@@ -103,32 +106,83 @@
       </div>
     </header>
 
-    <div class="flex-1 flex overflow-hidden">
+    <div class="flex-1 flex min-h-0">
       <!-- Sidebar Navigation -->
       <aside
         :class="[
-          'w-64 bg-brand-dark border-e border-white/10 p-4 space-y-2 shrink-0 backdrop-blur transition-all duration-300 z-30',
-          sidebarOpen ? 'block' : 'hidden md:block'
+          'w-64 bg-brand-dark border-e border-white/10 shrink-0 backdrop-blur transition-all duration-300 z-30 flex flex-col h-[calc(100vh-3.75rem)] sticky top-[3.75rem]',
+          sidebarOpen ? 'flex fixed inset-y-0 start-0 top-[3.75rem] shadow-2xl z-50' : 'hidden md:flex'
         ]"
       >
-        <nav class="space-y-1">
-          <router-link
-            v-for="item in navItems"
-            :key="item.path"
-            :to="item.path"
-            class="flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-semibold transition-all group"
-            :class="$route.path === item.path ? 'bg-brand-accent/10 text-brand-accent border border-brand-accent/30 font-bold' : 'text-slate-400 hover:text-slate-200 hover:bg-white/5'"
-          >
-            <div class="flex items-center gap-3">
-              <component :is="item.icon" class="w-4 h-4" :class="$route.path === item.path ? 'text-brand-accent' : 'text-slate-400 group-hover:text-slate-200'" />
-              <span>{{ item.label }}</span>
+        <!-- Nav Section: Clean with zero visible scrollbar -->
+        <nav class="flex-1 space-y-2 p-3 overflow-y-auto no-scrollbar">
+          <div v-for="(group, idx) in groupedNav" :key="group.key" class="space-y-1">
+            <!-- Group Header (Collapsible, Bold & Larger Font with Category Icon, No Numbering) -->
+            <button
+              type="button"
+              @click="toggleGroup(group.key)"
+              class="w-full px-2.5 py-2 flex items-center justify-between text-xs font-black tracking-wide text-white select-none rounded-xl hover:bg-white/5 transition-all cursor-pointer group/header"
+              :class="idx === 0 ? 'mt-0' : 'mt-2 border-t border-white/5 pt-2.5'"
+            >
+              <div class="flex items-center gap-2 min-w-0">
+                <component
+                  :is="group.icon || 'Folder'"
+                  class="w-4 h-4 text-brand-accent group-hover/header:scale-110 transition-transform shrink-0"
+                />
+                <span class="font-bold text-xs sm:text-[13px] text-white/95 group-hover/header:text-brand-accent transition-colors truncate">
+                  {{ group.title }}
+                </span>
+              </div>
+              <ChevronDown
+                class="w-3.5 h-3.5 text-slate-400 group-hover/header:text-brand-accent transition-transform duration-200 shrink-0"
+                :class="{ '-rotate-90 rtl:rotate-90 text-slate-500': !isGroupOpen(group.key) }"
+              />
+            </button>
+
+            <!-- Group Links (Collapsible) -->
+            <div
+              v-show="isGroupOpen(group.key)"
+              class="space-y-1 pt-0.5 transition-all duration-200"
+            >
+              <router-link
+                v-for="item in group.items"
+                :key="item.path"
+                :to="item.path"
+                class="flex items-center justify-between px-3 py-1.5 rounded-xl text-xs font-semibold transition-all group"
+                :class="$route.path === item.path ? 'bg-brand-accent/15 text-brand-accent border border-brand-accent/30 font-bold shadow-sm' : 'text-slate-400 hover:text-slate-200 hover:bg-white/5'"
+              >
+                <div class="flex items-center gap-2.5 min-w-0">
+                  <component :is="item.icon" class="w-4 h-4 shrink-0" :class="$route.path === item.path ? 'text-brand-accent' : 'text-slate-400 group-hover:text-slate-200'" />
+                  <span class="truncate">{{ item.label }}</span>
+                </div>
+                <span v-if="item.badge" class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/30 shrink-0">
+                  {{ item.badge }}
+                </span>
+              </router-link>
             </div>
-            <span v-if="item.badge" class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/30">
-              {{ item.badge }}
-            </span>
-          </router-link>
+          </div>
         </nav>
 
+        <!-- Sidebar Bottom Footer: Logout & Version -->
+        <div class="p-3 border-t border-white/10 bg-brand-dark/95 backdrop-blur shrink-0 space-y-2.5">
+          <!-- Sidebar Logout Button -->
+          <button
+            @click="logout"
+            class="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-xl text-xs font-bold text-red-400 bg-red-500/10 hover:bg-red-500/20 border border-red-500/25 hover:border-red-500/40 transition-all cursor-pointer shadow-sm active:scale-[0.98]"
+          >
+            <LogOut class="w-4 h-4 shrink-0" />
+            <span>تسجيل الخروج</span>
+          </button>
+
+          <!-- Ohda Version Badge -->
+          <div class="flex items-center justify-between px-2 pt-1 border-t border-white/5 text-[10px] text-slate-400 font-medium select-none">
+            <span class="flex items-center gap-1.5">
+              <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+              نظام العهدة والمخزون
+            </span>
+            <span class="font-mono text-slate-300 bg-white/5 px-2 py-0.5 rounded-md border border-white/10 text-[9px] font-semibold">v2.5 Enterprise</span>
+          </div>
+        </div>
       </aside>
 
       <!-- Main Content Router Area -->
@@ -143,8 +197,8 @@
 </template>
 
 <script setup>
-import { ref, computed } from "vue";
-import { useRouter } from "vue-router";
+import { ref, computed, watch } from "vue";
+import { useRouter, useRoute } from "vue-router";
 import { setLocale, getCurrentLocale } from "@/i18n";
 import { useOhdaAuthStore } from "../stores/useOhdaAuthStore";
 import { useOhdaNotificationStore } from "../stores/useOhdaNotificationStore";
@@ -153,6 +207,7 @@ import { useI18n } from "vue-i18n";
 import PageHelpDrawer from "../components/PageHelpDrawer.vue";
 
 const router = useRouter();
+const route = useRoute();
 const authStore = useOhdaAuthStore();
 const notifStore = useOhdaNotificationStore();
 const requestsStore = useOhdaRequestsStore();
@@ -161,6 +216,24 @@ const { t } = useI18n();
 const sidebarOpen = ref(false);
 const showNotifications = ref(false);
 const showPageHelp = ref(false);
+
+const openGroups = ref({
+  general: true,
+  inventory: true,
+  requests: true,
+  entities: true,
+  security: true,
+  branches: true,
+  other: true
+});
+
+function toggleGroup(key) {
+  openGroups.value[key] = !isGroupOpen(key);
+}
+
+function isGroupOpen(key) {
+  return openGroups.value[key] !== false;
+}
 
 const currentLocale = computed(() => getCurrentLocale());
 
@@ -179,12 +252,15 @@ const pageMeta = {
   "/ohda/product-states": { labelKey: "ohda.nav.productStates", icon: "Activity" },
   "/ohda/approval-config": { labelKey: "ohda.nav.approvalConfig", icon: "Settings" },
   "/ohda/notifications": { labelKey: "ohda.nav.notifications", icon: "Bell" },
-  "/ohda/compass": { labelKey: "ohda.nav.compass", icon: "Compass" }
+  "/ohda/compass": { labelKey: "ohda.nav.compass", icon: "Compass" },
+  "/ohda/branches": { labelKey: "ohda.nav.branches", icon: "Building2" },
+  "/ohda/branches-dashboard": { labelKey: "ohda.nav.branchesDashboard", icon: "Activity" }
 };
 
 const navItems = computed(() => {
   if (!authStore.allowedPaths) return [];
   return authStore.allowedPaths
+    .filter(path => authStore.isRouteAllowed(path))
     .filter(path => !path.toLowerCase().includes("order") && path !== "/ohda/notifications")
     .map(path => {
       const meta = pageMeta[path];
@@ -226,6 +302,106 @@ const navItems = computed(() => {
     });
 });
 
+const groupDefinitions = [
+  {
+    key: "general",
+    labelKey: "ohda.groups.general",
+    icon: "LayoutDashboard",
+    paths: ["/ohda/dashboard"]
+  },
+  {
+    key: "inventory",
+    labelKey: "ohda.groups.inventory",
+    icon: "Boxes",
+    paths: [
+      "/ohda/products",
+      "/ohda/inventory",
+      "/ohda/warehouse-bins",
+      "/ohda/categories",
+      "/ohda/scan"
+    ]
+  },
+  {
+    key: "requests",
+    labelKey: "ohda.groups.requests",
+    icon: "ScrollText",
+    paths: [
+      "/ohda/exit-requests",
+      "/ohda/entry-requests"
+    ]
+  },
+  {
+    key: "entities",
+    labelKey: "ohda.groups.entities",
+    icon: "Building2",
+    paths: [
+      "/ohda/departments",
+      "/ohda/suppliers"
+    ]
+  },
+  {
+    key: "security",
+    labelKey: "ohda.groups.security",
+    icon: "Shield",
+    paths: [
+      "/ohda/users",
+      "/ohda/approval-config",
+      "/ohda/product-states",
+      "/ohda/compass"
+    ]
+  },
+  {
+    key: "branches",
+    labelKey: "ohda.groups.branches",
+    icon: "Building",
+    paths: [
+      "/ohda/branches-dashboard",
+      "/ohda/branches"
+    ]
+  }
+];
+
+const groupedNav = computed(() => {
+  const items = navItems.value;
+  if (!items.length) return [];
+
+  const itemMap = new Map(items.map(it => [it.path.toLowerCase(), it]));
+  const usedPaths = new Set();
+  const groups = [];
+
+  for (const def of groupDefinitions) {
+    const groupItems = [];
+    for (const p of def.paths) {
+      const it = itemMap.get(p.toLowerCase());
+      if (it && authStore.isRouteAllowed(it.path)) {
+        groupItems.push(it);
+        usedPaths.add(p.toLowerCase());
+      }
+    }
+    if (groupItems.length > 0) {
+      groups.push({
+        key: def.key,
+        title: t(def.labelKey),
+        icon: def.icon,
+        items: groupItems
+      });
+    }
+  }
+
+  // Any other items not in the explicit categories
+  const otherItems = items.filter(it => !usedPaths.has(it.path.toLowerCase()));
+  if (otherItems.length > 0) {
+    groups.push({
+      key: "other",
+      title: currentLocale.value === "ar" ? "أخرى" : "Other",
+      icon: "Folder",
+      items: otherItems
+    });
+  }
+
+  return groups;
+});
+
 function toggleLanguage() {
   const target = currentLocale.value === "ar" ? "en" : "ar";
   setLocale(target);
@@ -235,6 +411,20 @@ function logout() {
   authStore.logout();
   router.push("/ohda/login");
 }
+
+// Auto expand active group on route change
+watch(
+  () => route.path,
+  (currentPath) => {
+    if (!currentPath) return;
+    for (const group of groupedNav.value) {
+      if (group.items.some(it => it.path.toLowerCase() === currentPath.toLowerCase())) {
+        openGroups.value[group.key] = true;
+      }
+    }
+  },
+  { immediate: true }
+);
 
 onMounted(async () => {
   await Promise.all([

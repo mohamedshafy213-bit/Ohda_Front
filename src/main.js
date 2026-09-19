@@ -100,4 +100,15 @@ app.use(PrimeVue, {
 });
 app.use(ToastService);
 app.use(i18n);
+
+// Global Error Handler to prevent app unmounting on component or render errors
+app.config.errorHandler = (err, instance, info) => {
+    console.error("[Ohda Global Error Handler]:", err, info);
+};
+
+// Global unhandled promise rejection listener
+window.addEventListener("unhandledrejection", (event) => {
+    console.error("[Ohda Unhandled Rejection]:", event.reason);
+});
+
 app.mount("#app");

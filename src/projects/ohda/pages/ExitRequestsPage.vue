@@ -39,7 +39,7 @@
 
     <!-- Exit Requests Volt DataTable -->
     <div class="bg-brand-white border border-brand-gray/10 rounded-2xl overflow-hidden shadow-sm">
-      <DataTable :value="filteredRequests" class="w-full text-xs">
+      <DataTable :value="filteredRequests" :dataKey="'id'" paginator :rows="10" :rowsPerPageOptions="[5, 10, 20, 50]" class="w-full text-xs">
         <Column field="id" :header="$t('ohda.exitRequests.requestID')">
           <template #body="{ data }">
             <span class="font-mono text-brand-accent font-bold cursor-pointer hover:underline" @click="viewDetails(data)">
@@ -197,7 +197,7 @@
             <SecondaryButton type="button" @click="showCreateModal = false">
               {{ $t('ohda.common.cancel') }}
             </SecondaryButton>
-            <Button @click="handleCreateExit" class="!bg-brand-accent hover:!bg-brand-accent/90 !text-brand-dark !font-bold">
+            <Button @click="handleCreateExit" :disabled="isSubmitting" :loading="isSubmitting" class="!bg-brand-accent hover:!bg-brand-accent/90 !text-brand-dark !font-bold">
               {{ $t('ohda.exitRequests.createRequest') }}
             </Button>
           </div>
@@ -418,20 +418,20 @@
 
             <!-- Manager Stage Approvals -->
             <template v-if="selectedRequest.status === 1 && canApproveAsManager">
-              <Button @click="submitApprovalDecisions(true)" class="!bg-brand-accent hover:!bg-brand-accent/90 !text-brand-dark !font-bold">
+              <Button @click="submitApprovalDecisions(true)" :disabled="isSubmitting" :loading="isSubmitting" class="!bg-brand-accent hover:!bg-brand-accent/90 !text-brand-dark !font-bold">
                 تقديم قرارات المدير
               </Button>
-              <Button @click="rejectEntireRequest" class="!bg-red-500 hover:!bg-red-600 !text-white !font-bold">
+              <Button @click="rejectEntireRequest" :disabled="isSubmitting" :loading="isSubmitting" class="!bg-red-500 hover:!bg-red-600 !text-white !font-bold">
                 رفض كلي للطلب
               </Button>
             </template>
 
             <!-- Supervisor Stage Approvals -->
             <template v-if="selectedRequest.status === 3 && canApproveAsSupervisor">
-              <Button @click="submitApprovalDecisions(false)" class="!bg-brand-accent hover:!bg-brand-accent/90 !text-brand-dark !font-bold">
+              <Button @click="submitApprovalDecisions(false)" :disabled="isSubmitting" :loading="isSubmitting" class="!bg-brand-accent hover:!bg-brand-accent/90 !text-brand-dark !font-bold">
                 توثيق واعتماد المشرف النهائي
               </Button>
-              <Button @click="rejectEntireRequest" class="!bg-red-500 hover:!bg-red-600 !text-white !font-bold">
+              <Button @click="rejectEntireRequest" :disabled="isSubmitting" :loading="isSubmitting" class="!bg-red-500 hover:!bg-red-600 !text-white !font-bold">
                 رفض كلي للطلب
               </Button>
             </template>
@@ -449,7 +449,6 @@ import { useOhdaInventoryStore } from "../stores/useOhdaInventoryStore";
 import { useOhdaRequestsStore } from "../stores/useOhdaRequestsStore";
 import { useOhdaApprovalConfigStore } from "../stores/useOhdaApprovalConfigStore";
 import { apiGet, apiPost } from "@/utilities/fetchApi";
-import { Html5Qrcode } from "html5-qrcode";
 
 const authStore = useOhdaAuthStore();
 const inventoryStore = useOhdaInventoryStore();
@@ -458,6 +457,7 @@ const approvalConfigStore = useOhdaApprovalConfigStore();
 
 const availableSerials = ref([]);
 const loadingSerials = ref(false);
+const isSubmitting = ref(false);
 const departments = ref([]);
 const allInStockSerials = ref([]);
 
@@ -480,14 +480,18 @@ onMounted(async () => {
   ]);
 
   pollInterval = setInterval(async () => {
-    await requestsStore.fetchExitRequests();
+    // Only refresh when tab is visible and do it silently to avoid UI flicker
+    if (document.visibilityState === "visible") {
+      await requestsStore.fetchExitRequests({ silent: true });
+    }
   }, 10000);
 });
 
-onUnmounted(() => {
+onUnmounted(async () => {
   if (pollInterval) {
     clearInterval(pollInterval);
   }
+  await stopScanner();
 });
 
 async function loadDepartments() {
@@ -502,22 +506,35 @@ async function loadDepartments() {
 async function loadAllInStockSerials() {
   allInStockSerials.value = [];
   try {
-    const promises = inventoryStore.products.map(async (prod) => {
-      try {
-        const res = await apiGet(`/api/ProductItem/product/${prod.id}/instock`);
-        if (res?.data?.isDone && res.data.objects) {
-          res.data.objects.forEach(item => {
-            allInStockSerials.value.push({
-              id: item.id,
-              productId: prod.id,
-              serialNumber: item.serialNumber,
-              qrCode: item.qrCode
+    // Optimized: Single endpoint call instead of N+1 requests
+    const res = await apiGet('/api/ProductItem/instock');
+    const items = res?.data?.objects || (res?.data?.singleObject ? [res.data.singleObject] : []);
+    if (res?.data?.isDone && items.length > 0) {
+      allInStockSerials.value = items.map(item => ({
+        id: item.id,
+        productId: item.productId,
+        serialNumber: item.serialNumber,
+        qrCode: item.qrCode
+      }));
+    } else {
+      // Fallback in case endpoint is not populated yet
+      const fallbackPromises = inventoryStore.products.slice(0, 10).map(async (prod) => {
+        try {
+          const r = await apiGet(`/api/ProductItem/product/${prod.id}/instock`);
+          if (r?.data?.isDone && r.data.objects) {
+            r.data.objects.forEach(item => {
+              allInStockSerials.value.push({
+                id: item.id,
+                productId: prod.id,
+                serialNumber: item.serialNumber,
+                qrCode: item.qrCode
+              });
             });
-          });
-        }
-      } catch (e) {}
-    });
-    await Promise.all(promises);
+          }
+        } catch (e) {}
+      });
+      await Promise.all(fallbackPromises);
+    }
   } catch (err) {
     console.warn("Serials bulk load failed", err);
   }
@@ -649,6 +666,7 @@ const startScanner = async () => {
   scanFeedback.value = "جاري تشغيل الكاميرا...";
   setTimeout(async () => {
     try {
+      const { Html5Qrcode } = await import("html5-qrcode");
       html5Qrcode.value = new Html5Qrcode("exit-qr-reader");
       await html5Qrcode.value.start(
         { facingMode: "environment" },
@@ -878,6 +896,7 @@ function removeRequestItem(index) {
 }
 
 async function handleCreateExit() {
+  if (isSubmitting.value) return;
   if (createForm.value.items.length === 0) {
     alert("يرجى إضافة صنف واحد على الأقل للمتابعة.");
     return;
@@ -887,14 +906,19 @@ async function handleCreateExit() {
     return;
   }
 
-  const result = await requestsStore.createExitRequest(createForm.value, authStore.user);
-  if (result.success) {
-    showCreateModal.value = false;
-    await stopScanner();
-    requestsStore.fetchExitRequests();
-    loadAllInStockSerials();
-  } else {
-    alert(result.message || "فشل إنشاء طلب الصرف");
+  isSubmitting.value = true;
+  try {
+    const result = await requestsStore.createExitRequest(createForm.value, authStore.user);
+    if (result.success) {
+      showCreateModal.value = false;
+      await stopScanner();
+      await requestsStore.fetchExitRequests();
+      await loadAllInStockSerials();
+    } else {
+      alert(result.message || "فشل إنشاء طلب الصرف");
+    }
+  } finally {
+    isSubmitting.value = false;
   }
 }
 
@@ -942,6 +966,7 @@ function getItemDecision(itemId) {
 
 // Submit decisions (Approve/Reject individual line items)
 async function submitApprovalDecisions(isManager) {
+  if (isSubmitting.value) return;
   const itemsPayload = Object.keys(itemDecisions.value).map(key => ({
     itemId: parseInt(key),
     status: itemDecisions.value[key]
@@ -958,36 +983,47 @@ async function submitApprovalDecisions(isManager) {
     items: itemsPayload
   };
 
-  let result;
-  if (isManager) {
-    result = await requestsStore.managerApproveExit(selectedRequest.value.id, authStore.user, payload);
-  } else {
-    result = await requestsStore.supervisorApproveExit(selectedRequest.value.id, authStore.user, payload);
-  }
+  isSubmitting.value = true;
+  try {
+    let result;
+    if (isManager) {
+      result = await requestsStore.managerApproveExit(selectedRequest.value.id, authStore.user, payload);
+    } else {
+      result = await requestsStore.supervisorApproveExit(selectedRequest.value.id, authStore.user, payload);
+    }
 
-  if (result.success) {
-    showDetailsModal.value = false;
-    requestsStore.fetchExitRequests();
-    inventoryStore.fetchProducts();
-    loadAllInStockSerials();
-  } else {
-    alert(result.message || "فشل تقديم قرارات الاعتماد.");
+    if (result.success) {
+      showDetailsModal.value = false;
+      await requestsStore.fetchExitRequests();
+      await inventoryStore.fetchProducts();
+      await loadAllInStockSerials();
+    } else {
+      alert(result.message || "فشل تقديم قرارات الاعتماد.");
+    }
+  } finally {
+    isSubmitting.value = false;
   }
 }
 
 async function rejectEntireRequest() {
+  if (isSubmitting.value) return;
   if (!rejectionReason.value) {
     alert("يرجى إدخال سبب الرفض أولاً.");
     return;
   }
-  const result = await requestsStore.rejectExitRequest(selectedRequest.value.id, rejectionReason.value, authStore.user);
-  if (result.success) {
-    showDetailsModal.value = false;
-    requestsStore.fetchExitRequests();
-    inventoryStore.fetchProducts();
-    loadAllInStockSerials();
-  } else {
-    alert(result.message || "فشل رفض الطلب");
+  isSubmitting.value = true;
+  try {
+    const result = await requestsStore.rejectExitRequest(selectedRequest.value.id, rejectionReason.value, authStore.user);
+    if (result.success) {
+      showDetailsModal.value = false;
+      await requestsStore.fetchExitRequests();
+      await inventoryStore.fetchProducts();
+      await loadAllInStockSerials();
+    } else {
+      alert(result.message || "فشل رفض الطلب");
+    }
+  } finally {
+    isSubmitting.value = false;
   }
 }
 

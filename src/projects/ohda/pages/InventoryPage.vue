@@ -33,7 +33,7 @@
 
     <!-- Inventory Stock Volt DataTable (No raw tr/td) -->
     <div class="bg-brand-white border border-brand-gray/10 rounded-2xl overflow-hidden shadow-sm">
-      <DataTable :value="inventoryStore.products" class="w-full text-xs">
+      <DataTable :value="inventoryStore.products" paginator :rows="10" :rowsPerPageOptions="[5, 10, 20, 50]" class="w-full text-xs">
         <Column field="name" :header="$t('ohda.products.name')">
           <template #body="{ data }">
             <span class="font-semibold text-brand-dark">{{ data.name }}</span>
@@ -62,7 +62,7 @@
 
         <Column field="minThreshold" :header="$t('ohda.products.minThreshold')">
           <template #body="{ data }">
-            <span class="text-brand-gray font-mono">{{ data.minThreshold }}</span>
+            <span class="text-brand-gray font-mono font-medium">{{ getMinThreshold(data) }}</span>
           </template>
         </Column>
 
@@ -74,11 +74,11 @@
                 <div
                   class="h-2 rounded-full transition-all duration-500"
                   :class="getBarColor(data)"
-                  :style="{ width: `${Math.min(100, (data.quantity / (data.minThreshold * 3)) * 100)}%` }"
+                  :style="{ width: `${getBarWidth(data)}%` }"
                 ></div>
               </div>
               <span class="text-[10px] text-brand-gray font-mono block">
-                {{ Math.round((data.quantity / (data.minThreshold * 3)) * 100) }}% من الأمان
+                {{ getSafePercentage(data) }}% من الأمان
               </span>
             </div>
           </template>
@@ -190,27 +190,54 @@ const uploadPdfFile = async (file) => {
   }
 };
 
+function getMinThreshold(product) {
+  if (!product) return 5;
+  const val = Number(product.minThreshold);
+  return (!isNaN(val) && val > 0) ? val : 5;
+}
+
+function getSafePercentage(product) {
+  if (!product) return 0;
+  const min = getMinThreshold(product);
+  const qty = Number(product.quantity) || 0;
+  const target = min * 3;
+  if (!target || target <= 0) return 100;
+  return Math.max(0, Math.round((qty / target) * 100));
+}
+
+function getBarWidth(product) {
+  return Math.min(100, Math.max(0, getSafePercentage(product)));
+}
+
 function getStockColorClass(product) {
-  if (product.quantity === 0) return "text-red-650";
-  if (product.quantity <= product.minThreshold) return "text-amber-600";
+  const qty = Number(product?.quantity) || 0;
+  const min = getMinThreshold(product);
+  if (qty === 0) return "text-red-600";
+  if (qty <= min) return "text-amber-600";
   return "text-brand-accent";
 }
 
 function getBarColor(product) {
-  if (product.quantity === 0) return "bg-red-500";
-  if (product.quantity <= product.minThreshold) return "bg-amber-500";
+  const qty = Number(product?.quantity) || 0;
+  const min = getMinThreshold(product);
+  if (qty === 0) return "bg-red-500";
+  if (qty <= min) return "bg-amber-500";
   return "bg-brand-accent";
 }
 
 function getStatusBadgeClass(product) {
-  if (product.quantity === 0) return "bg-red-500/10 text-red-700 border-red-500/20";
-  if (product.quantity <= product.minThreshold) return "bg-amber-500/10 text-amber-700 border-amber-500/20";
+  const qty = Number(product?.quantity) || 0;
+  const min = getMinThreshold(product);
+  if (qty === 0) return "bg-red-500/10 text-red-700 border-red-500/20";
+  if (qty <= min) return "bg-amber-500/10 text-amber-700 border-amber-500/20";
   return "bg-brand-soft text-brand-accent border-brand-accent/25";
 }
 
 function getStatusText(product) {
-  if (product.quantity === 0) return "نفذت الكمية بالكامل";
-  if (product.quantity <= product.minThreshold) return "منخفض - ينصح بالتوريد";
+  const qty = Number(product?.quantity) || 0;
+  const min = getMinThreshold(product);
+  if (qty === 0) return "نفذت الكمية بالكامل";
+  if (qty <= min) return "منخفض - ينصح بالتوريد";
   return "متوفر بكمية كافية";
 }
 </script>

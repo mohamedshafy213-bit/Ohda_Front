@@ -85,6 +85,16 @@ export default [
         path: "compass",
         name: "OhdaCompass",
         component: () => import("./pages/CompassPage.vue")
+      },
+      {
+        path: "branches",
+        name: "OhdaBranches",
+        component: () => import("./pages/BranchesPage.vue")
+      },
+      {
+        path: "branches-dashboard",
+        name: "OhdaBranchesDashboard",
+        component: () => import("./pages/BranchesDashboardPage.vue")
       }
     ]
   }

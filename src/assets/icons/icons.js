@@ -255,6 +255,7 @@ export const importIcons = (app) => {
     app.component("OctagonX", OctagonX);
     app.component("HousePlus", HousePlus);
     app.component("Building2", Building2);
+    app.component("Activity", Activity);
     app.component("BriefcaseBusiness", BriefcaseBusiness);
     app.component("ScrollText", ScrollText);
     app.component("ClipboardCheck", ClipboardCheck);
@@ -381,4 +382,6 @@ export const importIcons = (app) => {
     app.component("Boxes", Boxes);
     app.component("QrCode", QrCode);
     app.component("Truck", Truck);
+    app.component("Building2", Building2);
+    app.component("Activity", Activity);
 };

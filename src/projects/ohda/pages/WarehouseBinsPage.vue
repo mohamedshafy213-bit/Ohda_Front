@@ -5,10 +5,10 @@
       <div>
         <h2 class="text-xl font-bold text-brand-dark dark:text-white flex items-center gap-2">
           <Layers class="w-6 h-6 text-brand-accent" />
-          {{ $t('ohda.warehouseBins.title') || 'أماكن وأرفف التخزين (Warehouse Bins)' }}
+          {{ $t('ohda.warehouseBins.title') }}
         </h2>
         <p class="text-xs text-brand-gray mt-1">
-          {{ $t('ohda.warehouseBins.subtitle') || 'تنظيم الأرفف والخانات بالمستودع لتسهيل التوريد والسحب وتحديد مواقع الأجهزة بدقة' }}
+          {{ $t('ohda.warehouseBins.subtitle') }}
         </p>
       </div>
 
@@ -18,7 +18,7 @@
           class="!bg-brand-accent hover:!bg-brand-accent/90 !text-brand-dark !font-bold flex items-center gap-2 !px-4 !py-2 !rounded-xl !shadow-sm cursor-pointer"
         >
           <Plus class="w-4 h-4" />
-          <span>{{ $t('ohda.warehouseBins.addBin') || 'إضافة رف جديد' }}</span>
+          <span>{{ $t('ohda.warehouseBins.addBin') }}</span>
         </Button>
       </div>
     </div>

@@ -19,6 +19,8 @@ export default {
         approvalConfig: "إعدادات الموافقات",
         notifications: "الإشعارات",
         compass: "بوصلة العهد والأجهزة",
+        branches: "إدارة الفروع",
+        branchesDashboard: "مؤشرات الفروع",
         logout: "تسجيل الخروج"
       },
       common: {
@@ -191,7 +193,12 @@ export default {
         permissionsModal: "إدارة صلاحيات الوصول للصفحات",
         grantPage: "منح صلاحية الصفحة",
         revokePage: "إلغاء الصلاحية",
-        allowedPagesList: "الصفحات المتاحة للمستخدم"
+        allowedPagesList: "الصفحات المتاحة للمستخدم",
+        branch: "الفرع",
+        filterByBranch: "تصفية حسب الفرع",
+        allBranches: "جميع الفروع (الكل)",
+        branchScope: "نطاق إدارة الفرع",
+        assignedBranch: "الفرع التابع له المستخدم"
       },
       auth: {
         loginTitle: "تسجيل الدخول - نظام العهدة",
@@ -202,6 +209,75 @@ export default {
         quickLogin: "تسجيل دخول سريع بحسابات متوفرة:",
         welcome: "مرحباً بك",
         loggedAs: "تم الدخول بصلاحية"
+      },
+      warehouseBins: {
+        title: "أماكن وأرفف التخزين",
+        subtitle: "تنظيم الأرفف والخانات بالمستودع لتسهيل التوريد والسحب وتحديد مواقع الأجهزة بدقة",
+        addBin: "إضافة رف جديد"
+      },
+      branches: {
+        title: "إدارة الفروع والمستأجرين",
+        subTitle: "لوحة تحكم مدير المنصة (SuperAdmin) لإدارة الفروع وتخصيص حدود المستخدمين والأصناف",
+        createBranch: "إضافة فرع جديد",
+        editBranch: "تعديل بيانات الفرع",
+        code: "رمز الفرع",
+        name: "اسم الفرع",
+        contactName: "مسؤول الاتصال",
+        contactEmail: "البريد الإلكتروني",
+        contactPhone: "رقم الجوال",
+        industryTemplate: "نمط النشاط",
+        currency: "العملة",
+        timezone: "المنطقة الزمنية",
+        maxUsers: "الحد الأقصى للمستخدمين",
+        maxProducts: "الحد الأقصى للأصناف",
+        maxStorageMB: "مساحة التخزين (MB)",
+        quotas: "حدود الاستهلاك والسعة",
+        quotaUserProgress: "استهلاك سعة المستخدمين",
+        quotaProductProgress: "استهلاك سعة الأصناف",
+        status: "حالة الفرع",
+        active: "نشط",
+        suspended: "معلق",
+        activate: "تفعيل الفرع",
+        suspend: "تعليق الفرع",
+        confirmToggleStatus: "هل أنت متأكد من تغيير حالة هذا الفرع؟",
+        adminAccountTitle: "حساب مدير الفرع الأولي",
+        adminUsername: "اسم مستخدم المدير",
+        adminEmail: "بريد المدير",
+        adminPersonName: "الاسم الكامل للمدير",
+        adminMilitaryNumber: "الرقم التعريفي / العسكري",
+        tempPasswordNotice: "تم إنشاء الفرع وحساب مديره بنجاح! كلمة المرور المؤقتة:",
+        totalBranches: "إجمالي الفروع",
+        activeBranches: "الفروع النشطة",
+        suspendedBranches: "الفروع المعلقة",
+        totalTenantUsers: "إجمالي مستخدمي الفروع"
+      },
+      branchesDashboard: {
+        title: "لوحة مؤشرات الفروع والمنصة",
+        subTitle: "متابعة أداء واستهلاك السعة لجميع الفروع من منظور مدير المنصة العام",
+        summaryCards: "نظرة عامة على المنصة",
+        branchComparison: "مقارنة استهلاك الفروع للحدود والسعة",
+        userQuotaTitle: "سعة المستخدمين المخصصة من SuperAdmin",
+        productQuotaTitle: "سعة الأصناف المخصصة من SuperAdmin",
+        quotaUsageWarning: "تنبيه: اقتراب استهلاك الحد المسموح",
+        quickInspect: "فحص بيانات الفرع",
+        noBranches: "لا توجد فروع مسجلة حالياً",
+        healthy: "سليم",
+        warning: "قارب النفاد",
+        critical: "تجاوز الحد"
+      },
+      quotas: {
+        usersLimitBanner: "سعة المستخدمين المسموح بها لهذا الفرع: {current} من {max} مستخدم ({remaining} متبقي) — محدد بواسطة SuperAdmin",
+        usersLimitReached: "تم استهلاك كامل سعة المستخدمين المحددة لهذا الفرع من قِبل مدير المنصة (SuperAdmin). لا يمكن إضافة مستخدمين جدد قبل زيادة الحد.",
+        productsLimitBanner: "سعة الأصناف المسموح بها لهذا الفرع: {current} من {max} صنف ({remaining} متبقي) — محدد بواسطة SuperAdmin",
+        productsLimitReached: "تم استهلاك كامل سعة الأصناف المحددة لهذا الفرع من قِبل مدير المنصة (SuperAdmin). لا يمكن إضافة أصناف جديدة قبل زيادة الحد."
+      },
+      groups: {
+        general: "الرئيسية",
+        inventory: "المستودع والمخزون",
+        requests: "طلبات وحركة العهد",
+        entities: "الأقسام والموردين",
+        security: "الأمان وإدارة النظام",
+        branches: "إدارة الفروع والمنصة"
       }
     }
   },
@@ -225,6 +301,8 @@ export default {
         approvalConfig: "Acceptance Settings",
         notifications: "Notifications",
         compass: "Compass Log",
+        branches: "Branches Management",
+        branchesDashboard: "Branches Dashboard",
         logout: "Logout"
       },
       common: {
@@ -397,7 +475,12 @@ export default {
         permissionsModal: "Page Access Control",
         grantPage: "Grant Page Access",
         revokePage: "Revoke Access",
-        allowedPagesList: "Allowed Pages for User"
+        allowedPagesList: "Allowed Pages for User",
+        branch: "Branch",
+        filterByBranch: "Filter by Branch",
+        allBranches: "All Branches",
+        branchScope: "Branch Management Scope",
+        assignedBranch: "Assigned User Branch"
       },
       auth: {
         loginTitle: "Login - Ohda System",
@@ -408,6 +491,75 @@ export default {
         quickLogin: "Quick Login Seed Accounts:",
         welcome: "Welcome",
         loggedAs: "Logged in as"
+      },
+      warehouseBins: {
+        title: "Warehouse Storage Bins",
+        subtitle: "Organize warehouse shelves and bins for easier storage, dispatch, and precise tracking",
+        addBin: "Add New Bin"
+      },
+      branches: {
+        title: "Branches & Tenants Management",
+        subTitle: "SuperAdmin platform control to manage branches and allocate user and product quotas",
+        createBranch: "Add New Branch",
+        editBranch: "Edit Branch Details",
+        code: "Branch Code",
+        name: "Branch Name",
+        contactName: "Contact Person",
+        contactEmail: "Contact Email",
+        contactPhone: "Contact Phone",
+        industryTemplate: "Business Template",
+        currency: "Currency",
+        timezone: "Timezone",
+        maxUsers: "Max Users Quota",
+        maxProducts: "Max Products Quota",
+        maxStorageMB: "Storage Limit (MB)",
+        quotas: "Capacity & Limits",
+        quotaUserProgress: "User Quota Usage",
+        quotaProductProgress: "Product Quota Usage",
+        status: "Branch Status",
+        active: "Active",
+        suspended: "Suspended",
+        activate: "Activate Branch",
+        suspend: "Suspend Branch",
+        confirmToggleStatus: "Are you sure you want to change the status of this branch?",
+        adminAccountTitle: "Initial Branch Admin Account",
+        adminUsername: "Admin Username",
+        adminEmail: "Admin Email",
+        adminPersonName: "Admin Full Name",
+        adminMilitaryNumber: "ID / Military Number",
+        tempPasswordNotice: "Branch and initial admin created successfully! Temporary Password:",
+        totalBranches: "Total Branches",
+        activeBranches: "Active Branches",
+        suspendedBranches: "Suspended Branches",
+        totalTenantUsers: "Total Branch Users"
+      },
+      branchesDashboard: {
+        title: "Branches & Platform Analytics",
+        subTitle: "Monitor system performance and capacity consumption across all branches as SuperAdmin",
+        summaryCards: "Platform Overview",
+        branchComparison: "Branch Quota & Resource Usage",
+        userQuotaTitle: "User Capacity Allocated by SuperAdmin",
+        productQuotaTitle: "Product Capacity Allocated by SuperAdmin",
+        quotaUsageWarning: "Warning: Approaching allowed capacity limit",
+        quickInspect: "Inspect Branch",
+        noBranches: "No branches registered yet",
+        healthy: "Healthy",
+        warning: "Near Capacity",
+        critical: "Exceeded"
+      },
+      quotas: {
+        usersLimitBanner: "Allocated user capacity for this branch: {current} of {max} users ({remaining} remaining) — Set by SuperAdmin",
+        usersLimitReached: "User capacity limit for this branch has been reached. Contact SuperAdmin to increase the limit.",
+        productsLimitBanner: "Allocated product capacity for this branch: {current} of {max} items ({remaining} remaining) — Set by SuperAdmin",
+        productsLimitReached: "Product capacity limit for this branch has been reached. Contact SuperAdmin to increase the limit."
+      },
+      groups: {
+        general: "Overview",
+        inventory: "Inventory & Storage",
+        requests: "Requests & Movements",
+        entities: "Departments & Suppliers",
+        security: "Security & Management",
+        branches: "Branches & Platform"
       }
     }
   }

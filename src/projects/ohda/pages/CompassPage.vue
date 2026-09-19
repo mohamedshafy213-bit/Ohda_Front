@@ -84,7 +84,7 @@
 
     <!-- Results Table -->
     <div class="bg-brand-white border border-brand-gray/10 rounded-2xl overflow-hidden shadow-sm">
-      <DataTable :value="compassLogs" class="w-full text-xs" :loading="loading">
+      <DataTable :value="compassLogs" paginator :rows="10" :rowsPerPageOptions="[5, 10, 20, 50]" class="w-full text-xs" :loading="loading">
         <Column field="serialNumber" header="الرقم التسلسلي (S/N)">
           <template #body="{ data }">
             <span class="font-mono text-brand-accent font-bold select-all text-sm">{{ data.serialNumber }}</span>

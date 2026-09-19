@@ -80,6 +80,27 @@ export default defineConfig(({ mode }) => {
         },
         build: {
             sourcemap: isDev,
+            chunkSizeWarningLimit: 600,
+            rollupOptions: {
+                output: {
+                    manualChunks(id) {
+                        if (id.includes("node_modules")) {
+                            if (id.includes("primevue")) {
+                                return "vendor-primevue";
+                            }
+                            if (id.includes("lucide-vue-next")) {
+                                return "vendor-icons";
+                            }
+                            if (id.includes("vue") || id.includes("pinia") || id.includes("vue-router") || id.includes("vue-i18n")) {
+                                return "vendor-vue";
+                            }
+                            if (id.includes("axios") || id.includes("yup") || id.includes("vee-validate")) {
+                                return "vendor-utils";
+                            }
+                        }
+                    }
+                }
+            }
         },
         resolve: {
             alias: {

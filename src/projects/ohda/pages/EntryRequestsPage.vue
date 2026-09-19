@@ -39,7 +39,7 @@
 
     <!-- Entry Requests Volt DataTable -->
     <div class="bg-brand-white border border-brand-gray/10 rounded-2xl overflow-hidden shadow-sm">
-      <DataTable :value="filteredRequests" class="w-full text-xs">
+      <DataTable :value="filteredRequests" :dataKey="'id'" paginator :rows="10" :rowsPerPageOptions="[5, 10, 20, 50]" class="w-full text-xs">
         <Column field="id" :header="$t('ohda.exitRequests.requestID')">
           <template #body="{ data }">
             <span class="font-mono text-brand-accent font-bold cursor-pointer hover:underline" @click="viewDetails(data)">
@@ -290,7 +290,7 @@
             <SecondaryButton type="button" @click="showCreateModal = false">
               {{ $t('ohda.common.cancel') }}
             </SecondaryButton>
-            <Button @click="handleCreateEntry" class="!bg-brand-accent hover:!bg-brand-accent/90 !text-brand-dark !font-bold">
+            <Button @click="handleCreateEntry" :disabled="isSubmitting" :loading="isSubmitting" class="!bg-brand-accent hover:!bg-brand-accent/90 !text-brand-dark !font-bold">
               {{ $t('ohda.entryRequests.createRequest') }}
             </Button>
           </div>
@@ -510,20 +510,20 @@
 
             <!-- Manager Stage Approvals -->
             <template v-if="selectedRequest.status === 1 && canApproveAsManager">
-              <Button @click="submitApprovalDecisions(true)" class="!bg-brand-accent hover:!bg-brand-accent/90 !text-brand-dark !font-bold">
+              <Button @click="submitApprovalDecisions(true)" :disabled="isSubmitting" :loading="isSubmitting" class="!bg-brand-accent hover:!bg-brand-accent/90 !text-brand-dark !font-bold">
                 تقديم قرارات المدير
               </Button>
-              <Button @click="rejectEntireRequest" class="!bg-red-500 hover:!bg-red-600 !text-white !font-bold">
+              <Button @click="rejectEntireRequest" :disabled="isSubmitting" :loading="isSubmitting" class="!bg-red-500 hover:!bg-red-600 !text-white !font-bold">
                 رفض كلي للطلب
               </Button>
             </template>
 
             <!-- Supervisor Stage Approvals -->
             <template v-if="selectedRequest.status === 3 && canApproveAsSupervisor">
-              <Button @click="submitApprovalDecisions(false)" class="!bg-brand-accent hover:!bg-brand-accent/90 !text-brand-dark !font-bold">
+              <Button @click="submitApprovalDecisions(false)" :disabled="isSubmitting" :loading="isSubmitting" class="!bg-brand-accent hover:!bg-brand-accent/90 !text-brand-dark !font-bold">
                 توثيق واعتماد المشرف النهائي
               </Button>
-              <Button @click="rejectEntireRequest" class="!bg-red-500 hover:!bg-red-600 !text-white !font-bold">
+              <Button @click="rejectEntireRequest" :disabled="isSubmitting" :loading="isSubmitting" class="!bg-red-500 hover:!bg-red-600 !text-white !font-bold">
                 رفض كلي للطلب
               </Button>
             </template>
@@ -541,13 +541,13 @@ import { useOhdaInventoryStore } from "../stores/useOhdaInventoryStore";
 import { useOhdaRequestsStore } from "../stores/useOhdaRequestsStore";
 import { useOhdaApprovalConfigStore } from "../stores/useOhdaApprovalConfigStore";
 import { apiGet, apiPost } from "@/utilities/fetchApi";
-import { Html5Qrcode } from "html5-qrcode";
 
 const authStore = useOhdaAuthStore();
 const inventoryStore = useOhdaInventoryStore();
 const requestsStore = useOhdaRequestsStore();
 const approvalConfigStore = useOhdaApprovalConfigStore();
 
+const isSubmitting = ref(false);
 const departments = ref([]);
 const productStates = ref([]);
 const warehouseBins = ref([]);
@@ -572,14 +572,18 @@ onMounted(async () => {
   ]);
 
   pollInterval = setInterval(async () => {
-    await requestsStore.fetchEntryRequests();
+    // Only refresh when tab is visible and do it silently to avoid UI flicker
+    if (document.visibilityState === "visible") {
+      await requestsStore.fetchEntryRequests({ silent: true });
+    }
   }, 10000);
 });
 
-onUnmounted(() => {
+onUnmounted(async () => {
   if (pollInterval) {
     clearInterval(pollInterval);
   }
+  await stopScanner();
 });
 
 async function loadDepartments() {
@@ -725,6 +729,7 @@ const startScanner = async () => {
   scanFeedback.value = "جاري تشغيل الكاميرا...";
   setTimeout(async () => {
     try {
+      const { Html5Qrcode } = await import("html5-qrcode");
       html5Qrcode.value = new Html5Qrcode("entry-qr-reader");
       await html5Qrcode.value.start(
         { facingMode: "environment" },
@@ -840,6 +845,7 @@ function removeRequestItem(index) {
 }
 
 async function handleCreateEntry() {
+  if (isSubmitting.value) return;
   if (createForm.value.items.length === 0) {
     alert("يرجى إضافة صنف واحد على الأقل للمتابعة.");
     return;
@@ -860,15 +866,20 @@ async function handleCreateEntry() {
     }
   });
 
-  const result = await requestsStore.createEntryRequest(payload, authStore.user);
-  if (result.success) {
-    showCreateModal.value = false;
-    await stopScanner();
-    requestsStore.fetchEntryRequests();
-    selectedDeptSerials.value = [];
-    departmentItems.value = [];
-  } else {
-    alert(result.message || "فشل إنشاء طلب التوريد");
+  isSubmitting.value = true;
+  try {
+    const result = await requestsStore.createEntryRequest(payload, authStore.user);
+    if (result.success) {
+      showCreateModal.value = false;
+      await stopScanner();
+      await requestsStore.fetchEntryRequests();
+      selectedDeptSerials.value = [];
+      departmentItems.value = [];
+    } else {
+      alert(result.message || "فشل إنشاء طلب التوريد");
+    }
+  } finally {
+    isSubmitting.value = false;
   }
 }
 
@@ -1045,6 +1056,7 @@ function getItemDecision(itemId) {
 
 // Submit decisions (Approve/Reject individual line items)
 async function submitApprovalDecisions(isManager) {
+  if (isSubmitting.value) return;
   const itemsPayload = Object.keys(itemDecisions.value).map(key => ({
     itemId: parseInt(key),
     status: itemDecisions.value[key]
@@ -1060,34 +1072,45 @@ async function submitApprovalDecisions(isManager) {
     items: itemsPayload
   };
 
-  let result;
-  if (isManager) {
-    result = await requestsStore.managerApproveEntry(selectedRequest.value.id, authStore.user, payload);
-  } else {
-    result = await requestsStore.supervisorApproveEntry(selectedRequest.value.id, authStore.user, payload);
-  }
+  isSubmitting.value = true;
+  try {
+    let result;
+    if (isManager) {
+      result = await requestsStore.managerApproveEntry(selectedRequest.value.id, authStore.user, payload);
+    } else {
+      result = await requestsStore.supervisorApproveEntry(selectedRequest.value.id, authStore.user, payload);
+    }
 
-  if (result.success) {
-    showDetailsModal.value = false;
-    requestsStore.fetchEntryRequests();
-    inventoryStore.fetchProducts();
-  } else {
-    alert(result.message || "فشل تقديم قرارات الاعتماد.");
+    if (result.success) {
+      showDetailsModal.value = false;
+      await requestsStore.fetchEntryRequests();
+      await inventoryStore.fetchProducts();
+    } else {
+      alert(result.message || "فشل تقديم قرارات الاعتماد.");
+    }
+  } finally {
+    isSubmitting.value = false;
   }
 }
 
 async function rejectEntireRequest() {
+  if (isSubmitting.value) return;
   if (!rejectionReason.value) {
     alert("يرجى إدخال سبب الرفض أولاً.");
     return;
   }
-  const result = await requestsStore.rejectEntryRequest(selectedRequest.value.id, rejectionReason.value, authStore.user);
-  if (result.success) {
-    showDetailsModal.value = false;
-    requestsStore.fetchEntryRequests();
-    inventoryStore.fetchProducts();
-  } else {
-    alert(result.message || "فشل رفض الطلب");
+  isSubmitting.value = true;
+  try {
+    const result = await requestsStore.rejectEntryRequest(selectedRequest.value.id, rejectionReason.value, authStore.user);
+    if (result.success) {
+      showDetailsModal.value = false;
+      await requestsStore.fetchEntryRequests();
+      await inventoryStore.fetchProducts();
+    } else {
+      alert(result.message || "فشل رفض الطلب");
+    }
+  } finally {
+    isSubmitting.value = false;
   }
 }
 

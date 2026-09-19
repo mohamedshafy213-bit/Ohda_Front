@@ -42,12 +42,9 @@ api.interceptors.response.use(
                 //   // Handle resource not found
                 //   break;
                 case 401:
-                    console.error("Error 401: Unautherized", error.response);
-                    const ENABLE_TOKEN_CHECK = import.meta.env.VITE_ENABLE_TOKEN_CHECK === "true";
-                    if (ENABLE_TOKEN_CHECK) {
-                        location.replace("/archive/login");
-                    }
-                    // Handle unauthorized access, e.g., redirect to login, refresh token, etc.
+                    console.error("Error 401: Unauthorized", error.response);
+                    // Do not execute hard location.replace which wipes SPA state.
+                    // The router guard and user store manage auth redirection cleanly.
                     break;
                 case 404:
                     console.error("Error 404:  Not Found", error.response);

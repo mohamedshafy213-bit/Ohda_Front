@@ -32,11 +32,61 @@
 
         <Button
           @click="openAddModal"
-          class="!bg-brand-accent hover:!bg-brand-accent/90 !text-brand-dark !font-bold !rounded-xl !px-4 !py-2 !text-xs flex items-center gap-2 shadow-md shadow-brand-accent/10"
+          :disabled="branchStore.myQuota?.isProductQuotaExceeded && !authStore.isSuperAdmin"
+          class="!bg-brand-accent hover:!bg-brand-accent/90 !text-brand-dark !font-bold !rounded-xl !px-4 !py-2 !text-xs flex items-center gap-2 shadow-md shadow-brand-accent/10 transition-opacity"
+          :class="{ '!opacity-50 !cursor-not-allowed': branchStore.myQuota?.isProductQuotaExceeded && !authStore.isSuperAdmin }"
+          :title="branchStore.myQuota?.isProductQuotaExceeded && !authStore.isSuperAdmin ? $t('ohda.quotas.productsLimitReached') : $t('ohda.products.addProduct')"
         >
           <Plus class="w-4 h-4" />
           {{ $t('ohda.products.addProduct') }}
         </Button>
+      </div>
+    </div>
+
+    <!-- Branch Products Quota Consumption Banner -->
+    <div
+      v-if="branchStore.myQuota"
+      class="p-4 rounded-2xl border flex flex-col sm:flex-row sm:items-center justify-between gap-3 transition-all"
+      :class="branchStore.myQuota.isProductQuotaExceeded
+        ? 'bg-red-500/10 border-red-500/30 text-red-700 dark:text-red-300'
+        : (branchStore.myQuota.remainingProducts <= 20)
+          ? 'bg-amber-500/10 border-amber-500/30 text-amber-700 dark:text-amber-300'
+          : 'bg-brand-soft border-brand-accent/20 text-brand-dark'"
+    >
+      <div class="flex items-center gap-3">
+        <div
+          class="w-10 h-10 rounded-xl flex items-center justify-center shrink-0 border"
+          :class="branchStore.myQuota.isProductQuotaExceeded ? 'bg-red-500/20 border-red-500/30 text-red-500' : 'bg-emerald-500/20 border-emerald-500/30 text-emerald-600'"
+        >
+          <Package class="w-5 h-5" />
+        </div>
+        <div>
+          <div class="text-xs font-bold flex items-center gap-2">
+            <span>سعة أصناف الفرع ({{ branchStore.myQuota.branchName || 'الفرع الحالي' }}):</span>
+            <span class="font-mono font-bold">{{ branchStore.myQuota.currentProductCount }} / {{ branchStore.myQuota.maxProducts }} صنف</span>
+            <span class="text-[10px] font-semibold">({{ branchStore.myQuota.remainingProducts }} متبقي)</span>
+          </div>
+          <p class="text-[11px] opacity-80 mt-0.5">
+            {{ branchStore.myQuota.isProductQuotaExceeded
+              ? $t('ohda.quotas.productsLimitReached')
+              : 'الحد الأقصى للأصناف المسجلة في هذا الفرع محدد ومضبوط حصرياً من قِبل مدير المنصة العام (SuperAdmin).' }}
+          </p>
+        </div>
+      </div>
+
+      <!-- Quota Progress Bar -->
+      <div class="w-full sm:w-48 space-y-1">
+        <div class="flex items-center justify-between text-[10px] font-bold">
+          <span>الاستهلاك</span>
+          <span>{{ Math.round((branchStore.myQuota.currentProductCount / (branchStore.myQuota.maxProducts || 1)) * 100) }}%</span>
+        </div>
+        <div class="w-full bg-black/10 dark:bg-white/10 h-2 rounded-full overflow-hidden">
+          <div
+            class="h-full rounded-full transition-all"
+            :class="branchStore.myQuota.isProductQuotaExceeded ? 'bg-red-500' : (branchStore.myQuota.remainingProducts <= 20 ? 'bg-amber-500' : 'bg-emerald-500')"
+            :style="{ width: Math.min(100, Math.round((branchStore.myQuota.currentProductCount / (branchStore.myQuota.maxProducts || 1)) * 100)) + '%' }"
+          ></div>
+        </div>
       </div>
     </div>
 
@@ -47,7 +97,7 @@
 
     <!-- Products Volt DataTable (No raw tr/td) -->
     <div class="bg-brand-white border border-brand-gray/10 rounded-2xl overflow-hidden shadow-sm">
-      <DataTable :value="filteredProducts" class="w-full text-xs">
+      <DataTable :value="filteredProducts" paginator :rows="10" :rowsPerPageOptions="[5, 10, 20, 50]" class="w-full text-xs">
         <Column field="sku" :header="$t('ohda.products.sku')">
           <template #body="{ data }">
             <span class="font-mono text-brand-accent font-semibold">{{ data.sku }}</span>
@@ -302,9 +352,13 @@
 <script setup>
 import { ref, computed, onMounted } from "vue";
 import { useOhdaInventoryStore } from "../stores/useOhdaInventoryStore";
+import { useOhdaBranchStore } from "../stores/useOhdaBranchStore";
+import { useOhdaAuthStore } from "../stores/useOhdaAuthStore";
 import { apiGet } from "@/utilities/fetchApi";
 
 const inventoryStore = useOhdaInventoryStore();
+const branchStore = useOhdaBranchStore();
+const authStore = useOhdaAuthStore();
 const showSerialsModal = ref(false);
 const loadingSerials = ref(false);
 const productSerials = ref([]);
@@ -315,6 +369,7 @@ onMounted(async () => {
   inventoryStore.fetchProducts();
   inventoryStore.fetchCategories();
   inventoryStore.fetchSuppliers();
+  branchStore.fetchMyQuota();
   try {
     const res = await apiGet("/api/ProductState");
     productStates.value = res?.data?.objects || res?.data?.singleObject || [];

@@ -125,7 +125,7 @@
           </router-link>
         </div>
 
-        <DataTable :value="inventoryStore.lowStockProducts" class="w-full text-xs">
+        <DataTable :value="inventoryStore.lowStockProducts" paginator :rows="5" :rowsPerPageOptions="[5, 10, 20]" class="w-full text-xs">
           <Column field="name" :header="$t('ohda.dashboard.productName')">
             <template #body="{ data }">
               <span class="font-semibold text-brand-dark">{{ data.name }}</span>

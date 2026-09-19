@@ -9,7 +9,7 @@
     </div>
 
     <div class="bg-brand-white border border-brand-gray/10 rounded-2xl overflow-hidden shadow-sm">
-      <DataTable :value="states" class="w-full text-xs">
+      <DataTable :value="states" paginator :rows="10" :rowsPerPageOptions="[5, 10, 20, 50]" class="w-full text-xs">
         <Column field="name" header="الاسم">
           <template #body="{ data }">
             <div class="font-semibold">{{ data.name }}</div>

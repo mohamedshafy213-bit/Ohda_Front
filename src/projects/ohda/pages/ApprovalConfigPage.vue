@@ -16,7 +16,7 @@
 
     <!-- Approval Configs DataTable -->
     <div class="bg-brand-white border border-brand-gray/10 rounded-2xl overflow-hidden shadow-sm">
-      <DataTable :value="approvalConfigStore.configs" class="w-full text-xs">
+      <DataTable :value="approvalConfigStore.configs" paginator :rows="10" :rowsPerPageOptions="[5, 10, 20, 50]" class="w-full text-xs">
         <Column field="id" header="#">
           <template #body="{ data }">
             <span class="font-mono text-brand-gray">{{ data.id }}</span>

@@ -38,7 +38,11 @@ export const useOhdaInventoryStore = defineStore("ohdaInventory", {
         const res = await apiGet("/api/Product");
         const data = res?.data?.objects || res?.data?.singleObject;
         if (res?.data?.isDone && data) {
-          this.products = Array.isArray(data) ? data : [data];
+          const raw = Array.isArray(data) ? data : [data];
+          this.products = raw.map(p => ({
+            ...p,
+            minThreshold: (p.minThreshold != null && p.minThreshold !== "") ? Number(p.minThreshold) : 5
+          }));
         }
       } catch (err) {
         console.warn("Fetch products API offline, keeping active state", err);

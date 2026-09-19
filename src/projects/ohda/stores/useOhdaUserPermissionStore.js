@@ -22,10 +22,11 @@ export const useOhdaUserPermissionStore = defineStore("ohdaUserPermission", {
   }),
 
   actions: {
-    async fetchUsers() {
+    async fetchUsers(branchId = null) {
       this.loading = true;
       try {
-        const res = await apiGet("/api/Auth");
+        const url = (branchId && branchId > 0) ? `/api/Auth?branchId=${branchId}` : "/api/Auth";
+        const res = await apiGet(url);
         const data = res?.data?.objects || res?.data?.singleObject;
         if (res?.data?.isDone && data) {
           this.users = data;
