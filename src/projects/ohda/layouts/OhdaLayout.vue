@@ -155,7 +155,13 @@
                   <component :is="item.icon" class="w-4 h-4 shrink-0" :class="$route.path === item.path ? 'text-brand-accent' : 'text-slate-400 group-hover:text-slate-200'" />
                   <span class="truncate">{{ item.label }}</span>
                 </div>
-                <span v-if="item.badge" class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/30 shrink-0">
+                <span
+                  v-if="item.badge"
+                  class="px-2 py-0.5 rounded-full text-[10px] font-bold shrink-0 transition-all flex items-center gap-1"
+                  :class="item.isAlert ? 'bg-red-500/25 text-red-300 border border-red-500/40 shadow-sm' : 'bg-amber-500/20 text-amber-300 border border-amber-500/30'"
+                  :title="item.isAlert ? 'يوجد طلبات معادة / مرفوضة بحاجة إلى انتباهك' : ''"
+                >
+                  <span v-if="item.isAlert" class="w-1.5 h-1.5 rounded-full bg-red-400 animate-ping inline-block"></span>
                   {{ item.badge }}
                 </span>
               </router-link>
@@ -242,8 +248,18 @@ const pageMeta = {
   "/ohda/products": { labelKey: "ohda.nav.products", icon: "Package" },
   "/ohda/warehouse-bins": { labelKey: "ohda.nav.warehouseBins", icon: "Layers" },
   "/ohda/inventory": { labelKey: "ohda.nav.inventory", icon: "Boxes" },
-  "/ohda/exit-requests": { labelKey: "ohda.nav.exitRequests", icon: "ArrowUpRight", getBadge: () => requestsStore.pendingExitRequestsCount || null },
-  "/ohda/entry-requests": { labelKey: "ohda.nav.entryRequests", icon: "ArrowDownLeft", getBadge: () => requestsStore.pendingEntryRequestsCount || null },
+  "/ohda/exit-requests": { 
+    labelKey: "ohda.nav.exitRequests", 
+    icon: "ArrowUpRight", 
+    getBadge: () => requestsStore.pendingExitRequestsCount || null,
+    isAlert: () => (requestsStore.myReturnedExitRequestsCount > 0)
+  },
+  "/ohda/entry-requests": { 
+    labelKey: "ohda.nav.entryRequests", 
+    icon: "ArrowDownLeft", 
+    getBadge: () => requestsStore.pendingEntryRequestsCount || null,
+    isAlert: () => (requestsStore.myReturnedEntryRequestsCount > 0)
+  },
   "/ohda/scan": { labelKey: "ohda.nav.scan", icon: "QrCode" },
   "/ohda/categories": { labelKey: "ohda.nav.categories", icon: "Tags" },
   "/ohda/suppliers": { labelKey: "ohda.nav.suppliers", icon: "Truck" },
@@ -297,7 +313,8 @@ const navItems = computed(() => {
         path,
         label: meta ? t(meta.labelKey) : path.replace(/^\/ohda\//, "").replace(/[-\/]/g, " ").trim() || path,
         icon: backendIcon || meta?.icon || "FileText",
-        badge: meta?.getBadge ? meta.getBadge() : null
+        badge: meta?.getBadge ? meta.getBadge() : null,
+        isAlert: meta?.isAlert ? meta.isAlert() : false
       };
     });
 });

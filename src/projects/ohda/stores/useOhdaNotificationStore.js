@@ -65,8 +65,12 @@ export const useOhdaNotificationStore = defineStore("ohdaNotifications", {
     },
 
     async addNotification({ title, message, userId }) {
+      if (!userId || Number(userId) <= 0) {
+        console.warn("addNotification skipped: invalid recipient userId", userId);
+        return { success: false, message: "Invalid userId" };
+      }
       try {
-        const res = await apiPost("/api/Notification", { title, message, userId });
+        const res = await apiPost("/api/Notification", { title, message, userId: Number(userId) }, false);
         if (res?.data?.isDone && res?.data?.singleObject) {
           this.notifications.unshift(res.data.singleObject);
           return { success: true };

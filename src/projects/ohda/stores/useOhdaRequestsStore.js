@@ -13,35 +13,71 @@ export const useOhdaRequestsStore = defineStore("ohdaRequests", {
   }),
 
   getters: {
+    myReturnedExitRequestsCount: (state) => {
+      const auth = useOhdaAuthStore();
+      const userId = auth.user?.militaryNumber || auth.user?.id;
+      const username = auth.user?.username?.toLowerCase();
+      return state.exitRequests.filter(r => {
+        const isMine = (userId && r.requestedByUserId === userId) ||
+                       (username && (r.insertUserCode?.toLowerCase() === username || r.requestedByUsername?.toLowerCase() === username));
+        return isMine && r.status === 4;
+      }).length;
+    },
+    myReturnedEntryRequestsCount: (state) => {
+      const auth = useOhdaAuthStore();
+      const userId = auth.user?.militaryNumber || auth.user?.id;
+      const username = auth.user?.username?.toLowerCase();
+      return state.entryRequests.filter(r => {
+        const isMine = (userId && (r.receivedByUserId === userId || r.requestedByUserId === userId)) ||
+                       (username && (r.insertUserCode?.toLowerCase() === username || r.receivedByUsername?.toLowerCase() === username));
+        return isMine && r.status === 4;
+      }).length;
+    },
     pendingExitRequestsCount: (state) => {
       const auth = useOhdaAuthStore();
+      const userId = auth.user?.militaryNumber || auth.user?.id;
+      const username = auth.user?.username?.toLowerCase();
+      const myReturned = state.exitRequests.filter(r => {
+        const isMine = (userId && r.requestedByUserId === userId) ||
+                       (username && (r.insertUserCode?.toLowerCase() === username || r.requestedByUsername?.toLowerCase() === username));
+        return isMine && r.status === 4;
+      }).length;
+
+      let rolePending = 0;
       if (auth.isSupervisor) {
-        return state.exitRequests.filter(r => r.status === 3).length; // Awaiting supervisor
+        rolePending = state.exitRequests.filter(r => r.status === 3).length; // Awaiting supervisor
+      } else if (auth.isManager) {
+        rolePending = state.exitRequests.filter(r => r.status === 1).length; // Awaiting manager
+      } else if (auth.isAdmin || auth.isSuperAdmin) {
+        rolePending = state.exitRequests.filter(r => r.status === 1 || r.status === 3).length;
       }
-      if (auth.isManager) {
-        return state.exitRequests.filter(r => r.status === 1).length; // Awaiting manager
-      }
-      return state.exitRequests.filter(r => r.status === 1 || r.status === 3).length;
+      return (rolePending + myReturned) || null;
     },
     pendingEntryRequestsCount: (state) => {
       const auth = useOhdaAuthStore();
+      const userId = auth.user?.militaryNumber || auth.user?.id;
+      const username = auth.user?.username?.toLowerCase();
+      const myReturned = state.entryRequests.filter(r => {
+        const isMine = (userId && (r.receivedByUserId === userId || r.requestedByUserId === userId)) ||
+                       (username && (r.insertUserCode?.toLowerCase() === username || r.receivedByUsername?.toLowerCase() === username));
+        return isMine && r.status === 4;
+      }).length;
+
+      let rolePending = 0;
       if (auth.isSupervisor) {
-        return state.entryRequests.filter(r => r.status === 3).length;
+        rolePending = state.entryRequests.filter(r => r.status === 3).length;
+      } else if (auth.isManager) {
+        rolePending = state.entryRequests.filter(r => r.status === 1).length;
+      } else if (auth.isAdmin || auth.isSuperAdmin) {
+        rolePending = state.entryRequests.filter(r => r.status === 1 || r.status === 3).length;
       }
-      if (auth.isManager) {
-        return state.entryRequests.filter(r => r.status === 1).length;
-      }
-      return state.entryRequests.filter(r => r.status === 1 || r.status === 3).length;
+      return (rolePending + myReturned) || null;
     },
     totalPendingRequestsCount: (state) => {
       const auth = useOhdaAuthStore();
-      if (auth.isSupervisor) {
-        return state.exitRequests.filter(r => r.status === 3).length + state.entryRequests.filter(r => r.status === 3).length;
-      }
-      if (auth.isManager) {
-        return state.exitRequests.filter(r => r.status === 1).length + state.entryRequests.filter(r => r.status === 1).length;
-      }
-      return state.exitRequests.filter(r => r.status === 1 || r.status === 3).length + state.entryRequests.filter(r => r.status === 1 || r.status === 3).length;
+      const exitCount = state.exitRequests.filter(r => r.status === 1 || r.status === 3 || r.status === 4).length;
+      const entryCount = state.entryRequests.filter(r => r.status === 1 || r.status === 3 || r.status === 4).length;
+      return exitCount + entryCount;
     }
   },
 
@@ -92,21 +128,8 @@ export const useOhdaRequestsStore = defineStore("ohdaRequests", {
             req.managerUsername = managerUserObj?.username || req.managerUsername;
             req.managerApprove = true;
 
-            // Notify supervisors
-            try {
-              const userStore = useOhdaUserPermissionStore();
-              const notifStore = useOhdaNotificationStore();
-              const supervisors = userStore.users.filter(u => u.role === 3);
-              supervisors.forEach(sup => {
-                notifStore.addNotification({
-                  title: `طلب صرف معلق #${req.id}`,
-                  message: `تم اعتماد طلب الصرف من المدير. يرجى توثيق الطلب وصرف الكمية.`,
-                  userId: sup.id
-                });
-              });
-            } catch (notifErr) {
-              console.warn("Failed to notify supervisors", notifErr);
-            }
+            // Refresh user notifications from backend
+            useOhdaNotificationStore().fetchMyNotifications();
           }
           return { success: true };
         }
@@ -133,13 +156,8 @@ export const useOhdaRequestsStore = defineStore("ohdaRequests", {
             const inventoryStore = useOhdaInventoryStore();
             await inventoryStore.fetchProducts();
 
-            // Notify requesting employee
-            const notifStore = useOhdaNotificationStore();
-            notifStore.addNotification({
-              title: `تم توثيق واكتمال طلب الصرف #${req.id}`,
-              message: `تم اعتماد صرف الكمية لطلب الصرف #${req.id} وتسليمها إلى ${req.recipientName}.`,
-              userId: req.requestedByUserId
-            });
+            // Refresh user notifications from backend
+            useOhdaNotificationStore().fetchMyNotifications();
           }
           return { success: true };
         }
@@ -160,12 +178,8 @@ export const useOhdaRequestsStore = defineStore("ohdaRequests", {
             req.status = 4; // Rejected
             req.rejectionReason = rejectionReason;
 
-            const notifStore = useOhdaNotificationStore();
-            notifStore.addNotification({
-              title: `تم رفض طلب الصرف #${req.id}`,
-              message: `تم رفض طلب الصرف لـ ${req.productName}. السبب: ${rejectionReason}`,
-              userId: req.requestedByUserId
-            });
+            // Refresh user notifications from backend
+            useOhdaNotificationStore().fetchMyNotifications();
           }
           return { success: true };
         }
@@ -222,21 +236,8 @@ export const useOhdaRequestsStore = defineStore("ohdaRequests", {
             req.managerUsername = managerUserObj?.username || req.managerUsername;
             req.managerApprove = true;
 
-            // Notify supervisors
-            try {
-              const userStore = useOhdaUserPermissionStore();
-              const notifStore = useOhdaNotificationStore();
-              const supervisors = userStore.users.filter(u => u.role === 3);
-              supervisors.forEach(sup => {
-                notifStore.addNotification({
-                  title: `طلب توريد معلق #${req.id}`,
-                  message: `تم اعتماد طلب التوريد من المدير. يرجى توثيق الطلب وإدخال الكمية للمخزن.`,
-                  userId: sup.id
-                });
-              });
-            } catch (notifErr) {
-              console.warn("Failed to notify supervisors", notifErr);
-            }
+            // Refresh user notifications from backend
+            useOhdaNotificationStore().fetchMyNotifications();
           }
           return { success: true };
         }
@@ -263,13 +264,8 @@ export const useOhdaRequestsStore = defineStore("ohdaRequests", {
             const inventoryStore = useOhdaInventoryStore();
             await inventoryStore.fetchProducts();
 
-            // Notify receiving employee
-            const notifStore = useOhdaNotificationStore();
-            notifStore.addNotification({
-              title: `تم اعتماد وتوثيق توريد المخزون #${req.id}`,
-              message: `تمت إضافة الكمية الموردة لطلب التوريد #${req.id} إلى الرصيد المتاح.`,
-              userId: req.receivedByUserId
-            });
+            // Refresh user notifications from backend
+            useOhdaNotificationStore().fetchMyNotifications();
           }
           return { success: true };
         }
@@ -290,12 +286,8 @@ export const useOhdaRequestsStore = defineStore("ohdaRequests", {
             req.status = 4; // Rejected
             req.rejectionReason = rejectionReason;
 
-            const notifStore = useOhdaNotificationStore();
-            notifStore.addNotification({
-              title: `تم رفض شحنة التوريد #${req.id}`,
-              message: `تم رفض توريد ${req.productName}. السبب: ${rejectionReason}`,
-              userId: req.receivedByUserId
-            });
+            // Refresh user notifications from backend
+            useOhdaNotificationStore().fetchMyNotifications();
           }
           return { success: true };
         }

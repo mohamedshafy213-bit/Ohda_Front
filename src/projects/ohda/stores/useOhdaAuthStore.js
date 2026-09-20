@@ -4,15 +4,24 @@ import { apiPost, apiGet } from "@/utilities/fetchApi";
 export const useOhdaAuthStore = defineStore("ohdaAuth", {
   state: () => ({
     token: localStorage.getItem("accessToken") || null,
-    user: JSON.parse(localStorage.getItem("ohdaUser") || "null"),
+    user: (() => {
+      try {
+        const u = JSON.parse(localStorage.getItem("ohdaUser") || "null");
+        if (u && !u.id && u.militaryNumber) u.id = u.militaryNumber;
+        return u;
+      } catch (e) {
+        return null;
+      }
+    })(),
     allowedPages: JSON.parse(localStorage.getItem("ohdaAllowedPages") || "[]"),
     loading: false
   }),
   getters: {
     isAuthenticated: (state) => !!state.token || !!state.user,
+    userId: (state) => state.user?.militaryNumber || state.user?.id || 0,
     currentRole: (state) => state.user?.role ?? 2,
     isSuperAdmin: (state) => state.user?.role === 0 || state.user?.role === "SuperAdmin" || state.user?.role === "0",
-    isAdmin: (state) => state.user?.role === 1 || state.user?.role === "Admin" || state.user?.role === "1",
+    isAdmin: (state) => state.user?.role === 1 || state.user?.role === "Admin" || state.user?.role === "1" || state.user?.role === 0 || state.user?.role === "SuperAdmin" || state.user?.role === "0",
     isEmployee: (state) => state.user?.role === 2 || state.user?.role === "Employee" || state.user?.role === "2",
     isSupervisor: (state) => state.user?.role === 3 || state.user?.role === "Supervisor" || state.user?.role === "3",
     isManager: (state) => state.user?.role === 4 || state.user?.role === "Manager" || state.user?.role === "4",
@@ -126,6 +135,9 @@ export const useOhdaAuthStore = defineStore("ohdaAuth", {
     },
 
     setSession(token, user, allowedPages) {
+      if (user && !user.id && user.militaryNumber) {
+        user.id = user.militaryNumber;
+      }
       this.token = token;
       this.user = user;
       this.allowedPages = allowedPages;
