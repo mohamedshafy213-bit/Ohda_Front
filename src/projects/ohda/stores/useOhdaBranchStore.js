@@ -5,6 +5,8 @@ export const useOhdaBranchStore = defineStore("ohdaBranch", {
   state: () => ({
     branches: [],
     stats: [],
+    analytics: null,
+    branchDashboard: null,
     myQuota: null,
     loading: false
   }),
@@ -18,6 +20,32 @@ export const useOhdaBranchStore = defineStore("ohdaBranch", {
   },
 
   actions: {
+    async fetchAnalytics() {
+      try {
+        const res = await apiGet("/api/Branches/analytics");
+        if (res?.data?.isDone && res?.data?.singleObject) {
+          this.analytics = res.data.singleObject;
+          return this.analytics;
+        }
+      } catch (err) {
+        console.warn("Failed to fetch branch analytics", err);
+      }
+      return null;
+    },
+
+    async fetchBranchInventoryDashboard(branchId) {
+      try {
+        const res = await apiGet(`/api/Branches/${branchId}/inventory-dashboard`);
+        if (res?.data?.isDone && res?.data?.singleObject) {
+          this.branchDashboard = res.data.singleObject;
+          return this.branchDashboard;
+        }
+      } catch (err) {
+        console.warn(`Failed to fetch inventory dashboard for branch ${branchId}`, err);
+      }
+      return null;
+    },
+
     async fetchBranches() {
       this.loading = true;
       try {
@@ -122,7 +150,7 @@ export const useOhdaBranchStore = defineStore("ohdaBranch", {
         const res = await apiDelete(`/api/Branches/${id}`);
         if (res?.data?.isDone) {
           await this.fetchBranches();
-          return { success: true };
+          return { success: true, message: res?.data?.returnMessage };
         }
         return { success: false, message: res?.data?.returnMessage };
       } catch (err) {

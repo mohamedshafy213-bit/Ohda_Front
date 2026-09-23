@@ -227,6 +227,15 @@
           <Column :header="$t('ohda.common.actions')">
             <template #body="{ data }">
               <div class="flex items-center gap-1">
+                <!-- Branch Inventory Dashboard Link -->
+                <router-link
+                  :to="`/ohda/branches/${data.id}/dashboard`"
+                  class="p-1.5 text-purple-600 hover:bg-purple-50 dark:hover:bg-purple-900/20 rounded-lg transition-colors cursor-pointer"
+                  title="لوحة مؤشرات مخزون وعهدة الفرع"
+                >
+                  <BarChart2 class="w-4 h-4" />
+                </router-link>
+
                 <!-- Edit Button -->
                 <button
                   @click="openEditModal(data)"
@@ -245,6 +254,15 @@
                 >
                   <CircleOff v-if="data.isActive" class="w-4 h-4" />
                   <CheckCircle v-else class="w-4 h-4" />
+                </button>
+
+                <!-- Delete Button -->
+                <button
+                  @click="handleDeleteBranch(data)"
+                  class="p-1.5 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors cursor-pointer"
+                  :title="$t('ohda.branches.deleteBranch') || 'حذف الفرع'"
+                >
+                  <Trash2 class="w-4 h-4" />
                 </button>
               </div>
             </template>
@@ -579,6 +597,89 @@
           </div>
         </div>
       </Dialog>
+
+      <!-- DELETE BLOCKED MODAL -->
+      <Dialog
+        v-model:visible="showDeleteBlockModal"
+        modal
+        header="تعذر حذف الفرع"
+        class="!bg-brand-white !border-brand-gray/15 max-w-md w-full !text-brand-dark"
+      >
+        <div class="space-y-4 text-xs pt-2">
+          <div class="flex items-start gap-3 p-3 bg-amber-500/10 border border-amber-500/20 rounded-xl text-amber-700 dark:text-amber-400">
+            <AlertTriangle class="w-5 h-5 flex-shrink-0 mt-0.5" />
+            <div class="space-y-1">
+              <div class="font-bold text-sm">لا يمكن حذف الفرع لوجود مستخدمين أو منتجات نشطة</div>
+              <div class="text-xs text-brand-gray leading-relaxed">
+                يحتوي فرع <strong class="text-brand-dark">{{ branchToDelete?.name }}</strong> على ارتباطات نشطة يجب نقلها أو حذفها أولاً قبل إمكانية حذف الفرع:
+              </div>
+            </div>
+          </div>
+
+          <div class="space-y-2 bg-brand-light p-3.5 rounded-xl border border-brand-gray/15 text-xs">
+            <div class="flex items-center justify-between">
+              <span class="text-brand-gray flex items-center gap-1.5">
+                <Users class="w-4 h-4 text-brand-dark/60" />
+                المستخدمين النشطين:
+              </span>
+              <span class="font-bold text-brand-dark">{{ branchToDelete?.currentUserCount || 0 }} مستخدم</span>
+            </div>
+            <div class="flex items-center justify-between">
+              <span class="text-brand-gray flex items-center gap-1.5">
+                <Building2 class="w-4 h-4 text-brand-dark/60" />
+                الأصناف والمنتجات:
+              </span>
+              <span class="font-bold text-brand-dark">{{ branchToDelete?.currentProductCount || 0 }} منتج</span>
+            </div>
+          </div>
+
+          <div class="flex justify-end pt-2">
+            <Button
+              @click="showDeleteBlockModal = false"
+              class="!bg-brand-accent hover:!bg-brand-accent/90 !text-brand-dark !font-bold px-4 py-2 text-xs"
+            >
+              حسناً، فهمت
+            </Button>
+          </div>
+        </div>
+      </Dialog>
+
+      <!-- DELETE CONFIRMATION MODAL -->
+      <Dialog
+        v-model:visible="showDeleteConfirmModal"
+        modal
+        header="تأكيد حذف الفرع"
+        class="!bg-brand-white !border-brand-gray/15 max-w-md w-full !text-brand-dark"
+      >
+        <div class="space-y-4 text-xs pt-2">
+          <div class="flex items-start gap-3 p-3 bg-red-500/10 border border-red-500/20 rounded-xl text-red-600 dark:text-red-400">
+            <AlertTriangle class="w-5 h-5 flex-shrink-0 mt-0.5" />
+            <div class="space-y-1">
+              <div class="font-bold text-sm">هل أنت متأكد من رغبتك في حذف هذا الفرع؟</div>
+              <div class="text-xs text-brand-gray leading-relaxed">
+                سيتم حذف الفرع <strong class="text-brand-dark">{{ branchToDelete?.name }}</strong> (رمز: {{ branchToDelete?.code }}). هذا الإجراء لا يمكن التراجع عنه.
+              </div>
+            </div>
+          </div>
+
+          <div class="flex items-center justify-end gap-2 pt-2">
+            <SecondaryButton
+              @click="showDeleteConfirmModal = false"
+              :disabled="deletingBranch"
+            >
+              إلغاء
+            </SecondaryButton>
+            <Button
+              @click="executeDeleteBranch"
+              :disabled="deletingBranch"
+              class="!bg-red-600 hover:!bg-red-700 !text-white !font-bold px-4 py-2 text-xs flex items-center gap-2"
+            >
+              <Trash2 class="w-3.5 h-3.5" />
+              <span>{{ deletingBranch ? 'جاري الحذف...' : 'تأكيد الحذف' }}</span>
+            </Button>
+          </div>
+        </div>
+      </Dialog>
     </template>
   </div>
 </template>
@@ -603,6 +704,11 @@ const updatingBranch = ref(false);
 const showCredentialsDialog = ref(false);
 const createdResult = ref(null);
 const currentEditId = ref(null);
+
+const showDeleteBlockModal = ref(false);
+const showDeleteConfirmModal = ref(false);
+const branchToDelete = ref(null);
+const deletingBranch = ref(false);
 
 const createForm = reactive({
   code: "",
@@ -798,6 +904,52 @@ function copyCredentials() {
     detail: "تم نسخ بيانات الاعتماد إلى الحافظة",
     life: 3000
   });
+}
+
+function isMainBranch(branch) {
+  if (!branch) return false;
+  return (
+    branch.id === 1 ||
+    branch.code?.toUpperCase() === "MAIN" ||
+    branch.isDefault === true
+  );
+}
+
+function handleDeleteBranch(branch) {
+  branchToDelete.value = branch;
+  const userCount = branch.currentUserCount || 0;
+  const productCount = branch.currentProductCount || 0;
+
+  if (userCount > 0 || productCount > 0) {
+    showDeleteBlockModal.value = true;
+  } else {
+    showDeleteConfirmModal.value = true;
+  }
+}
+
+async function executeDeleteBranch() {
+  if (!branchToDelete.value) return;
+  deletingBranch.value = true;
+  const res = await branchStore.deleteBranch(branchToDelete.value.id);
+  deletingBranch.value = false;
+
+  if (res.success) {
+    showDeleteConfirmModal.value = false;
+    branchToDelete.value = null;
+    toast.add({
+      severity: "success",
+      summary: "تم الحذف",
+      detail: res.message || "تم حذف الفرع بنجاح",
+      life: 4000
+    });
+  } else {
+    toast.add({
+      severity: "error",
+      summary: "تعذر الحذف",
+      detail: res.message || "حدث خطأ أثناء محاولة حذف الفرع",
+      life: 5000
+    });
+  }
 }
 
 onMounted(async () => {

@@ -107,6 +107,12 @@ export const useOhdaAuthStore = defineStore("ohdaAuth", {
         return false;
       }
 
+      if (path.startsWith("/ohda/branches/")) {
+        const parts = path.split("/");
+        const bId = parseInt(parts[3]);
+        return (state.user?.branchId === bId);
+      }
+
       // Filter purely based on the pages assigned to this user!
       const allowed = state.allowedPaths || [];
       return allowed.includes(path);

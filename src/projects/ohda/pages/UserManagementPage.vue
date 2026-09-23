@@ -127,117 +127,258 @@
 
     <!-- TAB 1: USERS DATATABLE & MODALS -->
     <div v-if="activeTab === 'users'" class="space-y-4">
-      <!-- Users Filter & Search Toolbar -->
-      <div class="bg-brand-white border border-brand-gray/10 rounded-2xl p-4 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <!-- Branch Selector (SuperAdmin) or Branch Scope (Branch Admin) -->
-        <div class="flex flex-wrap items-center gap-3">
-          <div v-if="authStore.isSuperAdmin" class="flex items-center gap-2">
-            <Building2 class="w-4 h-4 text-brand-accent shrink-0" />
-            <span class="text-xs font-bold text-brand-dark shrink-0">{{ $t('ohda.users.filterByBranch') }}:</span>
-            <Select
-              v-model="selectedBranchFilter"
-              :options="branchFilterOptions"
-              optionLabel="label"
-              optionValue="value"
-              @change="handleBranchFilterChange"
-              class="w-56 md:w-64 !bg-brand-light !border-brand-gray/25 focus:!border-brand-accent !text-brand-dark text-xs !rounded-xl"
-            />
+      <!-- 1. SuperAdmin Landing: Branch Cards Grid View (when no branch is selected) -->
+      <div v-if="authStore.isSuperAdmin && !selectedBranchForUsers" class="space-y-4">
+        <!-- Branch Grid Header & Search -->
+        <div class="bg-brand-white border border-brand-gray/10 rounded-2xl p-4 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-xl bg-brand-soft border border-brand-accent/20 flex items-center justify-center text-brand-accent">
+              <Building2 class="w-5 h-5" />
+            </div>
+            <div>
+              <h2 class="text-sm font-bold text-brand-dark">فروع المنصة — اختر الفرع لعرض وإدارة مستخدميه</h2>
+              <p class="text-xs text-brand-gray">انقر على بطاقة أي فرع للنزول إلى قائمة المستخدمين الخاصة به وإدارتها</p>
+            </div>
           </div>
 
-          <!-- Non-SuperAdmin Branch Badge Scope -->
-          <div v-else class="flex items-center gap-2 px-3 py-1.5 bg-brand-soft text-brand-dark rounded-xl border border-brand-accent/25 text-xs font-semibold">
-            <Building2 class="w-4 h-4 text-brand-accent shrink-0" />
-            <span>{{ $t('ohda.users.branchScope') }}:</span>
-            <span class="font-bold text-brand-accent font-mono">{{ authStore.user?.branchName || branchStore.myQuota?.branchName || 'فرعك الحالي' }}</span>
-            <span class="text-[10px] text-brand-gray mr-1">(عرض وإنشاء لمستخدمي هذا الفرع فقط)</span>
-          </div>
+          <div class="flex flex-wrap items-center gap-3">
+            <div class="relative w-full sm:w-64">
+              <InputText
+                v-model="branchCardSearch"
+                placeholder="بحث باسم الفرع أو الرمز..."
+                class="w-full !bg-brand-light !border-brand-gray/25 focus:!border-brand-accent !text-brand-dark text-xs !rounded-xl pr-8 pl-3 py-2"
+              />
+              <Search class="w-4 h-4 text-brand-gray absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+            </div>
 
-          <!-- Fast Count indicator -->
-          <span class="text-[11px] font-bold text-brand-gray bg-brand-light px-2.5 py-1 rounded-lg border border-brand-gray/15">
-            {{ filteredUsers.length }} مستخدم
-          </span>
+            <Button
+              @click="drillDownToBranch(0)"
+              class="!bg-brand-light hover:!bg-brand-soft !border !border-brand-gray/20 !text-brand-dark !rounded-xl !px-3 !py-2 !text-xs font-bold cursor-pointer"
+            >
+              عرض كافة المستخدمين
+            </Button>
+          </div>
         </div>
 
-        <!-- Search Input -->
-        <div class="relative w-full md:w-64">
-          <InputText
-            v-model="searchQuery"
-            placeholder="بحث بالاسم، الرقم، أو البريد..."
-            class="w-full !bg-brand-light !border-brand-gray/25 focus:!border-brand-accent !text-brand-dark text-xs !rounded-xl pr-8 pl-3 py-2"
-          />
-          <Search class="w-4 h-4 text-brand-gray absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+        <!-- Branch Cards Grid -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div
+            v-for="branch in filteredBranchCards"
+            :key="branch.id"
+            @click="drillDownToBranch(branch)"
+            class="bg-brand-white border rounded-2xl p-5 shadow-sm space-y-4 hover:shadow-md transition-all cursor-pointer border-brand-gray/15 hover:border-brand-accent/40 group"
+          >
+            <!-- Header -->
+            <div class="flex items-start justify-between">
+              <div class="flex items-center gap-3">
+                <div class="w-11 h-11 rounded-xl bg-brand-soft group-hover:bg-brand-accent/20 border border-brand-accent/20 flex items-center justify-center text-brand-accent transition-colors">
+                  <Building2 class="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 class="font-bold text-brand-dark text-sm flex items-center gap-2 group-hover:text-brand-accent transition-colors">
+                    {{ branch.name }}
+                  </h3>
+                  <div class="flex items-center gap-2 mt-0.5">
+                    <span class="text-[10px] font-mono font-bold text-brand-accent px-1.5 py-0.5 bg-brand-accent/10 rounded">
+                      {{ branch.code }}
+                    </span>
+                    <span class="text-[10px] text-brand-gray">
+                      {{ branch.industryTemplate || 'عام' }}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              <span
+                class="px-2 py-0.5 rounded-full text-[10px] font-bold"
+                :class="branch.isActive ? 'bg-emerald-500/10 text-emerald-600 border border-emerald-500/20' : 'bg-amber-500/10 text-amber-600 border border-amber-500/20'"
+              >
+                {{ branch.isActive ? 'نشط' : 'معلق' }}
+              </span>
+            </div>
+
+            <!-- User Quota Utilization Progress Bar -->
+            <div class="space-y-1.5 pt-2 border-t border-brand-gray/10">
+              <div class="flex items-center justify-between text-xs">
+                <span class="text-brand-gray flex items-center gap-1.5 font-medium">
+                  <Users class="w-3.5 h-3.5 text-blue-500" />
+                  مستخدمي الفرع:
+                </span>
+                <div class="flex items-center gap-1 font-mono">
+                  <span class="font-bold text-brand-dark">{{ branch.currentUserCount || 0 }}</span>
+                  <span class="text-brand-gray">/ {{ branch.maxUsers }}</span>
+                  <span
+                    class="text-[10px] font-bold ms-1"
+                    :class="getPercentageColor((branch.currentUserCount || 0) / (branch.maxUsers || 1))"
+                  >
+                    ({{ Math.round(((branch.currentUserCount || 0) / (branch.maxUsers || 1)) * 100) }}%)
+                  </span>
+                </div>
+              </div>
+              <div class="w-full bg-slate-100 dark:bg-slate-800 h-2 rounded-full overflow-hidden">
+                <div
+                  class="h-full rounded-full transition-all"
+                  :class="getProgressBarColor((branch.currentUserCount || 0) / (branch.maxUsers || 1))"
+                  :style="{ width: Math.min(100, Math.round(((branch.currentUserCount || 0) / (branch.maxUsers || 1)) * 100)) + '%' }"
+                ></div>
+              </div>
+            </div>
+
+            <!-- Footer Details & Action -->
+            <div class="pt-3 border-t border-brand-gray/10 flex items-center justify-between text-xs">
+              <div class="text-[11px] text-brand-gray truncate">
+                المسؤول: <span class="font-semibold text-brand-dark">{{ branch.contactName || '—' }}</span>
+              </div>
+              <span class="text-brand-accent group-hover:underline font-bold text-xs flex items-center gap-1">
+                إدارة المستخدمين &larr;
+              </span>
+            </div>
+          </div>
         </div>
       </div>
 
-      <!-- Users Table -->
-      <div class="bg-brand-white border border-brand-gray/10 rounded-2xl overflow-hidden shadow-sm">
-        <DataTable :value="filteredUsers" paginator :rows="10" :rowsPerPageOptions="[5, 10, 20, 50]" class="w-full text-xs">
-          <Column field="militaryNumber" header="الرقم العسكري">
-            <template #body="{ data }">
-              <span class="font-mono font-bold text-brand-accent">{{ data.militaryNumber }}</span>
-            </template>
-          </Column>
+      <!-- 2. Drilled-down Scoped User Table View -->
+      <div v-else class="space-y-4">
+        <!-- Drilled-in Breadcrumb Bar (SuperAdmin) -->
+        <div v-if="authStore.isSuperAdmin" class="bg-brand-white border border-brand-gray/10 rounded-2xl p-4 shadow-sm flex items-center justify-between">
+          <div class="flex items-center gap-2 text-xs">
+            <button
+              @click="backToBranchGrid"
+              class="text-brand-gray hover:text-brand-accent font-semibold flex items-center gap-1 cursor-pointer transition-colors"
+            >
+              <Building2 class="w-4 h-4" />
+              <span>إدارة المستخدمين (كافة الفروع)</span>
+            </button>
+            <span class="text-brand-gray/40">&larr;</span>
+            <span class="font-bold text-brand-dark flex items-center gap-1">
+              <span class="font-mono text-brand-accent px-1.5 py-0.5 bg-brand-accent/10 rounded text-[10px]">
+                {{ selectedBranchForUsers?.code || 'ALL' }}
+              </span>
+              <span>{{ selectedBranchForUsers?.name || 'كافة الفروع' }}</span>
+            </span>
+          </div>
 
-          <Column field="username" :header="$t('ohda.users.username')">
-            <template #body="{ data }">
-              <span class="font-mono font-bold text-brand-dark">{{ data.username }}</span>
-            </template>
-          </Column>
+          <Button
+            @click="backToBranchGrid"
+            class="!bg-brand-light hover:!bg-brand-soft !border !border-brand-gray/20 !text-brand-dark !rounded-xl !px-3 !py-1.5 !text-xs flex items-center gap-1.5 font-bold cursor-pointer"
+          >
+            <ArrowRight class="w-3.5 h-3.5 rtl:rotate-0" />
+            <span>العودة لشبكة الفروع</span>
+          </Button>
+        </div>
 
-          <Column field="personName" :header="$t('ohda.users.personName')">
-            <template #body="{ data }">
-              <span class="font-semibold text-brand-dark">{{ data.personName }}</span>
-            </template>
-          </Column>
+        <!-- Users Filter & Search Toolbar -->
+        <div class="bg-brand-white border border-brand-gray/10 rounded-2xl p-4 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <!-- Branch Selector (SuperAdmin) or Branch Scope (Branch Admin) -->
+          <div class="flex flex-wrap items-center gap-3">
+            <div v-if="authStore.isSuperAdmin" class="flex items-center gap-2">
+              <Building2 class="w-4 h-4 text-brand-accent shrink-0" />
+              <span class="text-xs font-bold text-brand-dark shrink-0">{{ $t('ohda.users.filterByBranch') }}:</span>
+              <Select
+                v-model="selectedBranchFilter"
+                :options="branchFilterOptions"
+                optionLabel="label"
+                optionValue="value"
+                @change="handleBranchFilterChange"
+                class="w-56 md:w-64 !bg-brand-light !border-brand-gray/25 focus:!border-brand-accent !text-brand-dark text-xs !rounded-xl"
+              />
+            </div>
 
-          <Column header="الفرع" field="branchName">
-            <template #body="{ data }">
-              <div class="flex items-center gap-1.5">
-                <Building2 class="w-3.5 h-3.5 text-brand-accent shrink-0" />
+            <!-- Non-SuperAdmin Branch Badge Scope -->
+            <div v-else class="flex items-center gap-2 px-3 py-1.5 bg-brand-soft text-brand-dark rounded-xl border border-brand-accent/25 text-xs font-semibold">
+              <Building2 class="w-4 h-4 text-brand-accent shrink-0" />
+              <span>{{ $t('ohda.users.branchScope') }}:</span>
+              <span class="font-bold text-brand-accent font-mono">{{ authStore.user?.branchName || branchStore.myQuota?.branchName || 'فرعك الحالي' }}</span>
+              <span class="text-[10px] text-brand-gray mr-1">(عرض وإنشاء لمستخدمي هذا الفرع فقط)</span>
+            </div>
+
+            <!-- Fast Count indicator -->
+            <span class="text-[11px] font-bold text-brand-gray bg-brand-light px-2.5 py-1 rounded-lg border border-brand-gray/15">
+              {{ filteredUsers.length }} مستخدم
+            </span>
+          </div>
+
+          <!-- Search Input -->
+          <div class="relative w-full md:w-64">
+            <InputText
+              v-model="searchQuery"
+              placeholder="بحث بالاسم، الرقم، أو البريد..."
+              class="w-full !bg-brand-light !border-brand-gray/25 focus:!border-brand-accent !text-brand-dark text-xs !rounded-xl pr-8 pl-3 py-2"
+            />
+            <Search class="w-4 h-4 text-brand-gray absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+          </div>
+        </div>
+
+        <!-- Users Table -->
+        <div class="bg-brand-white border border-brand-gray/10 rounded-2xl overflow-hidden shadow-sm">
+          <DataTable :value="filteredUsers" paginator :rows="10" :rowsPerPageOptions="[5, 10, 20, 50]" class="w-full text-xs">
+            <Column field="militaryNumber" header="الرقم العسكري">
+              <template #body="{ data }">
+                <span class="font-mono font-bold text-brand-accent">{{ data.militaryNumber }}</span>
+              </template>
+            </Column>
+
+            <Column field="username" :header="$t('ohda.users.username')">
+              <template #body="{ data }">
+                <span class="font-mono font-bold text-brand-dark">{{ data.username }}</span>
+              </template>
+            </Column>
+
+            <Column field="personName" :header="$t('ohda.users.personName')">
+              <template #body="{ data }">
+                <span class="font-semibold text-brand-dark">{{ data.personName }}</span>
+              </template>
+            </Column>
+
+            <Column header="الفرع" field="branchName">
+              <template #body="{ data }">
+                <div class="flex items-center gap-1.5">
+                  <Building2 class="w-3.5 h-3.5 text-brand-accent shrink-0" />
+                  <span
+                    class="px-2.5 py-0.5 rounded-lg text-[10px] font-bold border inline-block"
+                    :class="getBranchBadgeClass(data.branchId)"
+                  >
+                    {{ data.branchName || getBranchName(data.branchId) }}
+                  </span>
+                </div>
+              </template>
+            </Column>
+
+            <Column field="email" :header="$t('ohda.users.email')">
+              <template #body="{ data }">
+                <span class="font-mono text-brand-gray">{{ data.email }}</span>
+              </template>
+            </Column>
+
+            <Column field="role" :header="$t('ohda.users.role')">
+              <template #body="{ data }">
                 <span
-                  class="px-2.5 py-0.5 rounded-lg text-[10px] font-bold border inline-block"
-                  :class="getBranchBadgeClass(data.branchId)"
+                  class="px-3 py-1 rounded-full text-[10px] font-bold border inline-block"
+                  :class="getRoleBadgeClass(data.role)"
                 >
-                  {{ data.branchName || getBranchName(data.branchId) }}
+                  {{ getRoleName(data.role) }}
                 </span>
-              </div>
-            </template>
-          </Column>
+              </template>
+            </Column>
 
-          <Column field="email" :header="$t('ohda.users.email')">
-            <template #body="{ data }">
-              <span class="font-mono text-brand-gray">{{ data.email }}</span>
-            </template>
-          </Column>
+            <Column header="مجموعة الصلاحيات (User Group)">
+              <template #body="{ data }">
+                <span class="px-2.5 py-1 bg-brand-soft text-brand-accent border border-brand-accent/20 rounded-lg text-[11px] font-bold font-mono">
+                  {{ data.userGroupName || getUserGroupName(data.userGroupId) }}
+                </span>
+              </template>
+            </Column>
 
-          <Column field="role" :header="$t('ohda.users.role')">
-            <template #body="{ data }">
-              <span
-                class="px-3 py-1 rounded-full text-[10px] font-bold border inline-block"
-                :class="getRoleBadgeClass(data.role)"
-              >
-                {{ getRoleName(data.role) }}
-              </span>
-            </template>
-          </Column>
-
-          <Column header="مجموعة الصلاحيات (User Group)">
-            <template #body="{ data }">
-              <span class="px-2.5 py-1 bg-brand-soft text-brand-accent border border-brand-accent/20 rounded-lg text-[11px] font-bold font-mono">
-                {{ data.userGroupName || getUserGroupName(data.userGroupId) }}
-              </span>
-            </template>
-          </Column>
-
-          <Column :header="$t('ohda.common.actions')">
-            <template #body="{ data }">
-              <div class="flex items-center justify-center gap-2">
-                <editButton @click="openEditModal(data)" />
-                <deleteButton v-if="data.role !== 0" @click="deleteUser(data.militaryNumber)" />
-              </div>
-            </template>
-          </Column>
-        </DataTable>
+            <Column :header="$t('ohda.common.actions')">
+              <template #body="{ data }">
+                <div class="flex items-center justify-center gap-2">
+                  <editButton @click="openEditModal(data)" />
+                  <deleteButton v-if="data.role !== 0" @click="deleteUser(data.militaryNumber)" />
+                </div>
+              </template>
+            </Column>
+          </DataTable>
+        </div>
       </div>
     </div>
 
@@ -718,6 +859,55 @@ onMounted(async () => {
 // --- Filter & Search State ---
 const selectedBranchFilter = ref(0);
 const searchQuery = ref("");
+const selectedBranchForUsers = ref(null);
+const branchCardSearch = ref("");
+
+const filteredBranchCards = computed(() => {
+  let list = branchStore.branches || [];
+  if (branchCardSearch.value && branchCardSearch.value.trim()) {
+    const q = branchCardSearch.value.trim().toLowerCase();
+    list = list.filter(b =>
+      (b.name && b.name.toLowerCase().includes(q)) ||
+      (b.code && b.code.toLowerCase().includes(q)) ||
+      (b.contactName && b.contactName.toLowerCase().includes(q))
+    );
+  }
+  return list;
+});
+
+async function drillDownToBranch(branch) {
+  if (typeof branch === "number") {
+    if (branch === 0) {
+      selectedBranchForUsers.value = { id: 0, name: "كافة الفروع", code: "ALL" };
+      selectedBranchFilter.value = 0;
+    } else {
+      const found = branchStore.branches.find(b => b.id === branch);
+      selectedBranchForUsers.value = found || { id: branch, name: `فرع #${branch}` };
+      selectedBranchFilter.value = branch;
+    }
+  } else if (branch) {
+    selectedBranchForUsers.value = branch;
+    selectedBranchFilter.value = branch.id;
+  }
+  await handleBranchFilterChange();
+}
+
+function backToBranchGrid() {
+  selectedBranchForUsers.value = null;
+  selectedBranchFilter.value = 0;
+}
+
+function getPercentageColor(ratio) {
+  if (ratio >= 1.0) return "text-red-500";
+  if (ratio >= 0.8) return "text-amber-500";
+  return "text-emerald-500";
+}
+
+function getProgressBarColor(ratio) {
+  if (ratio >= 1.0) return "bg-red-500";
+  if (ratio >= 0.8) return "bg-amber-500";
+  return "bg-emerald-500";
+}
 
 const branchOptions = computed(() => {
   return branchStore.branches.map(b => ({

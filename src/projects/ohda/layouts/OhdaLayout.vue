@@ -7,7 +7,7 @@
         <button @click="sidebarOpen = !sidebarOpen" class="md:hidden text-slate-400 hover:text-white p-1 cursor-pointer">
           <Menu class="w-6 h-6" />
         </button>
-        <router-link to="/ohda/dashboard" class="flex items-center gap-3 group">
+        <router-link :to="authStore.isSuperAdmin ? '/ohda/branches' : '/ohda/dashboard'" class="flex items-center gap-3 group">
           <div class="w-10 h-10 bg-brand-accent rounded-xl flex items-center justify-center shadow-lg shadow-brand-accent/20 group-hover:scale-105 transition-transform">
             <Box class="w-5 h-5 text-brand-dark font-bold" />
           </div>
@@ -319,64 +319,80 @@ const navItems = computed(() => {
     });
 });
 
-const groupDefinitions = [
-  {
-    key: "general",
-    labelKey: "ohda.groups.general",
-    icon: "LayoutDashboard",
-    paths: ["/ohda/dashboard"]
-  },
-  {
-    key: "inventory",
-    labelKey: "ohda.groups.inventory",
-    icon: "Boxes",
-    paths: [
-      "/ohda/products",
-      "/ohda/inventory",
-      "/ohda/warehouse-bins",
-      "/ohda/categories",
-      "/ohda/scan"
-    ]
-  },
-  {
-    key: "requests",
-    labelKey: "ohda.groups.requests",
-    icon: "ScrollText",
-    paths: [
-      "/ohda/exit-requests",
-      "/ohda/entry-requests"
-    ]
-  },
-  {
-    key: "entities",
-    labelKey: "ohda.groups.entities",
-    icon: "Building2",
-    paths: [
-      "/ohda/departments",
-      "/ohda/suppliers"
-    ]
-  },
-  {
-    key: "security",
-    labelKey: "ohda.groups.security",
-    icon: "Shield",
-    paths: [
-      "/ohda/users",
-      "/ohda/approval-config",
-      "/ohda/product-states",
-      "/ohda/compass"
-    ]
-  },
-  {
-    key: "branches",
-    labelKey: "ohda.groups.branches",
-    icon: "Building",
-    paths: [
-      "/ohda/branches-dashboard",
-      "/ohda/branches"
-    ]
+const groupDefinitions = computed(() => {
+  if (authStore.isSuperAdmin) {
+    return [
+      {
+        key: "branches",
+        labelKey: "ohda.groups.branches",
+        icon: "Building2",
+        paths: [
+          "/ohda/branches",
+          "/ohda/branches-dashboard"
+        ]
+      },
+      {
+        key: "users_group",
+        labelKey: "ohda.groups.security",
+        customTitle: currentLocale.value === "ar" ? "إدارة المستخدمين" : "User Management",
+        icon: "Users",
+        paths: [
+          "/ohda/users"
+        ]
+      }
+    ];
   }
-];
+
+  return [
+    {
+      key: "general",
+      labelKey: "ohda.groups.general",
+      icon: "LayoutDashboard",
+      paths: ["/ohda/dashboard"]
+    },
+    {
+      key: "inventory",
+      labelKey: "ohda.groups.inventory",
+      icon: "Boxes",
+      paths: [
+        "/ohda/products",
+        "/ohda/inventory",
+        "/ohda/warehouse-bins",
+        "/ohda/categories",
+        "/ohda/scan"
+      ]
+    },
+    {
+      key: "requests",
+      labelKey: "ohda.groups.requests",
+      icon: "ScrollText",
+      paths: [
+        "/ohda/exit-requests",
+        "/ohda/entry-requests"
+      ]
+    },
+    {
+      key: "entities",
+      labelKey: "ohda.groups.entities",
+      icon: "Building2",
+      paths: [
+        "/ohda/departments",
+        "/ohda/suppliers"
+      ]
+    },
+    {
+      key: "security",
+      labelKey: "ohda.groups.security",
+      icon: "Shield",
+      paths: [
+        "/ohda/users",
+        "/ohda/approval-config",
+        "/ohda/product-states",
+        "/ohda/compass"
+      ]
+    }
+  ];
+});
 
 const groupedNav = computed(() => {
   const items = navItems.value;
@@ -386,7 +402,7 @@ const groupedNav = computed(() => {
   const usedPaths = new Set();
   const groups = [];
 
-  for (const def of groupDefinitions) {
+  for (const def of groupDefinitions.value) {
     const groupItems = [];
     for (const p of def.paths) {
       const it = itemMap.get(p.toLowerCase());
@@ -398,22 +414,24 @@ const groupedNav = computed(() => {
     if (groupItems.length > 0) {
       groups.push({
         key: def.key,
-        title: t(def.labelKey),
+        title: def.customTitle || t(def.labelKey),
         icon: def.icon,
         items: groupItems
       });
     }
   }
 
-  // Any other items not in the explicit categories
-  const otherItems = items.filter(it => !usedPaths.has(it.path.toLowerCase()));
-  if (otherItems.length > 0) {
-    groups.push({
-      key: "other",
-      title: currentLocale.value === "ar" ? "أخرى" : "Other",
-      icon: "Folder",
-      items: otherItems
-    });
+  // Any other items not in the explicit categories - only for non-SuperAdmin
+  if (!authStore.isSuperAdmin) {
+    const otherItems = items.filter(it => !usedPaths.has(it.path.toLowerCase()));
+    if (otherItems.length > 0) {
+      groups.push({
+        key: "other",
+        title: currentLocale.value === "ar" ? "أخرى" : "Other",
+        icon: "Folder",
+        items: otherItems
+      });
+    }
   }
 
   return groups;

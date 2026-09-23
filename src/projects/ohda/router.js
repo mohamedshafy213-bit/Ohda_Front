@@ -9,7 +9,15 @@ export default [
   {
     path: "/ohda",
     component: OhdaLayout,
-    redirect: "/ohda/dashboard",
+    redirect: () => {
+      try {
+        const u = JSON.parse(localStorage.getItem("ohdaUser") || "null");
+        if (u && (u.role === 0 || u.role === "SuperAdmin" || u.role === "0")) {
+          return "/ohda/branches";
+        }
+      } catch (e) {}
+      return "/ohda/dashboard";
+    },
     children: [
       {
         path: "dashboard",
@@ -95,6 +103,11 @@ export default [
         path: "branches-dashboard",
         name: "OhdaBranchesDashboard",
         component: () => import("./pages/BranchesDashboardPage.vue")
+      },
+      {
+        path: "branches/:id/dashboard",
+        name: "OhdaBranchInventoryDashboard",
+        component: () => import("./pages/BranchInventoryDashboardPage.vue")
       }
     ]
   }

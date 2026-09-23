@@ -40,6 +40,57 @@
         </div>
       </div>
 
+      <!-- Top KPI Row (4 Cards) -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <!-- Card 1: Total Branches -->
+        <div class="bg-brand-white p-5 rounded-2xl border border-brand-gray/10 shadow-sm flex items-center gap-4">
+          <div class="w-12 h-12 rounded-xl bg-blue-500/10 text-blue-600 flex items-center justify-center border border-blue-500/20">
+            <Building2 class="w-6 h-6" />
+          </div>
+          <div>
+            <div class="text-xs text-brand-gray font-medium">إجمالي الفروع بالمنصة</div>
+            <div class="text-2xl font-bold text-brand-dark mt-0.5">{{ totalBranchesCount }}</div>
+            <span class="text-[10px] text-emerald-600 font-semibold">{{ activeBranchesCount }} نشط</span>
+          </div>
+        </div>
+
+        <!-- Card 2: Total Users (platform-wide) -->
+        <div class="bg-brand-white p-5 rounded-2xl border border-brand-gray/10 shadow-sm flex items-center gap-4">
+          <div class="w-12 h-12 rounded-xl bg-purple-500/10 text-purple-600 flex items-center justify-center border border-purple-500/20">
+            <Users class="w-6 h-6" />
+          </div>
+          <div>
+            <div class="text-xs text-brand-gray font-medium">إجمالي مستخدمي المنصة</div>
+            <div class="text-2xl font-bold text-brand-dark mt-0.5">{{ totalPlatformUsers }}</div>
+            <span class="text-[10px] text-brand-gray font-mono">من سعة إجمالية {{ totalAllowedUsers }}</span>
+          </div>
+        </div>
+
+        <!-- Card 3: Total Product Capacity vs Used -->
+        <div class="bg-brand-white p-5 rounded-2xl border border-brand-gray/10 shadow-sm flex items-center gap-4">
+          <div class="w-12 h-12 rounded-xl bg-emerald-500/10 text-emerald-600 flex items-center justify-center border border-emerald-500/20">
+            <Package class="w-6 h-6" />
+          </div>
+          <div>
+            <div class="text-xs text-brand-gray font-medium">استهلاك سعة الأصناف</div>
+            <div class="text-2xl font-bold text-brand-dark mt-0.5">{{ totalPlatformProducts }}</div>
+            <span class="text-[10px] text-brand-gray font-mono">من سعة إجمالية {{ totalAllowedProducts }}</span>
+          </div>
+        </div>
+
+        <!-- Card 4: Suspended Branches -->
+        <div class="bg-brand-white p-5 rounded-2xl border border-brand-gray/10 shadow-sm flex items-center gap-4">
+          <div class="w-12 h-12 rounded-xl bg-amber-500/10 text-amber-600 flex items-center justify-center border border-amber-500/20">
+            <AlertTriangle class="w-6 h-6" />
+          </div>
+          <div>
+            <div class="text-xs text-brand-gray font-medium">الفروع المعلقة</div>
+            <div class="text-2xl font-bold text-amber-600 mt-0.5">{{ suspendedBranchesCount }}</div>
+            <span class="text-[10px] text-brand-gray">فروع تتطلب مراجعة أو تفعيل</span>
+          </div>
+        </div>
+      </div>
+
       <!-- High-Priority Quota Warnings Alert (if any branch >= 80% quota) -->
       <div
         v-if="branchesNearCapacity.length > 0"
@@ -57,64 +108,116 @@
           >
             <span class="font-bold font-mono">{{ b.branchCode || b.code }} ({{ b.branchName || b.name }}):</span>
             <span v-if="b.isUserExceeded || b.userRatio >= 0.8" class="text-[11px] text-red-600 font-semibold">
-              المستخدمين ({{ b.totalUsers || b.currentUserCount }} / {{ b.maxUsers }})
+              المستخدمين ({{ b.userCount ?? b.currentUserCount }} / {{ b.maxUsers }})
             </span>
             <span v-if="b.isProductExceeded || b.productRatio >= 0.8" class="text-[11px] text-amber-700 font-semibold">
-              الأصناف ({{ b.totalProducts || b.currentProductCount }} / {{ b.maxProducts }})
+              الأصناف ({{ b.productCount ?? b.currentProductCount }} / {{ b.maxProducts }})
             </span>
-            <router-link
-              to="/ohda/branches"
-              class="text-brand-accent hover:underline text-[10px] font-bold ms-1"
+            <button
+              @click="openEditModal(b)"
+              class="text-brand-accent hover:underline text-[10px] font-bold ms-1 cursor-pointer"
             >
               تعديل السعة &larr;
-            </router-link>
+            </button>
           </div>
         </div>
       </div>
 
-      <!-- Macro Platform KPI Cards -->
-      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div class="bg-brand-white p-5 rounded-2xl border border-brand-gray/10 shadow-sm flex items-center gap-4">
-          <div class="w-12 h-12 rounded-xl bg-blue-500/10 text-blue-600 flex items-center justify-center border border-blue-500/20">
-            <Building2 class="w-6 h-6" />
+      <!-- Interactive Charts & Analytics Section with Branch Filter -->
+      <div class="bg-brand-white p-6 rounded-2xl border border-brand-gray/10 shadow-sm space-y-6">
+        <!-- Filter Controls -->
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-brand-gray/10 pb-4">
+          <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-xl bg-brand-soft text-brand-accent flex items-center justify-center border border-brand-accent/20">
+              <PieChart class="w-5 h-5" />
+            </div>
+            <div>
+              <h2 class="text-base font-bold text-brand-dark">تحليل ومؤشرات السعة التخزينية والحسابات</h2>
+              <p class="text-xs text-brand-gray">استخدم القائمة لتصفية المؤشرات الدائرية حسب فرع محدد أو استعراض المنصة بالكامل</p>
+            </div>
           </div>
-          <div>
-            <div class="text-xs text-brand-gray font-medium">إجمالي الفروع بالمنصة</div>
-            <div class="text-2xl font-bold text-brand-dark mt-0.5">{{ branchStore.branches.length }}</div>
-            <span class="text-[10px] text-emerald-600 font-semibold">{{ branchStore.activeBranches.length }} نشط</span>
+
+          <!-- Branch Filter Dropdown -->
+          <div class="flex items-center gap-2 w-full sm:w-72">
+            <label class="text-xs font-bold text-brand-dark shrink-0">عرض المؤشرات لـ:</label>
+            <Select
+              v-model="selectedBranchFilter"
+              :options="branchFilterOptions"
+              optionLabel="label"
+              optionValue="value"
+              class="w-full !bg-brand-light !border-brand-gray/25 focus:!border-brand-accent !text-brand-dark text-xs !rounded-xl"
+            />
           </div>
         </div>
 
-        <div class="bg-brand-white p-5 rounded-2xl border border-brand-gray/10 shadow-sm flex items-center gap-4">
-          <div class="w-12 h-12 rounded-xl bg-purple-500/10 text-purple-600 flex items-center justify-center border border-purple-500/20">
-            <Users class="w-6 h-6" />
+        <!-- Charts Grid -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 items-stretch">
+          <!-- Donut 1: User Quota Usage -->
+          <div class="bg-brand-light/70 p-5 rounded-2xl border border-brand-gray/15 flex flex-col justify-between">
+            <div>
+              <div class="flex items-center justify-between mb-3">
+                <span class="text-xs font-bold text-brand-dark flex items-center gap-2">
+                  <Users class="w-4 h-4 text-blue-500" />
+                  سعة المستخدمين
+                </span>
+                <span class="text-[10px] font-mono px-2 py-0.5 rounded-full bg-blue-500/10 text-blue-600 font-bold">
+                  {{ selectedBranchName }}
+                </span>
+              </div>
+              <div class="h-52 relative flex items-center justify-center">
+                <Doughnut :data="userDoughnutData" :options="doughnutOptions" />
+              </div>
+            </div>
+            <div class="mt-4 pt-3 border-t border-brand-gray/15 text-xs flex justify-between text-brand-gray">
+              <span>المستخدم: <strong class="text-brand-dark font-mono">{{ currentScopeUsers }}</strong></span>
+              <span>المتبقي: <strong class="text-brand-dark font-mono">{{ currentScopeRemainingUsers }}</strong></span>
+              <span>الإجمالي: <strong class="text-brand-dark font-mono">{{ currentScopeMaxUsers }}</strong></span>
+            </div>
           </div>
-          <div>
-            <div class="text-xs text-brand-gray font-medium">إجمالي مستخدمي الفروع</div>
-            <div class="text-2xl font-bold text-brand-dark mt-0.5">{{ totalPlatformUsers }}</div>
-            <span class="text-[10px] text-brand-gray font-mono">من سعة إجمالية {{ totalAllowedUsers }}</span>
-          </div>
-        </div>
 
-        <div class="bg-brand-white p-5 rounded-2xl border border-brand-gray/10 shadow-sm flex items-center gap-4">
-          <div class="w-12 h-12 rounded-xl bg-emerald-500/10 text-emerald-600 flex items-center justify-center border border-emerald-500/20">
-            <Package class="w-6 h-6" />
+          <!-- Donut 2: Product Quota Usage -->
+          <div class="bg-brand-light/70 p-5 rounded-2xl border border-brand-gray/15 flex flex-col justify-between">
+            <div>
+              <div class="flex items-center justify-between mb-3">
+                <span class="text-xs font-bold text-brand-dark flex items-center gap-2">
+                  <Package class="w-4 h-4 text-emerald-500" />
+                  سعة الأصناف والمخزون
+                </span>
+                <span class="text-[10px] font-mono px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 font-bold">
+                  {{ selectedBranchName }}
+                </span>
+              </div>
+              <div class="h-52 relative flex items-center justify-center">
+                <Doughnut :data="productDoughnutData" :options="doughnutOptions" />
+              </div>
+            </div>
+            <div class="mt-4 pt-3 border-t border-brand-gray/15 text-xs flex justify-between text-brand-gray">
+              <span>المستخدم: <strong class="text-brand-dark font-mono">{{ currentScopeProducts }}</strong></span>
+              <span>المتبقي: <strong class="text-brand-dark font-mono">{{ currentScopeRemainingProducts }}</strong></span>
+              <span>الإجمالي: <strong class="text-brand-dark font-mono">{{ currentScopeMaxProducts }}</strong></span>
+            </div>
           </div>
-          <div>
-            <div class="text-xs text-brand-gray font-medium">إجمالي الأصناف المدارة</div>
-            <div class="text-2xl font-bold text-brand-dark mt-0.5">{{ totalPlatformProducts }}</div>
-            <span class="text-[10px] text-brand-gray font-mono">من سعة إجمالية {{ totalAllowedProducts }}</span>
-          </div>
-        </div>
 
-        <div class="bg-brand-white p-5 rounded-2xl border border-brand-gray/10 shadow-sm flex items-center gap-4">
-          <div class="w-12 h-12 rounded-xl bg-brand-accent/15 text-brand-accent flex items-center justify-center border border-brand-accent/30">
-            <TrendingUp class="w-6 h-6" />
-          </div>
-          <div>
-            <div class="text-xs text-brand-gray font-medium">متوسط استهلاك السعة</div>
-            <div class="text-2xl font-bold text-brand-accent mt-0.5">{{ averageUserQuotaPercentage }}%</div>
-            <span class="text-[10px] text-brand-gray">استقرار الأداء ممتاز</span>
+          <!-- Bar Chart: Side-by-Side Comparison Across All Branches -->
+          <div class="bg-brand-light/70 p-5 rounded-2xl border border-brand-gray/15 flex flex-col justify-between">
+            <div>
+              <div class="flex items-center justify-between mb-3">
+                <span class="text-xs font-bold text-brand-dark flex items-center gap-2">
+                  <BarChart2 class="w-4 h-4 text-brand-accent" />
+                  مقارنة الفروع جنباً إلى جنب
+                </span>
+                <span class="text-[10px] text-brand-gray font-semibold">مستخدمين vs أصناف</span>
+              </div>
+              <div class="h-52 relative">
+                <Bar :data="barComparisonData" :options="barOptions" />
+              </div>
+            </div>
+            <div class="mt-4 pt-3 border-t border-brand-gray/15 text-[11px] text-brand-gray flex items-center justify-between">
+              <span>عدد الفروع المقارنة: <strong class="text-brand-dark font-mono">{{ branchList.length }}</strong></span>
+              <router-link to="/ohda/branches" class="text-brand-accent hover:underline font-bold">
+                إدارة كافة الفروع &larr;
+              </router-link>
+            </div>
           </div>
         </div>
       </div>
@@ -126,13 +229,13 @@
             <Layers class="w-4 h-4 text-brand-accent" />
             {{ $t('ohda.branchesDashboard.branchComparison') }}
           </h2>
-          <span class="text-xs text-brand-gray">{{ branchStore.branches.length }} فروع مسجلة</span>
+          <span class="text-xs text-brand-gray">{{ branchList.length }} فروع مسجلة</span>
         </div>
 
         <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
           <div
-            v-for="branch in branchStore.branches"
-            :key="branch.id"
+            v-for="branch in branchList"
+            :key="branch.branchId || branch.id"
             class="bg-brand-white border rounded-2xl p-5 shadow-sm space-y-4 transition-all hover:shadow-md"
             :class="branch.isActive ? 'border-brand-gray/15 hover:border-brand-accent/40' : 'border-amber-500/30 bg-amber-500/5'"
           >
@@ -144,25 +247,36 @@
                 </div>
                 <div>
                   <h3 class="font-bold text-brand-dark text-sm flex items-center gap-2">
-                    {{ branch.name }}
+                    {{ branch.branchName || branch.name }}
                   </h3>
                   <div class="flex items-center gap-2 mt-0.5">
                     <span class="text-[10px] font-mono font-bold text-brand-accent px-1.5 py-0.5 bg-brand-accent/10 rounded">
-                      {{ branch.code }}
+                      {{ branch.branchCode || branch.code }}
                     </span>
                     <span class="text-[10px] text-brand-gray">
-                      {{ branch.industryTemplate || 'General' }}
+                      {{ branch.industryTemplate || 'عام' }}
                     </span>
                   </div>
                 </div>
               </div>
 
-              <span
-                class="px-2 py-0.5 rounded-full text-[10px] font-bold"
-                :class="branch.isActive ? 'bg-emerald-500/10 text-emerald-600 border border-emerald-500/20' : 'bg-amber-500/10 text-amber-600 border border-amber-500/20'"
-              >
-                {{ branch.isActive ? 'نشط' : 'معلق' }}
-              </span>
+              <div class="flex items-center gap-2">
+                <span
+                  class="px-2 py-0.5 rounded-full text-[10px] font-bold"
+                  :class="branch.isActive ? 'bg-emerald-500/10 text-emerald-600 border border-emerald-500/20' : 'bg-amber-500/10 text-amber-600 border border-amber-500/20'"
+                >
+                  {{ branch.isActive ? 'نشط' : 'معلق' }}
+                </span>
+
+                <!-- Quick Edit Action -->
+                <button
+                  @click="openEditModal(branch)"
+                  class="p-1 text-brand-gray hover:text-brand-accent hover:bg-brand-light rounded-lg transition-colors cursor-pointer"
+                  title="تعديل سعة الفرع"
+                >
+                  <Pencil class="w-3.5 h-3.5" />
+                </button>
+              </div>
             </div>
 
             <!-- Dual Quota Progress Bars -->
@@ -175,21 +289,21 @@
                     المستخدمين:
                   </span>
                   <div class="flex items-center gap-1 font-mono">
-                    <span class="font-bold text-brand-dark">{{ branch.currentUserCount || 0 }}</span>
+                    <span class="font-bold text-brand-dark">{{ branch.userCount ?? branch.currentUserCount ?? 0 }}</span>
                     <span class="text-brand-gray">/ {{ branch.maxUsers }}</span>
                     <span
                       class="text-[10px] font-bold ms-1"
-                      :class="getPercentageColor((branch.currentUserCount || 0) / (branch.maxUsers || 1))"
+                      :class="getPercentageColor(((branch.userCount ?? branch.currentUserCount ?? 0) / (branch.maxUsers || 1)))"
                     >
-                      ({{ Math.round(((branch.currentUserCount || 0) / (branch.maxUsers || 1)) * 100) }}%)
+                      ({{ Math.round(((branch.userCount ?? branch.currentUserCount ?? 0) / (branch.maxUsers || 1)) * 100) }}%)
                     </span>
                   </div>
                 </div>
                 <div class="w-full bg-slate-100 dark:bg-slate-800 h-2 rounded-full overflow-hidden">
                   <div
                     class="h-full rounded-full transition-all"
-                    :class="getProgressBarColor((branch.currentUserCount || 0) / (branch.maxUsers || 1))"
-                    :style="{ width: Math.min(100, Math.round(((branch.currentUserCount || 0) / (branch.maxUsers || 1)) * 100)) + '%' }"
+                    :class="getProgressBarColor(((branch.userCount ?? branch.currentUserCount ?? 0) / (branch.maxUsers || 1)))"
+                    :style="{ width: Math.min(100, Math.round(((branch.userCount ?? branch.currentUserCount ?? 0) / (branch.maxUsers || 1)) * 100)) + '%' }"
                   ></div>
                 </div>
               </div>
@@ -202,21 +316,21 @@
                     الأصناف:
                   </span>
                   <div class="flex items-center gap-1 font-mono">
-                    <span class="font-bold text-brand-dark">{{ branch.currentProductCount || 0 }}</span>
+                    <span class="font-bold text-brand-dark">{{ branch.productCount ?? branch.currentProductCount ?? 0 }}</span>
                     <span class="text-brand-gray">/ {{ branch.maxProducts }}</span>
                     <span
                       class="text-[10px] font-bold ms-1"
-                      :class="getPercentageColor((branch.currentProductCount || 0) / (branch.maxProducts || 1))"
+                      :class="getPercentageColor(((branch.productCount ?? branch.currentProductCount ?? 0) / (branch.maxProducts || 1)))"
                     >
-                      ({{ Math.round(((branch.currentProductCount || 0) / (branch.maxProducts || 1)) * 100) }}%)
+                      ({{ Math.round(((branch.productCount ?? branch.currentProductCount ?? 0) / (branch.maxProducts || 1)) * 100) }}%)
                     </span>
                   </div>
                 </div>
                 <div class="w-full bg-slate-100 dark:bg-slate-800 h-2 rounded-full overflow-hidden">
                   <div
                     class="h-full rounded-full transition-all"
-                    :class="getProgressBarColor((branch.currentProductCount || 0) / (branch.maxProducts || 1))"
-                    :style="{ width: Math.min(100, Math.round(((branch.currentProductCount || 0) / (branch.maxProducts || 1)) * 100)) + '%' }"
+                    :class="getProgressBarColor(((branch.productCount ?? branch.currentProductCount ?? 0) / (branch.maxProducts || 1)))"
+                    :style="{ width: Math.min(100, Math.round(((branch.productCount ?? branch.currentProductCount ?? 0) / (branch.maxProducts || 1)) * 100)) + '%' }"
                   ></div>
                 </div>
               </div>
@@ -224,64 +338,307 @@
 
             <!-- Footer Details & Quick Action -->
             <div class="pt-3 border-t border-brand-gray/10 flex items-center justify-between text-xs">
-              <div class="text-[11px] text-brand-gray">
-                مسؤول الفرع: <span class="font-semibold text-brand-dark">{{ branch.contactName || '—' }}</span>
-              </div>
-
               <router-link
-                to="/ohda/branches"
-                class="px-2.5 py-1 bg-brand-light hover:bg-brand-soft text-brand-dark hover:text-brand-accent rounded-lg font-bold text-[11px] flex items-center gap-1 transition-colors"
+                :to="`/ohda/branches/${branch.branchId || branch.id}/dashboard`"
+                class="px-2.5 py-1 bg-brand-soft text-brand-accent hover:bg-brand-accent/20 rounded-lg font-bold text-[11px] flex items-center gap-1 transition-colors"
               >
-                إدارة الحصص &larr;
+                <Activity class="w-3.5 h-3.5" />
+                مؤشرات المخزون &larr;
               </router-link>
+
+              <button
+                @click="openEditModal(branch)"
+                class="px-2.5 py-1 bg-brand-light hover:bg-brand-soft text-brand-dark hover:text-brand-accent rounded-lg font-bold text-[11px] flex items-center gap-1 transition-colors cursor-pointer"
+              >
+                <Pencil class="w-3 h-3" />
+                تعديل السعة
+              </button>
             </div>
           </div>
         </div>
       </div>
+
+      <!-- Quick Edit Branch Dialog -->
+      <Dialog
+        v-model:visible="showEditModal"
+        modal
+        header="تعديل بيانات وسعة الفرع"
+        class="!bg-brand-white !border-brand-gray/15 max-w-lg w-full !text-brand-dark"
+      >
+        <form @submit.prevent="submitEditBranch" class="space-y-4 text-xs">
+          <div>
+            <label class="block font-semibold text-brand-dark mb-1">اسم الفرع</label>
+            <InputText v-model="editForm.name" required class="w-full !bg-brand-light !border-brand-gray/25 focus:!border-brand-accent !text-brand-dark" />
+          </div>
+
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label class="block font-semibold text-brand-dark mb-1">سعة المستخدمين (Max Users)</label>
+              <InputNumber v-model="editForm.maxUsers" :min="1" :max="1000" class="w-full" inputClass="!bg-brand-light !border-brand-gray/25 focus:!border-brand-accent !text-brand-dark text-xs" />
+            </div>
+            <div>
+              <label class="block font-semibold text-brand-dark mb-1">سعة الأصناف (Max Products)</label>
+              <InputNumber v-model="editForm.maxProducts" :min="1" :max="50000" class="w-full" inputClass="!bg-brand-light !border-brand-gray/25 focus:!border-brand-accent !text-brand-dark text-xs" />
+            </div>
+          </div>
+
+          <div class="flex items-center justify-end gap-3 pt-3 border-t border-brand-gray/10">
+            <Button
+              type="button"
+              @click="showEditModal = false"
+              class="!bg-brand-light hover:!bg-brand-soft !border !border-brand-gray/20 !text-brand-dark !rounded-xl !px-4 !py-2 text-xs font-semibold cursor-pointer"
+            >
+              {{ $t('ohda.common.cancel') }}
+            </Button>
+            <Button
+              type="submit"
+              :disabled="savingEdit"
+              class="!bg-brand-accent hover:!bg-brand-accent/90 !text-brand-dark !font-bold !rounded-xl !px-4 !py-2"
+            >
+              <span v-if="savingEdit">{{ $t('ohda.common.saving') }}</span>
+              <span v-else>{{ $t('ohda.common.save') }}</span>
+            </Button>
+          </div>
+        </form>
+      </Dialog>
     </template>
   </div>
 </template>
 
 <script setup>
 import { ref, computed, onMounted } from "vue";
+import { useToast } from "primevue/usetoast";
 import { useOhdaAuthStore } from "../stores/useOhdaAuthStore";
 import { useOhdaBranchStore } from "../stores/useOhdaBranchStore";
+import {
+  Chart as ChartJS,
+  Title,
+  Tooltip,
+  Legend,
+  BarElement,
+  CategoryScale,
+  LinearScale,
+  ArcElement
+} from "chart.js";
+import { Doughnut, Bar } from "vue-chartjs";
+
+ChartJS.register(Title, Tooltip, Legend, BarElement, CategoryScale, LinearScale, ArcElement);
 
 const authStore = useOhdaAuthStore();
 const branchStore = useOhdaBranchStore();
+const toast = useToast();
+
 const loading = ref(false);
+const selectedBranchFilter = ref(0);
+
+// --- Branch List & Analytics ---
+const analyticsData = computed(() => branchStore.analytics);
+
+const branchList = computed(() => {
+  if (analyticsData.value?.branches?.length) {
+    return analyticsData.value.branches;
+  }
+  return branchStore.branches || [];
+});
+
+const totalBranchesCount = computed(() => {
+  return analyticsData.value?.totalBranches ?? branchStore.branches.length;
+});
+
+const activeBranchesCount = computed(() => {
+  if (analyticsData.value) return analyticsData.value.activeBranches;
+  return branchStore.branches.filter(b => b.isActive).length;
+});
+
+const suspendedBranchesCount = computed(() => {
+  if (analyticsData.value) return analyticsData.value.suspendedBranches;
+  return branchStore.branches.filter(b => !b.isActive).length;
+});
 
 const totalPlatformUsers = computed(() => {
+  if (analyticsData.value) return analyticsData.value.totalUsers;
   return branchStore.branches.reduce((acc, b) => acc + (b.currentUserCount || 0), 0);
 });
 
 const totalAllowedUsers = computed(() => {
+  if (analyticsData.value) return analyticsData.value.totalUserCapacity;
   return branchStore.branches.reduce((acc, b) => acc + (b.maxUsers || 0), 0);
 });
 
 const totalPlatformProducts = computed(() => {
+  if (analyticsData.value) return analyticsData.value.totalProducts;
   return branchStore.branches.reduce((acc, b) => acc + (b.currentProductCount || 0), 0);
 });
 
 const totalAllowedProducts = computed(() => {
+  if (analyticsData.value) return analyticsData.value.totalProductCapacity;
   return branchStore.branches.reduce((acc, b) => acc + (b.maxProducts || 0), 0);
 });
 
-const averageUserQuotaPercentage = computed(() => {
-  if (!totalAllowedUsers.value) return 0;
-  return Math.round((totalPlatformUsers.value / totalAllowedUsers.value) * 100);
+const branchFilterOptions = computed(() => {
+  return [
+    { label: "جميع الفروع (المنصة ككل)", value: 0 },
+    ...branchList.value.map(b => ({
+      label: `${b.branchName || b.name} (${b.branchCode || b.code})`,
+      value: b.branchId || b.id
+    }))
+  ];
+});
+
+const selectedBranchObj = computed(() => {
+  if (selectedBranchFilter.value === 0) return null;
+  return branchList.value.find(b => (b.branchId || b.id) === selectedBranchFilter.value) || null;
+});
+
+const selectedBranchName = computed(() => {
+  if (selectedBranchObj.value) {
+    return selectedBranchObj.value.branchName || selectedBranchObj.value.name;
+  }
+  return "إجمالي المنصة";
+});
+
+// Scope counts for doughnut charts
+const currentScopeUsers = computed(() => {
+  if (selectedBranchObj.value) {
+    return selectedBranchObj.value.userCount ?? selectedBranchObj.value.currentUserCount ?? 0;
+  }
+  return totalPlatformUsers.value;
+});
+
+const currentScopeMaxUsers = computed(() => {
+  if (selectedBranchObj.value) {
+    return selectedBranchObj.value.maxUsers || 1;
+  }
+  return totalAllowedUsers.value || 1;
+});
+
+const currentScopeRemainingUsers = computed(() => {
+  return Math.max(0, currentScopeMaxUsers.value - currentScopeUsers.value);
+});
+
+const currentScopeProducts = computed(() => {
+  if (selectedBranchObj.value) {
+    return selectedBranchObj.value.productCount ?? selectedBranchObj.value.currentProductCount ?? 0;
+  }
+  return totalPlatformProducts.value;
+});
+
+const currentScopeMaxProducts = computed(() => {
+  if (selectedBranchObj.value) {
+    return selectedBranchObj.value.maxProducts || 1;
+  }
+  return totalAllowedProducts.value || 1;
+});
+
+const currentScopeRemainingProducts = computed(() => {
+  return Math.max(0, currentScopeMaxProducts.value - currentScopeProducts.value);
+});
+
+// --- Chart.js Data & Options ---
+const doughnutOptions = {
+  responsive: true,
+  maintainAspectRatio: false,
+  plugins: {
+    legend: {
+      position: "bottom",
+      labels: {
+        font: { family: "inherit", size: 11 },
+        padding: 12
+      }
+    }
+  },
+  cutout: "68%"
+};
+
+const userDoughnutData = computed(() => {
+  return {
+    labels: ["المستخدم الفعلي", "المقاعد الشاغرة"],
+    datasets: [
+      {
+        data: [currentScopeUsers.value, currentScopeRemainingUsers.value],
+        backgroundColor: ["#3b82f6", "#e2e8f0"],
+        hoverBackgroundColor: ["#2563eb", "#cbd5e1"],
+        borderWidth: 0
+      }
+    ]
+  };
+});
+
+const productDoughnutData = computed(() => {
+  return {
+    labels: ["الأصناف المستخدمة", "السعة المتبقية"],
+    datasets: [
+      {
+        data: [currentScopeProducts.value, currentScopeRemainingProducts.value],
+        backgroundColor: ["#10b981", "#e2e8f0"],
+        hoverBackgroundColor: ["#059669", "#cbd5e1"],
+        borderWidth: 0
+      }
+    ]
+  };
+});
+
+const barOptions = {
+  responsive: true,
+  maintainAspectRatio: false,
+  plugins: {
+    legend: {
+      position: "bottom",
+      labels: {
+        font: { family: "inherit", size: 10 },
+        padding: 8
+      }
+    }
+  },
+  scales: {
+    x: {
+      ticks: { font: { family: "inherit", size: 10 } },
+      grid: { display: false }
+    },
+    y: {
+      beginAtZero: true,
+      ticks: { font: { family: "inherit", size: 10 } },
+      grid: { color: "#f1f5f9" }
+    }
+  }
+};
+
+const barComparisonData = computed(() => {
+  const labels = branchList.value.map(b => b.branchName || b.name);
+  const users = branchList.value.map(b => b.userCount ?? b.currentUserCount ?? 0);
+  const products = branchList.value.map(b => b.productCount ?? b.currentProductCount ?? 0);
+
+  return {
+    labels,
+    datasets: [
+      {
+        label: "المستخدمين",
+        backgroundColor: "#3b82f6",
+        borderRadius: 6,
+        data: users
+      },
+      {
+        label: "الأصناف",
+        backgroundColor: "#cca752",
+        borderRadius: 6,
+        data: products
+      }
+    ]
+  };
 });
 
 const branchesNearCapacity = computed(() => {
-  return branchStore.branches.map(b => {
-    const userRatio = (b.currentUserCount || 0) / (b.maxUsers || 1);
-    const productRatio = (b.currentProductCount || 0) / (b.maxProducts || 1);
+  return branchList.value.map(b => {
+    const uCount = b.userCount ?? b.currentUserCount ?? 0;
+    const pCount = b.productCount ?? b.currentProductCount ?? 0;
+    const userRatio = uCount / (b.maxUsers || 1);
+    const productRatio = pCount / (b.maxProducts || 1);
     return {
       ...b,
       userRatio,
       productRatio,
-      isUserExceeded: (b.currentUserCount || 0) >= (b.maxUsers || 1),
-      isProductExceeded: (b.currentProductCount || 0) >= (b.maxProducts || 1)
+      isUserExceeded: uCount >= (b.maxUsers || 1),
+      isProductExceeded: pCount >= (b.maxProducts || 1)
     };
   }).filter(b => b.userRatio >= 0.8 || b.productRatio >= 0.8);
 });
@@ -298,10 +655,59 @@ function getProgressBarColor(ratio) {
   return "bg-emerald-500";
 }
 
+// --- Quick Edit Modal State ---
+const showEditModal = ref(false);
+const savingEdit = ref(false);
+const editingBranchId = ref(null);
+const editForm = ref({
+  name: "",
+  maxUsers: 10,
+  maxProducts: 1000
+});
+
+function openEditModal(branch) {
+  const id = branch.branchId || branch.id;
+  editingBranchId.value = id;
+  editForm.value = {
+    name: branch.branchName || branch.name || "",
+    maxUsers: branch.maxUsers || 10,
+    maxProducts: branch.maxProducts || 1000
+  };
+  showEditModal.value = true;
+}
+
+async function submitEditBranch() {
+  if (!editingBranchId.value) return;
+  savingEdit.value = true;
+  try {
+    const res = await branchStore.updateBranch(editingBranchId.value, editForm.value);
+    if (res.success) {
+      toast.add({
+        severity: "success",
+        summary: "تم بنجاح",
+        detail: "تم تحديث سعة الفرع بنجاح",
+        life: 3000
+      });
+      showEditModal.value = false;
+      await refreshData();
+    } else {
+      toast.add({
+        severity: "error",
+        summary: "خطأ",
+        detail: res.message || "فشل تحديث الفرع",
+        life: 4000
+      });
+    }
+  } finally {
+    savingEdit.value = false;
+  }
+}
+
 async function refreshData() {
   loading.value = true;
   await Promise.all([
     branchStore.fetchBranches(),
+    branchStore.fetchAnalytics(),
     branchStore.fetchStats()
   ]);
   loading.value = false;

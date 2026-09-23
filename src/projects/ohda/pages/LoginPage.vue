@@ -101,7 +101,11 @@ function toggleLanguage() {
 async function handleLogin() {
   const res = await authStore.login(form.value.username, form.value.password);
   if (res.success) {
-    router.push("/ohda/dashboard");
+    if (authStore.isSuperAdmin) {
+      router.push("/ohda/branches");
+    } else {
+      router.push("/ohda/dashboard");
+    }
   } else {
     toast.add({
       severity: "error",
