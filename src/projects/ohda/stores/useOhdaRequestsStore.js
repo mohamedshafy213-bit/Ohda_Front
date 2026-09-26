@@ -1,6 +1,7 @@
 import { defineStore } from "pinia";
 import { apiGet, apiPost, apiPut } from "@/utilities/fetchApi";
 import { useOhdaInventoryStore } from "./useOhdaInventoryStore";
+import { useOhdaWarehouseBinStore } from "./useOhdaWarehouseBinStore";
 import { useOhdaNotificationStore } from "./useOhdaNotificationStore";
 import { useOhdaUserPermissionStore } from "./useOhdaUserPermissionStore";
 import { useOhdaAuthStore } from "./useOhdaAuthStore";
@@ -103,8 +104,20 @@ export const useOhdaRequestsStore = defineStore("ohdaRequests", {
       this.loading = true;
       try {
         const res = await apiPost("/api/ProductExitRequest/request", payload);
-        if (res?.data?.isDone && res?.data?.singleObject) {
-          this.exitRequests.unshift(res.data.singleObject);
+        if (res?.data?.isDone) {
+          if (res?.data?.singleObject) {
+            this.exitRequests.unshift(res.data.singleObject);
+          }
+          if (payload.autoApprove) {
+            const inventoryStore = useOhdaInventoryStore();
+            const binStore = useOhdaWarehouseBinStore();
+            await Promise.all([
+              this.fetchExitRequests({ silent: true }),
+              inventoryStore.fetchProducts(),
+              inventoryStore.fetchCategories(),
+              binStore.fetchBins()
+            ]);
+          }
           return { success: true };
         }
         return { success: false, message: res?.data?.returnMessage || "فشل إنشاء طلب الصرف" };
@@ -152,9 +165,14 @@ export const useOhdaRequestsStore = defineStore("ohdaRequests", {
             req.supervisorUsername = supervisorUserObj?.username || req.supervisorUsername;
             req.supervisorApprove = true;
 
-            // Auto-Refresh inventory stock!
+            // Auto-Refresh inventory stock, warehouse bins, and categories across the whole system!
             const inventoryStore = useOhdaInventoryStore();
-            await inventoryStore.fetchProducts();
+            const binStore = useOhdaWarehouseBinStore();
+            await Promise.all([
+              inventoryStore.fetchProducts(),
+              inventoryStore.fetchCategories(),
+              binStore.fetchBins()
+            ]);
 
             // Refresh user notifications from backend
             useOhdaNotificationStore().fetchMyNotifications();
@@ -211,8 +229,20 @@ export const useOhdaRequestsStore = defineStore("ohdaRequests", {
       this.loading = true;
       try {
         const res = await apiPost("/api/ProductEntryRequest/request", payload);
-        if (res?.data?.isDone && res?.data?.singleObject) {
-          this.entryRequests.unshift(res.data.singleObject);
+        if (res?.data?.isDone) {
+          if (res?.data?.singleObject) {
+            this.entryRequests.unshift(res.data.singleObject);
+          }
+          if (payload.autoApprove) {
+            const inventoryStore = useOhdaInventoryStore();
+            const binStore = useOhdaWarehouseBinStore();
+            await Promise.all([
+              this.fetchEntryRequests({ silent: true }),
+              inventoryStore.fetchProducts(),
+              inventoryStore.fetchCategories(),
+              binStore.fetchBins()
+            ]);
+          }
           return { success: true };
         }
         return { success: false, message: res?.data?.returnMessage || "فشل إنشاء طلب التوريد" };
@@ -260,9 +290,14 @@ export const useOhdaRequestsStore = defineStore("ohdaRequests", {
             req.supervisorUsername = supervisorUserObj?.username || req.supervisorUsername;
             req.supervisorApprove = true;
 
-            // Auto-Refresh inventory stock!
+            // Auto-Refresh inventory stock, warehouse bins, and categories across the whole system!
             const inventoryStore = useOhdaInventoryStore();
-            await inventoryStore.fetchProducts();
+            const binStore = useOhdaWarehouseBinStore();
+            await Promise.all([
+              inventoryStore.fetchProducts(),
+              inventoryStore.fetchCategories(),
+              binStore.fetchBins()
+            ]);
 
             // Refresh user notifications from backend
             useOhdaNotificationStore().fetchMyNotifications();

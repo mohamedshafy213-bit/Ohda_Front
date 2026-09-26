@@ -48,10 +48,21 @@
         <p class="text-xs text-brand-gray min-h-[36px]">{{ cat.description || 'لا يوجد وصف مُدخل لهذه الفئة' }}</p>
 
         <div class="pt-2 border-t border-brand-gray/10 flex items-center justify-between text-xs">
-          <span class="text-brand-gray">المنتجات المرتبطة</span>
-          <span class="font-bold text-brand-accent bg-brand-soft px-2 py-0.5 rounded-full border border-brand-accent/20">
-            {{ getCategoryProductsCount(cat.id) }} منتج
-          </span>
+          <div class="flex items-center gap-1.5 text-brand-gray">
+            <span>المنتجات:</span>
+            <span class="font-bold text-brand-dark bg-brand-light px-2 py-0.5 rounded-full border border-brand-gray/15">
+              {{ getCategoryProductsCount(cat.id) }} منتج
+            </span>
+          </div>
+          <div class="flex items-center gap-1.5">
+            <span class="text-brand-gray">إجمالي الرصيد:</span>
+            <span
+              class="font-mono font-bold px-2.5 py-0.5 rounded-full text-xs border"
+              :class="getCategoryStockCount(cat.id) > 0 ? 'bg-emerald-500/10 text-emerald-600 border-emerald-500/25' : 'bg-red-500/10 text-red-600 border-red-500/25'"
+            >
+              {{ getCategoryStockCount(cat.id) }} قطعة
+            </span>
+          </div>
         </div>
       </div>
     </div>
@@ -110,6 +121,12 @@ const form = ref({
 
 function getCategoryProductsCount(catId) {
   return inventoryStore.products.filter(p => p.categoryId === catId).length;
+}
+
+function getCategoryStockCount(catId) {
+  return inventoryStore.products
+    .filter(p => p.categoryId === catId)
+    .reduce((sum, p) => sum + (p.quantity ?? p.amount ?? 0), 0);
 }
 
 function openAddModal() {

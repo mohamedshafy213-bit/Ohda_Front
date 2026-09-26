@@ -50,7 +50,8 @@ export default {
         approve: "موافق",
         reject: "مرفوض",
         itemStatus: "حالة العنصر",
-        partialDecision: "قرار الاعتماد (جزئي)"
+        partialDecision: "قرار الاعتماد (جزئي)",
+        saving: "جاري الحفظ..."
       },
       dashboard: {
         totalStock: "إجمالي المنتجات بالمخزن",
@@ -282,6 +283,73 @@ export default {
         entities: "الأقسام والموردين",
         security: "الأمان وإدارة النظام",
         branches: "إدارة الفروع والمنصة"
+      },
+      departments: {
+        title: "الأقسام",
+        subTitle: "إدارة أقسام وجهات المؤسسة",
+        addDepartment: "إضافة قسم جديد",
+        editDepartment: "تعديل القسم",
+        name: "اسم القسم",
+        description: "الوصف",
+        placeholderName: "أدخل اسم القسم...",
+        placeholderDesc: "أدخل وصف القسم...",
+        deleteConfirm: "هل أنت متأكد من حذف هذا القسم؟"
+      },
+      productStates: {
+        title: "حالات المنتجات",
+        subTitle: "إدارة حالات المنتجات (جديد، مستعمل، تالف...)",
+        addState: "إضافة حالة جديدة",
+        editState: "تعديل الحالة",
+        name: "الاسم",
+        code: "الكود (اختياري)",
+        placeholderName: "أدخل اسم الحالة...",
+        placeholderCode: "أدخل كود الحالة...",
+        deleteConfirm: "هل أنت متأكد من حذف هذه الحالة؟"
+      },
+      approvalConfig: {
+        title: "إعدادات ومسارات الاعتماد",
+        subTitle: "إدارة مسارات الاعتماد المرنة لطلبات الإدخال والصرف مع إمكانية تخصيص الخطوات والمجموعات",
+        addStep: "إضافة خطوة جديدة في المسار",
+        editStep: "تعديل بيانات الخطوة",
+        deleteStep: "حذف الخطوة",
+        flowCycle: "دورة الاعتماد والموافقات:",
+        entryFlow: "طلبات الإدخال والتوريد (Entry Flow)",
+        exitFlow: "طلبات الصرف (Exit Flow)",
+        flowEnabled: "دورة الموافقات مفعّلة",
+        flowDisabled: "صرف/توريد مباشر وفوري (بدون دورة)",
+        flowEnabledDesc: "عند تفعيل الدورة، يتطلب كل طلب المرور بالخطوات والمجموعات المحددة أدناه قبل توثيقه النهائي بالمخزون.",
+        flowDisabledDesc: "نمط الصاحب / المشرف المباشر: أي طلب يتم إنشاؤه يتم اعتماده وتسكينه/صرفه فورياً وتحديث الأرفف والمخزن تلقائياً بدون لجان موافقة.",
+        stepName: "اسم الخطوة",
+        stepDesc: "وصف الخطوة والهدف منها (اختياري)",
+        stepDescPlaceholder: "ملاحظات حول طبيعة هذه الخطوة والشروط المطلوبة لتنفيذها...",
+        assignInitialGroup: "إسناد مجموعة مستخدمين أولية لهذه الخطوة (اختياري)",
+        assignGroup: "إسناد مجموعة مستخدمين",
+        assignedGroups: "المجموعات المسندة:",
+        groupsCount: "مجموعات",
+        targetStep: "الخطوة المستهدفة:",
+        selectGroup: "اختر مجموعة المستخدمين",
+        activeInFlow: "تفعيل هذه المجموعة في مسار الاعتماد",
+        order: "الترتيب",
+        groupName: "اسم المجموعة",
+        status: "الحالة",
+        noGroups: "لم يتم إسناد أي مجموعات لهذه الخطوة بعد."
+      },
+      compass: {
+        title: "بوصلة العهد والأجهزة",
+        subTitle: "البحث التاريخي والتدقيق لصرف العهد والأجهزة والتحقق من وجهتها بالأرقام التسلسلية",
+        downloadTemplate: "تحميل نموذج البوصلة الفارغ",
+        uploadDocument: "رفع مستند البوصلة (.xlsx)",
+        showFilters: "إظهار عوامل التصفية",
+        hideFilters: "إخفاء عوامل التصفية",
+        textSearch: "بحث نصي",
+        searchPlaceholder: "ابحث برقم الجهاز، اسم المنتج، أو المستلم...",
+        movementType: "نوع الحركة",
+        allTypes: "الكل",
+        entry: "دخول (توريد/إرجاع)",
+        exit: "خروج (صرف)",
+        serialNumber: "الرقم التسلسلي (Serial Number)",
+        recipient: "المستلم",
+        date: "التاريخ والوقت"
       }
     }
   },
@@ -336,7 +404,8 @@ export default {
         approve: "Approve",
         reject: "Reject",
         itemStatus: "Item Status",
-        partialDecision: "Approval Decision (Partial)"
+        partialDecision: "Approval Decision (Partial)",
+        saving: "Saving..."
       },
       dashboard: {
         totalStock: "Total Warehouse Products",
@@ -568,6 +637,73 @@ export default {
         entities: "Departments & Suppliers",
         security: "Security & Management",
         branches: "Branches & Platform"
+      },
+      departments: {
+        title: "Departments",
+        subTitle: "Manage organization departments and units",
+        addDepartment: "Add New Department",
+        editDepartment: "Edit Department",
+        name: "Department Name",
+        description: "Description",
+        placeholderName: "Enter department name...",
+        placeholderDesc: "Enter department description...",
+        deleteConfirm: "Are you sure you want to delete this department?"
+      },
+      productStates: {
+        title: "Product States",
+        subTitle: "Manage product conditions (New, Used, Damaged...)",
+        addState: "Add New State",
+        editState: "Edit Product State",
+        name: "State Name",
+        code: "Code (Optional)",
+        placeholderName: "Enter state name...",
+        placeholderCode: "Enter state code...",
+        deleteConfirm: "Are you sure you want to delete this state?"
+      },
+      approvalConfig: {
+        title: "Approval Workflow Configurations",
+        subTitle: "Manage flexible approval workflows for entry and exit requests, with custom steps and assigned user groups",
+        addStep: "Add New Workflow Step",
+        editStep: "Edit Step",
+        deleteStep: "Delete Step",
+        flowCycle: "Approval Workflow Cycle:",
+        entryFlow: "Entry & Stocking Requests (Entry Flow)",
+        exitFlow: "Exit & Dispatch Requests (Exit Flow)",
+        flowEnabled: "Approval Cycle Enabled",
+        flowDisabled: "Immediate Direct Dispatch / Stocking (No Cycle)",
+        flowEnabledDesc: "When enabled, every request must pass through the steps and assigned groups before final stock execution.",
+        flowDisabledDesc: "Owner/Direct Supervisor Mode: Created requests are immediately approved and executed without multi-step approval cycles.",
+        stepName: "Step Name",
+        stepDesc: "Step Description & Purpose (Optional)",
+        stepDescPlaceholder: "Notes about this step and required conditions...",
+        assignInitialGroup: "Assign Initial User Group (Optional)",
+        assignGroup: "Assign User Group",
+        assignedGroups: "Assigned Groups:",
+        groupsCount: "groups",
+        targetStep: "Target Step:",
+        selectGroup: "Select User Group",
+        activeInFlow: "Activate this group in the approval workflow",
+        order: "Order",
+        groupName: "Group Name",
+        status: "Status",
+        noGroups: "No user groups assigned to this step yet."
+      },
+      compass: {
+        title: "Asset & Equipment Compass",
+        subTitle: "Historical audit and tracking for dispatched equipment and destination verification by serial numbers",
+        downloadTemplate: "Download Blank Template",
+        uploadDocument: "Upload Compass File (.xlsx)",
+        showFilters: "Show Filters",
+        hideFilters: "Hide Filters",
+        textSearch: "Text Search",
+        searchPlaceholder: "Search by serial number, product name, or recipient...",
+        movementType: "Movement Type",
+        allTypes: "All",
+        entry: "Stock In / Return",
+        exit: "Stock Out / Dispatch",
+        serialNumber: "Serial Number",
+        recipient: "Recipient",
+        date: "Date & Time"
       }
     }
   }

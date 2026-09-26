@@ -155,6 +155,33 @@
             </div>
           </div>
 
+          <!-- Direct Execution Toggle Option -->
+          <div
+            class="p-3.5 rounded-xl border flex items-center justify-between transition-all"
+            :class="createForm.autoApprove ? 'bg-amber-500/10 border-amber-500/30 ring-1 ring-amber-500/20' : 'bg-brand-light border-brand-gray/15'"
+          >
+            <div class="flex items-center gap-3">
+              <div
+                class="w-9 h-9 rounded-xl flex items-center justify-center shrink-0 transition-colors"
+                :class="createForm.autoApprove ? 'bg-amber-600 text-white shadow-sm' : 'bg-brand-gray/15 text-brand-gray'"
+              >
+                <Zap class="w-5 h-5" />
+              </div>
+              <div>
+                <div class="font-bold text-xs text-brand-dark flex items-center gap-2">
+                  <span>صرف مباشر وفوري (اعتماد تلقائي بدون دورة موافقات)</span>
+                  <span v-if="createForm.autoApprove" class="px-2 py-0.5 rounded text-[10px] font-black bg-amber-500/20 text-amber-700">
+                    مباشر وفوري
+                  </span>
+                </div>
+                <p class="text-[11px] text-brand-gray mt-0.5 leading-relaxed">
+                  خصم الكميات من المخزون والأرفف فور إنشاء الطلب واعتماده كطلب مكتمل وموثق نهائياً دون انتظار موافقة المدير أو المشرف.
+                </p>
+              </div>
+            </div>
+            <ToggleSwitch v-model="createForm.autoApprove" />
+          </div>
+
           <!-- Added Items List Table -->
           <div class="border border-brand-gray/10 rounded-xl overflow-hidden shadow-sm">
             <div class="bg-brand-light p-3 border-b border-brand-gray/10 flex items-center justify-between">
@@ -411,10 +438,24 @@
             </span>
           </div>
 
-          <div class="flex items-center gap-3">
+          <div class="flex flex-wrap items-center gap-2">
             <SecondaryButton type="button" @click="showDetailsModal = false">
               إغلاق
             </SecondaryButton>
+
+            <!-- 1-Step Direct Final Approval (Pending -> Supervisor Approved in 1 click) -->
+            <template v-if="selectedRequest.status === 1 && (canApproveAsSupervisor || authStore.isAdmin)">
+              <Button
+                @click="directSingleStepApproval"
+                :disabled="isSubmitting"
+                :loading="isSubmitting"
+                class="!bg-emerald-600 hover:!bg-emerald-700 !text-white !font-bold flex items-center gap-1.5 shadow-sm"
+                title="اعتماد نهائي وصرف مباشر للأصناف فوراً دون الحاجة لمراجعة إدارية"
+              >
+                <CheckCheck class="w-4 h-4" />
+                اعتماد نهائي وصرف مباشر (خطوة واحدة)
+              </Button>
+            </template>
 
             <!-- Manager Stage Approvals -->
             <template v-if="selectedRequest.status === 1 && canApproveAsManager">
@@ -444,14 +485,17 @@
 
 <script setup>
 import { ref, computed, onMounted, onUnmounted, watch } from "vue";
+import { Zap, CheckCheck } from "lucide-vue-next";
 import { useOhdaAuthStore } from "../stores/useOhdaAuthStore";
 import { useOhdaInventoryStore } from "../stores/useOhdaInventoryStore";
+import { useOhdaWarehouseBinStore } from "../stores/useOhdaWarehouseBinStore";
 import { useOhdaRequestsStore } from "../stores/useOhdaRequestsStore";
 import { useOhdaApprovalConfigStore } from "../stores/useOhdaApprovalConfigStore";
 import { apiGet, apiPost } from "@/utilities/fetchApi";
 
 const authStore = useOhdaAuthStore();
 const inventoryStore = useOhdaInventoryStore();
+const binStore = useOhdaWarehouseBinStore();
 const requestsStore = useOhdaRequestsStore();
 const approvalConfigStore = useOhdaApprovalConfigStore();
 
@@ -552,7 +596,8 @@ const createForm = ref({
   purpose: "",
   departmentId: null,
   items: [],
-  selectedProductItemIds: []
+  selectedProductItemIds: [],
+  autoApprove: false
 });
 
 const manualItem = ref({
@@ -618,12 +663,14 @@ function removeSerialSelection(id) {
 }
 
 function openCreateModal() {
+  const isFlowDisabled = localStorage.getItem("ohda_approval_flow_enabled_exit") === "false";
   createForm.value = {
     recipientName: "",
     purpose: "",
     departmentId: null,
     items: [],
-    selectedProductItemIds: []
+    selectedProductItemIds: [],
+    autoApprove: isFlowDisabled
   };
   manualItem.value = {
     productId: null,
@@ -914,6 +961,9 @@ async function handleCreateExit() {
       await stopScanner();
       await requestsStore.fetchExitRequests();
       await loadAllInStockSerials();
+      if (createForm.value.autoApprove) {
+        alert("تم إنشاء طلب الصرف وصرفه وتحديث الأرفف والمخزون بنجاح ومباشرة!");
+      }
     } else {
       alert(result.message || "فشل إنشاء طلب الصرف");
     }
@@ -951,10 +1001,44 @@ async function viewDetails(request) {
 
 const canReviewSelectedRequest = computed(() => {
   if (!selectedRequest.value) return false;
-  if (selectedRequest.value.status === 1 && canApproveAsManager.value) return true;
+  if (selectedRequest.value.status === 1 && (canApproveAsManager.value || canApproveAsSupervisor.value || authStore.isAdmin)) return true;
   if (selectedRequest.value.status === 3 && canApproveAsSupervisor.value) return true;
   return false;
 });
+
+// Single-step direct final approval (Bypasses review stage)
+async function directSingleStepApproval() {
+  if (isSubmitting.value) return;
+  if (!confirm("هل تريد اعتماد هذا الطلب وصرفه نهائياً ومباشرة في خطوة واحدة دون الحاجة لمراجعة إدارية؟")) return;
+
+  const itemsPayload = Object.keys(itemDecisions.value).map(key => ({
+    itemId: parseInt(key),
+    status: itemDecisions.value[key] || 5
+  }));
+
+  const payload = {
+    items: itemsPayload
+  };
+
+  isSubmitting.value = true;
+  try {
+    const result = await requestsStore.supervisorApproveExit(selectedRequest.value.id, authStore.user, payload);
+    if (result.success) {
+      showDetailsModal.value = false;
+      await Promise.all([
+        requestsStore.fetchExitRequests(),
+        inventoryStore.fetchProducts(),
+        inventoryStore.fetchCategories(),
+        binStore.fetchBins(),
+        loadAllInStockSerials()
+      ]);
+    } else {
+      alert(result.message || "فشل الاعتماد المباشر للطلب.");
+    }
+  } finally {
+    isSubmitting.value = false;
+  }
+}
 
 function toggleItemDecision(itemId, status) {
   itemDecisions.value[itemId] = status;
@@ -994,9 +1078,13 @@ async function submitApprovalDecisions(isManager) {
 
     if (result.success) {
       showDetailsModal.value = false;
-      await requestsStore.fetchExitRequests();
-      await inventoryStore.fetchProducts();
-      await loadAllInStockSerials();
+      await Promise.all([
+        requestsStore.fetchExitRequests(),
+        inventoryStore.fetchProducts(),
+        inventoryStore.fetchCategories(),
+        binStore.fetchBins(),
+        loadAllInStockSerials()
+      ]);
     } else {
       alert(result.message || "فشل تقديم قرارات الاعتماد.");
     }
