@@ -521,13 +521,8 @@
         </div>
 
         <div>
-          <label class="block font-semibold text-brand-dark mb-1">{{ $t('ohda.users.role') }}</label>
-          <Select v-model="registerForm.role" :options="roleOptions" optionLabel="label" optionValue="value" class="w-full !bg-brand-light !border-brand-gray/25 focus:!border-brand-accent !text-brand-dark" />
-        </div>
-
-        <div>
-          <label class="block font-semibold text-brand-dark mb-1">مجموعة الصلاحيات (User Group)</label>
-          <Select v-model="registerForm.userGroupId" :options="groupOptions" optionLabel="label" optionValue="value" class="w-full !bg-brand-light !border-brand-gray/25 focus:!border-brand-accent !text-brand-dark" />
+          <label class="block font-semibold text-brand-dark mb-1">مجموعة الصلاحيات (User Group) *</label>
+          <Select v-model="registerForm.userGroupId" :options="groupOptions" optionLabel="label" optionValue="value" class="w-full !bg-brand-light !border-brand-gray/25 focus:!border-brand-accent !text-brand-dark" placeholder="اختر مجموعة الصلاحيات..." />
         </div>
 
         <div class="flex items-center justify-end gap-3 pt-3 border-t border-brand-gray/10">
@@ -590,13 +585,8 @@
         </div>
 
         <div>
-          <label class="block font-semibold text-brand-dark mb-1">{{ $t('ohda.users.role') }}</label>
-          <Select v-model="editForm.role" :options="roleOptions" optionLabel="label" optionValue="value" class="w-full !bg-brand-light !border-brand-gray/25 focus:!border-brand-accent !text-brand-dark" />
-        </div>
-
-        <div>
           <label class="block font-semibold text-brand-dark mb-1">مجموعة الصلاحيات (User Group)</label>
-          <Select v-model="editForm.userGroupId" :options="groupOptions" optionLabel="label" optionValue="value" class="w-full !bg-brand-light !border-brand-gray/25 focus:!border-brand-accent !text-brand-dark" />
+          <Select v-model="editForm.userGroupId" :options="groupOptions" optionLabel="label" optionValue="value" class="w-full !bg-brand-light !border-brand-gray/25 focus:!border-brand-accent !text-brand-dark" placeholder="اختر مجموعة الصلاحيات..." />
         </div>
 
         <div class="flex items-center justify-end gap-3 pt-3 border-t border-brand-gray/10">
@@ -830,6 +820,7 @@
 <script setup>
 import { ref, computed, onMounted } from "vue";
 import { useI18n } from "vue-i18n";
+import { useToast } from "primevue/usetoast";
 import { useOhdaUserPermissionStore } from "../stores/useOhdaUserPermissionStore";
 import { useOhdaGroupStore } from "../stores/useOhdaGroupStore";
 import { useOhdaBranchStore } from "../stores/useOhdaBranchStore";
@@ -839,6 +830,7 @@ const userStore = useOhdaUserPermissionStore();
 const groupStore = useOhdaGroupStore();
 const branchStore = useOhdaBranchStore();
 const authStore = useOhdaAuthStore();
+const toast = useToast();
 const { t } = useI18n();
 
 const activeTab = ref("users");
@@ -1027,7 +1019,7 @@ function openRegisterModal() {
     username: "",
     personName: "",
     email: "",
-    password: "User@123",
+    password: "P@ssw0rd",
     role: 2,
     branchId: defaultBranchId,
     userGroupId: groupStore.groups[0]?.id || null
@@ -1036,8 +1028,29 @@ function openRegisterModal() {
 }
 
 async function handleRegisterUser() {
-  await userStore.registerUser(registerForm.value);
-  showRegisterModal.value = false;
+  const selectedGroup = groupStore.groups.find(g => g.id === registerForm.value.userGroupId);
+  if (selectedGroup && (selectedGroup.name.includes("مدير") || selectedGroup.name.includes("Admin"))) {
+    registerForm.value.role = 1;
+  } else {
+    registerForm.value.role = 2;
+  }
+  const res = await userStore.registerUser(registerForm.value);
+  if (res?.success) {
+    showRegisterModal.value = false;
+    toast.add({
+      severity: "success",
+      summary: "تم بنجاح",
+      detail: "تم تسجيل حساب المستخدم بنجاح بكلمة المرور الافتراضية (P@ssw0rd)",
+      life: 4000
+    });
+  } else {
+    toast.add({
+      severity: "error",
+      summary: "فشل إنشاء المستخدم",
+      detail: res?.message || "حدث خطأ أثناء حفظ المستخدم، يرجى مراجعة البيانات المدخلة",
+      life: 6000
+    });
+  }
 }
 
 function openEditModal(user) {
@@ -1050,14 +1063,33 @@ function openEditModal(user) {
     password: "",
     role: user.role ?? 2,
     branchId: user.branchId || null,
-    userGroupId: user.userGroupId || user.userGroup?.id || null
+    userGroupId: user.userGroupId || user.userGroup?.id || (groupStore.groups[0]?.id || null)
   };
   showEditModal.value = true;
 }
 
 async function handleUpdateUser() {
-  await userStore.updateUser(editingUserId.value, editForm.value);
-  showEditModal.value = false;
+  const selectedGroup = groupStore.groups.find(g => g.id === editForm.value.userGroupId);
+  if (selectedGroup && (selectedGroup.name.includes("مدير") || selectedGroup.name.includes("Admin"))) {
+    editForm.value.role = 1;
+  }
+  const res = await userStore.updateUser(editingUserId.value, editForm.value);
+  if (res?.success) {
+    showEditModal.value = false;
+    toast.add({
+      severity: "success",
+      summary: "تم التحديث",
+      detail: "تم تحديث بيانات المستخدم بنجاح",
+      life: 4000
+    });
+  } else {
+    toast.add({
+      severity: "error",
+      summary: "فشل التحديث",
+      detail: res?.message || "حدث خطأ أثناء تحديث بيانات المستخدم",
+      life: 6000
+    });
+  }
 }
 
 async function openUserPermissionsModal(user) {
@@ -1080,7 +1112,22 @@ async function toggleUserPageAccess(userId, pageId, grant) {
 
 async function deleteUser(id) {
   if (confirm("هل أنت متأكد من إلغاء حساب هذا المستخدم؟")) {
-    await userStore.deleteUser(id);
+    const res = await userStore.deleteUser(id);
+    if (res?.success) {
+      toast.add({
+        severity: "info",
+        summary: "تم الحذف",
+        detail: "تم حذف المستخدم بنجاح",
+        life: 3000
+      });
+    } else {
+      toast.add({
+        severity: "error",
+        summary: "فشل الحذف",
+        detail: res?.message || "تعذر حذف المستخدم",
+        life: 4000
+      });
+    }
   }
 }
 

@@ -556,48 +556,6 @@
         </form>
       </Dialog>
 
-      <!-- INITIAL ADMIN CREDENTIALS NOTICE DIALOG -->
-      <Dialog
-        v-model:visible="showCredentialsDialog"
-        modal
-        header="تم إنشاء الفرع وحساب مديره بنجاح!"
-        class="!bg-brand-white !border-brand-gray/15 max-w-md w-full !text-brand-dark"
-      >
-        <div class="space-y-4 text-xs">
-          <div class="p-3 bg-emerald-500/10 border border-emerald-500/20 rounded-xl text-emerald-800 dark:text-emerald-300">
-            يرجى نسخ بيانات اعتماد مدير الفرع وتزويده بها ليتمكن من تسجيل الدخول وإدارة فرعه:
-          </div>
-
-          <div class="space-y-2 bg-brand-light p-4 rounded-xl border border-brand-gray/15 font-mono">
-            <div class="flex items-center justify-between">
-              <span class="text-brand-gray">اسم المستخدم:</span>
-              <span class="font-bold text-brand-dark select-all">{{ createdResult?.adminUsername }}</span>
-            </div>
-            <div class="flex items-center justify-between">
-              <span class="text-brand-gray">كلمة المرور المؤقتة:</span>
-              <span class="font-bold text-emerald-600 select-all">{{ createdResult?.temporaryPassword }}</span>
-            </div>
-            <div v-if="createdResult?.adminMilitaryNumber" class="flex items-center justify-between">
-              <span class="text-brand-gray">الرقم العسكري:</span>
-              <span class="font-bold text-brand-dark select-all">{{ createdResult?.adminMilitaryNumber }}</span>
-            </div>
-          </div>
-
-          <div class="flex items-center justify-end gap-3 pt-2">
-            <Button
-              @click="copyCredentials"
-              class="!bg-brand-accent hover:!bg-brand-accent/90 !text-brand-dark !font-bold flex items-center gap-2"
-            >
-              <Copy class="w-4 h-4" />
-              نسخ البيانات
-            </Button>
-            <SecondaryButton @click="showCredentialsDialog = false">
-              إغلاق
-            </SecondaryButton>
-          </div>
-        </div>
-      </Dialog>
-
       <!-- DELETE BLOCKED MODAL -->
       <Dialog
         v-model:visible="showDeleteBlockModal"
@@ -817,12 +775,11 @@ async function submitCreateBranch() {
   if (res.success) {
     showCreateModal.value = false;
     createdResult.value = res.data;
-    showCredentialsDialog.value = true;
     toast.add({
       severity: "success",
-      summary: "تم بنجاح",
-      detail: "تم إنشاء الفرع وحساب مديره بنجاح",
-      life: 4000
+      summary: "تم إنشاء الفرع بنجاح",
+      detail: "تم إنشاء الفرع ومديره بكلمة المرور الافتراضية (P@ssw0rd). سيُطلب منه تعيين كلمة مرور خاصة عند أول تسجيل دخول.",
+      life: 6000
     });
   } else {
     toast.add({

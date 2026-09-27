@@ -95,6 +95,15 @@
           </div>
         </div>
 
+        <!-- Change Password Button -->
+        <button
+          @click="showChangePasswordModal = true"
+          class="p-2 bg-white/10 hover:bg-white/20 text-white border border-white/10 rounded-xl transition-all cursor-pointer"
+          :title="currentLocale === 'ar' ? 'تغيير كلمة المرور' : 'Change Password'"
+        >
+          <KeyRound class="w-4 h-4 text-brand-accent" />
+        </button>
+
         <!-- Logout Button -->
         <button
           @click="logout"
@@ -199,6 +208,9 @@
 
     <!-- Global Interactive Page Help Drawer -->
     <PageHelpDrawer v-model="showPageHelp" />
+
+    <!-- Mandatory / Voluntary Force Change Password Dialog -->
+    <ForceChangePasswordDialog :manual-open="showChangePasswordModal" @closed="showChangePasswordModal = false" />
   </div>
 </template>
 
@@ -211,6 +223,8 @@ import { useOhdaNotificationStore } from "../stores/useOhdaNotificationStore";
 import { useOhdaRequestsStore } from "../stores/useOhdaRequestsStore";
 import { useI18n } from "vue-i18n";
 import PageHelpDrawer from "../components/PageHelpDrawer.vue";
+import ForceChangePasswordDialog from "../components/ForceChangePasswordDialog.vue";
+import { KeyRound } from "lucide-vue-next";
 
 const router = useRouter();
 const route = useRoute();
@@ -222,6 +236,7 @@ const { t } = useI18n();
 const sidebarOpen = ref(false);
 const showNotifications = ref(false);
 const showPageHelp = ref(false);
+const showChangePasswordModal = ref(false);
 
 const openGroups = ref({
   general: true,
@@ -261,6 +276,7 @@ const pageMeta = {
     isAlert: () => (requestsStore.myReturnedEntryRequestsCount > 0)
   },
   "/ohda/scan": { labelKey: "ohda.nav.scan", icon: "QrCode" },
+  "/ohda/barcode-print": { labelKey: "ohda.nav.barcodePrint", icon: "Printer" },
   "/ohda/categories": { labelKey: "ohda.nav.categories", icon: "Tags" },
   "/ohda/suppliers": { labelKey: "ohda.nav.suppliers", icon: "Truck" },
   "/ohda/users": { labelKey: "ohda.nav.users", icon: "Users" },
@@ -358,6 +374,7 @@ const groupDefinitions = computed(() => {
         "/ohda/products",
         "/ohda/inventory",
         "/ohda/warehouse-bins",
+        "/ohda/barcode-print",
         "/ohda/categories",
         "/ohda/scan"
       ]

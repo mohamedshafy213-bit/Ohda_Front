@@ -38,6 +38,7 @@ declare global {
   const formatFileSize: typeof import('./src/utilities/fileProcessor.js').formatFileSize
   const formatNumber: typeof import('./src/utilities/functions.js').formatNumber
   const formatTime: typeof import('./src/utilities/functions.js').formatTime
+  const generateBarcodeSvgString: typeof import('./src/utilities/barcodeSvg.js').generateBarcodeSvgString
   const generateRoutes: typeof import('./src/utilities/exports.js').generateRoutes
   const getActivePersonUniversityId: typeof import('./src/utilities/authTokens.js').getActivePersonUniversityId
   const getCurrentInstance: typeof import('vue').getCurrentInstance

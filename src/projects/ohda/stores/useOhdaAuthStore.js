@@ -44,6 +44,7 @@ export const useOhdaAuthStore = defineStore("ohdaAuth", {
             "/ohda/exit-requests",
             "/ohda/entry-requests",
             "/ohda/scan",
+            "/ohda/barcode-print",
             "/ohda/categories",
             "/ohda/suppliers",
             "/ohda/users",
@@ -80,6 +81,12 @@ export const useOhdaAuthStore = defineStore("ohdaAuth", {
         if (!paths.includes("/ohda/branches")) paths.push("/ohda/branches");
       }
 
+      // If products or inventory are accessible, ensure barcode-print and warehouse-bins are accessible
+      if (paths.includes("/ohda/products") || paths.includes("/ohda/inventory") || paths.includes("/ohda/scan")) {
+        if (!paths.includes("/ohda/barcode-print")) paths.push("/ohda/barcode-print");
+        if (!paths.includes("/ohda/warehouse-bins")) paths.push("/ohda/warehouse-bins");
+      }
+
       // Ensure dashboard is always present as base landing
       if (!paths.includes("/ohda/dashboard")) {
         paths.unshift("/ohda/dashboard");
@@ -113,9 +120,16 @@ export const useOhdaAuthStore = defineStore("ohdaAuth", {
         return (state.user?.branchId === bId);
       }
 
-      // Filter purely based on the pages assigned to this user!
+      // Filter based on the pages assigned to this user!
       const allowed = state.allowedPaths || [];
-      return allowed.includes(path);
+      if (allowed.includes(path)) return true;
+
+      // Allow barcode-print if products or inventory are allowed
+      if (path === "/ohda/barcode-print" && (allowed.includes("/ohda/products") || allowed.includes("/ohda/inventory") || allowed.includes("/ohda/scan"))) {
+        return true;
+      }
+
+      return false;
     }
   },
   actions: {

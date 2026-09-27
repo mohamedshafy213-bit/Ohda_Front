@@ -75,12 +75,12 @@ export const useOhdaWarehouseBinStore = defineStore("ohdaWarehouseBin", {
         const res = await apiPost("/api/WarehouseBin", binData);
         if (res?.data?.isDone) {
           await this.fetchBins();
-          return true;
+          return { success: true, message: res?.data?.returnMessage || "تمت إضافة الرف بنجاح" };
         }
-        return false;
+        return { success: false, message: res?.data?.returnMessage || "فشل إضافة الرف" };
       } catch (error) {
         console.error("Error creating warehouse bin:", error);
-        return false;
+        return { success: false, message: error?.response?.data?.returnMessage || error?.message || "حدث خطأ أثناء إضافة الرف" };
       }
     },
 
@@ -89,12 +89,12 @@ export const useOhdaWarehouseBinStore = defineStore("ohdaWarehouseBin", {
         const res = await apiPut(`/api/WarehouseBin/${id}`, binData);
         if (res?.data?.isDone) {
           await this.fetchBins();
-          return true;
+          return { success: true, message: res?.data?.returnMessage || "تم تحديث الرف بنجاح" };
         }
-        return false;
+        return { success: false, message: res?.data?.returnMessage || "فشل تحديث الرف" };
       } catch (error) {
         console.error("Error updating warehouse bin:", error);
-        return false;
+        return { success: false, message: error?.response?.data?.returnMessage || error?.message || "حدث خطأ أثناء تحديث الرف" };
       }
     },
 
@@ -103,12 +103,12 @@ export const useOhdaWarehouseBinStore = defineStore("ohdaWarehouseBin", {
         const res = await apiDelete(`/api/WarehouseBin/${id}`);
         if (res?.data?.isDone) {
           await this.fetchBins();
-          return true;
+          return { success: true, message: res?.data?.returnMessage || "تم حذف الرف بنجاح" };
         }
-        return false;
+        return { success: false, message: res?.data?.returnMessage || "فشل حذف الرف" };
       } catch (error) {
         console.error("Error deleting warehouse bin:", error);
-        return false;
+        return { success: false, message: error?.response?.data?.returnMessage || error?.message || "حدث خطأ أثناء حذف الرف" };
       }
     },
 

@@ -55,6 +55,11 @@ export default [
         component: () => import("./pages/BarcodeScanPage.vue")
       },
       {
+        path: "barcode-print",
+        name: "OhdaBarcodePrint",
+        component: () => import("./pages/BarcodePrintPage.vue")
+      },
+      {
         path: "categories",
         name: "OhdaCategories",
         component: () => import("./pages/CategoriesPage.vue")

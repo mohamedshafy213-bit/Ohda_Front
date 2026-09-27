@@ -121,20 +121,20 @@
         emptyMessage="لا توجد أرفف تخزين مسجلة. اضغط على '+ إضافة رف جديد' لإنشاء أول رف."
       >
         <!-- Bin Code -->
-        <Column field="code" header="كود الرف">
-          <template #body="{ data }">
-            <span class="px-2.5 py-1 rounded-lg bg-brand-soft text-brand-accent font-mono font-bold text-xs border border-brand-accent/25">
-              {{ data.code }}
-            </span>
-          </template>
-        </Column>
-
-        <!-- Bin Name -->
+        <Co        <!-- Bin Name & Department -->
         <Column field="name" header="اسم الرف / الوصف">
           <template #body="{ data }">
             <div>
               <span class="font-bold text-brand-dark dark:text-white block">{{ data.name }}</span>
-              <span class="text-[10px] text-brand-gray" v-if="data.description">{{ data.description }}</span>
+              <div class="flex items-center gap-2 mt-0.5">
+                <span class="text-[10px] text-brand-gray" v-if="data.description">{{ data.description }}</span>
+                <span
+                  v-if="data.departmentName && data.departmentName !== 'غير محدد'"
+                  class="text-[10px] px-1.5 py-0.5 rounded bg-blue-500/10 text-blue-600 dark:text-blue-400 font-medium"
+                >
+                  {{ data.departmentName }}
+                </span>
+              </div>
             </div>
           </template>
         </Column>
@@ -449,6 +449,20 @@
           </div>
         </div>
 
+        <!-- Department Selection -->
+        <div>
+          <label class="block font-semibold text-brand-dark dark:text-white mb-1">القسم التابع له (اختياري)</label>
+          <select
+            v-model="form.departmentId"
+            class="w-full px-3 py-2 rounded-xl text-xs bg-brand-light dark:bg-brand-dark/50 border border-brand-gray/25 text-brand-dark dark:text-white focus:outline-none focus:border-brand-accent cursor-pointer"
+          >
+            <option :value="null">-- المستودع العام (بدون قسم) --</option>
+            <option v-for="dept in binStore.departments" :key="dept.id" :value="dept.id">
+              {{ dept.name }}
+            </option>
+          </select>
+        </div>
+
         <div>
           <label class="block font-semibold text-brand-dark dark:text-white mb-1">وصف وملاحظات</label>
           <Textarea
@@ -465,9 +479,10 @@
           </SecondaryButton>
           <Button
             type="submit"
-            class="!bg-brand-accent hover:!bg-brand-accent/90 !text-brand-dark !font-bold"
+            :disabled="isSaving"
+            class="!bg-brand-accent hover:!bg-brand-accent/90 !text-brand-dark !font-bold disabled:opacity-50"
           >
-            حفظ البيانات
+            {{ isSaving ? 'جاري الحفظ...' : 'حفظ البيانات' }}
           </Button>
         </div>
       </form>
@@ -477,6 +492,7 @@
 
 <script setup>
 import { ref, computed, onMounted } from "vue";
+import { useToast } from "primevue/usetoast";
 import { useOhdaWarehouseBinStore } from "../stores/useOhdaWarehouseBinStore";
 import { useOhdaInventoryStore } from "../stores/useOhdaInventoryStore";
 import {
@@ -492,6 +508,7 @@ import {
   PackagePlus
 } from "lucide-vue-next";
 
+const toast = useToast();
 const binStore = useOhdaWarehouseBinStore();
 const inventoryStore = useOhdaInventoryStore();
 
@@ -500,6 +517,7 @@ const showModal = ref(false);
 const showItemsModal = ref(false);
 const showAssignModal = ref(false);
 const isEditing = ref(false);
+const isSaving = ref(false);
 const editingId = ref(null);
 const selectedBin = ref(null);
 const targetBin = ref(null);
@@ -513,6 +531,7 @@ const form = ref({
   aisle: "",
   shelf: "",
   capacity: 50,
+  departmentId: null,
   description: "",
   isActive: true
 });
@@ -525,6 +544,7 @@ const assignForm = ref({
 onMounted(async () => {
   await Promise.all([
     binStore.fetchBins(),
+    binStore.fetchDepartments(),
     inventoryStore.fetchProducts()
   ]);
 });
@@ -575,6 +595,7 @@ const filteredBins = computed(() => {
       b.name?.toLowerCase().includes(q) ||
       b.aisle?.toLowerCase().includes(q) ||
       b.shelf?.toLowerCase().includes(q) ||
+      b.departmentName?.toLowerCase().includes(q) ||
       b.description?.toLowerCase().includes(q)
   );
 });
@@ -588,6 +609,7 @@ function openAddModal() {
     aisle: "A",
     shelf: "01",
     capacity: 40,
+    departmentId: null,
     description: "",
     isActive: true
   };
@@ -603,6 +625,7 @@ function openEditModal(bin) {
     aisle: bin.aisle || "",
     shelf: bin.shelf || "",
     capacity: bin.capacity || 50,
+    departmentId: bin.departmentId || null,
     description: bin.description || "",
     isActive: bin.isActive ?? true
   };
@@ -610,12 +633,41 @@ function openEditModal(bin) {
 }
 
 async function handleSaveBin() {
-  if (isEditing.value) {
-    await binStore.updateBin(editingId.value, form.value);
-  } else {
-    await binStore.createBin(form.value);
+  isSaving.value = true;
+  try {
+    let res;
+    if (isEditing.value) {
+      res = await binStore.updateBin(editingId.value, form.value);
+    } else {
+      res = await binStore.createBin(form.value);
+    }
+
+    if (res.success) {
+      toast.add({
+        severity: "success",
+        summary: "تمت العملية بنجاح",
+        detail: res.message || "تم حفظ بيانات الرف بنجاح",
+        life: 3000
+      });
+      showModal.value = false;
+    } else {
+      toast.add({
+        severity: "error",
+        summary: "خطأ في الحفظ",
+        detail: res.message || "تعذر حفظ بيانات الرف",
+        life: 5000
+      });
+    }
+  } catch (err) {
+    toast.add({
+      severity: "error",
+      summary: "خطأ غير متوقع",
+      detail: err.message || "حدث خطأ غير متوقع أثناء حفظ الرف",
+      life: 5000
+    });
+  } finally {
+    isSaving.value = false;
   }
-  showModal.value = false;
 }
 
 async function viewBinItems(bin) {
@@ -652,25 +704,68 @@ async function handleAssignProduct() {
   if (res.success) {
     assignStatusMessage.value = res.message || "تم تسكين الأصناف بنجاح";
     assignStatusError.value = false;
+    toast.add({
+      severity: "success",
+      summary: "تم التسكين",
+      detail: res.message || "تم تسكين الأصناف في الرف بنجاح",
+      life: 3000
+    });
     setTimeout(() => {
       showAssignModal.value = false;
     }, 1200);
   } else {
     assignStatusMessage.value = res.message || "فشل تسكين الأصناف في الرف";
     assignStatusError.value = true;
+    toast.add({
+      severity: "error",
+      summary: "فشل التسكين",
+      detail: res.message || "فشل تسكين الأصناف في الرف",
+      life: 5000
+    });
   }
 }
 
 async function handleUnassignItem(item) {
   if (!selectedBin.value) return;
   if (confirm(`هل أنت متأكد من إلغاء تسكين الجهاز رقم (${item.serialNumber}) من هذا الرف؟`)) {
-    await binStore.unassignItem(selectedBin.value.id, item.id);
+    const res = await binStore.unassignItem(selectedBin.value.id, item.id);
+    if (res.success) {
+      toast.add({
+        severity: "success",
+        summary: "تم الإلغاء",
+        detail: res.message || "تم إلغاء التسكين بنجاح",
+        life: 3000
+      });
+    } else {
+      toast.add({
+        severity: "error",
+        summary: "فشل الإلغاء",
+        detail: res.message || "فشل إلغاء تسكين الصنف",
+        life: 5000
+      });
+    }
   }
 }
 
 async function handleDeleteBin(bin) {
   if (confirm(`هل أنت متأكد من حذف الرف (${bin.code})؟`)) {
-    await binStore.deleteBin(bin.id);
+    const res = await binStore.deleteBin(bin.id);
+    if (res.success) {
+      toast.add({
+        severity: "success",
+        summary: "تم الحذف",
+        detail: res.message || "تم حذف الرف بنجاح",
+        life: 3000
+      });
+    } else {
+      toast.add({
+        severity: "error",
+        summary: "فشل الحذف",
+        detail: res.message || "فشل حذف الرف",
+        life: 5000
+      });
+    }
   }
 }
 </script>
+

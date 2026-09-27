@@ -55,9 +55,9 @@ export const useOhdaInventoryStore = defineStore("ohdaInventory", {
       this.loading = true;
       try {
         const res = await apiPost("/api/Product", productPayload);
-        if (res?.data?.isDone && res?.data?.singleObject) {
-          this.products.unshift(res.data.singleObject);
-          return { success: true };
+        if (res?.data?.isDone) {
+          await this.fetchProducts();
+          return { success: true, message: res?.data?.returnMessage || "تمت إضافة الصنف بنجاح" };
         }
         return { success: false, message: res?.data?.returnMessage || "فشل إضافة المنتج" };
       } catch (err) {
@@ -71,12 +71,9 @@ export const useOhdaInventoryStore = defineStore("ohdaInventory", {
     async updateProduct(id, productPayload) {
       try {
         const res = await apiPut(`/api/Product/${id}`, productPayload);
-        if (res?.data?.isDone && res?.data?.singleObject) {
-          const idx = this.products.findIndex(p => p.id === id);
-          if (idx !== -1) {
-            this.products[idx] = res.data.singleObject;
-          }
-          return { success: true };
+        if (res?.data?.isDone) {
+          await this.fetchProducts();
+          return { success: true, message: res?.data?.returnMessage || "تم تحديث الصنف بنجاح" };
         }
         return { success: false, message: res?.data?.returnMessage || "فشل تحديث المنتج" };
       } catch (err) {

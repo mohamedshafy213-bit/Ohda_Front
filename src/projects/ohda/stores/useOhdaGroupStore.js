@@ -45,11 +45,11 @@ export const useOhdaGroupStore = defineStore("ohdaGroup", {
 
     async updateUserGroup(id, payload) {
       try {
-        const res = await apiPut(`/api/UserGroup/${id}`, payload);
-        if (res?.data?.isDone && res?.data?.singleObject) {
+        const res = await apiPut(`/api/UserGroup/${id}`, { id, ...payload });
+        if (res?.data?.isDone) {
           const idx = this.groups.findIndex(g => g.id === id);
           if (idx !== -1) {
-            this.groups[idx] = res.data.singleObject;
+            this.groups[idx] = res.data.singleObject || { ...this.groups[idx], ...payload };
           }
           return { success: true };
         }
