@@ -200,8 +200,6 @@ export const useOhdaRequestsStore = defineStore("ohdaRequests", {
           if (req) {
             req.status = 4; // Rejected
             req.rejectionReason = rejectionReason;
-
-            // Refresh user notifications from backend
             useOhdaNotificationStore().fetchMyNotifications();
           }
           return { success: true };
@@ -210,6 +208,36 @@ export const useOhdaRequestsStore = defineStore("ohdaRequests", {
       } catch (err) {
         console.warn("Reject Exit Request API failed", err);
         return { success: false, message: err?.response?.data?.returnMessage || "فشل رفض طلب الصرف" };
+      }
+    },
+
+    // Requester Confirm & Release for Exit Request (Logs to Compass and decrements stock)
+    async requesterConfirmExit(id) {
+      this.loading = true;
+      try {
+        const res = await apiPost(`/api/ProductExitRequest/${id}/requester-confirm`, {}, false);
+        if (res?.data?.isDone) {
+          const req = this.exitRequests.find(r => r.id === id);
+          if (req) {
+            req.isRequesterConfirmed = true;
+            req.status = 2; // Approved / Completed
+          }
+          const inventoryStore = useOhdaInventoryStore();
+          const binStore = useOhdaWarehouseBinStore();
+          await Promise.all([
+            this.fetchExitRequests({ silent: true }),
+            inventoryStore.fetchProducts(),
+            inventoryStore.fetchCategories(),
+            binStore.fetchBins()
+          ]);
+          return { success: true, message: res.data.returnMessage };
+        }
+        return { success: false, message: res?.data?.returnMessage || "فشل تأكيد واستلام العهدة" };
+      } catch (err) {
+        console.warn("Requester confirm exit API failed", err);
+        return { success: false, message: err?.response?.data?.returnMessage || "فشل تأكيد واستلام العهدة" };
+      } finally {
+        this.loading = false;
       }
     },
 
@@ -273,8 +301,6 @@ export const useOhdaRequestsStore = defineStore("ohdaRequests", {
             req.managerId = managerUserObj?.id || req.managerId;
             req.managerUsername = managerUserObj?.username || req.managerUsername;
             req.managerApprove = true;
-
-            // Refresh user notifications from backend
             useOhdaNotificationStore().fetchMyNotifications();
           }
           return { success: true };
@@ -298,7 +324,6 @@ export const useOhdaRequestsStore = defineStore("ohdaRequests", {
             req.supervisorUsername = supervisorUserObj?.username || req.supervisorUsername;
             req.supervisorApprove = true;
 
-            // Auto-Refresh inventory stock, warehouse bins, and categories across the whole system!
             const inventoryStore = useOhdaInventoryStore();
             const binStore = useOhdaWarehouseBinStore();
             await Promise.all([
@@ -307,7 +332,6 @@ export const useOhdaRequestsStore = defineStore("ohdaRequests", {
               binStore.fetchBins()
             ]);
 
-            // Refresh user notifications from backend
             useOhdaNotificationStore().fetchMyNotifications();
           }
           return { success: true };
@@ -328,8 +352,6 @@ export const useOhdaRequestsStore = defineStore("ohdaRequests", {
           if (req) {
             req.status = 4; // Rejected
             req.rejectionReason = rejectionReason;
-
-            // Refresh user notifications from backend
             useOhdaNotificationStore().fetchMyNotifications();
           }
           return { success: true };
@@ -338,6 +360,36 @@ export const useOhdaRequestsStore = defineStore("ohdaRequests", {
       } catch (err) {
         console.warn("Reject Entry Request API failed", err);
         return { success: false, message: err?.response?.data?.returnMessage || "فشل رفض طلب التوريد" };
+      }
+    },
+
+    // Requester Confirm & Release for Entry Request (Logs to Compass and finishes warehouse entry)
+    async requesterConfirmEntry(id) {
+      this.loading = true;
+      try {
+        const res = await apiPost(`/api/ProductEntryRequest/${id}/requester-confirm`, {}, false);
+        if (res?.data?.isDone) {
+          const req = this.entryRequests.find(r => r.id === id);
+          if (req) {
+            req.isRequesterConfirmed = true;
+            req.status = 2; // Approved / Completed
+          }
+          const inventoryStore = useOhdaInventoryStore();
+          const binStore = useOhdaWarehouseBinStore();
+          await Promise.all([
+            this.fetchEntryRequests({ silent: true }),
+            inventoryStore.fetchProducts(),
+            inventoryStore.fetchCategories(),
+            binStore.fetchBins()
+          ]);
+          return { success: true, message: res.data.returnMessage };
+        }
+        return { success: false, message: res?.data?.returnMessage || "فشل تأكيد إدخال المخزون" };
+      } catch (err) {
+        console.warn("Requester confirm entry API failed", err);
+        return { success: false, message: err?.response?.data?.returnMessage || "فشل تأكيد إدخال المخزون" };
+      } finally {
+        this.loading = false;
       }
     }
   }

@@ -224,13 +224,15 @@
             : 'bg-brand-white hover:bg-brand-light text-brand-dark border border-brand-gray/15'"
         >
           <span
-            class="w-7 h-7 rounded-full flex items-center justify-center text-xs font-black shrink-0 transition-all"
-            :class="selectedStepId === step.id ? 'bg-brand-accent text-brand-dark' : 'bg-brand-gray/15 text-brand-dark'"
+            class="w-7 h-7 rounded-full flex items-center justify-center text-xs font-black shrink-0 transition-all text-white shadow-sm"
+            :style="{ backgroundColor: step.colorHex || (selectedStepId === step.id ? '#D97706' : '#6B7280') }"
           >
             {{ idx + 1 }}
           </span>
           <div>
-            <div class="text-xs font-bold truncate max-w-[130px]">{{ step.name }}</div>
+            <div class="text-xs font-bold truncate max-w-[130px] flex items-center gap-1.5">
+              <span>{{ step.name }}</span>
+            </div>
             <div class="text-[10px] opacity-75">{{ getGroupsForStep(step).length }} مجموعات مسندة</div>
           </div>
         </div>
@@ -336,16 +338,17 @@
                 </div>
               </div>
 
-              <!-- Step Number Badge (Reflects current order) -->
+              <!-- Step Number Badge (Reflects current order and step color) -->
               <div
-                class="w-8 h-8 rounded-lg flex items-center justify-center font-black text-sm transition-colors shrink-0"
-                :class="selectedStepId === step.id ? 'bg-brand-accent text-brand-dark font-black' : 'bg-brand-gray/10 text-brand-gray'"
+                class="w-8 h-8 rounded-lg flex items-center justify-center font-black text-sm transition-colors shrink-0 text-white shadow-sm"
+                :style="{ backgroundColor: step.colorHex || '#3B82F6' }"
               >
                 {{ index + 1 }}
               </div>
 
               <div class="min-w-0">
                 <div class="flex items-center gap-2">
+                  <span class="w-2 h-2 rounded-full shrink-0" :style="{ backgroundColor: step.colorHex || '#3B82F6' }"></span>
                   <h3 class="font-bold text-xs text-brand-dark group-hover:text-brand-accent transition-colors truncate">
                     {{ step.name }}
                   </h3>
@@ -597,6 +600,35 @@
           </div>
         </div>
 
+        <div>
+          <label class="block font-semibold text-brand-dark mb-1">
+            لون تمييز المرحلة في التقويم والجدول <span class="text-red-500">*</span>
+          </label>
+          <div class="flex items-center gap-3 p-2.5 rounded-xl bg-brand-light/60 border border-brand-gray/15">
+            <input
+              type="color"
+              v-model="stepForm.colorHex"
+              class="w-8 h-8 rounded-lg border border-brand-gray/25 cursor-pointer bg-transparent"
+              title="اختر لون مخصص"
+            />
+            <div class="flex flex-wrap items-center gap-1.5 flex-1">
+              <button
+                v-for="c in colorPresets"
+                :key="c.hex"
+                type="button"
+                @click="stepForm.colorHex = c.hex"
+                class="w-6 h-6 rounded-full border-2 transition-transform cursor-pointer"
+                :style="{ backgroundColor: c.hex }"
+                :class="stepForm.colorHex.toLowerCase() === c.hex.toLowerCase() ? 'scale-125 border-brand-dark shadow-sm' : 'border-white hover:scale-110'"
+                :title="c.label"
+              ></button>
+            </div>
+            <span class="font-mono text-xs font-bold text-brand-dark px-2 py-0.5 rounded bg-brand-white border border-brand-gray/20">
+              {{ stepForm.colorHex }}
+            </span>
+          </div>
+        </div>
+
         <!-- Optional: Immediately Assign a User Group -->
         <div v-if="!isEditingStep">
           <label class="block font-semibold text-brand-dark mb-1">
@@ -781,24 +813,38 @@ const roleOptions = [
   { value: 3, label: "مرحلة 3: اعتماد نهائي وتوثيق مباشر وصرف/تسكين (تنفيذ التغييرات)" }
 ];
 
+// Color Presets for workflow steps
+const colorPresets = [
+  { hex: "#3B82F6", label: "أزرق - تقديم (مرحلة 1)" },
+  { hex: "#F59E0B", label: "برتقالي - مراجعة (مرحلة 2)" },
+  { hex: "#10B981", label: "أخضر - اعتماد (مرحلة 3)" },
+  { hex: "#8B5CF6", label: "بنفسجي - إشراف" },
+  { hex: "#06B6D4", label: "سماوي - لوجستي" },
+  { hex: "#EC4899", label: "وردي - تدقيق" },
+  { hex: "#6366F1", label: "نيلي - إداري" }
+];
+
 // Initial default steps templates if no saved steps found
 const defaultEntrySteps = [
   {
     id: "step_entry_1",
     name: "مقدم الطلب والتوريد",
     role: 1,
+    colorHex: "#3B82F6",
     description: "تجهيز وإنشاء طلب إدخال وتوريد المنتجات للمستودع"
   },
   {
     id: "step_entry_2",
     name: "المراجعة والفحص الفني",
     role: 2,
+    colorHex: "#F59E0B",
     description: "مراجعة بنود وفواتير التوريد والتحقق الفني والإداري"
   },
   {
     id: "step_entry_3",
     name: "الاعتماد النهائي والتسكين",
     role: 3,
+    colorHex: "#10B981",
     description: "الموافقة الرسمية النهائية وإضافة الأصناف فعلياً لرصيد المخزون"
   }
 ];
@@ -808,18 +854,21 @@ const defaultExitSteps = [
     id: "step_exit_1",
     name: "مقدم طلب الصرف",
     role: 1,
+    colorHex: "#3B82F6",
     description: "إنشاء وتقديم طلب صرف العهدة وتحديد الأصناف المطلوبة"
   },
   {
     id: "step_exit_2",
     name: "المراجعة والتدقيق الإداري",
     role: 2,
+    colorHex: "#F59E0B",
     description: "مراجعة طلب الصرف والتأكد من استحقاق القسم والأصناف"
   },
   {
     id: "step_exit_3",
     name: "الاعتماد النهائي والتوثيق المستودعي",
     role: 3,
+    colorHex: "#10B981",
     description: "المصادقة النهائية وتحديث حركة الصرف وإنشاء وثيقة التسليم"
   }
 ];
@@ -917,9 +966,9 @@ function selectStep(stepId) {
 }
 
 function getStepBadgeClass(step) {
-  if (step.role === 1) return "bg-slate-500/10 text-slate-700 border-slate-500/20";
-  if (step.role === 2) return "bg-teal-500/10 text-teal-700 border-teal-500/20";
-  if (step.role === 3) return "bg-purple-500/10 text-purple-700 border-purple-500/20";
+  if (step.role === 1) return "bg-blue-500/10 text-blue-700 border-blue-500/20";
+  if (step.role === 2) return "bg-amber-500/10 text-amber-700 border-amber-500/20";
+  if (step.role === 3) return "bg-emerald-500/10 text-emerald-700 border-emerald-500/20";
   return "bg-brand-gray/10 text-brand-gray border-brand-gray/20";
 }
 
@@ -934,12 +983,14 @@ function getStepRoleLabel(step) {
 function openAddStepModal() {
   isEditingStep.value = false;
   editingStepId.value = null;
-  // Intelligently default role based on current steps count
-  const defaultRole = activeSteps.value.length === 0 ? 1 : activeSteps.value.length === 1 ? 2 : 3;
+  const count = activeSteps.value.length;
+  const defaultRole = count === 0 ? 1 : count === 1 ? 2 : 3;
+  const defaultColor = count === 0 ? "#3B82F6" : count === 1 ? "#F59E0B" : count === 2 ? "#10B981" : "#8B5CF6";
   stepForm.value = {
     name: "",
     description: "",
     role: defaultRole,
+    colorHex: defaultColor,
     initialUserGroupId: availableGroupOptionsAll.value[0]?.value || null
   };
   showStepModal.value = true;
@@ -952,6 +1003,7 @@ function openEditStepModal(step) {
     name: step.name,
     description: step.description || "",
     role: step.role || 2,
+    colorHex: step.colorHex || (step.role === 1 ? "#3B82F6" : step.role === 2 ? "#F59E0B" : "#10B981"),
     initialUserGroupId: null
   };
   showStepModal.value = true;
@@ -968,7 +1020,8 @@ async function saveStep() {
         ...list[idx],
         name: stepForm.value.name.trim(),
         description: stepForm.value.description.trim(),
-        role: stepForm.value.role
+        role: stepForm.value.role,
+        colorHex: stepForm.value.colorHex || "#3B82F6"
       };
       activeSteps.value = list;
     }
@@ -978,18 +1031,21 @@ async function saveStep() {
       id: newId,
       name: stepForm.value.name.trim(),
       description: stepForm.value.description.trim(),
-      role: stepForm.value.role
+      role: stepForm.value.role,
+      colorHex: stepForm.value.colorHex || "#3B82F6"
     };
 
     activeSteps.value = [...activeSteps.value, newStep];
     selectedStepId.value = newId;
 
-    // If an initial group was selected, immediately assign it
     if (stepForm.value.initialUserGroupId) {
       await approvalConfigStore.createApprovalConfig({
         requestType: selectedRequestType.value,
         workflowRole: newStep.role,
         userGroupId: stepForm.value.initialUserGroupId,
+        stepOrder: activeSteps.value.length,
+        stepName: newStep.name,
+        colorHex: newStep.colorHex,
         isActive: true
       });
     }
