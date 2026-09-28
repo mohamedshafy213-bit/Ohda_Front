@@ -10,7 +10,9 @@ export const useOhdaRequestsStore = defineStore("ohdaRequests", {
   state: () => ({
     exitRequests: [],
     entryRequests: [],
-    loading: false
+    loading: false,
+    isFetchingExit: false,
+    isFetchingEntry: false
   }),
 
   getters: {
@@ -85,6 +87,8 @@ export const useOhdaRequestsStore = defineStore("ohdaRequests", {
   actions: {
     // API Fetch Exit Requests (silent = true prevents UI loading flicker on background polls)
     async fetchExitRequests({ silent = false } = {}) {
+      if (this.isFetchingExit) return;
+      this.isFetchingExit = true;
       if (!silent) this.loading = true;
       try {
         const res = await apiGet("/api/ProductExitRequest");
@@ -96,6 +100,7 @@ export const useOhdaRequestsStore = defineStore("ohdaRequests", {
         console.warn("ProductExitRequest API failed", err);
       } finally {
         if (!silent) this.loading = false;
+        this.isFetchingExit = false;
       }
     },
 
@@ -210,6 +215,8 @@ export const useOhdaRequestsStore = defineStore("ohdaRequests", {
 
     // API Fetch Entry Requests (silent = true prevents UI loading flicker on background polls)
     async fetchEntryRequests({ silent = false } = {}) {
+      if (this.isFetchingEntry) return;
+      this.isFetchingEntry = true;
       if (!silent) this.loading = true;
       try {
         const res = await apiGet("/api/ProductEntryRequest");
@@ -221,6 +228,7 @@ export const useOhdaRequestsStore = defineStore("ohdaRequests", {
         console.warn("ProductEntryRequest API failed", err);
       } finally {
         if (!silent) this.loading = false;
+        this.isFetchingEntry = false;
       }
     },
 

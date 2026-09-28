@@ -29,9 +29,13 @@ export const useOhdaGroupStore = defineStore("ohdaGroup", {
     async createUserGroup(payload) {
       this.loading = true;
       try {
-        const res = await apiPost("/api/UserGroup", payload);
-        if (res?.data?.isDone && res?.data?.singleObject) {
-          this.groups.push(res.data.singleObject);
+        const res = await apiPost("/api/UserGroup", payload, false);
+        if (res?.data?.isDone) {
+          if (res?.data?.singleObject) {
+            this.groups.push(res.data.singleObject);
+          } else {
+            await this.fetchUserGroups();
+          }
           return { success: true };
         }
         return { success: false, message: res?.data?.returnMessage || "فشل إنشاء مجموعة المستخدم" };
@@ -45,7 +49,7 @@ export const useOhdaGroupStore = defineStore("ohdaGroup", {
 
     async updateUserGroup(id, payload) {
       try {
-        const res = await apiPut(`/api/UserGroup/${id}`, { id, ...payload });
+        const res = await apiPut(`/api/UserGroup/${id}`, { id, ...payload }, false);
         if (res?.data?.isDone) {
           const idx = this.groups.findIndex(g => g.id === id);
           if (idx !== -1) {
@@ -62,7 +66,7 @@ export const useOhdaGroupStore = defineStore("ohdaGroup", {
 
     async deleteUserGroup(id) {
       try {
-        const res = await apiDelete(`/api/UserGroup/${id}`);
+        const res = await apiDelete(`/api/UserGroup/${id}`, {}, false);
         if (res?.data?.isDone) {
           this.groups = this.groups.filter(g => g.id !== id);
           return { success: true };
@@ -130,7 +134,7 @@ export const useOhdaGroupStore = defineStore("ohdaGroup", {
       try {
         const res = await apiPost(`/api/GroupPagePermission/grant-all/${groupId}`, {}, false);
         if (res?.data?.isDone) {
-          this.groupPermissions[groupId] = this.pages.map(p => p.id);
+          await this.fetchGroupPermissions(groupId);
           return { success: true };
         }
         return { success: false, message: res?.data?.returnMessage || "فشل منح جميع صلاحيات المجموعة" };

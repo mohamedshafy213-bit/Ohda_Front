@@ -528,7 +528,7 @@ onMounted(async () => {
     if (document.visibilityState === "visible") {
       await requestsStore.fetchExitRequests({ silent: true });
     }
-  }, 10000);
+  }, 30000);
 });
 
 onUnmounted(async () => {

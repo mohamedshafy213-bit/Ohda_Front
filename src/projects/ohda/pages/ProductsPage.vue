@@ -210,11 +210,15 @@
       :header="isEditing ? 'تعديل بيانات الصنف / المنتج' : 'إضافة صنف / منتج جديد في المخزون'"
       class="!bg-brand-white dark:!bg-brand-dark !border-brand-gray/15 max-w-2xl w-full !text-brand-dark dark:!text-white"
     >
-      <form @submit.prevent="saveProduct" class="space-y-4 text-xs">
+      <form @submit.prevent="saveProduct" @keydown.enter="handleFormEnter" class="space-y-4 text-xs">
         <!-- 1. Product Basic Info -->
         <div>
-          <label class="block font-semibold text-brand-dark dark:text-white mb-1 required">اسم الصنف / المنتج</label>
+          <div class="flex items-center justify-between mb-1">
+            <label class="font-semibold text-brand-dark dark:text-white required">اسم الصنف / المنتج</label>
+            <span class="text-[10px] text-brand-gray font-normal">إلزامي *</span>
+          </div>
           <InputText
+            id="productNameInput"
             v-model="form.name"
             required
             placeholder="مثال: لابتوب Dell Latitude 5420 أو شاشة سامسونج 27 بوصة"
@@ -237,6 +241,7 @@
               </button>
             </div>
             <InputText
+              id="productSkuInput"
               v-model="form.sku"
               required
               placeholder="مثال: SKU-DELL-5420"
@@ -256,23 +261,35 @@
                 <span>توليد باركود</span>
               </button>
             </div>
-            <InputText
-              v-model="form.barcode"
-              placeholder="اكتب الباركود يدواً أو اضغط توليد باركود"
-              class="w-full !bg-brand-light dark:!bg-brand-dark/50 !border-brand-gray/25 focus:!border-brand-accent !text-brand-dark dark:!text-white font-mono"
-            />
+            <div class="relative">
+              <InputText
+                id="productBarcodeInput"
+                v-model="form.barcode"
+                @keydown.enter.prevent="handleBarcodeScanEnter"
+                placeholder="امسح بالماسح الضوئي أو اكتب الباركود..."
+                class="w-full !bg-brand-light dark:!bg-brand-dark/50 !border-brand-gray/25 focus:!border-brand-accent !text-brand-dark dark:!text-white font-mono"
+              />
+              <span v-if="barcodeScanNotice" class="absolute end-2 top-2 text-[10px] text-emerald-600 dark:text-emerald-400 font-bold bg-emerald-500/10 px-2 py-0.5 rounded animate-pulse">
+                {{ barcodeScanNotice }}
+              </span>
+            </div>
           </div>
         </div>
 
         <!-- 3. Category & Product State -->
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div>
-            <label class="block font-semibold text-brand-dark dark:text-white mb-1 required">{{ $t('ohda.products.category') }}</label>
+            <div class="flex items-center justify-between mb-1">
+              <label class="font-semibold text-brand-dark dark:text-white required">{{ $t('ohda.products.category') }}</label>
+              <span class="text-[10px] text-brand-gray font-normal">إلزامي *</span>
+            </div>
             <Select
+              id="productCategorySelect"
               v-model="form.categoryId"
               :options="inventoryStore.categories"
               optionLabel="name"
               optionValue="id"
+              placeholder="اختر الفئة / التصنيف *"
               class="w-full !bg-brand-light dark:!bg-brand-dark/50 !border-brand-gray/25 focus:!border-brand-accent !text-brand-dark dark:!text-white"
             />
           </div>
@@ -440,8 +457,10 @@
               >
                 <span class="text-[10px] font-mono text-brand-gray font-bold w-6 text-center">#{{ index + 1 }}</span>
                 <input
+                  :id="'serial-slot-' + index"
                   v-model="serialList[index]"
                   type="text"
+                  @keydown.enter.prevent="handleSerialSlotEnter(index)"
                   placeholder="اكتب أو امسح السيريال..."
                   class="flex-1 px-2 py-1 text-xs bg-transparent border-none focus:outline-none font-mono font-bold text-brand-dark dark:text-white"
                 />
@@ -678,12 +697,13 @@ const serialList = ref([]);
 const showFastScanInput = ref(false);
 const fastScanText = ref("");
 const fastScanInputRef = ref(null);
+const barcodeScanNotice = ref("");
 
 const form = ref({
   name: "",
   sku: "",
   barcode: "",
-  categoryId: 1,
+  categoryId: null,
   supplierId: null,
   productStateId: null,
   inventoryType: 1,
@@ -697,10 +717,12 @@ const form = ref({
 });
 
 onMounted(async () => {
-  inventoryStore.fetchProducts();
-  inventoryStore.fetchCategories();
-  inventoryStore.fetchSuppliers();
-  branchStore.fetchMyQuota();
+  await Promise.all([
+    inventoryStore.fetchProducts(),
+    inventoryStore.fetchCategories(),
+    inventoryStore.fetchSuppliers(),
+    branchStore.fetchMyQuota()
+  ]);
   try {
     const res = await apiGet("/api/ProductState");
     productStates.value = res?.data?.objects || res?.data?.singleObject || [];
@@ -719,6 +741,66 @@ const filteredProducts = computed(() => {
       p.barcode?.includes(q)
   );
 });
+
+// Sound feedback for scanner actions
+const playBeep = () => {
+  try {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.type = "sine";
+    osc.frequency.value = 1000;
+    gain.gain.setValueAtTime(0, ctx.currentTime);
+    gain.gain.linearRampToValueAtTime(0.2, ctx.currentTime + 0.04);
+    gain.gain.linearRampToValueAtTime(0, ctx.currentTime + 0.12);
+    osc.start(ctx.currentTime);
+    osc.stop(ctx.currentTime + 0.12);
+  } catch (e) {
+    // ignore audio failure
+  }
+};
+
+// Prevent scanner/Enter key from prematurely submitting form
+function handleFormEnter(e) {
+  if (e.target && e.target.tagName !== "TEXTAREA" && e.target.type !== "submit") {
+    e.preventDefault();
+  }
+}
+
+// When scanner scans into Barcode input
+function handleBarcodeScanEnter() {
+  if (form.value.barcode?.trim()) {
+    playBeep();
+    barcodeScanNotice.value = "تمت قراءة الباركود ✓";
+    setTimeout(() => {
+      barcodeScanNotice.value = "";
+    }, 2500);
+    toast.add({
+      severity: "info",
+      summary: "تم تسجيل الباركود",
+      detail: `الباركود: ${form.value.barcode}`,
+      life: 2000
+    });
+  }
+}
+
+// When scanner scans into Serial slot input
+function handleSerialSlotEnter(index) {
+  playBeep();
+  if (index + 1 < serialList.value.length) {
+    nextTick(() => {
+      document.getElementById(`serial-slot-${index + 1}`)?.focus();
+    });
+  } else if (serialList.value.length < (trackingType.value === "serials" ? 100 : 10000)) {
+    form.value.amount++;
+    serialList.value.push("");
+    nextTick(() => {
+      document.getElementById(`serial-slot-${index + 1}`)?.focus();
+    });
+  }
+}
 
 function generateSku() {
   const prefix = form.value.name ? form.value.name.substring(0, 3).toUpperCase().replace(/\s/g, "") : "SKU";
@@ -765,6 +847,7 @@ function openFastScanner() {
 function handleFastScanSubmit() {
   const code = fastScanText.value.trim();
   if (!code) return;
+  playBeep();
 
   // Find first empty slot in serialList
   const emptyIndex = serialList.value.findIndex(s => !s || !s.trim());
@@ -789,12 +872,13 @@ function openAddModal() {
   trackingType.value = "serials";
   showFastScanInput.value = false;
   fastScanText.value = "";
+  barcodeScanNotice.value = "";
 
   form.value = {
     name: "",
     sku: "",
     barcode: "",
-    categoryId: inventoryStore.categories[0]?.id || 1,
+    categoryId: inventoryStore.categories.length > 0 ? inventoryStore.categories[0].id : null,
     supplierId: null,
     productStateId: null,
     inventoryType: 1,
@@ -817,6 +901,7 @@ function editProduct(product) {
   hasPricing.value = !!(product.purchasePrice || product.assetValue || product.unitPrice);
   trackingType.value = "general";
   showFastScanInput.value = false;
+  barcodeScanNotice.value = "";
 
   form.value = {
     ...product,
@@ -829,6 +914,89 @@ function editProduct(product) {
 }
 
 async function saveProduct() {
+  // 1. Validation: Product Name (Required)
+  if (!form.value.name?.trim()) {
+    toast.add({
+      severity: "warn",
+      summary: "حقل إلزامي مطلوب",
+      detail: "يرجى كتابة اسم الصنف / المنتج أولاً.",
+      life: 4000
+    });
+    document.getElementById("productNameInput")?.focus();
+    return;
+  }
+
+  // 2. Validation: SKU (Required)
+  if (!form.value.sku?.trim()) {
+    toast.add({
+      severity: "warn",
+      summary: "حقل إلزامي مطلوب",
+      detail: "يرجى إدخال رمز الصنف (SKU) أو الضغط على زر 'توليد تلقائي'.",
+      life: 4000
+    });
+    document.getElementById("productSkuInput")?.focus();
+    return;
+  }
+
+  // 3. Validation: Category (Required)
+  if (!form.value.categoryId) {
+    toast.add({
+      severity: "warn",
+      summary: "حقل إلزامي مطلوب",
+      detail: "يرجى اختيار فئة / تصنيف للصنف من قائمة الفئات.",
+      life: 4000
+    });
+    document.getElementById("productCategorySelect")?.focus();
+    return;
+  }
+
+  // 4. Validation: Quantity / Amount
+  if (!form.value.amount || form.value.amount <= 0) {
+    toast.add({
+      severity: "warn",
+      summary: "قيمة غير صالحة",
+      detail: "يرجى إدخال كمية صحيحة أكبر من صفر.",
+      life: 4000
+    });
+    return;
+  }
+
+  // 5. Validation: Serials when tracking mode is "serials"
+  if (trackingType.value === "serials" && !isEditing.value) {
+    const filledSerials = serialList.value.map(s => s?.trim()).filter(Boolean);
+    const expectedCount = form.value.amount || 1;
+
+    // Check if any slot is missing
+    if (filledSerials.length < expectedCount) {
+      const confirmAuto = confirm(
+        `لقد حددت كمية (${expectedCount}) أجهزة، ولكن تم إدخال (${filledSerials.length}) أرقام تسلسلية فقط.\n\nهل تريد توليد أرقام تسلسلية تلقائياً للمتبقي (${expectedCount - filledSerials.length}) وإكمال الحفظ؟`
+      );
+      if (confirmAuto) {
+        autoFillSerials();
+      } else {
+        toast.add({
+          severity: "info",
+          summary: "إدخال السيريال مطلوب",
+          detail: "يرجى مسح أو إدخال السيريال لكل جهاز أو استخدام زر 'توليد تلقائي للمتبقي'.",
+          life: 4000
+        });
+        return;
+      }
+    }
+
+    // Check for duplicate serials
+    const uniqueSerials = new Set(serialList.value.map(s => s.trim().toLowerCase()));
+    if (uniqueSerials.size !== serialList.value.length) {
+      toast.add({
+        severity: "error",
+        summary: "أرقام تسلسلية مكررة",
+        detail: "يوجد أرقام تسلسلية مكررة في القائمة. يجب أن يكون لكل جهاز رقم تسلسلي فريد.",
+        life: 5000
+      });
+      return;
+    }
+  }
+
   isSaving.value = true;
   try {
     // If barcode not provided, generate a clean one based on SKU or random
@@ -869,6 +1037,7 @@ async function saveProduct() {
         life: 3000
       });
       showModal.value = false;
+      branchStore.fetchMyQuota();
     } else {
       toast.add({
         severity: "error",

@@ -121,7 +121,25 @@
         emptyMessage="لا توجد أرفف تخزين مسجلة. اضغط على '+ إضافة رف جديد' لإنشاء أول رف."
       >
         <!-- Bin Code -->
-        <Co        <!-- Bin Name & Department -->
+        <Column field="code" header="كود الرف">
+          <template #body="{ data }">
+            <div class="flex items-center gap-2">
+              <span class="font-mono font-bold text-brand-dark dark:text-white">{{ data.code }}</span>
+              <Button
+                type="button"
+                icon="pi pi-copy"
+                severity="secondary"
+                text
+                rounded
+                size="small"
+                class="!w-6 !h-6"
+                @click="copyToClipboard(data.code)"
+                v-tooltip.top="'نسخ الكود'"
+              />
+            </div>
+          </template>
+        </Column>
+        <!-- Bin Name & Department -->
         <Column field="name" header="اسم الرف / الوصف">
           <template #body="{ data }">
             <div>

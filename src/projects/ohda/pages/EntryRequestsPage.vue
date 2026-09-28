@@ -618,7 +618,7 @@ onMounted(async () => {
     if (document.visibilityState === "visible") {
       await requestsStore.fetchEntryRequests({ silent: true });
     }
-  }, 10000);
+  }, 30000);
 });
 
 onUnmounted(async () => {

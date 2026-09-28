@@ -115,6 +115,7 @@
       </button>
 
       <button
+        v-if="authStore.isSuperAdmin"
         @click="activeTab = 'pages'"
         class="px-4 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center gap-2 cursor-pointer border"
         :class="activeTab === 'pages' ? 'bg-brand-soft text-brand-accent border-brand-accent/30 shadow-sm' : 'text-brand-gray border-transparent hover:text-brand-dark hover:bg-brand-light'"
@@ -427,7 +428,7 @@
     </div>
 
     <!-- TAB 3: SYSTEM PAGES DATATABLE & MODALS -->
-    <div v-if="activeTab === 'pages'" class="bg-brand-white border border-brand-gray/10 rounded-2xl overflow-hidden shadow-sm">
+    <div v-if="activeTab === 'pages' && authStore.isSuperAdmin" class="bg-brand-white border border-brand-gray/10 rounded-2xl overflow-hidden shadow-sm">
       <DataTable :value="groupStore.pages" paginator :rows="10" :rowsPerPageOptions="[5, 10, 20, 50]" class="w-full text-xs">
         <Column field="id" header="#">
           <template #body="{ data }">
@@ -609,7 +610,7 @@
 
         <div class="space-y-2 max-h-96 overflow-y-auto pr-1">
           <div
-            v-for="page in groupStore.pages"
+            v-for="page in visibleSystemPages"
             :key="page.id"
             class="flex items-center justify-between p-3 rounded-xl border border-brand-gray/10 bg-brand-light"
           >
@@ -711,7 +712,7 @@
 
         <div class="space-y-2 max-h-96 overflow-y-auto pr-1">
           <div
-            v-for="page in groupStore.pages"
+            v-for="page in visibleSystemPages"
             :key="page.id"
             class="flex items-center justify-between p-3 rounded-xl border border-brand-gray/10 bg-brand-light"
           >
@@ -834,6 +835,11 @@ const toast = useToast();
 const { t } = useI18n();
 
 const activeTab = ref("users");
+
+const visibleSystemPages = computed(() => {
+  if (authStore.isSuperAdmin) return groupStore.pages || [];
+  return (groupStore.pages || []).filter(p => !p.path?.toLowerCase().includes("branches"));
+});
 
 onMounted(async () => {
   const promises = [

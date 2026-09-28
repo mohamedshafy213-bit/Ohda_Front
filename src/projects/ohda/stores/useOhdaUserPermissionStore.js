@@ -56,7 +56,7 @@ export const useOhdaUserPermissionStore = defineStore("ohdaUserPermission", {
     async registerUser(payload) {
       this.loading = true;
       try {
-        const res = await apiPost("/api/Auth/register", payload);
+        const res = await apiPost("/api/Auth/register", payload, false);
         if (res?.data?.isDone) {
           if (res?.data?.singleObject) {
             this.users.push(res.data.singleObject);
@@ -77,11 +77,15 @@ export const useOhdaUserPermissionStore = defineStore("ohdaUserPermission", {
 
     async updateUser(id, payload) {
       try {
-        const res = await apiPut(`/api/Auth/${id}`, payload);
-        if (res?.data?.isDone && res?.data?.singleObject) {
-          const idx = this.users.findIndex(u => u.militaryNumber === id);
-          if (idx !== -1) {
-            this.users[idx] = res.data.singleObject;
+        const res = await apiPut(`/api/Auth/${id}`, payload, false);
+        if (res?.data?.isDone) {
+          if (res?.data?.singleObject) {
+            const idx = this.users.findIndex(u => u.militaryNumber === id);
+            if (idx !== -1) {
+              this.users[idx] = res.data.singleObject;
+            }
+          } else {
+            await this.fetchUsers();
           }
           return { success: true };
         }
@@ -94,7 +98,7 @@ export const useOhdaUserPermissionStore = defineStore("ohdaUserPermission", {
 
     async deleteUser(id) {
       try {
-        const res = await apiDelete(`/api/Auth/${id}`);
+        const res = await apiDelete(`/api/Auth/${id}`, {}, false);
         if (res?.data?.isDone) {
           this.users = this.users.filter(u => u.militaryNumber !== id);
           return { success: true };
