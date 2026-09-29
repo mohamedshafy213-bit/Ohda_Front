@@ -1636,9 +1636,12 @@ function getTrailActionLabel(action) {
 
 // Creation & Scanner Handling
 const availableExitRequests = computed(() => {
-  if (!createForm.value.departmentId) return [];
-  return requestsStore.exitRequests.filter(
-    r => r.departmentId === createForm.value.departmentId && r.status === 2
+  const allExit = requestsStore.exitRequests || [];
+  if (!createForm.value.departmentId) {
+    return allExit;
+  }
+  return allExit.filter(
+    r => r.departmentId === createForm.value.departmentId
   );
 });
 
@@ -1664,7 +1667,7 @@ function onRowStateChange(item, stateId) {
   item.productStateName = state ? state.name : "سليم / افتراضي";
 }
 
-function openCreateModal() {
+async function openCreateModal() {
   const isFlowDisabled = localStorage.getItem("ohda_approval_flow_enabled_entry") === "false";
   selectedDeptSerials.value = [];
   departmentItems.value = [];
@@ -1684,6 +1687,7 @@ function openCreateModal() {
     quantity: 1
   };
   showCreateModal.value = true;
+  await requestsStore.fetchExitRequests();
 }
 
 const toggleScanner = async () => {
@@ -1746,13 +1750,33 @@ const stopScanner = async () => {
   scanFeedback.value = "";
 };
 
-const onCodeScanned = (decodedText) => {
+const onCodeScanned = async (decodedText) => {
+  const code = (decodedText || "").trim();
+  if (!code) return;
   const now = Date.now();
-  if (lastScanned.value.code === decodedText && now - lastScanned.value.time < 1200) return;
-  lastScanned.value = { code: decodedText, time: now };
+  if (lastScanned.value.code === code && now - lastScanned.value.time < 1200) return;
+  lastScanned.value = { code, time: now };
   playBeep();
 
-  const product = inventoryStore.products.find(p => p.barcode === decodedText || p.sku === decodedText);
+  // 1. Check if it matches an item in selected exit request
+  if (departmentItems.value.length > 0) {
+    const matchedDeptItem = departmentItems.value.find(i =>
+      (i.serialNumber && i.serialNumber.toLowerCase() === code.toLowerCase()) ||
+      (i.productBarcode && i.productBarcode.toLowerCase() === code.toLowerCase()) ||
+      (i.productSKU && i.productSKU.toLowerCase() === code.toLowerCase())
+    );
+    if (matchedDeptItem) {
+      if (!selectedDeptSerials.value.includes(matchedDeptItem.serialNumber)) {
+        selectedDeptSerials.value.push(matchedDeptItem.serialNumber);
+        addSerialToFormItems(matchedDeptItem);
+      }
+      scanFeedback.value = `تمت إضافة جهاز العهدة: ${matchedDeptItem.productName} (S/N: ${matchedDeptItem.serialNumber})`;
+      return;
+    }
+  }
+
+  // 2. Check against catalog products
+  const product = inventoryStore.products.find(p => p.barcode === code || p.sku === code);
   if (product) {
     const existing = createForm.value.items.find(
       i => i.productId === product.id && i.productStateId === null
@@ -1771,10 +1795,49 @@ const onCodeScanned = (decodedText) => {
       });
     }
     scanFeedback.value = `تمت إضافة: ${product.name} (+1)`;
-  } else {
-    scanFeedback.value = `الرمز "${decodedText}" غير مطابق لكتالوج المنتجات!`;
+    return;
   }
+
+  // 3. Check if it's a serialized device in the database
+  try {
+    const res = await apiGet(`/api/ProductItem/serial/${encodeURIComponent(code)}`);
+    const item = res?.data?.singleObject;
+    if (item && item.productId) {
+      const existing = createForm.value.items.find(
+        i => i.productId === item.productId && i.productStateId === (item.productStateId || null)
+      );
+      if (existing) {
+        if (!existing.selectedSerials) existing.selectedSerials = [];
+        if (!existing.selectedSerials.includes(item.serialNumber)) {
+          existing.selectedSerials.push(item.serialNumber);
+          existing.quantity += 1;
+        }
+      } else {
+        createForm.value.items.push({
+          productId: item.productId,
+          productName: item.productName || item.product?.name || "جهاز محدد",
+          productStateId: item.productStateId || null,
+          productStateName: item.productStateName || "سليم / افتراضي",
+          binId: item.binId || null,
+          quantity: 1,
+          selectedSerials: [item.serialNumber],
+          notes: `إرجاع جهاز S/N: ${item.serialNumber}`
+        });
+      }
+      scanFeedback.value = `تم العثور على الجهاز: ${item.productName || item.serialNumber}`;
+      return;
+    }
+  } catch (_) {}
+
+  scanFeedback.value = `الرمز "${code}" غير مطابق لكتالوج المنتجات أو الأجهزة!`;
 };
+
+async function handleHardwareScan() {
+  const code = (hardwareScanText.value || "").trim();
+  if (!code) return;
+  hardwareScanText.value = "";
+  await onCodeScanned(code);
+}
 
 function addManualItem() {
   if (!manualItem.value.productId) {
@@ -1861,15 +1924,29 @@ async function handleCreateEntry() {
   }
 }
 
-watch(() => createForm.value.departmentId, () => {
-  selectedExitRequestId.value = null;
-  departmentItems.value = [];
-  selectedDeptSerials.value = [];
+watch(() => createForm.value.departmentId, (newDeptId) => {
+  if (selectedExitRequestId.value) {
+    const currentReq = requestsStore.exitRequests.find(r => r.id === selectedExitRequestId.value);
+    if (currentReq && currentReq.departmentId && currentReq.departmentId !== newDeptId) {
+      selectedExitRequestId.value = null;
+      departmentItems.value = [];
+      selectedDeptSerials.value = [];
+    }
+  }
 });
 
-watch(selectedExitRequestId, () => {
-  if (selectedExitRequestId.value) {
-    createForm.value.invoiceNumber = "REQ-" + selectedExitRequestId.value;
+watch(selectedExitRequestId, (newId) => {
+  if (newId) {
+    const exitReq = requestsStore.exitRequests.find(r => r.id === newId);
+    if (exitReq) {
+      if (exitReq.departmentId && !createForm.value.departmentId) {
+        createForm.value.departmentId = exitReq.departmentId;
+      }
+      if (exitReq.recipientName && !createForm.value.fromSource) {
+        createForm.value.fromSource = exitReq.recipientName;
+      }
+    }
+    createForm.value.invoiceNumber = "RET-REQ-" + newId;
   } else {
     createForm.value.invoiceNumber = "";
   }
@@ -1885,11 +1962,25 @@ async function fetchExitRequestItems() {
   loadingDeptItems.value = true;
   try {
     const res = await apiGet(`/api/ProductItem/exit-request/${selectedExitRequestId.value}`);
-    if (res?.data?.isDone) {
-      departmentItems.value = res.data.objects || [];
+    let items = [];
+    if (res?.data?.isDone && res.data.objects?.length > 0) {
+      items = res.data.objects;
     } else {
-      departmentItems.value = [];
+      // Fallback: check if exit request has items in the requestsStore or exit request details
+      const exitReq = requestsStore.exitRequests.find(r => r.id === selectedExitRequestId.value);
+      if (exitReq?.items?.length > 0) {
+        items = exitReq.items.map(i => ({
+          productId: i.productId,
+          productName: i.productName || i.product?.name || "منتج",
+          productBarcode: i.productBarcode || i.product?.barcode,
+          productSKU: i.productSKU || i.product?.sku,
+          serialNumber: i.serialNumber || `SN-${i.id}`,
+          productStateId: i.productStateId,
+          productStateName: i.productStateName || "سليم / افتراضي"
+        }));
+      }
     }
+    departmentItems.value = items;
   } catch (e) {
     console.error(e);
     departmentItems.value = [];

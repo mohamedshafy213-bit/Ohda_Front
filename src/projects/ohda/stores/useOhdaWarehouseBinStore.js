@@ -121,12 +121,12 @@ export const useOhdaWarehouseBinStore = defineStore("ohdaWarehouseBin", {
         if (res?.data?.isDone) {
           await this.fetchBins();
           await this.fetchBinItems(binId);
-          return { success: true, message: res?.data?.message || "تم تسكين الأصناف بنجاح" };
+          return { success: true, message: res?.data?.returnMessage || res?.data?.message || "تم تسكين الأصناف بنجاح" };
         }
-        return { success: false, message: res?.data?.message || "فشل تسكين الأصناف" };
+        return { success: false, message: res?.data?.returnMessage || res?.data?.message || "فشل تسكين الأصناف" };
       } catch (error) {
         console.error("Error assigning product to bin:", error);
-        return { success: false, message: error?.response?.data?.message || "حدث خطأ أثناء التسكين" };
+        return { success: false, message: error?.response?.data?.returnMessage || error?.response?.data?.message || error?.message || "حدث خطأ أثناء التسكين" };
       }
     },
 
@@ -136,12 +136,12 @@ export const useOhdaWarehouseBinStore = defineStore("ohdaWarehouseBin", {
         if (res?.data?.isDone) {
           await this.fetchBins();
           await this.fetchBinItems(binId);
-          return { success: true, message: res?.data?.message || "تم إلغاء تسكين الجهاز بنجاح" };
+          return { success: true, message: res?.data?.returnMessage || res?.data?.message || "تم إلغاء تسكين الجهاز بنجاح" };
         }
-        return { success: false, message: res?.data?.message || "فشل إلغاء التسكين" };
+        return { success: false, message: res?.data?.returnMessage || res?.data?.message || "فشل إلغاء التسكين" };
       } catch (error) {
         console.error("Error unassigning item from bin:", error);
-        return { success: false, message: "حدث خطأ أثناء إلغاء التسكين" };
+        return { success: false, message: error?.response?.data?.returnMessage || error?.response?.data?.message || "حدث خطأ أثناء إلغاء التسكين" };
       }
     }
   }

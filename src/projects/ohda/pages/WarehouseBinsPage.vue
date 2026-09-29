@@ -139,20 +139,12 @@
             </div>
           </template>
         </Column>
-        <!-- Bin Name & Department -->
+        <!-- Bin Name & Description -->
         <Column field="name" header="اسم الرف / الوصف">
           <template #body="{ data }">
             <div>
               <span class="font-bold text-brand-dark dark:text-white block">{{ data.name }}</span>
-              <div class="flex items-center gap-2 mt-0.5">
-                <span class="text-[10px] text-brand-gray" v-if="data.description">{{ data.description }}</span>
-                <span
-                  v-if="data.departmentName && data.departmentName !== 'غير محدد'"
-                  class="text-[10px] px-1.5 py-0.5 rounded bg-blue-500/10 text-blue-600 dark:text-blue-400 font-medium"
-                >
-                  {{ data.departmentName }}
-                </span>
-              </div>
+              <span class="text-[10px] text-brand-gray mt-0.5 block" v-if="data.description">{{ data.description }}</span>
             </div>
           </template>
         </Column>
@@ -465,20 +457,6 @@
               class="w-full !bg-brand-light dark:!bg-brand-dark/50 !border-brand-gray/25 focus:!border-brand-accent font-mono"
             />
           </div>
-        </div>
-
-        <!-- Department Selection -->
-        <div>
-          <label class="block font-semibold text-brand-dark dark:text-white mb-1">القسم التابع له (اختياري)</label>
-          <select
-            v-model="form.departmentId"
-            class="w-full px-3 py-2 rounded-xl text-xs bg-brand-light dark:bg-brand-dark/50 border border-brand-gray/25 text-brand-dark dark:text-white focus:outline-none focus:border-brand-accent cursor-pointer"
-          >
-            <option :value="null">-- المستودع العام (بدون قسم) --</option>
-            <option v-for="dept in binStore.departments" :key="dept.id" :value="dept.id">
-              {{ dept.name }}
-            </option>
-          </select>
         </div>
 
         <div>
