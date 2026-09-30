@@ -103,6 +103,19 @@
         :loading="loading"
         emptyMessage="لا توجد حركات عهدة أو أجهزة مسجلة تطابق معايير البحث."
       >
+        <Column header="رقم المستند">
+          <template #body="{ data }">
+            <div class="flex flex-col">
+              <span class="font-mono text-brand-dark font-bold text-xs">
+                {{ data.documentNumber || (data.type === 2 ? `DOC-OUT-${data.productExitRequestId || data.id}` : `DOC-IN-${data.productEntryRequestId || data.id}`) }}
+              </span>
+              <span v-if="data.type === 1 && (data.originalExitDocumentNumber || data.productExitRequestId)" class="text-[10px] text-amber-600 font-mono font-bold">
+                مرتبط بـ: {{ data.originalExitDocumentNumber || `DOC-OUT-${data.productExitRequestId}` }}
+              </span>
+            </div>
+          </template>
+        </Column>
+
         <Column field="serialNumber" header="الرقم التسلسلي (S/N)">
           <template #body="{ data }">
             <span class="font-mono text-brand-accent font-bold select-all text-xs bg-brand-soft px-2 py-0.5 rounded border border-brand-accent/20">
@@ -245,9 +258,15 @@
                 <span class="font-bold text-brand-dark">{{ selectedItem.productStateName || 'سليم / افتراضي' }}</span>
               </div>
               <div class="flex items-center justify-between">
-                <span class="text-brand-gray">السند المرجعي:</span>
-                <span class="font-mono bg-brand-light px-2 py-0.5 rounded border border-brand-gray/10 font-bold">
-                  {{ selectedItem.productExitRequestId ? `#طلب صرف ${selectedItem.productExitRequestId}` : (selectedItem.productEntryRequestId ? `#طلب توريد ${selectedItem.productEntryRequestId}` : 'إدخال يدوي/أرشيفي') }}
+                <span class="text-brand-gray">رقم المستند للحركة:</span>
+                <span class="font-mono text-brand-dark px-2 py-0.5 rounded bg-brand-light border border-brand-gray/10 font-bold">
+                  {{ selectedItem.documentNumber || (selectedItem.type === 2 ? `DOC-OUT-${selectedItem.productExitRequestId || selectedItem.id}` : `DOC-IN-${selectedItem.productEntryRequestId || selectedItem.id}`) }}
+                </span>
+              </div>
+              <div v-if="selectedItem.type === 1 && (selectedItem.originalExitDocumentNumber || selectedItem.productExitRequestId)" class="flex items-center justify-between">
+                <span class="text-brand-gray">رقم مستند الصرف الأصلي:</span>
+                <span class="font-mono text-amber-700 bg-amber-500/10 px-2 py-0.5 rounded border border-amber-500/20 font-bold">
+                  {{ selectedItem.originalExitDocumentNumber || `DOC-OUT-${selectedItem.productExitRequestId}` }}
                 </span>
               </div>
             </div>

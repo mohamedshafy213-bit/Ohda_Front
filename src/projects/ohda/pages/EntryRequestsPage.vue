@@ -2034,51 +2034,6 @@ function removeSerialFromFormItems(item) {
   }
 }
 
-async function handleHardwareScan() {
-  const code = hardwareScanText.value.trim();
-  if (!code) return;
-
-  if (createForm.value.departmentId && departmentItems.value.length > 0) {
-    const foundItem = departmentItems.value.find(
-      pi => pi.serialNumber.toLowerCase() === code.toLowerCase() ||
-            (pi.productBarcode && pi.productBarcode.toLowerCase() === code.toLowerCase())
-    );
-    if (foundItem) {
-      toggleDeptSerial(foundItem);
-      playBeep();
-      hardwareScanText.value = "";
-      return;
-    }
-  }
-
-  const product = inventoryStore.products.find(
-    p => p.barcode?.toLowerCase() === code.toLowerCase() || p.sku?.toLowerCase() === code.toLowerCase()
-  );
-  if (product) {
-    manualItem.value.productId = product.id;
-    manualItem.value.productStateId = null;
-    manualItem.value.quantity = 1;
-    playBeep();
-  } else {
-    try {
-      const res = await apiGet(`/api/ProductItem/serial/${code}`);
-      if (res?.data?.isDone && res.data.singleObject) {
-        const item = res.data.singleObject;
-        addSerialToFormItems(item);
-        if (!selectedDeptSerials.value.includes(item.serialNumber)) {
-          selectedDeptSerials.value.push(item.serialNumber);
-        }
-        playBeep();
-      } else {
-        alert(`الرمز "${code}" غير مطابق للمنتجات أو الأرقام التسلسلية!`);
-      }
-    } catch (_) {
-      alert(`الرمز "${code}" غير مطابق للمنتجات أو الأرقام التسلسلية!`);
-    }
-  }
-  hardwareScanText.value = "";
-}
-
 // View Details & Decisions
 async function viewDetails(request) {
   try {
