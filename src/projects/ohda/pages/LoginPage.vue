@@ -1,13 +1,13 @@
 <template>
-  <div class="min-h-screen bg-brand-light flex flex-col justify-center items-center p-4 relative overflow-hidden text-brand-dark">
+  <div class="min-h-screen bg-surface-50 dark:bg-surface-950 flex flex-col justify-center items-center p-4 relative overflow-hidden text-surface-900 dark:text-surface-100 transition-colors">
     <div class="absolute top-10 start-10 w-96 h-96 bg-brand-accent/5 rounded-full blur-3xl pointer-events-none"></div>
-    <div class="absolute bottom-10 end-10 w-96 h-96 bg-brand-gray/5 rounded-full blur-3xl pointer-events-none"></div>
+    <div class="absolute bottom-10 end-10 w-96 h-96 bg-brand-accent/10 rounded-full blur-3xl pointer-events-none"></div>
 
-    <!-- Language Toggle Button using Volt Button -->
+    <!-- Language Toggle Button -->
     <div class="absolute top-6 end-6 flex items-center gap-3">
       <Button
         @click="toggleLanguage"
-        class="!bg-brand-white hover:!bg-brand-light !text-brand-dark !border !border-brand-gray/20 !rounded-xl !px-4 !py-2 flex items-center gap-2 text-sm backdrop-blur shadow-sm"
+        class="!bg-white dark:!bg-surface-900 hover:!bg-surface-100 dark:hover:!bg-surface-800 !text-surface-800 dark:!text-surface-200 !border !border-surface-200 dark:!border-surface-700 !rounded-xl !px-4 !py-2 flex items-center gap-2 text-sm backdrop-blur shadow-xs cursor-pointer transition-colors"
       >
         <Globe class="w-4 h-4 text-brand-accent" />
         <span>{{ currentLocale === 'ar' ? 'English (LTR)' : 'العربية (RTL)' }}</span>
@@ -15,48 +15,48 @@
     </div>
 
     <!-- Login Card -->
-    <div class="w-full max-w-md bg-brand-white border border-brand-gray/10 rounded-3xl p-8 shadow-xl z-10">
+    <div class="w-full max-w-md bg-white dark:bg-surface-900 border border-surface-200 dark:border-surface-800 rounded-3xl p-8 shadow-xl z-10 transition-colors">
       <div class="text-center mb-8">
         <div class="w-16 h-16 bg-brand-accent rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg shadow-brand-accent/20">
-          <Box class="w-8 h-8 text-brand-dark" />
+          <Box class="w-8 h-8 text-surface-900" />
         </div>
-        <h1 class="text-2xl font-bold tracking-tight text-brand-dark mb-2">
+        <h1 class="text-2xl font-bold tracking-tight text-surface-900 dark:text-surface-100 mb-2">
           {{ $t('ohda.systemTitle') }}
         </h1>
-        <p class="text-xs text-brand-gray">
+        <p class="text-xs text-surface-500 dark:text-surface-400">
           {{ $t('ohda.auth.subTitle') }}
         </p>
       </div>
 
       <form @submit.prevent="handleLogin" class="space-y-5">
         <div>
-          <label class="block text-xs font-semibold text-brand-dark mb-2">
+          <label class="block text-xs font-semibold text-surface-700 dark:text-surface-300 mb-2">
             {{ $t('ohda.auth.username') }}
           </label>
           <div class="relative">
-            <User class="w-4 h-4 absolute start-3 top-3.5 text-brand-gray z-10" />
+            <User class="w-4 h-4 absolute start-3.5 top-3 text-surface-400 z-10" />
             <InputText
               v-model="form.username"
               type="text"
               required
-              class="w-full !bg-brand-light !border-brand-gray/25 focus:!border-brand-accent !rounded-xl !py-2.5 !ps-10 !pe-4 text-sm !text-brand-dark placeholder-brand-gray/60"
-              placeholder="أدخل اسم المستخدم"
+              class="w-full !ps-10 !pe-4 !py-2.5 text-sm"
+              :placeholder="$t('ohda.auth.usernamePlaceholder')"
             />
           </div>
         </div>
 
         <div>
-          <label class="block text-xs font-semibold text-brand-dark mb-2">
+          <label class="block text-xs font-semibold text-surface-700 dark:text-surface-300 mb-2">
             {{ $t('ohda.auth.password') }}
           </label>
           <div class="relative">
-            <Lock class="w-4 h-4 absolute start-3 top-3.5 text-brand-gray z-10" />
+            <Lock class="w-4 h-4 absolute start-3.5 top-3 text-surface-400 z-10" />
             <InputText
               v-model="form.password"
               type="password"
               required
-              class="w-full !bg-brand-light !border-brand-gray/25 focus:!border-brand-accent !rounded-xl !py-2.5 !ps-10 !pe-4 text-sm !text-brand-dark placeholder-brand-gray/60"
-              placeholder="••••••••"
+              class="w-full !ps-10 !pe-4 !py-2.5 text-sm"
+              :placeholder="$t('ohda.auth.passwordPlaceholder')"
             />
           </div>
         </div>
@@ -64,7 +64,7 @@
         <Button
           type="submit"
           :disabled="authStore.loading"
-          class="w-full !py-3 !px-4 !bg-brand-accent hover:!bg-brand-accent/90 !text-brand-dark !font-bold !rounded-xl shadow-md shadow-brand-accent/20 flex items-center justify-center gap-2"
+          class="w-full !py-3 !px-4 !bg-brand-accent hover:!bg-brand-accent/90 !text-surface-900 !font-bold !rounded-xl shadow-md shadow-brand-accent/20 flex items-center justify-center gap-2 cursor-pointer transition-colors"
         >
           <span v-if="!authStore.loading">{{ $t('ohda.auth.loginBtn') }}</span>
           <span v-else>{{ $t('ohda.common.loading') }}</span>
@@ -81,10 +81,11 @@ import { ref, computed } from "vue";
 import { useRouter } from "vue-router";
 import { setLocale, getCurrentLocale } from "@/i18n";
 import { useOhdaAuthStore } from "../stores/useOhdaAuthStore";
+import { useToastStore } from "@/stores/toastStore";
 
 const router = useRouter();
 const authStore = useOhdaAuthStore();
-const toast = useToast();
+const toastStore = useToastStore();
 
 const currentLocale = computed(() => getCurrentLocale());
 
@@ -107,11 +108,9 @@ async function handleLogin() {
       router.push("/ohda/dashboard");
     }
   } else {
-    toast.add({
-      severity: "error",
-      summary: currentLocale.value === "ar" ? "فشل تسجيل الدخول" : "Login Failed",
-      detail: res.message || "اسم المستخدم أو كلمة المرور غير صحيحة",
-      life: 5000
+    toastStore.addErrorToast({
+      title: currentLocale.value === "ar" ? "فشل تسجيل الدخول" : "Login Failed",
+      message: res.message || (currentLocale.value === "ar" ? "اسم المستخدم أو كلمة المرور غير صحيحة" : "Invalid username or password")
     });
   }
 }

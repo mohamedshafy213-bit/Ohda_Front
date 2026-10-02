@@ -1,7 +1,11 @@
 <template>
-    <Button
-        class="bg-transparent !rounded-full w-9 h-9 !p-1 border-none hover:!bg-gray-500/10 hover:dark:!bg-gray-300/20"
-    >
-        <Eye class="w-4 h-4 !text-gray-700 dark:!text-gray-300" />
-    </Button>
+  <Button
+    type="button"
+    class="bg-transparent !rounded-xl w-8 h-8 !p-1 border border-transparent hover:!border-brand-gray/30 hover:!bg-brand-gray/10 text-brand-gray hover:text-brand-dark dark:hover:text-white transition-all cursor-pointer flex items-center justify-center shadow-none"
+    :title="$t('view') || 'عرض'"
+    :aria-label="$t('view') || 'عرض'"
+  >
+    <Eye class="w-3.5 h-3.5" />
+  </Button>
 </template>
+
