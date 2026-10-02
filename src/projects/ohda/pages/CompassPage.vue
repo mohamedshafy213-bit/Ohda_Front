@@ -1,273 +1,397 @@
 <template>
   <div class="space-y-6 font-sans">
-    <!-- Header Title & Action Toolbar -->
-    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white dark:bg-surface-900 p-6 rounded-2xl border border-surface-200 dark:border-surface-800 shadow-sm transition-colors">
-      <div>
-        <h1 class="text-2xl font-bold text-surface-900 dark:text-surface-100 flex items-center gap-3">
-          <Compass class="w-7 h-7 text-brand-accent" />
-          {{ $t('ohda.compass.title') }}
-        </h1>
-        <p class="text-xs text-surface-500 dark:text-surface-400 mt-1">
-          {{ $t('ohda.compass.subTitle') }}
-        </p>
+    <!-- Non-Printable UI (Normal View) -->
+    <div class="no-print space-y-6">
+      <!-- Header Title & Action Toolbar -->
+      <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white dark:bg-surface-900 p-6 rounded-2xl border border-surface-200 dark:border-surface-800 shadow-sm transition-colors">
+        <div>
+          <h1 class="text-2xl font-bold text-surface-900 dark:text-surface-100 flex items-center gap-3">
+            <Compass class="w-7 h-7 text-brand-accent" />
+            {{ $t('ohda.compass.title') }}
+          </h1>
+          <p class="text-xs text-surface-500 dark:text-surface-400 mt-1">
+            {{ $t('ohda.compass.subTitle') }}
+          </p>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="flex flex-wrap items-center gap-2.5">
+          <!-- Print / Export PDF Button (Matching the User's Required Compass Register) -->
+          <Button
+            @click="openPrintPreview"
+            :disabled="compassLogs.length === 0"
+            class="!bg-blue-600 hover:!bg-blue-700 !text-white !font-bold !rounded-xl !px-4 !py-2.5 !text-xs flex items-center gap-2 shadow-sm cursor-pointer transition-colors"
+          >
+            <Printer class="w-4 h-4" />
+            {{ $t('ohda.compass.exportPdf') }}
+          </Button>
+
+          <!-- Export to Excel Button -->
+          <Button
+            @click="exportToExcel"
+            :loading="exporting"
+            class="!bg-emerald-600 hover:!bg-emerald-700 !text-white !font-bold !rounded-xl !px-4 !py-2.5 !text-xs flex items-center gap-2 shadow-sm cursor-pointer transition-colors"
+          >
+            <FileSpreadsheet class="w-4 h-4" />
+            {{ $t('ohda.compass.exportExcel') }}
+          </Button>
+
+          <Button
+            @click="downloadTemplate"
+            class="!bg-surface-100 dark:!bg-surface-800 hover:!bg-surface-200 dark:hover:!bg-surface-700 !text-surface-800 dark:!text-surface-200 !border !border-surface-300 dark:!border-surface-700 !rounded-xl !px-3.5 !py-2.5 !text-xs !font-semibold flex items-center gap-2 cursor-pointer transition-colors"
+          >
+            <Download class="w-4 h-4 text-brand-accent" />
+            {{ $t('ohda.compass.downloadTemplate') }}
+          </Button>
+
+          <Button
+            @click="showUploadModal = true"
+            class="!bg-brand-accent hover:!bg-brand-accent/90 !text-surface-900 !font-bold !rounded-xl !px-4 !py-2.5 !text-xs flex items-center gap-2 shadow-sm cursor-pointer transition-colors"
+          >
+            <Upload class="w-4 h-4" />
+            {{ $t('ohda.compass.uploadDocument') }}
+          </Button>
+        </div>
       </div>
 
-      <!-- Action Buttons -->
-      <div class="flex flex-wrap items-center gap-3">
-        <!-- Export to Excel Button -->
-        <Button
-          @click="exportToExcel"
-          :loading="exporting"
-          class="!bg-emerald-600 hover:!bg-emerald-700 !text-white !font-bold !rounded-xl !px-4 !py-2.5 !text-xs flex items-center gap-2 shadow-sm cursor-pointer transition-colors"
-        >
-          <FileSpreadsheet class="w-4 h-4" />
-          {{ $t('ohda.compass.exportExcel') }}
-        </Button>
+      <!-- Filter Panel -->
+      <div class="bg-white dark:bg-surface-900 border border-surface-200 dark:border-surface-800 shadow-sm p-5 rounded-2xl space-y-4 transition-colors">
+        <div class="flex flex-col lg:flex-row items-start gap-4">
+          <div class="flex-1 w-full">
+            <div class="flex items-center justify-between">
+              <button
+                @click="filtersCollapsed = !filtersCollapsed"
+                class="text-xs text-brand-accent font-bold hover:underline cursor-pointer flex items-center gap-1"
+              >
+                <Filter class="w-3.5 h-3.5" />
+                {{ filtersCollapsed ? $t('ohda.compass.showFilters') : $t('ohda.compass.hideFilters') }}
+              </button>
+              <span class="text-[11px] text-surface-500 font-medium">
+                {{ filteredLogs.length }} {{ $t('ohda.inventory.recordsCount') }}
+              </span>
+            </div>
 
-        <Button
-          @click="downloadTemplate"
-          class="!bg-surface-100 dark:!bg-surface-800 hover:!bg-surface-200 dark:hover:!bg-surface-700 !text-surface-800 dark:!text-surface-200 !border !border-surface-300 dark:!border-surface-700 !rounded-xl !px-4 !py-2.5 !text-xs !font-semibold flex items-center gap-2 cursor-pointer transition-colors"
-        >
-          <Download class="w-4 h-4 text-brand-accent" />
-          {{ $t('ohda.compass.downloadTemplate') }}
-        </Button>
+            <div v-if="!filtersCollapsed" class="mt-3 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+              <div>
+                <label class="block text-[11px] mb-1 font-semibold text-surface-700 dark:text-surface-300">
+                  🔍 {{ $t('ohda.compass.textSearch') }}
+                </label>
+                <InputText
+                  v-model="filters.query"
+                  :placeholder="$t('ohda.compass.searchPlaceholder')"
+                  class="w-full text-xs"
+                  @input="debouncedSearch"
+                />
+              </div>
 
-        <Button
-          @click="showUploadModal = true"
-          class="!bg-brand-accent hover:!bg-brand-accent/90 !text-surface-900 !font-bold !rounded-xl !px-4 !py-2.5 !text-xs flex items-center gap-2 shadow-sm cursor-pointer transition-colors"
+              <div>
+                <label class="block text-[11px] mb-1 font-semibold text-surface-700 dark:text-surface-300">
+                  🏢 {{ $t('ohda.compass.department') }}
+                </label>
+                <Select
+                  v-model="filters.departmentId"
+                  :options="departments"
+                  optionLabel="name"
+                  optionValue="id"
+                  class="w-full text-xs"
+                  showClear
+                  :placeholder="$t('ohda.common.all')"
+                  @change="performSearch"
+                />
+              </div>
+
+              <div>
+                <label class="block text-[11px] mb-1 font-semibold text-surface-700 dark:text-surface-300">
+                  🔄 {{ $t('ohda.compass.movementType') }}
+                </label>
+                <Select
+                  v-model="filters.type"
+                  :options="[
+                    { label: $t('ohda.compass.allTypes'), value: null },
+                    { label: $t('ohda.compass.inflow'), value: 1 },
+                    { label: $t('ohda.compass.outflow'), value: 2 }
+                  ]"
+                  optionLabel="label"
+                  optionValue="value"
+                  class="w-full text-xs"
+                  @change="performSearch"
+                />
+              </div>
+
+              <div>
+                <label class="block text-[11px] mb-1 font-semibold text-surface-700 dark:text-surface-300">
+                  📦 {{ $t('ohda.compass.productState') }}
+                </label>
+                <Select
+                  v-model="filters.stateId"
+                  :options="productStates"
+                  optionLabel="name"
+                  optionValue="id"
+                  class="w-full text-xs"
+                  showClear
+                  :placeholder="$t('ohda.common.all')"
+                  @change="performSearch"
+                />
+              </div>
+
+              <div>
+                <label class="block text-[11px] mb-1 font-semibold text-surface-700 dark:text-surface-300">
+                  📅 {{ $t('ohda.compass.fromDate') }}
+                </label>
+                <InputText
+                  v-model="filters.startDate"
+                  type="date"
+                  class="w-full text-xs"
+                  @change="performSearch"
+                />
+              </div>
+
+              <div>
+                <label class="block text-[11px] mb-1 font-semibold text-surface-700 dark:text-surface-300">
+                  📅 {{ $t('ohda.compass.toDate') }}
+                </label>
+                <InputText
+                  v-model="filters.endDate"
+                  type="date"
+                  class="w-full text-xs"
+                  @change="performSearch"
+                />
+              </div>
+            </div>
+          </div>
+
+          <div class="w-full lg:w-44 flex flex-row lg:flex-col gap-2 shrink-0 pt-2 lg:pt-6">
+            <Button @click="performSearch" class="flex-1 !bg-brand-accent !text-surface-900 !font-bold !text-xs !py-2.5">
+              {{ $t('ohda.common.search') }}
+            </Button>
+            <SecondaryButton @click="resetFilters" class="flex-1 !text-xs !py-2.5">
+              {{ $t('ohda.common.reset') }}
+            </SecondaryButton>
+          </div>
+        </div>
+      </div>
+
+      <!-- Results Table: Explicit 5-Column Core Layout matching the user's Compass register -->
+      <div class="bg-white dark:bg-surface-900 border border-surface-200 dark:border-surface-800 rounded-2xl overflow-hidden shadow-sm transition-colors">
+        <div v-if="loading" class="p-6">
+          <LoadingSkeleton type="table" :rows="8" />
+        </div>
+
+        <DataTable
+          v-else
+          :value="filteredLogs"
+          paginator
+          :rows="15"
+          :rowsPerPageOptions="[15, 30, 50, 100]"
+          class="w-full text-xs"
         >
-          <Upload class="w-4 h-4" />
-          {{ $t('ohda.compass.uploadDocument') }}
-        </Button>
+          <template #empty>
+            <div class="p-8">
+              <EmptyState
+                :title="$t('ohda.compass.emptyTitle')"
+                :description="$t('ohda.compass.emptyDesc')"
+                :showAction="false"
+              />
+            </div>
+          </template>
+
+          <!-- 1. Index Number (م) -->
+          <Column :header="$t('ohda.compass.indexNo')" headerClass="text-center w-14" bodyClass="text-center font-mono font-bold text-surface-600 dark:text-surface-400">
+            <template #body="{ index }">
+              {{ index + 1 }}
+            </template>
+          </Column>
+
+          <!-- 2. Model / Product Name (الطراز) -->
+          <Column field="productName" :header="$t('ohda.compass.model')">
+            <template #body="{ data }">
+              <div class="font-bold text-surface-900 dark:text-surface-100 text-[13px]">
+                {{ data.productName }}
+              </div>
+              <span v-if="data.categoryName" class="text-[10px] text-surface-400">
+                {{ data.categoryName }}
+              </span>
+            </template>
+          </Column>
+
+          <!-- 3. Serial Number (رقم المسلسل S/N) -->
+          <Column field="serialNumber" :header="$t('ohda.compass.serialNumber')">
+            <template #body="{ data }">
+              <span class="font-mono text-brand-accent font-bold select-all text-xs bg-brand-soft dark:bg-brand-accent/10 px-2.5 py-1 rounded-md border border-brand-accent/20 tracking-wider">
+                {{ data.serialNumber }}
+              </span>
+            </template>
+          </Column>
+
+          <!-- 4. Location / Destination Place (مكان التواجد / القسم) -->
+          <Column field="departmentName" :header="$t('ohda.compass.locationPlace')">
+            <template #body="{ data }">
+              <div class="flex items-center gap-1.5">
+                <MapPin class="w-3.5 h-3.5 text-rose-500 shrink-0" />
+                <span class="font-semibold text-surface-800 dark:text-surface-200">
+                  {{ data.place || data.departmentName || 'فرع النظم' }}
+                </span>
+              </div>
+            </template>
+          </Column>
+
+          <!-- 5. Current Custody Holder / Recipient (المستلم / حامل العهدة) -->
+          <Column field="recipientName" :header="$t('ohda.compass.currentHolder')">
+            <template #body="{ data }">
+              <span class="font-medium text-surface-700 dark:text-surface-300">
+                {{ data.recipientName || data.delivererName || '-' }}
+              </span>
+            </template>
+          </Column>
+
+          <!-- 6. Movement Status Badge -->
+          <Column :header="$t('ohda.compass.movementType')" headerClass="text-center" bodyClass="text-center">
+            <template #body="{ data }">
+              <span v-if="data.type === 1" class="px-2.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 font-bold border border-emerald-500/20 text-[11px]">
+                {{ $t('ohda.compass.inflow') }}
+              </span>
+              <span v-else class="px-2.5 py-0.5 rounded-full bg-rose-500/10 text-rose-700 dark:text-rose-400 font-bold border border-rose-500/20 text-[11px]">
+                {{ $t('ohda.compass.outflow') }}
+              </span>
+            </template>
+          </Column>
+
+          <!-- 7. Remarks / Notes (ملاحظات) -->
+          <Column field="notes" :header="$t('ohda.compass.remarks')">
+            <template #body="{ data }">
+              <span class="text-surface-500 dark:text-surface-400 text-[11px] truncate max-w-xs block">
+                {{ data.purpose || data.notes || data.productStateName || '-' }}
+              </span>
+            </template>
+          </Column>
+
+          <!-- 8. Actions / Details Eye Icon -->
+          <Column :header="$t('ohda.compass.details')" headerClass="text-center" bodyClass="text-center" style="width: 70px">
+            <template #body="{ data }">
+              <button
+                @click="openDetailsModal(data)"
+                :title="$t('ohda.compass.viewDetails')"
+                class="w-8 h-8 rounded-xl bg-blue-600 hover:bg-blue-700 text-white flex items-center justify-center transition-all cursor-pointer shadow-xs hover:scale-105 mx-auto"
+              >
+                <Eye class="w-4 h-4 text-white" />
+              </button>
+            </template>
+          </Column>
+        </DataTable>
       </div>
     </div>
 
-    <!-- Filter Panel -->
-    <div class="bg-white dark:bg-surface-900 border border-surface-200 dark:border-surface-800 shadow-sm p-5 rounded-2xl space-y-4 transition-colors">
-      <div class="flex flex-col lg:flex-row items-start gap-4">
-        <div class="flex-1 w-full">
-          <div class="flex items-center justify-between">
-            <button
-              @click="filtersCollapsed = !filtersCollapsed"
-              class="text-xs text-brand-accent font-bold hover:underline cursor-pointer flex items-center gap-1"
-            >
-              <Filter class="w-3.5 h-3.5" />
-              {{ filtersCollapsed ? $t('ohda.compass.showFilters') : $t('ohda.compass.hideFilters') }}
-            </button>
-            <span class="text-[11px] text-surface-400">
-              {{ compassLogs.length }} {{ $t('ohda.inventory.recordsCount') }}
-            </span>
+    <!-- Printable PDF Compass Report Preview Modal (Grouped by Type/Category exactly matching the Word Document) -->
+    <Dialog
+      v-model:visible="showPrintPreviewModal"
+      modal
+      :header="$t('ohda.compass.exportPdf')"
+      class="max-w-5xl w-full"
+    >
+      <div class="space-y-4">
+        <!-- Print Toolbar in Modal -->
+        <div class="flex items-center justify-between p-3 bg-surface-100 dark:bg-surface-800 rounded-xl border border-surface-200 dark:border-surface-700">
+          <div class="text-xs text-surface-600 dark:text-surface-300">
+            {{ $t('ohda.compass.totalDevices') }} <strong class="text-brand-accent font-mono text-sm">{{ filteredLogs.length }}</strong>
           </div>
 
-          <div v-if="!filtersCollapsed" class="mt-3 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-            <div>
-              <label class="block text-[11px] mb-1 font-semibold text-surface-700 dark:text-surface-300">
-                🔍 {{ $t('ohda.compass.textSearch') }}
-              </label>
-              <InputText
-                v-model="filters.query"
-                :placeholder="$t('ohda.compass.searchPlaceholder')"
-                class="w-full text-xs"
-                @input="debouncedSearch"
-              />
-            </div>
-
-            <div>
-              <label class="block text-[11px] mb-1 font-semibold text-surface-700 dark:text-surface-300">
-                🏢 {{ $t('ohda.compass.department') }}
-              </label>
-              <Select
-                v-model="filters.departmentId"
-                :options="departments"
-                optionLabel="name"
-                optionValue="id"
-                class="w-full text-xs"
-                showClear
-                :placeholder="$t('ohda.common.all')"
-                @change="performSearch"
-              />
-            </div>
-
-            <div>
-              <label class="block text-[11px] mb-1 font-semibold text-surface-700 dark:text-surface-300">
-                🔄 {{ $t('ohda.compass.movementType') }}
-              </label>
-              <Select
-                v-model="filters.type"
-                :options="[
-                  { label: $t('ohda.compass.allTypes'), value: null },
-                  { label: $t('ohda.compass.inflow'), value: 1 },
-                  { label: $t('ohda.compass.outflow'), value: 2 }
-                ]"
-                optionLabel="label"
-                optionValue="value"
-                class="w-full text-xs"
-                @change="performSearch"
-              />
-            </div>
-
-            <div>
-              <label class="block text-[11px] mb-1 font-semibold text-surface-700 dark:text-surface-300">
-                📦 {{ $t('ohda.compass.productState') }}
-              </label>
-              <Select
-                v-model="filters.stateId"
-                :options="productStates"
-                optionLabel="name"
-                optionValue="id"
-                class="w-full text-xs"
-                showClear
-                :placeholder="$t('ohda.common.all')"
-                @change="performSearch"
-              />
-            </div>
-
-            <div>
-              <label class="block text-[11px] mb-1 font-semibold text-surface-700 dark:text-surface-300">
-                📅 {{ $t('ohda.compass.fromDate') }}
-              </label>
-              <InputText
-                v-model="filters.startDate"
-                type="date"
-                class="w-full text-xs"
-                @change="performSearch"
-              />
-            </div>
-
-            <div>
-              <label class="block text-[11px] mb-1 font-semibold text-surface-700 dark:text-surface-300">
-                📅 {{ $t('ohda.compass.toDate') }}
-              </label>
-              <InputText
-                v-model="filters.endDate"
-                type="date"
-                class="w-full text-xs"
-                @change="performSearch"
-              />
-            </div>
+          <div class="flex items-center gap-2">
+            <Button
+              @click="triggerPrint"
+              class="!bg-blue-600 hover:!bg-blue-700 !text-white !font-bold !rounded-xl !px-4 !py-2 !text-xs flex items-center gap-2 shadow-sm cursor-pointer"
+            >
+              <Printer class="w-4 h-4" />
+              <span>{{ $t('ohda.barcodePrint.print') }} (A4)</span>
+            </Button>
           </div>
         </div>
 
-        <div class="w-full lg:w-44 flex flex-row lg:flex-col gap-2 shrink-0 pt-2 lg:pt-6">
-          <Button @click="performSearch" class="flex-1 !bg-brand-accent !text-surface-900 !font-bold !text-xs !py-2.5">
-            {{ $t('ohda.common.search') }}
-          </Button>
-          <SecondaryButton @click="resetFilters" class="flex-1 !text-xs !py-2.5">
-            {{ $t('ohda.common.reset') }}
+        <!-- Printable Document Canvas -->
+        <div id="printableCompassReport" class="bg-white text-black p-8 rounded-xl border border-surface-200 shadow-sm font-sans" dir="rtl">
+          <!-- Official Report Header -->
+          <div class="border-b-2 border-black pb-4 mb-6 text-center space-y-1">
+            <div class="flex justify-between items-start text-[11px] font-bold text-gray-700 mb-2">
+              <div class="text-start">
+                <p>جمهورية مصر العربية</p>
+                <p>إدارة نظم المعلومات والتحول الرقمي</p>
+                <p>قسم العهد والمستودعات</p>
+              </div>
+              <div class="text-end">
+                <p>{{ $t('ohda.compass.printDate') }} {{ currentDateFormatted }}</p>
+                <p>{{ $t('ohda.compass.totalDevices') }} {{ filteredLogs.length }}</p>
+              </div>
+            </div>
+
+            <h2 class="text-xl font-black tracking-wide text-black uppercase">
+              {{ $t('ohda.compass.printTitle') }}
+            </h2>
+            <p class="text-xs text-gray-600">
+              {{ $t('ohda.compass.printSubtitle') }}
+            </p>
+          </div>
+
+          <!-- Grouped Sections by Type / Category (e.g. الطابعات أسود: / أجهزة حاسوب:) -->
+          <div
+            v-for="(items, categoryName) in groupedLogs"
+            :key="categoryName"
+            class="mb-6 break-inside-avoid print-section"
+          >
+            <!-- Section Heading (e.g. الطابعات أسود:) exactly matching the Word document -->
+            <div class="category-heading text-lg font-bold text-black mb-2 text-start">
+              {{ categoryName.endsWith(':') ? categoryName : categoryName + ':' }}
+            </div>
+
+            <!-- Table matching the Word document layout with columns: م | الطراز | رقم المسلسل | مكان التواجد | ملاحظات -->
+            <table class="w-full border-collapse border border-black text-xs mb-4">
+              <thead>
+                <tr class="bg-gray-100 font-bold text-center border-b border-black">
+                  <th class="border border-black p-1.5 w-12 text-center">{{ $t('ohda.compass.indexNo') || 'م' }}</th>
+                  <th class="border border-black p-1.5 text-start w-1/3">{{ $t('ohda.compass.model') || 'الطراز' }}</th>
+                  <th class="border border-black p-1.5 font-mono text-center w-1/4">{{ $t('ohda.compass.serialNumber') || 'رقم المسلسل' }}</th>
+                  <th class="border border-black p-1.5 text-start w-1/4">{{ $t('ohda.compass.locationPlace') || 'مكان التواجد' }}</th>
+                  <th class="border border-black p-1.5 text-start w-1/6">{{ $t('ohda.compass.remarks') || 'ملاحظات' }}</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr
+                  v-for="(item, idx) in items"
+                  :key="idx"
+                  class="border-b border-black text-center"
+                >
+                  <td class="border border-black p-1.5 font-bold font-mono text-center">{{ idx + 1 }}</td>
+                  <td class="border border-black p-1.5 text-start font-bold text-[12px]">{{ item.productName }}</td>
+                  <td class="border border-black p-1.5 font-mono font-bold select-all text-[11px] text-center">{{ item.serialNumber }}</td>
+                  <td class="border border-black p-1.5 text-start font-semibold">{{ item.place || item.departmentName || 'فرع النظم' }}</td>
+                  <td class="border border-black p-1.5 text-start text-[10px] text-gray-700">{{ item.purpose || item.notes || item.productStateName || '-' }}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Official Signatures Block -->
+          <div class="grid grid-cols-2 gap-8 mt-12 pt-4 text-xs font-bold text-center">
+            <div class="space-y-8">
+              <p>{{ $t('ohda.compass.signatureDeliverer') }}</p>
+              <p class="text-gray-400">..................................................</p>
+            </div>
+            <div class="space-y-8">
+              <p>{{ $t('ohda.compass.signatureRecipient') }}</p>
+              <p class="text-gray-400">..................................................</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <template #footer>
+        <div class="flex items-center justify-end gap-2">
+          <SecondaryButton @click="showPrintPreviewModal = false">
+            {{ $t('ohda.common.close') }}
           </SecondaryButton>
         </div>
-      </div>
-    </div>
+      </template>
+    </Dialog>
 
-    <!-- Results Table -->
-    <div class="bg-white dark:bg-surface-900 border border-surface-200 dark:border-surface-800 rounded-2xl overflow-hidden shadow-sm transition-colors">
-      <div v-if="loading" class="p-6">
-        <LoadingSkeleton type="table" :rows="8" />
-      </div>
-
-      <DataTable
-        v-else
-        :value="compassLogs"
-        paginator
-        :rows="10"
-        :rowsPerPageOptions="[10, 25, 50, 100]"
-        class="w-full text-xs"
-      >
-        <template #empty>
-          <div class="p-8">
-            <EmptyState
-              :title="$t('ohda.compass.emptyTitle')"
-              :description="$t('ohda.compass.emptyDesc')"
-              :showAction="false"
-            />
-          </div>
-        </template>
-
-        <Column :header="$t('ohda.compass.documentNumber')">
-          <template #body="{ data }">
-            <div class="flex flex-col">
-              <span class="font-mono text-surface-900 dark:text-surface-100 font-bold text-xs">
-                {{ data.documentNumber || (data.type === 2 ? `DOC-OUT-${data.productExitRequestId || data.id}` : `DOC-IN-${data.productEntryRequestId || data.id}`) }}
-              </span>
-              <span v-if="data.type === 1 && (data.originalExitDocumentNumber || data.productExitRequestId)" class="text-[10px] text-amber-600 dark:text-amber-400 font-mono font-bold">
-                {{ $t('ohda.compass.linkedTo') }} {{ data.originalExitDocumentNumber || `DOC-OUT-${data.productExitRequestId}` }}
-              </span>
-            </div>
-          </template>
-        </Column>
-
-        <Column field="serialNumber" :header="$t('ohda.compass.serialNumber')">
-          <template #body="{ data }">
-            <span class="font-mono text-brand-accent font-bold select-all text-xs bg-brand-soft dark:bg-brand-accent/10 px-2 py-0.5 rounded border border-brand-accent/20">
-              {{ data.serialNumber }}
-            </span>
-          </template>
-        </Column>
-
-        <Column field="productName" :header="$t('ohda.compass.productName')">
-          <template #body="{ data }">
-            <span class="font-bold text-surface-900 dark:text-surface-100">{{ data.productName }}</span>
-          </template>
-        </Column>
-
-        <Column :header="$t('ohda.compass.movementType')">
-          <template #body="{ data }">
-            <span v-if="data.type === 1" class="px-2.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 font-bold border border-emerald-500/20">
-              {{ $t('ohda.compass.inflow') }}
-            </span>
-            <span v-else-if="data.type === 2" class="px-2.5 py-0.5 rounded-full bg-rose-500/10 text-rose-700 dark:text-rose-400 font-bold border border-rose-500/20">
-              {{ $t('ohda.compass.outflow') }}
-            </span>
-            <span v-else class="text-surface-400">-</span>
-          </template>
-        </Column>
-
-        <Column field="recipientName" :header="$t('ohda.compass.recipient')">
-          <template #body="{ data }">
-            <span class="font-semibold text-surface-800 dark:text-surface-200">{{ data.recipientName || '-' }}</span>
-          </template>
-        </Column>
-
-        <Column field="delivererName" :header="$t('ohda.compass.deliverer')">
-          <template #body="{ data }">
-            <span class="text-surface-700 dark:text-surface-300 font-medium">{{ data.delivererName || '-' }}</span>
-          </template>
-        </Column>
-
-        <Column field="departmentName" :header="$t('ohda.compass.deptAndPlace')">
-          <template #body="{ data }">
-            <span class="text-surface-600 dark:text-surface-400">{{ data.departmentName || data.place || '-' }}</span>
-          </template>
-        </Column>
-
-        <Column field="exitDate" :header="$t('ohda.compass.date')">
-          <template #body="{ data }">
-            <span class="font-mono text-surface-500 dark:text-surface-400 text-[11px]">{{ formatDate(data.exitDate) }}</span>
-          </template>
-        </Column>
-
-        <Column field="productStateName" :header="$t('ohda.compass.state')">
-          <template #body="{ data }">
-            <span class="text-surface-600 dark:text-surface-400 text-[11px]">{{ data.productStateName || '-' }}</span>
-          </template>
-        </Column>
-
-        <!-- Actions / Details Eye Icon -->
-        <Column :header="$t('ohda.compass.details')" headerClass="text-center" bodyClass="text-center" style="width: 80px">
-          <template #body="{ data }">
-            <button
-              @click="openDetailsModal(data)"
-              :title="$t('ohda.compass.viewDetails')"
-              class="w-8 h-8 rounded-xl bg-brand-soft dark:bg-brand-accent/10 hover:bg-brand-accent/20 text-brand-accent border border-brand-accent/25 flex items-center justify-center transition-all cursor-pointer shadow-xs hover:scale-105 mx-auto"
-            >
-              <Eye class="w-4 h-4" />
-            </button>
-          </template>
-        </Column>
-      </DataTable>
-    </div>
-
-    <!-- Movement & Approval Details Modal -->
+    <!-- Movement & Approval Details Modal (When Clicking Eye Action) -->
     <Dialog
       v-model:visible="showDetailsModal"
       modal
@@ -318,7 +442,7 @@
               </div>
               <div class="flex items-center justify-between">
                 <span class="text-surface-500 dark:text-surface-400">{{ $t('ohda.compass.recipientPlace') }}</span>
-                <span class="text-surface-700 dark:text-surface-300">{{ selectedItem.place || '-' }}</span>
+                <span class="text-surface-700 dark:text-surface-300 font-bold text-brand-accent">{{ selectedItem.place || 'فرع النظم' }}</span>
               </div>
             </div>
           </div>
@@ -426,20 +550,51 @@
       v-model:visible="showUploadModal"
       modal
       :header="$t('ohda.compass.importModalTitle')"
-      class="max-w-md w-full"
+      class="max-w-lg w-full"
     >
       <div class="space-y-4 text-xs">
+        <!-- Instructions / Feature Callout Card -->
+        <div class="p-4 rounded-2xl bg-brand-soft/30 dark:bg-brand-accent/5 border border-brand-accent/20 space-y-2.5">
+          <div class="flex items-center gap-2 font-bold text-surface-900 dark:text-surface-100 text-xs">
+            <Sparkles class="w-4 h-4 text-brand-accent" />
+            <span>نظام التأسيس والربط التلقائي بالبوصلة</span>
+          </div>
+          <ul class="text-[11px] text-surface-600 dark:text-surface-300 space-y-1.5 list-disc list-inside">
+            <li>
+              <strong>دليل المفاتيح (Lookups):</strong> يحتوي ملف النموذج على شيتات فرعية توضح أرقام ومعرفات الفروع، التصنيفات، والأقسام.
+            </li>
+            <li>
+              <strong>الإنشاء التلقائي:</strong> عند تسجيل أي صنف جديد غير مسجل، يقوم النظام بإنشائه تلقائياً في جدول المنتجات والمخزون.
+            </li>
+            <li>
+              <strong>تحديث العهد:</strong> يتم تسجيل السيريال ومكان التواجد واسم المستلم فوراً في قاعدة البيانات.
+            </li>
+          </ul>
+
+          <div class="pt-1 flex items-center justify-between border-t border-brand-accent/15">
+            <span class="text-[10px] text-surface-500">ليس لديك النموذج المحدث؟</span>
+            <button
+              type="button"
+              @click="downloadTemplate"
+              class="text-[11px] font-bold text-brand-accent hover:underline flex items-center gap-1 cursor-pointer"
+            >
+              <Download class="w-3.5 h-3.5" />
+              تحميل نموذج الإكسيل الشامل
+            </button>
+          </div>
+        </div>
+
         <div
-          class="border-2 border-dashed border-surface-300 dark:border-surface-700 hover:border-brand-accent rounded-2xl p-8 text-center bg-surface-50 dark:bg-surface-800/50 transition-colors cursor-pointer"
+          class="border-2 border-dashed border-surface-300 dark:border-surface-700 hover:border-brand-accent rounded-2xl p-7 text-center bg-surface-50 dark:bg-surface-800/50 transition-colors cursor-pointer"
           @dragover.prevent
           @drop.prevent="onFileDrop"
           @click="triggerFileSelect"
         >
-          <FileSpreadsheet class="w-12 h-12 text-brand-accent mx-auto mb-3" />
-          <p class="font-semibold text-surface-800 dark:text-surface-200 mb-1">{{ $t('ohda.compass.dropZoneText') }}</p>
-          <span class="text-[10px] text-surface-500 dark:text-surface-400 block mb-4">{{ $t('ohda.compass.dropZoneHint') }}</span>
+          <FileSpreadsheet class="w-11 h-11 text-brand-accent mx-auto mb-2" />
+          <p class="font-bold text-surface-800 dark:text-surface-200 mb-1">{{ $t('ohda.compass.dropZoneText') }}</p>
+          <span class="text-[10px] text-surface-500 dark:text-surface-400 block mb-3">{{ $t('ohda.compass.dropZoneHint') }}</span>
           <input type="file" ref="fileInput" accept=".xlsx, .xls" class="hidden" @change="onFileSelected" />
-          <button class="px-4 py-2 bg-brand-soft dark:bg-brand-accent/10 text-brand-accent border border-brand-accent/30 rounded-xl text-xs font-semibold cursor-pointer">
+          <button class="px-4 py-2 bg-brand-soft dark:bg-brand-accent/10 text-brand-accent border border-brand-accent/30 rounded-xl text-xs font-bold cursor-pointer hover:scale-102 transition-transform">
             {{ $t('ohda.compass.browseFiles') }}
           </button>
         </div>
@@ -447,10 +602,10 @@
         <div v-if="uploading" class="space-y-2">
           <div class="flex justify-between text-surface-500 dark:text-surface-400">
             <span>{{ $t('ohda.compass.importingProgress') }}</span>
-            <span class="font-bold text-brand-accent">50%</span>
+            <span class="font-bold text-brand-accent animate-pulse">جاري المعالجة...</span>
           </div>
-          <div class="w-full bg-surface-200 dark:bg-surface-700 rounded-full h-1.5 overflow-hidden">
-            <div class="bg-brand-accent h-1.5 rounded-full animate-pulse" style="width: 50%"></div>
+          <div class="w-full bg-surface-200 dark:bg-surface-700 rounded-full h-2 overflow-hidden">
+            <div class="bg-brand-accent h-2 rounded-full animate-pulse" style="width: 100%"></div>
           </div>
         </div>
       </div>
@@ -485,12 +640,84 @@ const compassLogs = ref([]);
 const loading = ref(false);
 const exporting = ref(false);
 const showUploadModal = ref(false);
+const showPrintPreviewModal = ref(false);
 const uploading = ref(false);
 const fileInput = ref(null);
 
 // Details Modal State
 const showDetailsModal = ref(false);
 const selectedItem = ref(null);
+
+const filteredLogs = computed(() => {
+  return compassLogs.value;
+});
+
+// Group items by category/type for the PDF report matching the Word document (e.g., 'الطابعات أسود:', 'طابعات ألوان:', 'أجهزة الحاسب الآلي:', etc.)
+const groupedLogs = computed(() => {
+  const groups = {};
+  filteredLogs.value.forEach((item) => {
+    let cat = item.categoryName;
+    if (!cat) {
+      const name = (item.productName || '').toLowerCase();
+      // Black laser printer models as shown in the user's Word document (e.g. Laser 2015, DN9050, DN5200, 1300, M404, etc.)
+      if (
+        name.includes('أسود') || 
+        name.includes('black') || 
+        name.includes('laser 2015') || 
+        name.includes('dn9050') || 
+        name.includes('dn5200') || 
+        name.includes('1300') || 
+        name.includes('m404') || 
+        name.includes('laserjet') ||
+        name.includes('laser jet') ||
+        (name.includes('laser') && !name.includes('color'))
+      ) {
+        cat = 'الطابعات أسود';
+      } else if (
+        name.includes('ألوان') || 
+        name.includes('color') || 
+        name.includes('officejet') || 
+        name.includes('office jet') || 
+        name.includes('7740') || 
+        name.includes('7110') || 
+        name.includes('8100') || 
+        name.includes('2800') || 
+        name.includes('inkjet') || 
+        name.includes('inket') ||
+        name.includes('deskjet')
+      ) {
+        cat = 'طابعات ألوان';
+      } else if (name.includes('طابعة') || name.includes('printer')) {
+        cat = 'الطابعات والملحقات';
+      } else if (name.includes('حاسب') || name.includes('كمبيوتر') || name.includes('laptop') || name.includes('pc') || name.includes('optiplex') || name.includes('workstation') || name.includes('dell') || name.includes('thinkpad')) {
+        cat = 'أجهزة الحاسب الآلي والملحقات';
+      } else if (name.includes('شاشة') || name.includes('monitor') || name.includes('display') || name.includes('screen')) {
+        cat = 'الشاشات والعوارض';
+      } else if (name.includes('سويتش') || name.includes('switch') || name.includes('راوتر') || name.includes('router') || name.includes('شبكة') || name.includes('network') || name.includes('cisco') || name.includes('3com')) {
+        cat = 'أجهزة الشبكات والاتصالات';
+      } else if (name.includes('سكانر') || name.includes('ماسح') || name.includes('scanner')) {
+        cat = 'الماسحات الضوئية';
+      } else {
+        cat = 'الأجهزة والعهد العامة';
+      }
+    }
+
+    if (!groups[cat]) {
+      groups[cat] = [];
+    }
+    groups[cat].push(item);
+  });
+  return groups;
+});
+
+const currentDateFormatted = computed(() => {
+  const d = new Date();
+  return d.toLocaleDateString(locale.value === 'ar' ? 'ar-EG' : 'en-US', {
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit'
+  });
+});
 
 const parsedApprovalTrail = computed(() => {
   if (!selectedItem.value?.approvalTrail) return [];
@@ -509,9 +736,107 @@ function openDetailsModal(item) {
   showDetailsModal.value = true;
 }
 
+function openPrintPreview() {
+  showPrintPreviewModal.value = true;
+}
+
+function triggerPrint() {
+  const printContent = document.getElementById("printableCompassReport");
+  if (!printContent) return;
+
+  const printWindow = window.open("", "_blank");
+  printWindow.document.write(`
+    <!DOCTYPE html>
+    <html dir="rtl" lang="ar">
+      <head>
+        <meta charset="utf-8" />
+        <title>سجل بوصلة العهد والأجهزة ومواقع تواجدها</title>
+        <style>
+          @page { size: A4 portrait; margin: 10mm 12mm; }
+          body { 
+            font-family: 'Times New Roman', 'Cairo', Tahoma, Arial, sans-serif; 
+            direction: rtl; 
+            margin: 0; 
+            padding: 5px; 
+            color: #000; 
+            font-size: 11px; 
+            background: #fff;
+          }
+          .category-heading {
+            font-size: 14px;
+            font-weight: bold;
+            margin-top: 14px;
+            margin-bottom: 5px;
+            text-align: right;
+          }
+          table { 
+            width: 100%; 
+            border-collapse: collapse; 
+            margin-top: 4px; 
+            margin-bottom: 14px; 
+            font-size: 11px; 
+            page-break-inside: auto; 
+          }
+          tr { 
+            page-break-inside: avoid; 
+            page-break-after: auto; 
+          }
+          thead { 
+            display: table-header-group; 
+          }
+          tfoot { 
+            display: table-footer-group; 
+          }
+          th, td { 
+            border: 1px solid #000; 
+            padding: 4px 6px; 
+          }
+          th { 
+            background-color: #f2f2f2 !important; 
+            font-weight: bold; 
+            font-size: 11px; 
+            text-align: center;
+          }
+          .text-start { text-align: right; }
+          .text-center { text-align: center; }
+          .font-mono { font-family: 'Consolas', 'Courier New', monospace; font-weight: bold; }
+          .header-box { 
+            border-bottom: 2px solid #000; 
+            padding-bottom: 8px; 
+            margin-bottom: 14px; 
+            text-align: center; 
+          }
+          .signatures { 
+            display: flex; 
+            justify-content: space-between; 
+            margin-top: 35px; 
+            font-size: 12px; 
+            font-weight: bold; 
+            page-break-inside: avoid; 
+          }
+          @media print {
+            body { padding: 0; }
+            button { display: none; }
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+          }
+        </style>
+      </head>
+      <body>
+        ${printContent.innerHTML}
+      </body>
+    </html>
+  `);
+  printWindow.document.close();
+  printWindow.focus();
+  setTimeout(() => {
+    printWindow.print();
+    printWindow.close();
+  }, 400);
+}
+
 onMounted(() => {
   performSearch();
-  // load filter lists
   (async () => {
     try {
       const d = await apiGet('/api/Department');
@@ -658,3 +983,11 @@ function formatDate(dateStr) {
   }
 }
 </script>
+
+<style scoped>
+@media print {
+  .no-print {
+    display: none !important;
+  }
+}
+</style>
