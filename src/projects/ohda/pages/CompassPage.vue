@@ -16,6 +16,15 @@
 
         <!-- Action Buttons -->
         <div class="flex flex-wrap items-center gap-2.5">
+          <!-- Edit Header & Signatures Settings Button -->
+          <Button
+            @click="openHeaderConfigModal"
+            class="!bg-surface-800 hover:!bg-surface-700 dark:!bg-surface-700 dark:hover:!bg-surface-600 !text-white !font-bold !rounded-xl !px-3.5 !py-2.5 !text-xs flex items-center gap-2 shadow-sm cursor-pointer transition-colors"
+          >
+            <Settings class="w-4 h-4 text-brand-accent" />
+            {{ $t('ohda.compass.editHeaderSignatures') }}
+          </Button>
+
           <!-- Print / Export PDF Button (Matching the User's Required Compass Register) -->
           <Button
             @click="openPrintPreview"
@@ -281,6 +290,125 @@
       </div>
     </div>
 
+    <!-- Header & Signatures Configuration Modal Dialog -->
+    <Dialog
+      v-model:visible="showConfigModal"
+      modal
+      :header="$t('ohda.compass.headerConfigTitle')"
+      class="max-w-2xl w-full"
+    >
+      <div class="space-y-5 text-xs font-sans">
+        <!-- Header Lines Section -->
+        <div class="p-4 rounded-2xl bg-surface-50 dark:bg-surface-800/60 border border-surface-200 dark:border-surface-700 space-y-4">
+          <h4 class="font-bold text-xs text-surface-900 dark:text-surface-100 flex items-center gap-2 border-b border-surface-200 dark:border-surface-700 pb-2">
+            <FileText class="w-4 h-4 text-brand-accent" />
+            <span>{{ $t('ohda.compass.headerRightGroup') }} &amp; {{ $t('ohda.compass.headerLeftGroup') }}</span>
+          </h4>
+
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <!-- Right Header -->
+            <div class="space-y-2.5 p-3 bg-white dark:bg-surface-850 rounded-xl border border-surface-200 dark:border-surface-700">
+              <span class="font-bold text-surface-800 dark:text-surface-200 block text-[11px] text-brand-accent">
+                {{ $t('ohda.compass.headerRightGroup') }} (اليمين)
+              </span>
+              <div>
+                <label class="block text-[10px] mb-1 font-semibold text-surface-600 dark:text-surface-400">{{ $t('ohda.compass.line1') }}</label>
+                <InputText v-model="headerConfig.headerRightLine1" class="w-full text-xs" />
+              </div>
+              <div>
+                <label class="block text-[10px] mb-1 font-semibold text-surface-600 dark:text-surface-400">{{ $t('ohda.compass.line2') }}</label>
+                <InputText v-model="headerConfig.headerRightLine2" class="w-full text-xs" />
+              </div>
+              <div>
+                <label class="block text-[10px] mb-1 font-semibold text-surface-600 dark:text-surface-400">{{ $t('ohda.compass.line3') }}</label>
+                <InputText v-model="headerConfig.headerRightLine3" class="w-full text-xs" />
+              </div>
+            </div>
+
+            <!-- Left Header -->
+            <div class="space-y-2.5 p-3 bg-white dark:bg-surface-850 rounded-xl border border-surface-200 dark:border-surface-700">
+              <span class="font-bold text-surface-800 dark:text-surface-200 block text-[11px] text-brand-accent">
+                {{ $t('ohda.compass.headerLeftGroup') }} (اليسار)
+              </span>
+              <div>
+                <label class="block text-[10px] mb-1 font-semibold text-surface-600 dark:text-surface-400">{{ $t('ohda.compass.line1') }}</label>
+                <InputText v-model="headerConfig.headerLeftLine1" class="w-full text-xs" />
+              </div>
+              <div>
+                <label class="block text-[10px] mb-1 font-semibold text-surface-600 dark:text-surface-400">{{ $t('ohda.compass.line2') }}</label>
+                <InputText v-model="headerConfig.headerLeftLine2" class="w-full text-xs" />
+              </div>
+            </div>
+          </div>
+
+          <!-- Main Document Title -->
+          <div class="pt-2 border-t border-surface-200 dark:border-surface-700">
+            <label class="block text-[11px] mb-1 font-bold text-surface-800 dark:text-surface-200">
+              {{ $t('ohda.compass.headerMainTitle') }}
+            </label>
+            <InputText v-model="headerConfig.mainTitle" class="w-full text-xs font-bold" />
+          </div>
+        </div>
+
+        <!-- Signatures Section Settings -->
+        <div class="p-4 rounded-2xl bg-surface-50 dark:bg-surface-800/60 border border-surface-200 dark:border-surface-700 space-y-4">
+          <h4 class="font-bold text-xs text-surface-900 dark:text-surface-100 flex items-center gap-2 border-b border-surface-200 dark:border-surface-700 pb-2">
+            <Users class="w-4 h-4 text-brand-accent" />
+            <span>{{ $t('ohda.compass.signaturesGroup') }} (تظهر بنهاية الصفحة)</span>
+          </h4>
+
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <!-- Branch Head -->
+            <div class="space-y-2.5 p-3 bg-white dark:bg-surface-850 rounded-xl border border-surface-200 dark:border-surface-700">
+              <span class="font-bold text-surface-800 dark:text-surface-200 block text-[11px] text-brand-accent">
+                رئيس الفرع (الجهة اليمنى)
+              </span>
+              <div>
+                <label class="block text-[10px] mb-1 font-semibold text-surface-600 dark:text-surface-400">{{ $t('ohda.compass.branchHeadRankAndName') }}</label>
+                <InputText v-model="headerConfig.branchHeadName" class="w-full text-xs font-bold" />
+              </div>
+              <div>
+                <label class="block text-[10px] mb-1 font-semibold text-surface-600 dark:text-surface-400">{{ $t('ohda.compass.branchHeadRole') }}</label>
+                <InputText v-model="headerConfig.branchHeadTitle" class="w-full text-xs" />
+              </div>
+            </div>
+
+            <!-- Custody Head -->
+            <div class="space-y-2.5 p-3 bg-white dark:bg-surface-850 rounded-xl border border-surface-200 dark:border-surface-700">
+              <span class="font-bold text-surface-800 dark:text-surface-200 block text-[11px] text-brand-accent">
+                رئيس فرع مراقبة العهدة (الجهة اليسرى)
+              </span>
+              <div>
+                <label class="block text-[10px] mb-1 font-semibold text-surface-600 dark:text-surface-400">{{ $t('ohda.compass.custodyHeadRankAndName') }}</label>
+                <InputText v-model="headerConfig.custodyHeadName" class="w-full text-xs font-bold" />
+              </div>
+              <div>
+                <label class="block text-[10px] mb-1 font-semibold text-surface-600 dark:text-surface-400">{{ $t('ohda.compass.custodyHeadRole') }}</label>
+                <InputText v-model="headerConfig.custodyHeadTitle" class="w-full text-xs" />
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <template #footer>
+        <div class="flex items-center justify-between w-full">
+          <SecondaryButton @click="resetHeaderConfigToDefault" class="!text-xs">
+            {{ $t('ohda.compass.resetHeaderConfig') }}
+          </SecondaryButton>
+
+          <div class="flex items-center gap-2">
+            <SecondaryButton @click="showConfigModal = false" class="!text-xs">
+              {{ $t('ohda.common.cancel') }}
+            </SecondaryButton>
+            <Button @click="saveHeaderConfig" class="!bg-brand-accent !text-surface-900 !font-bold !text-xs">
+              {{ $t('ohda.compass.saveHeaderConfig') }}
+            </Button>
+          </div>
+        </div>
+      </template>
+    </Dialog>
+
     <!-- Printable PDF Compass Report Preview Modal (Grouped by Type/Category exactly matching the Word Document) -->
     <Dialog
       v-model:visible="showPrintPreviewModal"
@@ -297,6 +425,14 @@
 
           <div class="flex items-center gap-2">
             <Button
+              @click="openHeaderConfigModal"
+              class="!bg-surface-200 dark:!bg-surface-700 hover:!bg-surface-300 !text-surface-800 dark:!text-surface-100 !font-bold !rounded-xl !px-3.5 !py-2 !text-xs flex items-center gap-2 cursor-pointer"
+            >
+              <Settings class="w-3.5 h-3.5 text-brand-accent" />
+              <span>{{ $t('ohda.compass.editHeaderSignatures') }}</span>
+            </Button>
+
+            <Button
               @click="triggerPrint"
               class="!bg-blue-600 hover:!bg-blue-700 !text-white !font-bold !rounded-xl !px-4 !py-2 !text-xs flex items-center gap-2 shadow-sm cursor-pointer"
             >
@@ -307,76 +443,89 @@
         </div>
 
         <!-- Printable Document Canvas -->
-        <div id="printableCompassReport" class="bg-white text-black p-8 rounded-xl border border-surface-200 shadow-sm font-sans" dir="rtl">
-          <!-- Official Report Header -->
-          <div class="border-b-2 border-black pb-4 mb-6 text-center space-y-1">
-            <div class="flex justify-between items-start text-[11px] font-bold text-gray-700 mb-2">
-              <div class="text-start">
-                <p>جمهورية مصر العربية</p>
-                <p>إدارة نظم المعلومات والتحول الرقمي</p>
-                <p>قسم العهد والمستودعات</p>
+        <div id="printableCompassReport" class="bg-white text-black p-8 rounded-xl border-4 border-double border-black shadow-sm font-sans" dir="rtl">
+          <!-- Official Report Military Header -->
+          <div class="border-b-2 border-black pb-3 mb-5 text-center space-y-2">
+            <div class="flex justify-between items-start text-[12px] font-bold text-black mb-1 leading-relaxed">
+              <!-- Right Header Lines -->
+              <div class="text-start whitespace-pre-line">
+                <p v-if="headerConfig.headerRightLine1" class="font-bold">{{ headerConfig.headerRightLine1 }}</p>
+                <p v-if="headerConfig.headerRightLine2" class="font-bold">{{ headerConfig.headerRightLine2 }}</p>
+                <p v-if="headerConfig.headerRightLine3" class="font-bold">{{ headerConfig.headerRightLine3 }}</p>
               </div>
-              <div class="text-end">
-                <p>{{ $t('ohda.compass.printDate') }} {{ currentDateFormatted }}</p>
-                <p>{{ $t('ohda.compass.totalDevices') }} {{ filteredLogs.length }}</p>
+
+              <!-- Left Header Lines -->
+              <div class="text-end whitespace-pre-line">
+                <p v-if="headerConfig.headerLeftLine1" class="font-bold">{{ headerConfig.headerLeftLine1 }}</p>
+                <p v-if="headerConfig.headerLeftLine2" class="font-bold">{{ headerConfig.headerLeftLine2 }}</p>
               </div>
             </div>
 
-            <h2 class="text-xl font-black tracking-wide text-black uppercase">
-              {{ $t('ohda.compass.printTitle') }}
-            </h2>
-            <p class="text-xs text-gray-600">
-              {{ $t('ohda.compass.printSubtitle') }}
-            </p>
+            <!-- Main Statement Title -->
+            <div v-if="headerConfig.mainTitle" class="pt-2 text-center">
+              <h2 class="text-[15px] font-black underline tracking-wide text-black uppercase">
+                {{ headerConfig.mainTitle }}
+              </h2>
+            </div>
           </div>
 
-          <!-- Grouped Sections by Type / Category (e.g. الطابعات أسود: / أجهزة حاسوب:) -->
+          <!-- Dynamic Table Sections (Matching whatever data is loaded in the Compass table) -->
           <div
             v-for="(items, categoryName) in groupedLogs"
             :key="categoryName"
             class="mb-6 break-inside-avoid print-section"
           >
-            <!-- Section Heading (e.g. الطابعات أسود:) exactly matching the Word document -->
-            <div class="category-heading text-lg font-bold text-black mb-2 text-start">
-              {{ categoryName.endsWith(':') ? categoryName : categoryName + ':' }}
+            <!-- Section Heading (Only shown if real categories exist in the data) -->
+            <div
+              v-if="categoryName !== 'بيان الأجهزة والعهد' && Object.keys(groupedLogs).length > 1"
+              class="category-heading text-[13px] font-black text-black mb-1.5 text-start border-b border-black/30 pb-0.5"
+            >
+              {{ categoryName.endsWith(':') ? categoryName : categoryName + ' :' }}
             </div>
 
-            <!-- Table matching the Word document layout with columns: م | الطراز | رقم المسلسل | مكان التواجد | ملاحظات -->
-            <table class="w-full border-collapse border border-black text-xs mb-4">
+            <!-- Table matching the Word/PDF document layout with columns: م | نوع الجهاز / الطراز | رقم مسلسل | مكان التواجد | ملاحظات -->
+            <table class="w-full border-collapse border border-black text-xs mb-3">
               <thead>
                 <tr class="bg-gray-100 font-bold text-center border-b border-black">
-                  <th class="border border-black p-1.5 w-12 text-center">{{ $t('ohda.compass.indexNo') || 'م' }}</th>
-                  <th class="border border-black p-1.5 text-start w-1/3">{{ $t('ohda.compass.model') || 'الطراز' }}</th>
-                  <th class="border border-black p-1.5 font-mono text-center w-1/4">{{ $t('ohda.compass.serialNumber') || 'رقم المسلسل' }}</th>
-                  <th class="border border-black p-1.5 text-start w-1/4">{{ $t('ohda.compass.locationPlace') || 'مكان التواجد' }}</th>
-                  <th class="border border-black p-1.5 text-start w-1/6">{{ $t('ohda.compass.remarks') || 'ملاحظات' }}</th>
+                  <th class="border border-black p-1.5 w-12 text-center font-bold">{{ $t('ohda.compass.indexNo') || 'م' }}</th>
+                  <th class="border border-black p-1.5 text-start w-1/3 font-bold">{{ $t('ohda.compass.model') || 'نوع الجهاز / الطراز' }}</th>
+                  <th class="border border-black p-1.5 font-mono text-center w-1/4 font-bold">{{ $t('ohda.compass.serialNumber') || 'رقم مسلسل' }}</th>
+                  <th class="border border-black p-1.5 text-start w-1/4 font-bold">{{ $t('ohda.compass.locationPlace') || 'مكان التواجد' }}</th>
+                  <th class="border border-black p-1.5 text-start w-1/6 font-bold">{{ $t('ohda.compass.remarks') || 'ملاحظات' }}</th>
                 </tr>
               </thead>
               <tbody>
                 <tr
                   v-for="(item, idx) in items"
-                  :key="idx"
+                  :key="item.id || idx"
                   class="border-b border-black text-center"
                 >
                   <td class="border border-black p-1.5 font-bold font-mono text-center">{{ idx + 1 }}</td>
-                  <td class="border border-black p-1.5 text-start font-bold text-[12px]">{{ item.productName }}</td>
-                  <td class="border border-black p-1.5 font-mono font-bold select-all text-[11px] text-center">{{ item.serialNumber }}</td>
-                  <td class="border border-black p-1.5 text-start font-semibold">{{ item.place || item.departmentName || 'فرع النظم' }}</td>
-                  <td class="border border-black p-1.5 text-start text-[10px] text-gray-700">{{ item.purpose || item.notes || item.productStateName || '-' }}</td>
+                  <td class="border border-black p-1.5 text-start font-bold text-[12px]">{{ item.productName || '-' }}</td>
+                  <td class="border border-black p-1.5 font-mono font-bold select-all text-[11px] text-center">{{ item.serialNumber || '-' }}</td>
+                  <td class="border border-black p-1.5 text-start font-semibold">{{ item.place || item.departmentName || '-' }}</td>
+                  <td class="border border-black p-1.5 text-start text-[10px] text-gray-800">{{ item.notes || item.purpose || item.productStateName || '-' }}</td>
                 </tr>
               </tbody>
             </table>
           </div>
 
-          <!-- Official Signatures Block -->
-          <div class="grid grid-cols-2 gap-8 mt-12 pt-4 text-xs font-bold text-center">
-            <div class="space-y-8">
-              <p>{{ $t('ohda.compass.signatureDeliverer') }}</p>
-              <p class="text-gray-400">..................................................</p>
-            </div>
-            <div class="space-y-8">
-              <p>{{ $t('ohda.compass.signatureRecipient') }}</p>
-              <p class="text-gray-400">..................................................</p>
+          <!-- Official Signatures Block (at the end of report) -->
+          <div class="mt-14 pt-4 text-xs font-bold break-inside-avoid signatures-container">
+            <div class="grid grid-cols-2 gap-12 text-center">
+              <!-- Branch Head (Right) -->
+              <div class="space-y-1">
+                <p class="mb-8 font-black text-[13px]">التوقيع ( &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; )</p>
+                <p class="font-black text-[13px] text-black">{{ headerConfig.branchHeadName }}</p>
+                <p class="font-bold text-[12px] text-black">{{ headerConfig.branchHeadTitle }}</p>
+              </div>
+
+              <!-- Custody Head (Left) -->
+              <div class="space-y-1">
+                <p class="mb-8 font-black text-[13px]">التوقيع ( &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; )</p>
+                <p class="font-black text-[13px] text-black">{{ headerConfig.custodyHeadName }}</p>
+                <p class="font-bold text-[12px] text-black">{{ headerConfig.custodyHeadTitle }}</p>
+              </div>
             </div>
           </div>
         </div>
@@ -641,8 +790,64 @@ const loading = ref(false);
 const exporting = ref(false);
 const showUploadModal = ref(false);
 const showPrintPreviewModal = ref(false);
+const showConfigModal = ref(false);
 const uploading = ref(false);
 const fileInput = ref(null);
+
+// Default Military Header & Signatures Configuration matching official Army/Tech College Register
+const DEFAULT_HEADER_CONFIG = {
+  headerRightLine1: "وزارة الدفــــــــــــــــــــــــاع",
+  headerRightLine2: "الكلية العسكرية التكنولوجية",
+  headerRightLine3: "فرع نظم المعلومـــــــــــــات",
+  headerLeftLine1: "التصنيف طبقا لنوع الأجهزة",
+  headerLeftLine2: "الملحق ( ب )",
+  mainTitle: "أولا: بيان الأرقام المسلسلة لأجهزة الحواسب وتوزيعها طبقا للنوع",
+  branchHeadName: "عقيـــــد/ محمـد فرغـل توفيـــق",
+  branchHeadTitle: "رئيـس فـــرع نظـم المعلومـــــات",
+  custodyHeadName: "رائـــد /عـلاء منير عبد الرازق",
+  custodyHeadTitle: "رئيس فـرع مراقبة العـــــــهدة"
+};
+
+const headerConfig = ref({ ...DEFAULT_HEADER_CONFIG });
+
+const STORAGE_KEY = "ohda_compass_header_config";
+
+function loadSavedHeaderConfig() {
+  try {
+    const saved = localStorage.getItem(STORAGE_KEY);
+    if (saved) {
+      const parsed = JSON.parse(saved);
+      headerConfig.value = { ...DEFAULT_HEADER_CONFIG, ...parsed };
+    }
+  } catch (e) {
+    console.warn("Failed to parse saved compass header config", e);
+  }
+}
+
+function openHeaderConfigModal() {
+  loadSavedHeaderConfig();
+  showConfigModal.value = true;
+}
+
+function saveHeaderConfig() {
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(headerConfig.value));
+    toastStore.addSuccessToast({ title: t('ohda.compass.configSavedSuccess') });
+    showConfigModal.value = false;
+  } catch (e) {
+    console.error("Failed to save compass header config", e);
+  }
+}
+
+function resetHeaderConfigToDefault() {
+  headerConfig.value = { ...DEFAULT_HEADER_CONFIG };
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(DEFAULT_HEADER_CONFIG));
+    toastStore.addSuccessToast({ title: t('ohda.compass.configResetSuccess') });
+  } catch (e) {
+    console.error("Failed to reset compass header config", e);
+  }
+}
 
 // Details Modal State
 const showDetailsModal = ref(false);
@@ -652,60 +857,24 @@ const filteredLogs = computed(() => {
   return compassLogs.value;
 });
 
-// Group items by category/type for the PDF report matching the Word document (e.g., 'الطابعات أسود:', 'طابعات ألوان:', 'أجهزة الحاسب الآلي:', etc.)
+// Group items purely dynamically from API / DB data (no hardcoded models or seed strings)
 const groupedLogs = computed(() => {
   const groups = {};
   filteredLogs.value.forEach((item) => {
-    let cat = item.categoryName;
-    if (!cat) {
-      const name = (item.productName || '').toLowerCase();
-      // Black laser printer models as shown in the user's Word document (e.g. Laser 2015, DN9050, DN5200, 1300, M404, etc.)
-      if (
-        name.includes('أسود') || 
-        name.includes('black') || 
-        name.includes('laser 2015') || 
-        name.includes('dn9050') || 
-        name.includes('dn5200') || 
-        name.includes('1300') || 
-        name.includes('m404') || 
-        name.includes('laserjet') ||
-        name.includes('laser jet') ||
-        (name.includes('laser') && !name.includes('color'))
-      ) {
-        cat = 'الطابعات أسود';
-      } else if (
-        name.includes('ألوان') || 
-        name.includes('color') || 
-        name.includes('officejet') || 
-        name.includes('office jet') || 
-        name.includes('7740') || 
-        name.includes('7110') || 
-        name.includes('8100') || 
-        name.includes('2800') || 
-        name.includes('inkjet') || 
-        name.includes('inket') ||
-        name.includes('deskjet')
-      ) {
-        cat = 'طابعات ألوان';
-      } else if (name.includes('طابعة') || name.includes('printer')) {
-        cat = 'الطابعات والملحقات';
-      } else if (name.includes('حاسب') || name.includes('كمبيوتر') || name.includes('laptop') || name.includes('pc') || name.includes('optiplex') || name.includes('workstation') || name.includes('dell') || name.includes('thinkpad')) {
-        cat = 'أجهزة الحاسب الآلي والملحقات';
-      } else if (name.includes('شاشة') || name.includes('monitor') || name.includes('display') || name.includes('screen')) {
-        cat = 'الشاشات والعوارض';
-      } else if (name.includes('سويتش') || name.includes('switch') || name.includes('راوتر') || name.includes('router') || name.includes('شبكة') || name.includes('network') || name.includes('cisco') || name.includes('3com')) {
-        cat = 'أجهزة الشبكات والاتصالات';
-      } else if (name.includes('سكانر') || name.includes('ماسح') || name.includes('scanner')) {
-        cat = 'الماسحات الضوئية';
-      } else {
-        cat = 'الأجهزة والعهد العامة';
+    // Purely dynamic: if the item has a categoryName from the database, group by it; otherwise group into a single list
+    const cat = item.categoryName && item.categoryName.trim() ? item.categoryName.trim() : null;
+    if (cat) {
+      if (!groups[cat]) {
+        groups[cat] = [];
       }
+      groups[cat].push(item);
+    } else {
+      const defaultGroup = "بيان الأجهزة والعهد";
+      if (!groups[defaultGroup]) {
+        groups[defaultGroup] = [];
+      }
+      groups[defaultGroup].push(item);
     }
-
-    if (!groups[cat]) {
-      groups[cat] = [];
-    }
-    groups[cat].push(item);
   });
   return groups;
 });
@@ -737,6 +906,7 @@ function openDetailsModal(item) {
 }
 
 function openPrintPreview() {
+  loadSavedHeaderConfig();
   showPrintPreviewModal.value = true;
 }
 
@@ -750,30 +920,46 @@ function triggerPrint() {
     <html dir="rtl" lang="ar">
       <head>
         <meta charset="utf-8" />
-        <title>سجل بوصلة العهد والأجهزة ومواقع تواجدها</title>
+        <title>${headerConfig.value.mainTitle || 'سجل بوصلة العهد والأجهزة ومواقع تواجدها'}</title>
         <style>
-          @page { size: A4 portrait; margin: 10mm 12mm; }
+          @page { 
+            size: A4 portrait; 
+            margin: 8mm 8mm 10mm 8mm; 
+          }
+          * {
+            box-sizing: border-box;
+          }
           body { 
             font-family: 'Times New Roman', 'Cairo', Tahoma, Arial, sans-serif; 
             direction: rtl; 
             margin: 0; 
-            padding: 5px; 
+            padding: 4px; 
             color: #000; 
             font-size: 11px; 
             background: #fff;
           }
+          .print-outer-frame {
+            border: 3px double #000;
+            padding: 10px 12px;
+            min-height: 98vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+          }
           .category-heading {
-            font-size: 14px;
-            font-weight: bold;
-            margin-top: 14px;
-            margin-bottom: 5px;
+            font-size: 13px;
+            font-weight: 900;
+            margin-top: 10px;
+            margin-bottom: 4px;
             text-align: right;
+            border-bottom: 1px solid #000;
+            padding-bottom: 2px;
           }
           table { 
             width: 100%; 
             border-collapse: collapse; 
-            margin-top: 4px; 
-            margin-bottom: 14px; 
+            margin-top: 3px; 
+            margin-bottom: 12px; 
             font-size: 11px; 
             page-break-inside: auto; 
           }
@@ -800,16 +986,9 @@ function triggerPrint() {
           .text-start { text-align: right; }
           .text-center { text-align: center; }
           .font-mono { font-family: 'Consolas', 'Courier New', monospace; font-weight: bold; }
-          .header-box { 
-            border-bottom: 2px solid #000; 
-            padding-bottom: 8px; 
-            margin-bottom: 14px; 
-            text-align: center; 
-          }
-          .signatures { 
-            display: flex; 
-            justify-content: space-between; 
-            margin-top: 35px; 
+          .signatures-container { 
+            margin-top: 30px; 
+            padding-top: 10px; 
             font-size: 12px; 
             font-weight: bold; 
             page-break-inside: avoid; 
@@ -817,13 +996,16 @@ function triggerPrint() {
           @media print {
             body { padding: 0; }
             button { display: none; }
+            .print-outer-frame { border: 3px double #000 !important; }
             -webkit-print-color-adjust: exact;
             print-color-adjust: exact;
           }
         </style>
       </head>
       <body>
-        ${printContent.innerHTML}
+        <div class="print-outer-frame">
+          ${printContent.innerHTML}
+        </div>
       </body>
     </html>
   `);
@@ -836,6 +1018,7 @@ function triggerPrint() {
 }
 
 onMounted(() => {
+  loadSavedHeaderConfig();
   performSearch();
   (async () => {
     try {
