@@ -144,12 +144,21 @@ export const useOhdaAuthStore = defineStore("ohdaAuth", {
           return { success: true };
         } else {
           this.loading = false;
-          return { success: false, message: response?.data?.returnMessage || "اسم المستخدم أو كلمة المرور غير صحيحة" };
+          const msg = response?.data?.returnMessage || response?.data?.ReturnMessage || "اسم المستخدم أو كلمة المرور غير صحيحة";
+          return { success: false, message: msg };
         }
       } catch (err) {
         this.loading = false;
         console.warn("API Login failed", err);
-        const errorMsg = err?.response?.data?.returnMessage || "اسم المستخدم أو كلمة المرور غير صحيحة";
+        const data = err?.response?.data;
+        let errorMsg = "اسم المستخدم أو كلمة المرور غير صحيحة";
+        if (typeof data === "string" && data.trim()) {
+          errorMsg = data;
+        } else if (data && typeof data === "object") {
+          errorMsg = data.returnMessage || data.ReturnMessage || data.message || data.title || errorMsg;
+        } else if (err?.message && !err.response) {
+          errorMsg = "تعذر الاتصال بالخادم. يرجى التأكد من تشغيل الـ API";
+        }
         return { success: false, message: errorMsg };
       }
     },

@@ -214,6 +214,7 @@ export default {
         lowStock: "منخفض - ينصح بالتوريد",
         outOfStock: "نفذت الكمية بالكامل",
         safetyPercentage: "{percent}% من الأمان",
+        recordsCount: "سجل",
         pdfImportTitle: "تفريغ دفتر العهد (حساب صنف PDF)",
         pdfImportSub: "اسحب ملف PDF دفتر العهد هنا أو اضغط للاختيار",
         pdfOnlyNotice: "يدعم فقط ملفات PDF الخاصة بـ 'حساب صنف'",
@@ -456,7 +457,9 @@ export default {
         changePassword: "تغيير كلمة المرور",
         currentPassword: "كلمة المرور الحالية",
         newPassword: "كلمة المرور الجديدة",
-        confirmPassword: "تأكيد كلمة المرور الجديدة"
+        confirmPassword: "تأكيد كلمة المرور الجديدة",
+        loginFailed: "فشل تسجيل الدخول",
+        invalidCredentials: "اسم المستخدم أو كلمة المرور غير صحيحة"
       },
       quotas: {
         usersLimitBanner: "سعة المستخدمين المسموح بها لهذا الفرع: {current} من {max} مستخدم ({remaining} متبقي) — محدد بواسطة SuperAdmin",
@@ -494,6 +497,7 @@ export default {
         uploadDocument: "رفع مستند البوصلة",
         showFilters: "إظهار عوامل التصفية",
         hideFilters: "إخفاء عوامل التصفية",
+        recordsCount: "سجل",
         textSearch: "بحث نصي",
         searchPlaceholder: "ابحث برقم الجهاز، اسم المنتج، أو المستلم",
         department: "القسم",
@@ -832,6 +836,7 @@ export default {
         lowStock: "Low Stock - Reorder Suggested",
         outOfStock: "Completely Out of Stock",
         safetyPercentage: "{percent}% of Safety Target",
+        recordsCount: "records",
         pdfImportTitle: "Import Military Asset Ledger (PDF)",
         pdfImportSub: "Drag and drop the ledger PDF file here or click to select",
         pdfOnlyNotice: "Supports only military 'Item Account' PDF ledger files",
@@ -1074,7 +1079,9 @@ export default {
         changePassword: "Change Password",
         currentPassword: "Current Password",
         newPassword: "New Password",
-        confirmPassword: "Confirm New Password"
+        confirmPassword: "Confirm New Password",
+        loginFailed: "Login Failed",
+        invalidCredentials: "Invalid username or password"
       },
       quotas: {
         usersLimitBanner: "Allocated user capacity for this branch: {current} of {max} users ({remaining} remaining) — Set by SuperAdmin",
@@ -1112,6 +1119,7 @@ export default {
         uploadDocument: "Upload Compass Document",
         showFilters: "Show Filters",
         hideFilters: "Hide Filters",
+        recordsCount: "records",
         textSearch: "Text Search",
         searchPlaceholder: "Search by serial number, product name, or recipient...",
         department: "Department",
