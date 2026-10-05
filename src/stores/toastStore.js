@@ -1,29 +1,26 @@
 import { defineStore } from "pinia";
-import { useToast } from "primevue/usetoast";
-import { useRouter } from "vue-router";
+import ToastEventBus from "primevue/toasteventbus";
 import i18n from "@/i18n";
 
 export const useToastStore = defineStore("toast", {
     state: () => ({
-        toast: null,
-        router: null,
         lastToastKey: "",
         lastToastTime: 0
     }),
     actions: {
-        init() {
-            if (!this.toast) {
-                try {
-                    this.toast = useToast();
-                } catch (e) {
-                    // Handled outside component context
-                }
+        _normalizeToastArgs(messageOrObj, summary) {
+            if (messageOrObj && typeof messageOrObj === "object") {
+                const msg = messageOrObj.message || messageOrObj.detail || messageOrObj.text || "";
+                const sum = messageOrObj.summary || messageOrObj.title || summary;
+                return {
+                    message: typeof msg === "string" ? msg : JSON.stringify(msg),
+                    summary: sum
+                };
             }
-            if (!this.router) {
-                try {
-                    this.router = useRouter();
-                } catch (e) {}
-            }
+            return {
+                message: typeof messageOrObj === "string" ? messageOrObj : String(messageOrObj || ""),
+                summary: summary
+            };
         },
         _shouldThrottle(message, severity) {
             const key = `${severity}:${message}`;
@@ -50,50 +47,57 @@ export const useToastStore = defineStore("toast", {
                     return isAr ? "معلومة" : "Information";
             }
         },
+        _emitToast(payload) {
+            try {
+                ToastEventBus.emit("add", payload);
+            } catch (e) {
+                console.error("[ToastStore Emit Error]:", e);
+            }
+        },
         addSuccessToast(message, summary) {
-            this.init();
-            if (!message || this._shouldThrottle(message, "success")) return;
-            this.toast?.add({
+            const { message: msg, summary: sum } = this._normalizeToastArgs(message, summary);
+            if (!msg || this._shouldThrottle(msg, "success")) return;
+            this._emitToast({
                 severity: "success",
-                summary: summary || this.getSummary("success"),
-                detail: message,
+                summary: sum || this.getSummary("success"),
+                detail: msg,
                 life: 3500,
             });
         },
         addErrorToast(message, summary) {
-            this.init();
-            if (!message || this._shouldThrottle(message, "error")) return;
-            this.toast?.add({
+            const { message: msg, summary: sum } = this._normalizeToastArgs(message, summary);
+            if (!msg || this._shouldThrottle(msg, "error")) return;
+            this._emitToast({
                 severity: "error",
-                summary: summary || this.getSummary("error"),
-                detail: message,
+                summary: sum || this.getSummary("error"),
+                detail: msg,
                 life: 5000,
             });
         },
         addWarningToast(message, summary) {
-            this.init();
-            if (!message || this._shouldThrottle(message, "warn")) return;
-            this.toast?.add({
+            const { message: msg, summary: sum } = this._normalizeToastArgs(message, summary);
+            if (!msg || this._shouldThrottle(msg, "warn")) return;
+            this._emitToast({
                 severity: "warn",
-                summary: summary || this.getSummary("warn"),
-                detail: message,
+                summary: sum || this.getSummary("warn"),
+                detail: msg,
                 life: 4000,
             });
         },
         addInfoToast(message, summary) {
-            this.init();
-            if (!message || this._shouldThrottle(message, "info")) return;
-            this.toast?.add({
+            const { message: msg, summary: sum } = this._normalizeToastArgs(message, summary);
+            if (!msg || this._shouldThrottle(msg, "info")) return;
+            this._emitToast({
                 severity: "info",
-                summary: summary || this.getSummary("info"),
-                detail: message,
+                summary: sum || this.getSummary("info"),
+                detail: msg,
                 life: 3500,
             });
         },
         redirectToLogin() {
-            this.init();
-            this.router?.replace("/ohda/login");
+            window.location.assign("/ohda/login");
         },
     },
 });
+
 

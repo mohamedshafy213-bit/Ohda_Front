@@ -76,7 +76,7 @@
                 {{ filtersCollapsed ? $t('ohda.compass.showFilters') : $t('ohda.compass.hideFilters') }}
               </button>
               <span class="text-[11px] text-surface-500 font-medium">
-                {{ filteredLogs.length }} {{ $t('ohda.inventory.recordsCount') }}
+                {{ filteredLogs.length }} {{ $t('ohda.compass.recordsCount') }}
               </span>
             </div>
 

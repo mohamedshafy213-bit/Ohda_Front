@@ -79,10 +79,12 @@
 <script setup>
 import { ref, computed } from "vue";
 import { useRouter } from "vue-router";
+import { useI18n } from "vue-i18n";
 import { setLocale, getCurrentLocale } from "@/i18n";
 import { useOhdaAuthStore } from "../stores/useOhdaAuthStore";
 import { useToastStore } from "@/stores/toastStore";
 
+const { t } = useI18n();
 const router = useRouter();
 const authStore = useOhdaAuthStore();
 const toastStore = useToastStore();
@@ -102,16 +104,19 @@ function toggleLanguage() {
 async function handleLogin() {
   const res = await authStore.login(form.value.username, form.value.password);
   if (res.success) {
+    toastStore.addSuccessToast(
+      currentLocale.value === "ar" ? "تم تسجيل الدخول بنجاح" : "Logged in successfully",
+      currentLocale.value === "ar" ? "مرحباً بك" : "Welcome"
+    );
     if (authStore.isSuperAdmin) {
       router.push("/ohda/branches");
     } else {
       router.push("/ohda/dashboard");
     }
   } else {
-    toastStore.addErrorToast({
-      title: currentLocale.value === "ar" ? "فشل تسجيل الدخول" : "Login Failed",
-      message: res.message || (currentLocale.value === "ar" ? "اسم المستخدم أو كلمة المرور غير صحيحة" : "Invalid username or password")
-    });
+    const errorMsg = res.message || t("ohda.auth.invalidCredentials");
+    const errorTitle = t("ohda.auth.loginFailed");
+    toastStore.addErrorToast(errorMsg, errorTitle);
   }
 }
 </script>
