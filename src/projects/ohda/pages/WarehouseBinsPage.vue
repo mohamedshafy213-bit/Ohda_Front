@@ -423,6 +423,8 @@
       v-model="showDeleteDialog"
       :itemType="$t('ohda.warehouseBins.title')"
       :itemName="selectedBinForDelete?.code || selectedBinForDelete?.name || ''"
+      :canDelete="!selectedBinForDelete?.itemCount && !selectedBinForDelete?.currentOccupancy"
+      :warningMessage="(selectedBinForDelete?.itemCount > 0 || selectedBinForDelete?.currentOccupancy > 0) ? 'لا يمكن حذف هذا الرف لوجود أجهزة ومخزون مسندة له حالياً. يرجى إخلاء الرف ونقل الأصناف أولاً.' : ''"
       :confirm="handleDeleteBin"
     />
 
@@ -626,10 +628,16 @@ function promptDelete(bin) {
 async function handleDeleteBin() {
   if (!selectedBinForDelete.value) return;
   try {
-    await binStore.deleteBin(selectedBinForDelete.value.id);
+    const res = await binStore.deleteBin(selectedBinForDelete.value.id);
+    if (res && res.success === false) {
+      toastStore.addErrorToast(res.message || "تعذر حذف الرف لوجود ارتباطات");
+      return res;
+    }
     toastStore.addSuccessToast(t("ohda.common.operationSuccess"));
   } catch (err) {
     console.error("Delete bin error:", err);
+    toastStore.addErrorToast(err?.response?.data?.returnMessage || err?.message || "تعذر حذف الرف");
+    throw err;
   } finally {
     selectedBinForDelete.value = null;
   }

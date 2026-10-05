@@ -149,6 +149,8 @@
       v-model="showDeleteDialog"
       :itemType="$t('ohda.categories.title')"
       :itemName="selectedCategoryForDelete?.name || ''"
+      :canDelete="getCategoryProductsCount(selectedCategoryForDelete?.id) === 0"
+      :warningMessage="getCategoryProductsCount(selectedCategoryForDelete?.id) > 0 ? `لا يمكن حذف هذا التصنيف لوجود (${getCategoryProductsCount(selectedCategoryForDelete?.id)}) أصناف/أجهزة مرتبطة به في المخزون حالياً. يرجى نقل أو معالجة الأصناف التابعة له أولاً.` : ''"
       :confirm="handleDelete"
     />
   </div>
@@ -196,10 +198,12 @@ const filteredCategories = computed(() => {
 });
 
 function getCategoryProductsCount(catId) {
+  if (!catId) return 0;
   return (inventoryStore.products || []).filter(p => p.categoryId === catId).length;
 }
 
 function getCategoryStockCount(catId) {
+  if (!catId) return 0;
   return (inventoryStore.products || [])
     .filter(p => p.categoryId === catId)
     .reduce((sum, p) => sum + (p.quantity ?? p.amount ?? 0), 0);
@@ -245,10 +249,16 @@ function promptDelete(cat) {
 async function handleDelete() {
   if (!selectedCategoryForDelete.value) return;
   try {
-    await inventoryStore.deleteCategory(selectedCategoryForDelete.value.id);
+    const res = await inventoryStore.deleteCategory(selectedCategoryForDelete.value.id);
+    if (res && res.success === false) {
+      toastStore.addErrorToast(res.message || "تعذر حذف التصنيف لوجود ارتباطات");
+      return res;
+    }
     toastStore.addSuccessToast(t("ohda.common.operationSuccess"));
   } catch (err) {
     console.error("Delete category failed", err);
+    toastStore.addErrorToast(err?.response?.data?.returnMessage || err?.message || "تعذر حذف التصنيف");
+    throw err;
   } finally {
     selectedCategoryForDelete.value = null;
   }

@@ -643,6 +643,8 @@
       v-model="showDeleteDialog"
       :itemType="$t('ohda.products.title')"
       :itemName="selectedProductForDelete?.name || ''"
+      :canDelete="(selectedProductForDelete?.quantity ?? selectedProductForDelete?.amount ?? 0) === 0"
+      :warningMessage="(selectedProductForDelete?.quantity ?? selectedProductForDelete?.amount ?? 0) > 0 ? `لا يمكن حذف هذا الصنف لوجود رصيد فعلي (${selectedProductForDelete?.quantity ?? selectedProductForDelete?.amount ?? 0}) في المخزون حالياً. يرجى تصفية الرصيد أولاً.` : ''"
       :confirm="handleDeleteProduct"
     />
   </div>
@@ -911,11 +913,15 @@ async function handleDeleteProduct() {
   if (!selectedProductForDelete.value) return;
   try {
     const res = await inventoryStore.deleteProduct(selectedProductForDelete.value.id);
-    if (res.success) {
-      toastStore.addSuccessToast(t("ohda.common.operationSuccess"));
+    if (res && res.success === false) {
+      toastStore.addErrorToast(res.message || "تعذر حذف المنتج لوجود ارتباطات");
+      return res;
     }
+    toastStore.addSuccessToast(t("ohda.common.operationSuccess"));
   } catch (err) {
     console.error("Delete product error:", err);
+    toastStore.addErrorToast(err?.response?.data?.returnMessage || err?.message || "تعذر حذف المنتج");
+    throw err;
   } finally {
     selectedProductForDelete.value = null;
   }

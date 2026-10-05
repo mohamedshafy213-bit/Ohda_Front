@@ -165,6 +165,8 @@
       v-model="showDeleteDialog"
       :itemType="$t('ohda.suppliers.title')"
       :itemName="selectedSupplierForDelete?.companyName || ''"
+      :canDelete="getSupplierProductsCount(selectedSupplierForDelete?.id) === 0"
+      :warningMessage="getSupplierProductsCount(selectedSupplierForDelete?.id) > 0 ? `لا يمكن حذف هذا المورد لأنه مرتبط بـ (${getSupplierProductsCount(selectedSupplierForDelete?.id)}) أصناف في المخزون. يرجى تعديل الأصناف أولاً.` : ''"
       :confirm="handleDelete"
     />
   </div>
@@ -202,6 +204,7 @@ const form = ref({
 
 onMounted(() => {
   inventoryStore.fetchSuppliers();
+  inventoryStore.fetchProducts();
 });
 
 const filteredSuppliers = computed(() => {
@@ -215,6 +218,11 @@ const filteredSuppliers = computed(() => {
          s.address?.toLowerCase().includes(q)
   );
 });
+
+function getSupplierProductsCount(supId) {
+  if (!supId) return 0;
+  return (inventoryStore.products || []).filter(p => p.supplierId === supId).length;
+}
 
 function openAddModal() {
   isEditing.value = false;
@@ -256,10 +264,16 @@ function promptDelete(sup) {
 async function handleDelete() {
   if (!selectedSupplierForDelete.value) return;
   try {
-    await inventoryStore.deleteSupplier(selectedSupplierForDelete.value.id);
+    const res = await inventoryStore.deleteSupplier(selectedSupplierForDelete.value.id);
+    if (res && res.success === false) {
+      toastStore.addErrorToast(res.message || "تعذر حذف المورد");
+      return res;
+    }
     toastStore.addSuccessToast(t("ohda.common.operationSuccess"));
   } catch (err) {
     console.error("Delete supplier failed", err);
+    toastStore.addErrorToast(err?.response?.data?.returnMessage || err?.message || "تعذر حذف المورد");
+    throw err;
   } finally {
     selectedSupplierForDelete.value = null;
   }

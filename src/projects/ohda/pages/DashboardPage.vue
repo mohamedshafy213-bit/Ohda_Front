@@ -276,78 +276,127 @@
       </div>
 
       <!-- Low Stock Alerts Table -->
-      <div class="lg:col-span-7 bg-brand-white border border-brand-gray/10 rounded-2xl p-5 shadow-sm">
-        <div class="flex items-center justify-between mb-4">
-          <h2 class="text-sm font-bold text-brand-dark flex items-center gap-2">
-            <AlertTriangle class="w-4 h-4 text-amber-500" />
-            تنبيهات انخفاض المخزون
-            <span v-if="inventoryStore.lowStockCount" 
-                  class="text-[10px] bg-amber-500/10 text-amber-600 font-bold px-2 py-0.5 rounded-full border border-amber-500/20">
-              {{ inventoryStore.lowStockCount }} صنف
-            </span>
-          </h2>
-          <router-link to="/ohda/inventory" class="text-xs text-brand-accent hover:underline flex items-center gap-1">
-            عرض المخزون الكامل
-            <ChevronLeft class="w-3 h-3" />
-          </router-link>
-        </div>
-
-        <DataTable v-if="inventoryStore.lowStockProducts.length"
-                   :value="inventoryStore.lowStockProducts" 
-                   paginator :rows="5" :rowsPerPageOptions="[5, 10, 20]" 
-                   class="w-full text-xs"
-                   stripedRows>
-          <Column field="name" header="اسم الصنف">
-            <template #body="{ data }">
-              <span class="font-semibold text-brand-dark">{{ data.name }}</span>
-            </template>
-          </Column>
-          <Column field="sku" header="SKU">
-            <template #body="{ data }">
-              <span class="font-mono text-brand-gray text-[11px]">{{ data.sku || '—' }}</span>
-            </template>
-          </Column>
-          <Column field="categoryName" header="التصنيف">
-            <template #body="{ data }">
-              <span class="text-brand-gray">{{ data.categoryName || 'عام' }}</span>
-            </template>
-          </Column>
-          <Column field="quantity" header="الرصيد" sortable>
-            <template #body="{ data }">
-              <span class="font-bold" :class="data.quantity === 0 ? 'text-red-500' : 'text-amber-600'">
-                {{ data.quantity }}
-              </span>
-            </template>
-          </Column>
-          <Column field="minThreshold" header="الحد الأدنى">
-            <template #body="{ data }">
-              <span class="text-brand-gray">{{ data.minThreshold }}</span>
-            </template>
-          </Column>
-          <Column header="الحالة">
-            <template #body="{ data }">
-              <span v-if="data.quantity === 0"
-                    class="px-2 py-1 rounded-full text-[10px] font-bold bg-red-500/10 text-red-600 border border-red-500/20">
-                نفد المخزون
-              </span>
-              <span v-else-if="data.quantity <= Math.floor((data.minThreshold || 5) * 0.5)"
-                    class="px-2 py-1 rounded-full text-[10px] font-bold bg-red-500/10 text-red-500 border border-red-400/20">
-                حرج جداً
-              </span>
-              <span v-else
-                    class="px-2 py-1 rounded-full text-[10px] font-bold bg-amber-500/10 text-amber-700 border border-amber-500/20">
-                منخفض
-              </span>
-            </template>
-          </Column>
-        </DataTable>
-        
-        <div v-else class="flex flex-col items-center justify-center py-16">
-          <div class="w-16 h-16 rounded-full bg-emerald-50 flex items-center justify-center mb-4">
-            <CheckCircle class="w-8 h-8 text-emerald-500" />
+      <div class="lg:col-span-7 bg-brand-white border border-brand-gray/10 rounded-2xl p-5 shadow-sm flex flex-col justify-between">
+        <div>
+          <!-- Header -->
+          <div class="flex flex-wrap items-center justify-between gap-3 mb-4 pb-3 border-b border-brand-gray/10">
+            <div class="flex items-center gap-3">
+              <div class="w-10 h-10 rounded-xl bg-amber-500/10 text-amber-600 flex items-center justify-center border border-amber-500/20 shrink-0">
+                <AlertTriangle class="w-5 h-5" />
+              </div>
+              <div>
+                <div class="flex items-center gap-2">
+                  <h2 class="text-sm font-bold text-brand-dark">تنبيهات انخفاض المخزون</h2>
+                  <span v-if="inventoryStore.lowStockCount" 
+                        class="text-[10px] bg-amber-500/15 text-amber-700 font-bold px-2.5 py-0.5 rounded-full border border-amber-500/25">
+                    {{ inventoryStore.lowStockCount }} صنف بحاجة للتوريد
+                  </span>
+                </div>
+                <p class="text-[11px] text-brand-gray mt-0.5">الأصناف التي وصلت أو قاربت على النفاذ عن الحد الأدنى المحدد</p>
+              </div>
+            </div>
+            <router-link to="/ohda/inventory" class="group text-xs text-brand-accent hover:text-brand-accent/80 font-semibold flex items-center gap-1.5 transition-colors">
+              <span>عرض المخزون الكامل</span>
+              <ChevronLeft class="w-3.5 h-3.5 transition-transform group-hover:-translate-x-1" />
+            </router-link>
           </div>
-          <span class="text-sm font-semibold text-brand-dark mb-1">المخزون بحالة ممتازة</span>
-          <span class="text-xs text-brand-gray">لا توجد أصناف تحت الحد الأدنى المطلوب</span>
+
+          <!-- Table Container -->
+          <div v-if="inventoryStore.lowStockProducts.length" class="overflow-hidden rounded-xl border border-brand-gray/10">
+            <DataTable 
+              :value="inventoryStore.lowStockProducts" 
+              paginator 
+              :rows="5" 
+              class="w-full text-xs"
+              stripedRows
+            >
+              <!-- Name & SKU Column -->
+              <Column field="name" header="اسم الصنف" class="text-start">
+                <template #body="{ data }">
+                  <div class="flex flex-col py-0.5">
+                    <span class="font-bold text-brand-dark text-xs truncate max-w-[200px]" :title="data.name">{{ data.name }}</span>
+                    <div class="flex items-center gap-2 mt-0.5">
+                      <span class="font-mono text-[10px] text-brand-gray bg-brand-light px-1.5 py-0.5 rounded border border-brand-gray/10 select-all">
+                        {{ data.sku || '—' }}
+                      </span>
+                      <span class="text-[10px] text-brand-gray/80 truncate max-w-[120px]">
+                        {{ data.categoryName || 'عام' }}
+                      </span>
+                    </div>
+                  </div>
+                </template>
+              </Column>
+
+              <!-- Stock & Min Threshold Level -->
+              <Column header="الرصيد / الحد الأدنى" class="text-center">
+                <template #body="{ data }">
+                  <div class="flex flex-col items-center justify-center">
+                    <div class="flex items-center gap-1 font-mono text-xs">
+                      <span class="font-black" :class="data.quantity === 0 ? 'text-red-600' : 'text-amber-600'">
+                        {{ data.quantity }}
+                      </span>
+                      <span class="text-brand-gray/60">/</span>
+                      <span class="text-brand-gray text-[11px] font-medium">{{ data.minThreshold || 5 }}</span>
+                    </div>
+                    <!-- Mini Stock Progress Bar -->
+                    <div class="w-20 bg-brand-gray/15 rounded-full h-1.5 mt-1 overflow-hidden">
+                      <div 
+                        class="h-full rounded-full transition-all duration-300"
+                        :class="data.quantity === 0 ? 'bg-red-500 w-0' : (data.quantity <= Math.floor((data.minThreshold || 5) * 0.5) ? 'bg-rose-500' : 'bg-amber-500')"
+                        :style="{ width: `${Math.min(100, Math.max(6, ((data.quantity || 0) / (data.minThreshold || 5)) * 100))}%` }"
+                      ></div>
+                    </div>
+                  </div>
+                </template>
+              </Column>
+
+              <!-- Status Badge -->
+              <Column header="الحالة" class="text-center">
+                <template #body="{ data }">
+                  <span v-if="data.quantity === 0"
+                        class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold bg-red-50 text-red-700 border border-red-200">
+                    <span class="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse"></span>
+                    نفد المخزون
+                  </span>
+                  <span v-else-if="data.quantity <= Math.floor((data.minThreshold || 5) * 0.5)"
+                        class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold bg-rose-50 text-rose-700 border border-rose-200">
+                    <span class="w-1.5 h-1.5 rounded-full bg-rose-500"></span>
+                    رصيد حرج
+                  </span>
+                  <span v-else
+                        class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold bg-amber-50 text-amber-800 border border-amber-200">
+                    <span class="w-1.5 h-1.5 rounded-full bg-amber-500"></span>
+                    منخفض
+                  </span>
+                </template>
+              </Column>
+
+              <!-- Quick Action Link -->
+              <Column header="الإجراء" class="text-center w-24">
+                <template #body="{ data }">
+                  <router-link 
+                    to="/ohda/entry-requests" 
+                    class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[10px] font-bold bg-brand-soft text-brand-accent hover:bg-brand-accent/20 transition-colors shadow-xs"
+                    :title="`إنشاء طلب إدخال وتوريد لـ ${data.name}`"
+                  >
+                    <Plus class="w-3 h-3" />
+                    <span>توريد</span>
+                  </router-link>
+                </template>
+              </Column>
+            </DataTable>
+          </div>
+
+          <!-- Empty State when no low stock items -->
+          <div v-else class="flex flex-col items-center justify-center py-12 px-4 text-center">
+            <div class="w-14 h-14 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center mb-3 border border-emerald-100 shadow-sm">
+              <CheckCircle class="w-7 h-7 text-emerald-500" />
+            </div>
+            <h3 class="text-sm font-bold text-brand-dark mb-1">المخزون في حالة ممتازة ومستقرة</h3>
+            <p class="text-xs text-brand-gray max-w-sm">
+              لا توجد أي أصناف وصلت لحد إعادة الطلب أو نفدت من المستودع حالياً.
+            </p>
+          </div>
         </div>
       </div>
     </div>
@@ -381,9 +430,7 @@ import {
   Warehouse, Activity, ChevronLeft, CheckCircle,
   ShoppingCart, ArrowUpRight, ArrowDownLeft, Users, Layers, Tag
 } from "lucide-vue-next";
-import DataTable from "primevue/datatable";
 import Column from "primevue/column";
-import Button from "primevue/button";
 
 const authStore = useOhdaAuthStore();
 const inventoryStore = useOhdaInventoryStore();
@@ -425,14 +472,14 @@ const kpiCards = computed(() => [
     suffix: "ريال"
   },
   {
-    label: "تنبيهات نقص المخزون",
+    label: "تنبيهات انخفاض المخزون",
     value: inventoryStore.lowStockCount,
     icon: AlertTriangle,
     color: "#F59E0B",
     borderColor: "#F59E0B",
     valueColor: inventoryStore.lowStockCount > 0 ? "#D97706" : "#101828",
     trend: null,
-    suffix: null
+    suffix: "صنف"
   },
   {
     label: "طلبات صرف معلقة",

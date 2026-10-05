@@ -374,7 +374,7 @@
               <template #body="{ data }">
                 <div class="flex items-center justify-center gap-2">
                   <editButton @click="openEditModal(data)" />
-                  <deleteButton v-if="data.role !== 0" @click="deleteUser(data.militaryNumber)" />
+                  <deleteButton v-if="data.role !== 0" @click="promptDeleteUser(data)" />
                 </div>
               </template>
             </Column>
@@ -420,7 +420,7 @@
           <template #body="{ data }">
             <div class="flex items-center justify-center gap-2">
               <editButton @click="openEditGroupModal(data)" />
-              <deleteButton @click="deleteGroup(data.id)" />
+              <deleteButton @click="promptDeleteGroup(data)" />
             </div>
           </template>
         </Column>
@@ -815,6 +815,26 @@
         </div>
       </form>
     </Dialog>
+
+    <!-- User Delete Dialog -->
+    <DeleteDialog
+      v-model="showDeleteUserDialog"
+      itemType="مستخدم"
+      :itemName="userToDelete?.personName || userToDelete?.username"
+      :canDelete="userCanBeDeleted"
+      :warningMessage="userDeleteWarning"
+      @confirm="executeDeleteUser"
+    />
+
+    <!-- Group Delete Dialog -->
+    <DeleteDialog
+      v-model="showDeleteGroupDialog"
+      itemType="مجموعة صلاحيات"
+      :itemName="groupToDelete?.name"
+      :canDelete="groupCanBeDeleted"
+      :warningMessage="groupDeleteWarning"
+      @confirm="executeDeleteGroup"
+    />
   </div>
 </template>
 
@@ -1116,24 +1136,43 @@ async function toggleUserPageAccess(userId, pageId, grant) {
   }
 }
 
-async function deleteUser(id) {
-  if (confirm("هل أنت متأكد من إلغاء حساب هذا المستخدم؟")) {
-    const res = await userStore.deleteUser(id);
-    if (res?.success) {
-      toast.add({
-        severity: "info",
-        summary: "تم الحذف",
-        detail: "تم حذف المستخدم بنجاح",
-        life: 3000
-      });
-    } else {
-      toast.add({
-        severity: "error",
-        summary: "فشل الحذف",
-        detail: res?.message || "تعذر حذف المستخدم",
-        life: 4000
-      });
-    }
+// --- User Delete Dialog State ---
+const showDeleteUserDialog = ref(false);
+const userToDelete = ref(null);
+const userCanBeDeleted = computed(() => {
+  if (!userToDelete.value) return true;
+  if (userToDelete.value.role === 0) return false;
+  return true;
+});
+const userDeleteWarning = computed(() => {
+  if (!userToDelete.value) return "";
+  if (userToDelete.value.role === 0) return "لا يمكن حذف الحساب الرئيسي للمنصة (SuperAdmin).";
+  return "";
+});
+
+function promptDeleteUser(user) {
+  userToDelete.value = user;
+  showDeleteUserDialog.value = true;
+}
+
+async function executeDeleteUser() {
+  if (!userToDelete.value) return;
+  const res = await userStore.deleteUser(userToDelete.value.militaryNumber);
+  showDeleteUserDialog.value = false;
+  if (res?.success) {
+    toast.add({
+      severity: "info",
+      summary: "تم الحذف",
+      detail: "تم حذف المستخدم بنجاح مع الاحتفاظ بسجل العمليات التاريخية",
+      life: 3000
+    });
+  } else {
+    toast.add({
+      severity: "error",
+      summary: "تعذر حذف المستخدم",
+      detail: res?.message || "لا يمكن حذف المستخدم لوجود طلبات أو عهد نشطة مرتبطة به",
+      life: 6000
+    });
   }
 }
 
@@ -1181,9 +1220,49 @@ async function handleUpdateGroup() {
   showEditGroupModal.value = false;
 }
 
-async function deleteGroup(id) {
-  if (confirm("هل أنت تأكد من حذف مجموعة المستخدمين هذه؟")) {
-    await groupStore.deleteUserGroup(id);
+// --- Group Delete Dialog State ---
+const showDeleteGroupDialog = ref(false);
+const groupToDelete = ref(null);
+
+const groupAssignedUsersCount = computed(() => {
+  if (!groupToDelete.value) return 0;
+  return (userStore.users || []).filter(u => (u.userGroupId === groupToDelete.value.id || u.userGroup?.id === groupToDelete.value.id) && !u.isDeleted).length;
+});
+
+const groupCanBeDeleted = computed(() => {
+  return groupAssignedUsersCount.value === 0;
+});
+
+const groupDeleteWarning = computed(() => {
+  if (groupAssignedUsersCount.value > 0) {
+    return `لا يمكن حذف هذه المجموعة لوجود (${groupAssignedUsersCount.value}) مستخدمين مسندين إليها حالياً. يرجى نقل المستخدمين لمجموعة أخرى أولاً.`;
+  }
+  return "";
+});
+
+function promptDeleteGroup(group) {
+  groupToDelete.value = group;
+  showDeleteGroupDialog.value = true;
+}
+
+async function executeDeleteGroup() {
+  if (!groupToDelete.value) return;
+  const res = await groupStore.deleteUserGroup(groupToDelete.value.id);
+  showDeleteGroupDialog.value = false;
+  if (res?.success) {
+    toast.add({
+      severity: "info",
+      summary: "تم الحذف",
+      detail: "تم حذف مجموعة الصلاحيات بنجاح",
+      life: 3000
+    });
+  } else {
+    toast.add({
+      severity: "error",
+      summary: "تعذر الحذف",
+      detail: res?.message || "لا يمكن حذف المجموعة لوجود ارتباطات نشطة",
+      life: 6000
+    });
   }
 }
 

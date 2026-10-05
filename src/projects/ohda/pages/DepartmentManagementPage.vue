@@ -226,11 +226,20 @@ function promptDelete(item) {
 async function handleDelete() {
   if (!selectedItemForDelete.value) return;
   try {
-    await apiDelete(`/api/Department/${selectedItemForDelete.value.id}`);
-    toastStore.addSuccessToast(t('ohda.common.operationSuccess'));
-    await load();
+    const res = await apiDelete(`/api/Department/${selectedItemForDelete.value.id}`, {}, false);
+    if (res?.data?.isDone) {
+      toastStore.addSuccessToast(t('ohda.common.operationSuccess'));
+      await load();
+      return { success: true };
+    }
+    const msg = res?.data?.returnMessage || "تعذر حذف القسم لوجود ارتباطات نشطة";
+    toastStore.addErrorToast(msg);
+    return { success: false, message: msg };
   } catch (err) {
     console.error('Delete department failed', err);
+    const msg = err?.response?.data?.returnMessage || err?.message || "تعذر حذف القسم";
+    toastStore.addErrorToast(msg);
+    throw err;
   } finally {
     selectedItemForDelete.value = null;
   }

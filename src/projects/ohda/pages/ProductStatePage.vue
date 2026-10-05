@@ -227,11 +227,20 @@ function promptDelete(item) {
 async function handleDelete() {
   if (!selectedItemForDelete.value) return;
   try {
-    await apiDelete(`/api/ProductState/${selectedItemForDelete.value.id}`);
-    toastStore.addSuccessToast(t('ohda.common.operationSuccess'));
-    await load();
+    const res = await apiDelete(`/api/ProductState/${selectedItemForDelete.value.id}`, {}, false);
+    if (res?.data?.isDone) {
+      toastStore.addSuccessToast(t('ohda.common.operationSuccess'));
+      await load();
+      return { success: true };
+    }
+    const msg = res?.data?.returnMessage || "تعذر حذف الحالة لوجود ارتباطات نشطة";
+    toastStore.addErrorToast(msg);
+    return { success: false, message: msg };
   } catch (err) {
     console.error('Delete product state failed', err);
+    const msg = err?.response?.data?.returnMessage || err?.message || "تعذر حذف الحالة";
+    toastStore.addErrorToast(msg);
+    throw err;
   } finally {
     selectedItemForDelete.value = null;
   }

@@ -11,7 +11,13 @@
       <!-- Icon Indicator -->
       <div class="w-full flex justify-center items-center text-center pt-2">
         <div
-          v-if="isDeactivate"
+          v-if="!canDelete"
+          class="rounded-2xl border border-amber-500/30 bg-amber-500/10 p-3 w-16 h-16 flex items-center justify-center text-amber-500 shadow-sm"
+        >
+          <AlertTriangle class="w-8 h-8" />
+        </div>
+        <div
+          v-else-if="isDeactivate"
           class="rounded-2xl border border-orange-500/30 bg-orange-500/10 p-3 w-16 h-16 flex items-center justify-center text-orange-500 shadow-sm"
         >
           <CircleOff class="w-8 h-8" />
@@ -43,18 +49,36 @@
         </div>
       </div>
 
+      <!-- Dependency Warning / Block Notice Banner -->
+      <div v-if="warningMessage || !canDelete" class="p-3.5 bg-amber-500/10 border border-amber-500/25 rounded-2xl flex items-start gap-2.5 text-xs text-amber-800 dark:text-amber-300">
+        <AlertTriangle class="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
+        <div class="space-y-1">
+          <p class="font-bold leading-tight">تنبيه ارتباطات النظام:</p>
+          <p class="text-[11px] leading-relaxed text-amber-700 dark:text-amber-300/90">
+            {{ warningMessage || "لا يمكن إتمام عملية الحذف لوجود عناصر أو أجهزة مرتبطة بهذا السجل." }}
+          </p>
+        </div>
+      </div>
+
+      <!-- Error message banner if action failed -->
+      <div v-if="errorMessage" class="p-3 bg-red-500/10 border border-red-500/25 rounded-2xl flex items-start gap-2 text-xs text-red-600 dark:text-red-400">
+        <AlertCircle class="w-4 h-4 shrink-0 mt-0.5" />
+        <span class="leading-relaxed">{{ errorMessage }}</span>
+      </div>
+
       <!-- Action Buttons with Loading States -->
       <div class="flex items-center justify-end gap-2.5 pt-4 border-t border-brand-gray/10 dark:border-white/10 mt-2">
         <SecondaryButton
           type="button"
           :disabled="loading"
-          class="!px-4 !py-2.5 !text-xs font-semibold !rounded-xl"
+          class="!px-4 !py-2.5 !text-xs font-semibold !rounded-xl cursor-pointer"
           @click="displayDeleteDialog = false"
         >
-          {{ $t('ohda.common.cancel') }}
+          {{ !canDelete ? $t('ohda.common.close') : $t('ohda.common.cancel') }}
         </SecondaryButton>
 
         <Button
+          v-if="canDelete"
           type="button"
           :disabled="loading"
           @click="confirmAction"
@@ -75,8 +99,9 @@
 </template>
 
 <script setup>
-import { computed, ref } from "vue";
+import { computed, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
+import { AlertTriangle, AlertCircle, Trash, CircleOff, CheckCircle } from "lucide-vue-next";
 
 const displayDeleteDialog = defineModel();
 const { t } = useI18n();
@@ -102,6 +127,14 @@ const props = defineProps({
     type: Boolean,
     default: false
   },
+  canDelete: {
+    type: Boolean,
+    default: true
+  },
+  warningMessage: {
+    type: String,
+    default: ""
+  },
   confirm: {
     type: Function,
     default: () => {}
@@ -109,9 +142,19 @@ const props = defineProps({
 });
 
 const loading = ref(false);
+const errorMessage = ref("");
+
+watch(displayDeleteDialog, (val) => {
+  if (val) {
+    errorMessage.value = "";
+  }
+});
 
 const dialogTitle = computed(() => {
   if (props.title) return props.title;
+  if (!props.canDelete) {
+    return `تعذر حذف ${props.itemType}`;
+  }
   if (props.isDeactivate) {
     return t("deleteDialog.deactivateDialogTitle", { itemType: props.itemType });
   }
@@ -122,6 +165,9 @@ const dialogTitle = computed(() => {
 });
 
 const subtitleText = computed(() => {
+  if (!props.canDelete) {
+    return props.warningMessage || "هذا السجل مرتبط ببيانات وعناصر أخرى في النظام ولا يمكن حذفه.";
+  }
   if (props.isDeactivate) {
     return t("deleteDialog.deactivateDialogSubtitle", { itemType: props.itemType, itemName: props.itemName });
   }
@@ -139,16 +185,23 @@ const confirmButtonText = computed(() => {
 
 const confirmAction = async () => {
   loading.value = true;
+  errorMessage.value = "";
   try {
     if (props.confirm) {
-      await props.confirm();
+      const result = await props.confirm();
+      if (result && result.success === false) {
+        errorMessage.value = result.message || "فشلت العملية لوجود ارتباطات غير مكتملة";
+        return;
+      }
     }
     displayDeleteDialog.value = false;
   } catch (err) {
     console.error("[DeleteDialog Error]:", err);
+    errorMessage.value = err?.response?.data?.returnMessage || err?.message || "حدث خطأ أثناء تنفيذ الحذف.";
   } finally {
     loading.value = false;
   }
 };
 </script>
+
 
