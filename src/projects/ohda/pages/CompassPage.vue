@@ -540,158 +540,300 @@
       </template>
     </Dialog>
 
-    <!-- Movement & Approval Details Modal (When Clicking Eye Action) -->
+    <!-- Movement & Approval Details Modal (Checkout Voucher / Receipt Design) -->
     <Dialog
       v-model:visible="showDetailsModal"
       modal
-      :header="$t('ohda.compass.modalTitle', { name: selectedItem?.productName || '' })"
-      class="max-w-2xl w-full"
+      :header="null"
+      :style="{ width: '800px', maxWidth: '96vw' }"
+      :pt="{
+        root: { class: '!rounded-3xl !shadow-2xl overflow-hidden !border-surface-200 dark:!border-surface-700 !bg-white dark:!bg-surface-900' },
+        header: { class: '!hidden' },
+        content: { class: '!p-0' }
+      }"
     >
-      <div v-if="selectedItem" class="space-y-5 text-xs">
-        <!-- Top Status Banner -->
-        <div class="p-4 rounded-2xl bg-surface-50 dark:bg-surface-800 border border-surface-200 dark:border-surface-700 flex flex-wrap items-center justify-between gap-3">
-          <div>
-            <span class="text-[10px] text-surface-500 dark:text-surface-400 font-semibold block mb-0.5">
-              {{ $t('ohda.compass.serialNumber') }}
+      <div v-if="selectedItem" class="flex flex-col text-xs font-sans">
+        <!-- 1. Checkout Voucher Header Ribbon -->
+        <div class="relative p-6 bg-gradient-to-r from-surface-100 via-surface-50 to-brand-soft/40 dark:from-surface-850 dark:via-surface-800 dark:to-surface-850 border-b border-surface-200 dark:border-surface-700/80">
+          <!-- Top Row: Voucher Badge + Serial & Close Button -->
+          <div class="flex items-center justify-between gap-3 mb-4">
+            <!-- Movement Type Badge -->
+            <div class="flex items-center gap-2">
+              <span
+                class="px-3 py-1 rounded-xl text-xs font-black flex items-center gap-1.5 shadow-2xs"
+                :class="selectedItem.type === 1 
+                  ? 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30' 
+                  : 'bg-rose-500/15 text-rose-700 dark:text-rose-300 border border-rose-500/30'"
+              >
+                <ArrowDownLeft v-if="selectedItem.type === 1" class="w-3.5 h-3.5" />
+                <ArrowUpRight v-else class="w-3.5 h-3.5" />
+                {{ selectedItem.type === 1 ? 'سند توريد عهدة (دخول)' : 'سند صرف عهدة (خروج)' }}
+              </span>
+
+              <span class="px-2.5 py-1 rounded-xl text-[11px] font-mono font-bold bg-white dark:bg-surface-900 border border-surface-200 dark:border-surface-700 text-surface-700 dark:text-surface-300 shadow-2xs">
+                {{ selectedItem.documentNumber || (selectedItem.type === 2 ? `DOC-OUT-${selectedItem.productExitRequestId || selectedItem.id}` : `DOC-IN-${selectedItem.productEntryRequestId || selectedItem.id}`) }}
+              </span>
+            </div>
+
+            <!-- Close Action Button -->
+            <button
+              type="button"
+              @click="showDetailsModal = false"
+              class="w-8 h-8 rounded-full bg-white dark:bg-surface-800 hover:bg-surface-200 dark:hover:bg-surface-700 text-surface-500 hover:text-surface-800 dark:hover:text-surface-200 flex items-center justify-center transition-all cursor-pointer shadow-2xs border border-surface-200 dark:border-surface-700"
+              title="إغلاق"
+            >
+              <X class="w-4 h-4" />
+            </button>
+          </div>
+
+          <!-- Product Details & Serial Number Barcode Banner -->
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div class="space-y-1">
+              <div class="flex items-center gap-2">
+                <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-brand-accent/20 text-brand-dark dark:text-brand-accent border border-brand-accent/30">
+                  {{ selectedItem.categoryName || 'أجهزة ومعدات' }}
+                </span>
+                <span v-if="selectedItem.productStateName" class="px-2 py-0.5 rounded text-[10px] font-bold bg-surface-200/60 dark:bg-surface-700 text-surface-700 dark:text-surface-300">
+                  {{ selectedItem.productStateName }}
+                </span>
+              </div>
+              <h3 class="text-xl font-black text-surface-900 dark:text-surface-100 flex items-center gap-2">
+                <Package class="w-5 h-5 text-brand-accent shrink-0" />
+                {{ selectedItem.productName || 'أصل وعهدة مستلمة' }}
+              </h3>
+            </div>
+
+            <!-- Serial Card with Copy Action -->
+            <div class="p-2.5 px-3.5 bg-white dark:bg-surface-900 rounded-2xl border border-surface-200 dark:border-surface-700 shadow-sm flex items-center gap-3 self-start sm:self-auto">
+              <div class="text-end">
+                <span class="text-[9px] font-bold text-surface-400 dark:text-surface-500 block uppercase tracking-wider">
+                  {{ $t('ohda.compass.serialNumber') }} (S/N)
+                </span>
+                <span class="font-mono text-sm font-black text-brand-accent select-all">
+                  {{ selectedItem.serialNumber }}
+                </span>
+              </div>
+              <button
+                type="button"
+                @click="copySerialNumber(selectedItem.serialNumber)"
+                class="p-2 rounded-xl bg-surface-100 dark:bg-surface-800 hover:bg-brand-accent/20 text-surface-600 dark:text-surface-300 hover:text-brand-dark transition-all cursor-pointer"
+                :title="serialCopied ? 'تم النسخ!' : 'نسخ الرقم التسلسلي'"
+              >
+                <Check v-if="serialCopied" class="w-4 h-4 text-emerald-600" />
+                <Copy v-else class="w-4 h-4" />
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- 2. Main Checkout Body (Structured, No Blank Voids) -->
+        <div class="p-6 space-y-5 bg-white dark:bg-surface-900 max-h-[70vh] overflow-y-auto">
+          
+          <!-- Section A: Custody Route / Handover Checkout Card -->
+          <div class="p-4 rounded-2xl bg-surface-50/70 dark:bg-surface-850 border border-surface-200/80 dark:border-surface-700/80 space-y-3">
+            <div class="flex items-center justify-between border-b border-surface-200/50 dark:border-surface-700/50 pb-2">
+              <span class="font-bold text-xs text-surface-800 dark:text-surface-200 flex items-center gap-1.5">
+                <Users class="w-4 h-4 text-brand-accent" />
+                مسار تسليم العهدة وأطراف المعاملة
+              </span>
+              <span class="text-[10px] text-surface-500 font-medium">Chain of Custody</span>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-3 items-center">
+              <!-- Origin / Deliverer -->
+              <div class="p-3 bg-white dark:bg-surface-800 rounded-xl border border-surface-200/60 dark:border-surface-700 flex items-start gap-3 shadow-2xs">
+                <div class="w-9 h-9 rounded-xl bg-surface-100 dark:bg-surface-700 text-surface-600 dark:text-surface-300 flex items-center justify-center shrink-0">
+                  <User class="w-4 h-4" />
+                </div>
+                <div class="min-w-0 flex-1">
+                  <span class="text-[10px] text-surface-500 dark:text-surface-400 block font-semibold">
+                    {{ $t('ohda.compass.delivererApplicant') }}
+                  </span>
+                  <span class="font-bold text-surface-900 dark:text-surface-100 text-xs block truncate">
+                    {{ selectedItem.delivererName || 'مسؤول المخزن / مقدم الطلب' }}
+                  </span>
+                  <span class="text-[10px] text-surface-400 mt-0.5 block">جهة الصرف المعتمدة</span>
+                </div>
+              </div>
+
+              <!-- Destination / Recipient -->
+              <div class="p-3 bg-white dark:bg-surface-800 rounded-xl border border-brand-accent/30 dark:border-brand-accent/20 flex items-start gap-3 shadow-2xs">
+                <div class="w-9 h-9 rounded-xl bg-brand-soft text-brand-accent flex items-center justify-center shrink-0">
+                  <UserCheck class="w-4 h-4" />
+                </div>
+                <div class="min-w-0 flex-1">
+                  <div class="flex items-center justify-between">
+                    <span class="text-[10px] text-surface-500 dark:text-surface-400 font-semibold">
+                      {{ $t('ohda.compass.recipientHolder') }}
+                    </span>
+                    <span class="px-1.5 py-0.2 rounded text-[9px] font-bold bg-brand-accent/15 text-brand-dark dark:text-brand-accent">
+                      حامل العهدة
+                    </span>
+                  </div>
+                  <span class="font-bold text-brand-accent text-xs block truncate mt-0.5">
+                    {{ selectedItem.recipientName || '-' }}
+                  </span>
+                  <div class="flex flex-wrap items-center gap-1.5 mt-1 text-[10px]">
+                    <span class="inline-flex items-center gap-1 text-surface-700 dark:text-surface-300 font-medium">
+                      <Building class="w-3 h-3 text-surface-400" />
+                      {{ selectedItem.departmentName || '-' }}
+                    </span>
+                    <span class="text-surface-300">•</span>
+                    <span class="inline-flex items-center gap-1 text-surface-700 dark:text-surface-300 font-bold">
+                      <MapPin class="w-3 h-3 text-brand-accent" />
+                      {{ selectedItem.place || 'فرع النظم' }}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Section B: Movement Dates & Voucher Summary Matrix (Compact 4 Tiles) -->
+          <div class="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+            <div class="p-3 rounded-xl bg-surface-50 dark:bg-surface-800/80 border border-surface-200/70 dark:border-surface-700 space-y-1">
+              <span class="text-[10px] text-surface-500 dark:text-surface-400 flex items-center gap-1">
+                <Calendar class="w-3 h-3 text-brand-accent" />
+                {{ $t('ohda.compass.movementDate') }}
+              </span>
+              <p class="font-mono font-bold text-xs text-surface-800 dark:text-surface-200">
+                {{ formatDate(selectedItem.exitDate) }}
+              </p>
+            </div>
+
+            <div class="p-3 rounded-xl bg-surface-50 dark:bg-surface-800/80 border border-surface-200/70 dark:border-surface-700 space-y-1">
+              <span class="text-[10px] text-surface-500 dark:text-surface-400 flex items-center gap-1">
+                <Clock class="w-3 h-3 text-emerald-600 dark:text-emerald-400" />
+                {{ $t('ohda.compass.confirmationDate') }}
+              </span>
+              <p class="font-mono font-bold text-xs" :class="selectedItem.requesterConfirmedDate ? 'text-emerald-600 dark:text-emerald-400' : 'text-surface-400'">
+                {{ selectedItem.requesterConfirmedDate ? formatDate(selectedItem.requesterConfirmedDate) : 'موثق ومعتمد' }}
+              </p>
+            </div>
+
+            <div class="p-3 rounded-xl bg-surface-50 dark:bg-surface-800/80 border border-surface-200/70 dark:border-surface-700 space-y-1">
+              <span class="text-[10px] text-surface-500 dark:text-surface-400 flex items-center gap-1">
+                <Layers class="w-3 h-3 text-brand-accent" />
+                {{ $t('ohda.compass.deviceState') }}
+              </span>
+              <p class="font-bold text-xs text-surface-800 dark:text-surface-200 truncate">
+                {{ selectedItem.productStateName || 'صالح للتشغيل' }}
+              </p>
+            </div>
+
+            <div class="p-3 rounded-xl bg-surface-50 dark:bg-surface-800/80 border border-surface-200/70 dark:border-surface-700 space-y-1">
+              <span class="text-[10px] text-surface-500 dark:text-surface-400 flex items-center gap-1">
+                <FileText class="w-3 h-3 text-brand-accent" />
+                {{ $t('ohda.compass.docNumber') }}
+              </span>
+              <p class="font-mono font-bold text-xs text-surface-800 dark:text-surface-200 truncate">
+                {{ selectedItem.documentNumber || (selectedItem.type === 2 ? `DOC-OUT-${selectedItem.productExitRequestId || selectedItem.id}` : `DOC-IN-${selectedItem.productEntryRequestId || selectedItem.id}`) }}
+              </p>
+            </div>
+          </div>
+
+          <!-- Section C: Approval Verification Stamps (Like Checkout Authorization Seals) -->
+          <div class="p-4 rounded-2xl bg-surface-50/70 dark:bg-surface-850 border border-surface-200/80 dark:border-surface-700/80 space-y-3">
+            <div class="flex items-center justify-between border-b border-surface-200/50 dark:border-surface-700/50 pb-2">
+              <span class="font-bold text-xs text-surface-800 dark:text-surface-200 flex items-center gap-1.5">
+                <ShieldCheck class="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+                {{ $t('ohda.compass.workflowTitle') }}
+              </span>
+              <span class="px-2 py-0.5 rounded-full text-[9px] font-bold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
+                مكتمل وموثق رسمياً
+              </span>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div class="p-3 bg-white dark:bg-surface-800 rounded-xl border border-surface-200/60 dark:border-surface-700 flex items-center justify-between gap-3 shadow-2xs">
+                <div>
+                  <span class="text-[10px] text-surface-500 dark:text-surface-400 block font-medium">
+                    {{ $t('ohda.compass.firstApprover') }}
+                  </span>
+                  <span class="font-bold text-surface-900 dark:text-surface-100 text-xs mt-0.5 block">
+                    {{ selectedItem.supervisorName || $t('ohda.compass.autoApproved') }}
+                  </span>
+                </div>
+                <div class="w-7 h-7 rounded-full bg-emerald-500/15 text-emerald-600 flex items-center justify-center shrink-0">
+                  <CheckCircle2 class="w-4 h-4" />
+                </div>
+              </div>
+
+              <div class="p-3 bg-white dark:bg-surface-800 rounded-xl border border-surface-200/60 dark:border-surface-700 flex items-center justify-between gap-3 shadow-2xs">
+                <div>
+                  <span class="text-[10px] text-surface-500 dark:text-surface-400 block font-medium">
+                    {{ $t('ohda.compass.secondApprover') }}
+                  </span>
+                  <span class="font-bold text-surface-900 dark:text-surface-100 text-xs mt-0.5 block">
+                    {{ selectedItem.managerName || $t('ohda.compass.autoApproved') }}
+                  </span>
+                </div>
+                <div class="w-7 h-7 rounded-full bg-emerald-500/15 text-emerald-600 flex items-center justify-center shrink-0">
+                  <CheckCircle2 class="w-4 h-4" />
+                </div>
+              </div>
+            </div>
+
+            <!-- Dynamic Decision Timeline & Audit Steps (Normalized and Tightly Formatted) -->
+            <div v-if="parsedApprovalTrail.length > 0" class="pt-2 border-t border-surface-200/50 dark:border-surface-700/50">
+              <span class="text-[11px] font-bold text-surface-800 dark:text-surface-200 block mb-2">
+                {{ $t('ohda.compass.timelineTitle') }}
+              </span>
+              <div class="space-y-1.5">
+                <div
+                  v-for="(step, idx) in parsedApprovalTrail"
+                  :key="idx"
+                  class="flex items-center justify-between gap-3 p-2 px-3 bg-white dark:bg-surface-800 rounded-xl border border-surface-200/60 dark:border-surface-700"
+                >
+                  <div class="flex items-center gap-2.5 min-w-0">
+                    <span class="w-5 h-5 rounded-full bg-brand-soft text-brand-dark font-black text-[10px] flex items-center justify-center shrink-0">
+                      {{ step.stepOrder || idx + 1 }}
+                    </span>
+                    <span class="font-bold text-surface-900 dark:text-surface-100 text-xs truncate">
+                      {{ step.stepName || step.action || `الخطوة ${idx + 1}` }}
+                    </span>
+                    <span class="text-surface-300">•</span>
+                    <span class="text-[11px] text-surface-500 dark:text-surface-400 truncate">
+                      {{ $t('ohda.compass.byUser') }} <strong class="text-surface-800 dark:text-surface-200">{{ step.userName || step.user || '-' }}</strong>
+                    </span>
+                    <span v-if="step.notes" class="text-[10px] text-surface-400 italic truncate hidden sm:inline">
+                      ({{ step.notes }})
+                    </span>
+                  </div>
+
+                  <span class="text-[10px] font-mono text-surface-400 dark:text-surface-500 shrink-0">
+                    {{ formatDate(step.date) }}
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Section D: Statement & Purpose Memo -->
+          <div v-if="selectedItem.purpose || selectedItem.notes" class="p-3.5 rounded-xl bg-surface-50 dark:bg-surface-850 border border-surface-200/70 dark:border-surface-700 space-y-1">
+            <span class="font-bold text-xs text-surface-800 dark:text-surface-200 block">
+              {{ $t('ohda.compass.notesTitle') }}
             </span>
-            <span class="font-mono text-base font-black text-brand-accent select-all">{{ selectedItem.serialNumber }}</span>
+            <p class="text-surface-600 dark:text-surface-300 text-xs leading-relaxed">
+              {{ selectedItem.purpose ? `[${selectedItem.purpose}] ` : '' }}{{ selectedItem.notes || '' }}
+            </p>
+          </div>
+        </div>
+
+        <!-- 3. Checkout Voucher Footer -->
+        <div class="p-4 px-6 bg-surface-50 dark:bg-surface-850 border-t border-surface-200 dark:border-surface-700 flex items-center justify-between gap-3">
+          <div class="flex items-center gap-2 text-[11px] text-surface-500">
+            <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
+            <span>وثيقة عهدة معتمدة بسجل البوصلة الإلكتروني</span>
           </div>
 
           <div class="flex items-center gap-2">
-            <span
-              class="px-3 py-1 rounded-xl text-xs font-black"
-              :class="selectedItem.type === 1 ? 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 border border-emerald-500/30' : 'bg-rose-500/15 text-rose-700 dark:text-rose-400 border border-rose-500/30'"
-            >
-              {{ selectedItem.type === 1 ? $t('ohda.compass.inflowBadge') : $t('ohda.compass.outflowBadge') }}
-            </span>
+            <SecondaryButton @click="showDetailsModal = false" class="!px-4 !py-2 !text-xs !rounded-xl">
+              {{ $t('ohda.common.close') }}
+            </SecondaryButton>
           </div>
-        </div>
-
-        <!-- 2-Column Details Grid -->
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
-          <!-- Parties Card -->
-          <div class="p-4 rounded-2xl border border-surface-200 dark:border-surface-700 bg-white dark:bg-surface-850 space-y-3 shadow-xs">
-            <h4 class="font-bold text-xs text-surface-900 dark:text-surface-100 flex items-center gap-2 border-b border-surface-100 dark:border-surface-700 pb-2">
-              <Users class="w-4 h-4 text-brand-accent" />
-              {{ $t('ohda.compass.partiesTitle') }}
-            </h4>
-
-            <div class="space-y-2">
-              <div class="flex items-center justify-between">
-                <span class="text-surface-500 dark:text-surface-400">{{ $t('ohda.compass.delivererApplicant') }}</span>
-                <span class="font-bold text-surface-900 dark:text-surface-100">{{ selectedItem.delivererName || '-' }}</span>
-              </div>
-              <div class="flex items-center justify-between">
-                <span class="text-surface-500 dark:text-surface-400">{{ $t('ohda.compass.recipientHolder') }}</span>
-                <span class="font-bold text-brand-accent">{{ selectedItem.recipientName || '-' }}</span>
-              </div>
-              <div class="flex items-center justify-between">
-                <span class="text-surface-500 dark:text-surface-400">{{ $t('ohda.compass.recipientDept') }}</span>
-                <span class="font-semibold text-surface-800 dark:text-surface-200">{{ selectedItem.departmentName || '-' }}</span>
-              </div>
-              <div class="flex items-center justify-between">
-                <span class="text-surface-500 dark:text-surface-400">{{ $t('ohda.compass.recipientPlace') }}</span>
-                <span class="text-surface-700 dark:text-surface-300 font-bold text-brand-accent">{{ selectedItem.place || 'فرع النظم' }}</span>
-              </div>
-            </div>
-          </div>
-
-          <!-- Movement Info Card -->
-          <div class="p-4 rounded-2xl border border-surface-200 dark:border-surface-700 bg-white dark:bg-surface-850 space-y-3 shadow-xs">
-            <h4 class="font-bold text-xs text-surface-900 dark:text-surface-100 flex items-center gap-2 border-b border-surface-100 dark:border-surface-700 pb-2">
-              <Calendar class="w-4 h-4 text-brand-accent" />
-              {{ $t('ohda.compass.movementDataTitle') }}
-            </h4>
-
-            <div class="space-y-2">
-              <div class="flex items-center justify-between">
-                <span class="text-surface-500 dark:text-surface-400">{{ $t('ohda.compass.movementDate') }}</span>
-                <span class="font-mono font-semibold text-surface-800 dark:text-surface-200">{{ formatDate(selectedItem.exitDate) }}</span>
-              </div>
-              <div v-if="selectedItem.requesterConfirmedDate" class="flex items-center justify-between">
-                <span class="text-surface-500 dark:text-surface-400">{{ $t('ohda.compass.confirmationDate') }}</span>
-                <span class="font-mono text-emerald-600 dark:text-emerald-400 font-bold">{{ formatDate(selectedItem.requesterConfirmedDate) }}</span>
-              </div>
-              <div class="flex items-center justify-between">
-                <span class="text-surface-500 dark:text-surface-400">{{ $t('ohda.compass.deviceState') }}</span>
-                <span class="font-bold text-surface-800 dark:text-surface-200">{{ selectedItem.productStateName || '-' }}</span>
-              </div>
-              <div class="flex items-center justify-between">
-                <span class="text-surface-500 dark:text-surface-400">{{ $t('ohda.compass.docNumber') }}</span>
-                <span class="font-mono text-surface-800 dark:text-surface-200 px-2 py-0.5 rounded bg-surface-100 dark:bg-surface-700 border border-surface-200 dark:border-surface-600 font-bold">
-                  {{ selectedItem.documentNumber || (selectedItem.type === 2 ? `DOC-OUT-${selectedItem.productExitRequestId || selectedItem.id}` : `DOC-IN-${selectedItem.productEntryRequestId || selectedItem.id}`) }}
-                </span>
-              </div>
-              <div v-if="selectedItem.type === 1 && (selectedItem.originalExitDocumentNumber || selectedItem.productExitRequestId)" class="flex items-center justify-between">
-                <span class="text-surface-500 dark:text-surface-400">{{ $t('ohda.compass.originalDocNumber') }}</span>
-                <span class="font-mono text-amber-700 dark:text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded border border-amber-500/20 font-bold">
-                  {{ selectedItem.originalExitDocumentNumber || `DOC-OUT-${selectedItem.productExitRequestId}` }}
-                </span>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Approval Workflow & Approver Names -->
-        <div class="p-4 rounded-2xl border border-surface-200 dark:border-surface-700 bg-surface-50/50 dark:bg-surface-800/50 space-y-3">
-          <h4 class="font-bold text-xs text-surface-900 dark:text-surface-100 flex items-center gap-2 border-b border-surface-200/50 dark:border-surface-700 pb-2">
-            <ShieldCheck class="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
-            {{ $t('ohda.compass.workflowTitle') }}
-          </h4>
-
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
-            <div class="p-3 bg-white dark:bg-surface-850 rounded-xl border border-surface-200 dark:border-surface-700">
-              <span class="text-[10px] text-surface-500 dark:text-surface-400 block">{{ $t('ohda.compass.firstApprover') }}</span>
-              <span class="font-bold text-surface-800 dark:text-surface-200 text-xs mt-0.5 block">{{ selectedItem.supervisorName || $t('ohda.compass.autoApproved') }}</span>
-            </div>
-
-            <div class="p-3 bg-white dark:bg-surface-850 rounded-xl border border-surface-200 dark:border-surface-700">
-              <span class="text-[10px] text-surface-500 dark:text-surface-400 block">{{ $t('ohda.compass.secondApprover') }}</span>
-              <span class="font-bold text-surface-800 dark:text-surface-200 text-xs mt-0.5 block">{{ selectedItem.managerName || $t('ohda.compass.autoApproved') }}</span>
-            </div>
-          </div>
-
-          <!-- Dynamic Approval Trail Timeline if present -->
-          <div v-if="parsedApprovalTrail.length > 0" class="pt-2">
-            <span class="text-[11px] font-bold text-surface-800 dark:text-surface-200 block mb-2">{{ $t('ohda.compass.timelineTitle') }}</span>
-            <div class="space-y-2">
-              <div
-                v-for="(step, idx) in parsedApprovalTrail"
-                :key="idx"
-                class="flex items-start gap-3 p-2.5 bg-white dark:bg-surface-850 rounded-xl border border-surface-200 dark:border-surface-700"
-              >
-                <div class="w-6 h-6 rounded-full bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 flex items-center justify-center font-black text-[10px] shrink-0">
-                  {{ idx + 1 }}
-                </div>
-                <div class="flex-1 min-w-0">
-                  <div class="flex items-center justify-between">
-                    <span class="font-bold text-surface-800 dark:text-surface-200">{{ step.stepName || step.action }}</span>
-                    <span class="text-[10px] font-mono text-surface-500 dark:text-surface-400">{{ formatDate(step.date) }}</span>
-                  </div>
-                  <div class="text-[11px] text-surface-500 dark:text-surface-400 mt-0.5">
-                    {{ $t('ohda.compass.byUser') }} <strong class="text-surface-800 dark:text-surface-200">{{ step.userName || step.user || '-' }}</strong>
-                    <span v-if="step.notes" class="ms-2 text-surface-700 dark:text-surface-300">({{ step.notes }})</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Notes / Purpose -->
-        <div v-if="selectedItem.purpose || selectedItem.notes" class="p-3.5 rounded-xl bg-white dark:bg-surface-850 border border-surface-200 dark:border-surface-700">
-          <span class="font-bold text-surface-800 dark:text-surface-200 block mb-1">{{ $t('ohda.compass.notesTitle') }}</span>
-          <p class="text-surface-600 dark:text-surface-400 leading-relaxed text-[11px]">
-            {{ selectedItem.purpose ? `[${selectedItem.purpose}] ` : '' }}{{ selectedItem.notes || '' }}
-          </p>
         </div>
       </div>
-
-      <template #footer>
-        <div class="flex items-center justify-end gap-3">
-          <SecondaryButton @click="showDetailsModal = false">{{ $t('ohda.common.close') }}</SecondaryButton>
-        </div>
-      </template>
     </Dialog>
 
     <!-- Upload Modal Dialog -->
@@ -776,9 +918,35 @@ import axios from "@/utilities/apiClient";
 import { useToastStore } from "@/stores/toastStore";
 import EmptyState from "@/components/EmptyState.vue";
 import LoadingSkeleton from "@/components/LoadingSkeleton.vue";
+import {
+  ShieldCheck,
+  CheckCircle2,
+  ArrowUpRight,
+  ArrowDownLeft,
+  Copy,
+  Check,
+  Package,
+  Layers,
+  Building,
+  MapPin,
+  FileText,
+  User,
+  UserCheck,
+  Clock,
+  Printer,
+  Sparkles,
+  X,
+  Compass,
+  Settings,
+  FileSpreadsheet,
+  Download,
+  Upload,
+  Filter
+} from "lucide-vue-next";
 
 const { t, locale } = useI18n();
 const toastStore = useToastStore();
+const serialCopied = ref(false);
 
 const departments = ref([]);
 const productStates = ref([]);
@@ -891,14 +1059,40 @@ const currentDateFormatted = computed(() => {
 const parsedApprovalTrail = computed(() => {
   if (!selectedItem.value?.approvalTrail) return [];
   try {
-    const parsed = typeof selectedItem.value.approvalTrail === "string"
+    const raw = typeof selectedItem.value.approvalTrail === "string"
       ? JSON.parse(selectedItem.value.approvalTrail)
       : selectedItem.value.approvalTrail;
-    return Array.isArray(parsed) ? parsed : [];
+    if (!Array.isArray(raw)) return [];
+    return raw
+      .map(s => ({
+        stepOrder: s.stepOrder ?? s.StepOrder ?? 1,
+        stepName: s.stepName ?? s.StepName ?? s.step ?? "",
+        role: s.role ?? s.Role ?? "",
+        action: s.action ?? s.Action ?? "Approved",
+        userId: s.userId ?? s.UserId,
+        userName: s.userName ?? s.UserName ?? s.user ?? s.User ?? "-",
+        date: s.date ?? s.Date ?? null,
+        notes: s.notes ?? s.Notes ?? ""
+      }))
+      .filter(s => s.stepName || s.action || s.userName !== "-");
   } catch (_) {
     return [];
   }
 });
+
+async function copySerialNumber(sn) {
+  if (!sn) return;
+  try {
+    await navigator.clipboard.writeText(sn);
+    serialCopied.value = true;
+    toastStore.addSuccessToast("تم نسخ الرقم التسلسلي إلى الحافظة بنجاح");
+    setTimeout(() => {
+      serialCopied.value = false;
+    }, 2000);
+  } catch (_) {
+    toastStore.addInfoToast(`الرقم التسلسلي: ${sn}`);
+  }
+}
 
 function openDetailsModal(item) {
   selectedItem.value = item;

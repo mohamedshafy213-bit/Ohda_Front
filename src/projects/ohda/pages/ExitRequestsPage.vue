@@ -1092,6 +1092,17 @@
         </div>
       </div>
     </Dialog>
+
+    <!-- Requester Custody Receipt & Compass Documentation Confirmation Dialog -->
+    <ConfirmDialog
+      v-model="showRequesterConfirmDialog"
+      title="تأكيد استلام وصرف العهدة"
+      :message="`هل أنت متأكد من تأكيد استلام عهدة الطلب #${requestToConfirm?.id} وتوثيقها رسمياً ببوصلة الأجهزة والمخزون؟`"
+      :itemName="requestToConfirm ? `${requestToConfirm.recipientName || ''} (${requestToConfirm.departmentName || ''})` : ''"
+      :confirm="executeRequesterConfirm"
+      severity="info"
+      confirmText="تأكيد الاستلام والتوثيق"
+    />
   </div>
 </template>
 
@@ -1125,12 +1136,15 @@ import { useOhdaWarehouseBinStore } from "../stores/useOhdaWarehouseBinStore";
 import { useOhdaRequestsStore } from "../stores/useOhdaRequestsStore";
 import { useOhdaApprovalConfigStore } from "../stores/useOhdaApprovalConfigStore";
 import { apiGet } from "@/utilities/fetchApi";
+import { useToastStore } from "@/stores/toastStore";
+import ConfirmDialog from "@/components/ConfirmDialog.vue";
 
 const authStore = useOhdaAuthStore();
 const inventoryStore = useOhdaInventoryStore();
 const binStore = useOhdaWarehouseBinStore();
 const requestsStore = useOhdaRequestsStore();
 const approvalConfigStore = useOhdaApprovalConfigStore();
+const toastStore = useToastStore();
 
 // View and filter states
 const currentView = ref("table"); // 'table' | 'calendar'
@@ -1142,10 +1156,12 @@ const rangeDateFrom = ref("");
 const rangeDateTo = ref("");
 const selectedCalendarDate = ref(null); // 'YYYY-MM-DD'
 
-// Modals
+// Modals & Confirmations
 const showCreateModal = ref(false);
 const showDetailsModal = ref(false);
 const showTimelineModal = ref(false);
+const showRequesterConfirmDialog = ref(false);
+const requestToConfirm = ref(null);
 const selectedRequest = ref(null);
 const timelineRequest = ref(null);
 const rejectionReason = ref("");
@@ -1282,22 +1298,31 @@ function canRequesterConfirm(request) {
   return isRequester || authStore.isAdmin || authStore.isSuperAdmin;
 }
 
-async function handleRequesterConfirm(request) {
+function handleRequesterConfirm(request) {
   if (confirmingId.value) return;
-  if (!confirm(`هل أنت متأكد من تأكيد استلام عهدة الطلب #${request.id} وتوثيقها ببوصلة الأجهزة والمخزون؟`)) return;
+  requestToConfirm.value = request;
+  showRequesterConfirmDialog.value = true;
+}
 
-  confirmingId.value = request.id;
+async function executeRequesterConfirm() {
+  if (!requestToConfirm.value || confirmingId.value) return;
+  const req = requestToConfirm.value;
+  confirmingId.value = req.id;
   try {
-    const res = await requestsStore.requesterConfirmExit(request.id);
+    const res = await requestsStore.requesterConfirmExit(req.id);
     if (res.success) {
-      if (showDetailsModal.value && selectedRequest.value?.id === request.id) {
+      if (showDetailsModal.value && selectedRequest.value?.id === req.id) {
         selectedRequest.value.isRequesterConfirmed = true;
         selectedRequest.value.status = 2;
       }
-      alert(res.message || "تم تأكيد الاستلام وصرف العهدة وتوثيقها في البوصلة بنجاح!");
+      toastStore.addSuccessToast(res.message || "تم تأكيد الاستلام وصرف العهدة وتوثيقها ببوصلة الأجهزة والمخزون بنجاح!");
+      showRequesterConfirmDialog.value = false;
+      await requestsStore.fetchExitRequests();
     } else {
-      alert(res.message || "فشل تأكيد الاستلام");
+      toastStore.addErrorToast(res.message || "فشل تأكيد الاستلام");
     }
+  } catch (err) {
+    toastStore.addErrorToast("حدث خطأ غير متوقع أثناء تأكيد الاستلام");
   } finally {
     confirmingId.value = null;
   }
@@ -1530,7 +1555,20 @@ const parsedApprovalTrail = computed(() => {
     ];
   }
   try {
-    return JSON.parse(trailStr);
+    const raw = typeof trailStr === "string" ? JSON.parse(trailStr) : trailStr;
+    if (!Array.isArray(raw)) return [];
+    return raw
+      .map(s => ({
+        stepOrder: s.stepOrder ?? s.StepOrder ?? 1,
+        stepName: s.stepName ?? s.StepName ?? s.step ?? "",
+        role: s.role ?? s.Role ?? "",
+        action: s.action ?? s.Action ?? "Approved",
+        userId: s.userId ?? s.UserId,
+        userName: s.userName ?? s.UserName ?? s.user ?? "-",
+        date: s.date ?? s.Date ?? null,
+        notes: s.notes ?? s.Notes ?? ""
+      }))
+      .filter(s => s.stepName || s.action || s.userName !== "-");
   } catch (_) {
     return [];
   }
@@ -1789,7 +1827,7 @@ const onCodeScanned = (decodedText) => {
 
 function addManualItem() {
   if (!manualItem.value.productId) {
-    alert("يرجى اختيار الصنف أولاً!");
+    toastStore.addWarningToast("يرجى اختيار الصنف أولاً!");
     return;
   }
   const product = inventoryStore.products.find(p => p.id === manualItem.value.productId);
@@ -1837,11 +1875,11 @@ function removeRequestItem(index) {
 async function handleCreateExit() {
   if (isSubmitting.value) return;
   if (createForm.value.items.length === 0) {
-    alert("يرجى إضافة صنف واحد على الأقل للمتابعة.");
+    toastStore.addWarningToast("يرجى إضافة صنف واحد على الأقل للمتابعة.");
     return;
   }
   if (!createForm.value.recipientName || !createForm.value.departmentId || !createForm.value.purpose) {
-    alert("يرجى ملء جميع الحقول الإلزامية.");
+    toastStore.addWarningToast("يرجى ملء جميع الحقول الإلزامية.");
     return;
   }
 
@@ -1854,10 +1892,12 @@ async function handleCreateExit() {
       await requestsStore.fetchExitRequests();
       await loadAllInStockSerials();
       if (createForm.value.autoApprove) {
-        alert("تم إنشاء طلب الصرف وصرفه وتوثيق العهدة بالبوصلة بنجاح ومباشرة!");
+        toastStore.addSuccessToast("تم إنشاء طلب الصرف وصرفه وتوثيق العهدة بالبوصلة بنجاح ومباشرة!");
+      } else {
+        toastStore.addSuccessToast("تم إنشاء طلب الصرف بنجاح وإرساله للمسار الإداري.");
       }
     } else {
-      alert(result.message || "فشل إنشاء طلب الصرف");
+      toastStore.addErrorToast(result.message || "فشل إنشاء طلب الصرف");
     }
   } finally {
     isSubmitting.value = false;
@@ -1897,7 +1937,6 @@ const canReviewSelectedRequest = computed(() => {
 
 async function directSingleStepApproval() {
   if (isSubmitting.value) return;
-  if (!confirm("هل تريد اعتماد هذا الطلب وصرفه نهائياً في خطوة واحدة؟")) return;
 
   const itemsPayload = Object.keys(itemDecisions.value).map(key => ({
     itemId: parseInt(key),
@@ -1909,13 +1948,14 @@ async function directSingleStepApproval() {
     const result = await requestsStore.supervisorApproveExit(selectedRequest.value.id, authStore.user, { items: itemsPayload });
     if (result.success) {
       showDetailsModal.value = false;
+      toastStore.addSuccessToast(result.message || "تم الاعتماد النهائي وصرف العهدة بنجاح!");
       await Promise.all([
         requestsStore.fetchExitRequests(),
         inventoryStore.fetchProducts(),
         loadAllInStockSerials()
       ]);
     } else {
-      alert(result.message || "فشل الاعتماد المباشر للطلب.");
+      toastStore.addErrorToast(result.message || "فشل الاعتماد المباشر للطلب.");
     }
   } finally {
     isSubmitting.value = false;
@@ -1939,7 +1979,7 @@ async function submitApprovalDecisions(isManager) {
 
   const anyRejected = itemsPayload.some(i => i.status === 4);
   if (anyRejected && !rejectionReason.value) {
-    alert("يرجى إدخال سبب الرفض لوجود أصناف مرفوضة.");
+    toastStore.addWarningToast("يرجى إدخال سبب الرفض لوجود أصناف مرفوضة.");
     return;
   }
 
@@ -1954,13 +1994,14 @@ async function submitApprovalDecisions(isManager) {
 
     if (result.success) {
       showDetailsModal.value = false;
+      toastStore.addSuccessToast(result.message || "تم تسجيل قرارات الاعتماد بنجاح");
       await Promise.all([
         requestsStore.fetchExitRequests(),
         inventoryStore.fetchProducts(),
         loadAllInStockSerials()
       ]);
     } else {
-      alert(result.message || "فشل تقديم قرارات الاعتماد.");
+      toastStore.addErrorToast(result.message || "فشل تقديم قرارات الاعتماد.");
     }
   } finally {
     isSubmitting.value = false;
@@ -1970,7 +2011,7 @@ async function submitApprovalDecisions(isManager) {
 async function rejectEntireRequest() {
   if (isSubmitting.value) return;
   if (!rejectionReason.value) {
-    alert("يرجى إدخال سبب الرفض أولاً.");
+    toastStore.addWarningToast("يرجى إدخال سبب الرفض أولاً.");
     return;
   }
   isSubmitting.value = true;
@@ -1978,9 +2019,10 @@ async function rejectEntireRequest() {
     const result = await requestsStore.rejectExitRequest(selectedRequest.value.id, rejectionReason.value, authStore.user);
     if (result.success) {
       showDetailsModal.value = false;
+      toastStore.addSuccessToast(result.message || "تم رفض الطلب بنجاح");
       await requestsStore.fetchExitRequests();
     } else {
-      alert(result.message || "فشل رفض الطلب");
+      toastStore.addErrorToast(result.message || "فشل رفض الطلب");
     }
   } finally {
     isSubmitting.value = false;
