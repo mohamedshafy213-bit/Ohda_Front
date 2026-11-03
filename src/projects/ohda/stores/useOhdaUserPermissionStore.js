@@ -54,6 +54,7 @@ export const useOhdaUserPermissionStore = defineStore("ohdaUserPermission", {
     },
 
     async registerUser(payload) {
+
       this.loading = true;
       try {
         const res = await apiPost("/api/Auth/register", payload, false);

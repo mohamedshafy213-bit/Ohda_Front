@@ -11,8 +11,10 @@
 // axios
 import axios from "axios";
 // import {useRouter} from 'vue-router'
-// Use main API root; falls back to same root used by fetchApi (VITE_ROOT_URL)
-const baseURL = import.meta.env.VITE_API_URL || import.meta.env.VITE_ROOT_URL || "";
+const runtimeRoot =
+    typeof window !== "undefined" &&
+    (window.__RUNTIME_ENV__?.VITE_ROOT_URL || window.__APP_CONFIG__?.VITE_ROOT_URL);
+const baseURL = runtimeRoot || import.meta.env.VITE_API_URL || import.meta.env.VITE_ROOT_URL || "";
 const api = axios.create({
     baseURL,
     // You can add your headers here

@@ -476,7 +476,7 @@
       <form @submit.prevent="handleRegisterUser" class="space-y-4 text-xs">
         <div>
           <label class="block font-semibold text-brand-dark mb-1">الرقم العسكري *</label>
-          <InputText v-model.number="registerForm.militaryNumber" type="number" required class="w-full !bg-brand-light !border-brand-gray/25 focus:!border-brand-accent !text-brand-dark font-mono" />
+          <InputText v-model="registerForm.militaryNumber" type="text" pattern="[0-9]*" inputmode="numeric" required class="w-full !bg-brand-light !border-brand-gray/25 focus:!border-brand-accent !text-brand-dark font-mono" placeholder="أدخل الرقم العسكري..." />
         </div>
 
         <div>
@@ -511,10 +511,7 @@
           </div>
         </div>
 
-        <div>
-          <label class="block font-semibold text-brand-dark mb-1">{{ $t('ohda.users.email') }}</label>
-          <InputText v-model="registerForm.email" type="email" required class="w-full !bg-brand-light !border-brand-gray/25 focus:!border-brand-accent !text-brand-dark font-mono" />
-        </div>
+        <!-- Email hidden per requirement -->
 
         <div>
           <label class="block font-semibold text-brand-dark mb-1">كلمة المرور</label>
@@ -575,10 +572,7 @@
           </div>
         </div>
 
-        <div>
-          <label class="block font-semibold text-brand-dark mb-1">{{ $t('ohda.users.email') }}</label>
-          <InputText v-model="editForm.email" type="email" required class="w-full !bg-brand-light !border-brand-gray/25 focus:!border-brand-accent !text-brand-dark font-mono" />
-        </div>
+        <!-- Email hidden per requirement -->
 
         <div>
           <label class="block font-semibold text-brand-dark mb-1">تحديث كلمة المرور (اختياري)</label>
@@ -621,7 +615,7 @@
 
             <Button
               v-if="isPageAllowedForUser(selectedUser, page.id)"
-              @click="toggleUserPageAccess(selectedUser.id, page.id, false)"
+              @click="toggleUserPageAccess(selectedUser.militaryNumber || selectedUser.id, page.id, false)"
               class="!px-3 !py-1 !bg-red-500/10 hover:!bg-red-500/20 !text-red-600 !border !border-red-500/30 !rounded-lg !text-xs !font-bold flex items-center gap-1"
             >
               <X class="w-3.5 h-3.5" />
@@ -629,7 +623,7 @@
             </Button>
             <Button
               v-else
-              @click="toggleUserPageAccess(selectedUser.id, page.id, true)"
+              @click="toggleUserPageAccess(selectedUser.militaryNumber || selectedUser.id, page.id, true)"
               class="!px-3 !py-1 !bg-brand-soft hover:!bg-brand-accent/20 !text-brand-accent !border !border-brand-accent/30 !rounded-lg !text-xs !font-bold flex items-center gap-1"
             >
               <Check class="w-3.5 h-3.5" />
@@ -1060,7 +1054,12 @@ async function handleRegisterUser() {
   } else {
     registerForm.value.role = 2;
   }
-  const res = await userStore.registerUser(registerForm.value);
+  const payload = {
+    ...registerForm.value,
+    militaryNumber: registerForm.value.militaryNumber ? String(registerForm.value.militaryNumber).trim() : null,
+    email: registerForm.value.email || null
+  };
+  const res = await userStore.registerUser(payload);
   if (res?.success) {
     showRegisterModal.value = false;
     toast.add({
@@ -1099,7 +1098,11 @@ async function handleUpdateUser() {
   if (selectedGroup && (selectedGroup.name.includes("مدير") || selectedGroup.name.includes("Admin"))) {
     editForm.value.role = 1;
   }
-  const res = await userStore.updateUser(editingUserId.value, editForm.value);
+  const payload = {
+    ...editForm.value,
+    email: editForm.value.email || null
+  };
+  const res = await userStore.updateUser(editingUserId.value, payload);
   if (res?.success) {
     showEditModal.value = false;
     toast.add({

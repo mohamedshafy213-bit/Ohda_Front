@@ -275,6 +275,11 @@ const pageMeta = {
     getBadge: () => requestsStore.pendingEntryRequestsCount || null,
     isAlert: () => (requestsStore.myReturnedEntryRequestsCount > 0)
   },
+  "/ohda/acceptance": { 
+    labelKey: "ohda.nav.acceptance", 
+    icon: "CheckCheck", 
+    getBadge: () => ((requestsStore.pendingExitRequestsCount || 0) + (requestsStore.pendingEntryRequestsCount || 0)) || null 
+  },
   "/ohda/scan": { labelKey: "ohda.nav.scan", icon: "QrCode" },
   "/ohda/barcode-print": { labelKey: "ohda.nav.barcodePrint", icon: "Printer" },
   "/ohda/categories": { labelKey: "ohda.nav.categories", icon: "Tags" },
@@ -384,6 +389,7 @@ const groupDefinitions = computed(() => {
       labelKey: "ohda.groups.requests",
       icon: "ScrollText",
       paths: [
+        "/ohda/acceptance",
         "/ohda/exit-requests",
         "/ohda/entry-requests"
       ]

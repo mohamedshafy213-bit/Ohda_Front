@@ -85,12 +85,16 @@ export const useOhdaInventoryStore = defineStore("ohdaInventory", {
     async deleteProduct(id) {
       try {
         const res = await apiDelete(`/api/Product/${id}`);
-        if (res?.data?.isDone) {
-          this.products = this.products.filter(p => p.id !== id);
-          return { success: true };
+        if (res?.data?.isDone || res?.data?.returnMessage?.includes("غير موجود") || res?.data?.returnMessage?.includes("مسبقاً")) {
+          this.products = this.products.filter(p => p.id !== id && p.id !== Number(id));
+          return { success: true, message: res?.data?.returnMessage || "تم حذف الصنف بنجاح" };
         }
         return { success: false, message: res?.data?.returnMessage || "فشل حذف المنتج" };
       } catch (err) {
+        if (err?.response?.status === 404 || err?.response?.data?.returnMessage?.includes("غير موجود")) {
+          this.products = this.products.filter(p => p.id !== id && p.id !== Number(id));
+          return { success: true, message: "تمت إزالة الصنف من القائمة" };
+        }
         console.warn("Delete product API failed", err);
         return { success: false, message: err?.response?.data?.returnMessage || "فشل حذف المنتج" };
       }
@@ -106,6 +110,34 @@ export const useOhdaInventoryStore = defineStore("ohdaInventory", {
         quantity: Math.max(0, (product.quantity || 0) + deltaQty)
       };
       return this.updateProduct(productId, updatedPayload);
+    },
+
+    async adjustStock(productId, newQuantity) {
+      try {
+        const res = await apiPost("/api/Inventory/adjust-quantity", { productId, newQuantity });
+        if (res?.data?.isDone) {
+          await this.fetchProducts();
+          await this.fetchInventory();
+          return { success: true, message: res?.data?.returnMessage || "تم تعديل الرصيد بنجاح" };
+        }
+        return { success: false, message: res?.data?.returnMessage || "فشل تعديل الرصيد" };
+      } catch (err) {
+        return { success: false, message: err?.response?.data?.returnMessage || "فشل تعديل الرصيد" };
+      }
+    },
+
+    async deleteInventoryByProduct(productId) {
+      try {
+        const res = await apiDelete(`/api/Inventory/product/${productId}`);
+        if (res?.data?.isDone) {
+          await this.fetchProducts();
+          await this.fetchInventory();
+          return { success: true, message: res?.data?.returnMessage || "تم تصفية الرصيد بنجاح" };
+        }
+        return { success: false, message: res?.data?.returnMessage || "فشل تصفية الرصيد" };
+      } catch (err) {
+        return { success: false, message: err?.response?.data?.returnMessage || "فشل تصفية الرصيد" };
+      }
     },
 
     // ------------------------------------

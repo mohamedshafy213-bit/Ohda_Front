@@ -95,6 +95,11 @@ export default [
         component: () => import("./pages/ApprovalRequestsPage.vue")
       },
       {
+        path: "acceptance",
+        name: "OhdaAcceptance",
+        component: () => import("./pages/AcceptancePage.vue")
+      },
+      {
         path: "compass",
         name: "OhdaCompass",
         component: () => import("./pages/CompassPage.vue")

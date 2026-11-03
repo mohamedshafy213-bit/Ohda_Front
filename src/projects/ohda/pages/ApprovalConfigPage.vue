@@ -1024,6 +1024,20 @@ async function saveStep() {
         colorHex: stepForm.value.colorHex || "#3B82F6"
       };
       activeSteps.value = list;
+
+      // Sync existing configs assigned to this step in backend
+      const stepConfigs = getGroupsForStep(list[idx]);
+      for (const cfg of stepConfigs) {
+        await approvalConfigStore.updateApprovalConfig(cfg.id, {
+          requestType: cfg.requestType,
+          workflowRole: stepForm.value.role,
+          userGroupId: cfg.userGroupId,
+          stepOrder: idx + 1,
+          stepName: list[idx].name,
+          colorHex: list[idx].colorHex,
+          isActive: cfg.isActive
+        });
+      }
     }
   } else {
     const newId = `step_${Date.now()}`;
@@ -1252,6 +1266,9 @@ async function saveAssignment() {
     requestType: selectedRequestType.value,
     workflowRole: currentStep.value.role,
     userGroupId: assignForm.value.userGroupId,
+    stepOrder: currentStepIndex.value + 1,
+    stepName: currentStep.value.name,
+    colorHex: currentStep.value.colorHex || "#3B82F6",
     isActive: assignForm.value.isActive
   };
 

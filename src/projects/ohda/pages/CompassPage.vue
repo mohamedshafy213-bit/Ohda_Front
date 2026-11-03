@@ -247,9 +247,14 @@
           <!-- 5. Current Custody Holder / Recipient (المستلم / حامل العهدة) -->
           <Column field="recipientName" :header="$t('ohda.compass.currentHolder')">
             <template #body="{ data }">
-              <span class="font-medium text-surface-700 dark:text-surface-300">
-                {{ data.recipientName || data.delivererName || '-' }}
-              </span>
+              <div class="flex flex-col">
+                <span class="font-medium text-surface-700 dark:text-surface-300">
+                  {{ data.recipientPersonName || data.recipientName || data.delivererPersonName || data.delivererName || '-' }}
+                </span>
+                <span v-if="data.recipientUserId || data.delivererUserId" class="font-mono text-[10px] text-surface-400">
+                  عسكري: {{ data.recipientUserId || data.delivererUserId }}
+                </span>
+              </div>
             </template>
           </Column>
 
@@ -650,7 +655,10 @@
                     {{ $t('ohda.compass.delivererApplicant') }}
                   </span>
                   <span class="font-bold text-surface-900 dark:text-surface-100 text-xs block truncate">
-                    {{ selectedItem.delivererName || 'مسؤول المخزن / مقدم الطلب' }}
+                    {{ selectedItem.delivererPersonName || selectedItem.delivererName || 'مسؤول المخزن / مقدم الطلب' }}
+                  </span>
+                  <span v-if="selectedItem.delivererUserId" class="font-mono text-[10px] text-surface-400 block">
+                    الرقم العسكري: {{ selectedItem.delivererUserId }}
                   </span>
                   <span class="text-[10px] text-surface-400 mt-0.5 block">جهة الصرف المعتمدة</span>
                 </div>
@@ -751,7 +759,10 @@
                     {{ $t('ohda.compass.firstApprover') }}
                   </span>
                   <span class="font-bold text-surface-900 dark:text-surface-100 text-xs mt-0.5 block">
-                    {{ selectedItem.supervisorName || $t('ohda.compass.autoApproved') }}
+                    {{ selectedItem.supervisorPersonName || selectedItem.supervisorName || $t('ohda.compass.autoApproved') }}
+                  </span>
+                  <span v-if="selectedItem.supervisorId" class="font-mono text-[10px] text-surface-400 block">
+                    عسكري: {{ selectedItem.supervisorId }}
                   </span>
                 </div>
                 <div class="w-7 h-7 rounded-full bg-emerald-500/15 text-emerald-600 flex items-center justify-center shrink-0">
@@ -765,7 +776,10 @@
                     {{ $t('ohda.compass.secondApprover') }}
                   </span>
                   <span class="font-bold text-surface-900 dark:text-surface-100 text-xs mt-0.5 block">
-                    {{ selectedItem.managerName || $t('ohda.compass.autoApproved') }}
+                    {{ selectedItem.managerPersonName || selectedItem.managerName || $t('ohda.compass.autoApproved') }}
+                  </span>
+                  <span v-if="selectedItem.managerId" class="font-mono text-[10px] text-surface-400 block">
+                    عسكري: {{ selectedItem.managerId }}
                   </span>
                 </div>
                 <div class="w-7 h-7 rounded-full bg-emerald-500/15 text-emerald-600 flex items-center justify-center shrink-0">
@@ -852,7 +866,7 @@
           </div>
           <ul class="text-[11px] text-surface-600 dark:text-surface-300 space-y-1.5 list-disc list-inside">
             <li>
-              <strong>دليل المفاتيح (Lookups):</strong> يحتوي ملف النموذج على شيتات فرعية توضح أرقام ومعرفات الفروع، التصنيفات، والأقسام.
+              <strong>دليل المفاتيح (Lookups):</strong> يحتوي ملف النموذج على شيتات فرعية توضح أرقام ومعرفات الفروع، التصنيفات، والأفرع.
             </li>
             <li>
               <strong>الإنشاء التلقائي:</strong> عند تسجيل أي صنف جديد غير مسجل، يقوم النظام بإنشائه تلقائياً في جدول المنتجات والمخزون.

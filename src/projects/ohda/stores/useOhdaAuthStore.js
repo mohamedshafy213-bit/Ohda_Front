@@ -36,6 +36,7 @@ export const useOhdaAuthStore = defineStore("ohdaAuth", {
         if (isSuper) {
           return [
             "/ohda/dashboard",
+            "/ohda/acceptance",
             "/ohda/branches-dashboard",
             "/ohda/branches",
             "/ohda/products",
@@ -124,9 +125,11 @@ export const useOhdaAuthStore = defineStore("ohdaAuth", {
       const allowed = state.allowedPaths || [];
       if (allowed.includes(path)) return true;
 
-      // Allow barcode-print if products or inventory are allowed
-      if (path === "/ohda/barcode-print" && (allowed.includes("/ohda/products") || allowed.includes("/ohda/inventory") || allowed.includes("/ohda/scan"))) {
-        return true;
+      // Allow acceptance page for managers, supervisors, admins, or if granted
+      if (path === "/ohda/acceptance") {
+        if (isSuper || state.user?.role === 1 || state.user?.role === 3 || state.user?.role === 4 || state.user?.role === "Manager" || state.user?.role === "Supervisor" || state.user?.role === "Admin") {
+          return true;
+        }
       }
 
       return false;

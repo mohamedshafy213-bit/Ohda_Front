@@ -372,35 +372,81 @@
             </label>
           </div>
 
-          <!-- Quantity Input -->
-          <div class="grid grid-cols-2 gap-3 pt-1">
-            <div>
-              <label class="block font-semibold text-brand-dark dark:text-white mb-1.5 required">{{ $t('ohda.products.qty') }}</label>
-              <InputNumber
-                v-model="form.amount"
-                :min="1"
-                :max="trackingType === 'serials' ? 100 : 10000"
-                required
-                @input="syncSerialsList"
-                class="w-full !bg-white dark:!bg-brand-dark/80 !border-brand-gray/25 rounded-xl font-mono font-bold"
-              />
+          <!-- 5. Quantity & Serials Setup -->
+          <div class="space-y-3 pt-1">
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label class="block font-semibold text-brand-dark dark:text-white mb-1.5 required">
+                  {{ trackingType === 'serials' ? $t('ohda.products.devicesCount') : $t('ohda.products.stockQuantity') }}
+                </label>
+                <InputNumber
+                  v-model="form.amount"
+                  :min="1"
+                  :max="trackingType === 'serials' ? 100 : 10000"
+                  required
+                  @update:model-value="syncSerialsList"
+                  class="w-full !bg-white dark:!bg-brand-dark/80 !border-brand-gray/25 rounded-xl font-mono font-bold"
+                />
+              </div>
+              <div>
+                <label class="block font-semibold text-brand-dark dark:text-white mb-1.5 required">{{ $t('ohda.products.minThreshold') }}</label>
+                <InputNumber
+                  v-model="form.minThreshold"
+                  :min="0"
+                  required
+                  class="w-full !bg-white dark:!bg-brand-dark/80 !border-brand-gray/25 rounded-xl font-mono font-bold"
+                />
+              </div>
             </div>
-            <div>
-              <label class="block font-semibold text-brand-dark dark:text-white mb-1.5 required">{{ $t('ohda.products.minThreshold') }}</label>
-              <InputNumber
-                v-model="form.minThreshold"
-                :min="0"
-                required
-                class="w-full !bg-white dark:!bg-brand-dark/80 !border-brand-gray/25 rounded-xl font-mono font-bold"
-              />
+
+            <!-- Traditional Serials Trigger Button -->
+            <div
+              v-if="trackingType === 'serials' && !isEditing"
+              class="flex flex-wrap items-center justify-between gap-2.5 p-3 bg-brand-accent/10 dark:bg-brand-accent/5 rounded-2xl border border-brand-accent/25"
+            >
+              <div class="flex items-center gap-2">
+                <span class="text-xs font-bold text-brand-dark dark:text-white">
+                  الأرقام التسلسلية:
+                </span>
+                <span class="text-[11px] font-mono px-2 py-0.5 rounded-lg bg-white dark:bg-black/40 text-brand-accent font-bold border border-brand-accent/20">
+                  {{ form.amount || 1 }} أجهزة مطلوبة
+                </span>
+                <span
+                  class="text-[10px] font-bold px-2 py-0.5 rounded-md"
+                  :class="serialList.length === (form.amount || 1) ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400' : 'bg-amber-500/15 text-amber-600 dark:text-amber-400'"
+                >
+                  {{ serialList.length === (form.amount || 1) ? 'الحقول مطابقة' : 'الحقول تحتاج تحديث' }}
+                </span>
+              </div>
+
+              <div class="flex items-center gap-2">
+                <button
+                  type="button"
+                  @click="openAndSyncSerials"
+                  class="px-3 py-1.5 rounded-xl bg-brand-accent hover:bg-brand-accent/90 text-brand-dark font-bold text-xs flex items-center gap-1.5 shadow-sm cursor-pointer transition transform active:scale-95"
+                  title="تجهيز وفتح حقول الأرقام التسلسلية وفق الكمية المحددة"
+                >
+                  <Plus class="w-4 h-4" />
+                  <span>اضافة السيريلات ({{ form.amount || 1 }})</span>
+                </button>
+                <button
+                  type="button"
+                  @click="autoFillSerials"
+                  class="px-2.5 py-1.5 rounded-xl bg-white dark:bg-white/10 text-brand-gray hover:text-brand-dark dark:hover:text-white border border-brand-gray/20 font-semibold text-xs flex items-center gap-1 cursor-pointer transition"
+                >
+                  <Sparkles class="w-3.5 h-3.5" />
+                  <span>توليد تلقائي للكل</span>
+                </button>
+              </div>
             </div>
           </div>
 
           <!-- Serials Inputs Table when "serials" is active and in Add Mode -->
           <div v-if="trackingType === 'serials' && !isEditing" class="space-y-2 pt-2 border-t border-brand-gray/10 dark:border-white/10">
             <div class="flex items-center justify-between">
-              <span class="text-[11px] font-bold text-brand-dark dark:text-white">
-                {{ $t('ohda.products.serialNumbers') }} ({{ serialList.length }}):
+              <span class="text-[11px] font-bold text-brand-dark dark:text-white flex items-center gap-1.5">
+                <span>{{ $t('ohda.products.serialNumbers') }}</span>
+                <span class="font-mono text-brand-accent">({{ serialList.length }} من {{ form.amount || 1 }}):</span>
               </span>
 
               <div class="flex items-center gap-2">
@@ -418,6 +464,13 @@
                   class="text-[10px] px-2 py-1 rounded-lg bg-brand-light dark:bg-white/10 text-brand-gray hover:text-brand-dark dark:hover:text-white border border-brand-gray/20 font-semibold cursor-pointer transition"
                 >
                   {{ $t('ohda.products.autoFillRemaining') }}
+                </button>
+                <button
+                  type="button"
+                  @click="clearAllSerials"
+                  class="text-[10px] px-2 py-1 rounded-lg bg-red-500/10 text-red-500 hover:bg-red-500/20 font-semibold cursor-pointer transition"
+                >
+                  تفريغ الكل
                 </button>
               </div>
             </div>
@@ -641,17 +694,17 @@
     <!-- Delete Confirmation Dialog -->
     <DeleteDialog
       v-model="showDeleteDialog"
-      :itemType="$t('ohda.products.title')"
+      :itemType="'الصنف'"
       :itemName="selectedProductForDelete?.name || ''"
-      :canDelete="(selectedProductForDelete?.quantity ?? selectedProductForDelete?.amount ?? 0) === 0"
-      :warningMessage="(selectedProductForDelete?.quantity ?? selectedProductForDelete?.amount ?? 0) > 0 ? `لا يمكن حذف هذا الصنف لوجود رصيد فعلي (${selectedProductForDelete?.quantity ?? selectedProductForDelete?.amount ?? 0}) في المخزون حالياً. يرجى تصفية الرصيد أولاً.` : ''"
+      :canDelete="true"
+      :warningMessage="(selectedProductForDelete?.quantity ?? selectedProductForDelete?.amount ?? 0) > 0 ? `سيتم حذف الصنف ورصيده في المخزون (${selectedProductForDelete?.quantity ?? selectedProductForDelete?.amount ?? 0}) وكافة الأرقام التسلسلية غير المصروفة التابعة له.` : ''"
       :confirm="handleDeleteProduct"
     />
   </div>
 </template>
 
 <script setup>
-import { ref, computed, onMounted, nextTick } from "vue";
+import { ref, computed, watch, onMounted, nextTick } from "vue";
 import { useOhdaInventoryStore } from "../stores/useOhdaInventoryStore";
 import { useOhdaBranchStore } from "../stores/useOhdaBranchStore";
 import { useOhdaAuthStore } from "../stores/useOhdaAuthStore";
@@ -752,16 +805,48 @@ function generateBarcode() {
   form.value.barcode = `629${Math.floor(100000000 + Math.random() * 900000000)}`;
 }
 
+watch(
+  () => form.value.amount,
+  (newVal) => {
+    if (trackingType.value === "serials" && !isEditing.value) {
+      syncSerialsList();
+    }
+  }
+);
+
 function syncSerialsList() {
-  const count = Math.max(1, Math.min(100, form.value.amount || 1));
-  const current = serialList.value;
+  const count = Math.max(1, Math.min(100, parseInt(form.value.amount) || 1));
+  const current = [...serialList.value];
   if (current.length < count) {
     while (current.length < count) {
       current.push("");
     }
+    serialList.value = current;
   } else if (current.length > count) {
     serialList.value = current.slice(0, count);
   }
+}
+
+function openAndSyncSerials() {
+  trackingType.value = "serials";
+  const count = Math.max(1, Math.min(100, parseInt(form.value.amount) || 1));
+  form.value.amount = count;
+  const current = [...serialList.value];
+  if (current.length < count) {
+    while (current.length < count) current.push("");
+    serialList.value = current;
+  } else {
+    serialList.value = current.slice(0, count);
+  }
+  toastStore.addInfoToast(`تم فتح وتجهيز (${count}) حقول لإدخال الأرقام التسلسلية`);
+  nextTick(() => {
+    document.getElementById("serial-slot-0")?.focus();
+  });
+}
+
+function clearAllSerials() {
+  const count = Math.max(1, Math.min(100, parseInt(form.value.amount) || 1));
+  serialList.value = Array(count).fill("");
 }
 
 function onTrackingTypeChange() {
@@ -771,9 +856,10 @@ function onTrackingTypeChange() {
 }
 
 function autoFillSerials() {
+  syncSerialsList();
   const sku = form.value.sku || "ITEM";
   serialList.value = serialList.value.map((val, idx) => {
-    if (val && val.trim()) return val;
+    if (val && val.trim()) return val.trim();
     return `SN-${sku}-${idx + 1}-${Math.floor(1000 + Math.random() * 9000)}`;
   });
 }
@@ -856,8 +942,9 @@ async function saveProduct() {
   }
 
   if (trackingType.value === "serials" && !isEditing.value) {
+    syncSerialsList();
     const filledSerials = serialList.value.map(s => s?.trim()).filter(Boolean);
-    const expectedCount = form.value.amount || 1;
+    const expectedCount = Math.max(1, Math.min(100, parseInt(form.value.amount) || 1));
     if (filledSerials.length < expectedCount) {
       autoFillSerials();
     }
@@ -892,10 +979,12 @@ async function saveProduct() {
       res = await inventoryStore.addProduct(form.value);
     }
 
-    if (res.success) {
+    if (res && res.success) {
       toastStore.addSuccessToast(t("ohda.common.operationSuccess"));
       showModal.value = false;
       branchStore.fetchMyQuota();
+    } else {
+      toastStore.addErrorToast(res?.message || t("ohda.common.operationFailed"));
     }
   } catch (err) {
     console.error("Save product error:", err);
@@ -911,17 +1000,26 @@ function promptDelete(product) {
 
 async function handleDeleteProduct() {
   if (!selectedProductForDelete.value) return;
+  const targetId = selectedProductForDelete.value.id;
   try {
-    const res = await inventoryStore.deleteProduct(selectedProductForDelete.value.id);
+    const res = await inventoryStore.deleteProduct(targetId);
     if (res && res.success === false) {
       toastStore.addErrorToast(res.message || "تعذر حذف المنتج لوجود ارتباطات");
       return res;
     }
-    toastStore.addSuccessToast(t("ohda.common.operationSuccess"));
+    inventoryStore.products = inventoryStore.products.filter(p => p.id !== targetId && p.id !== Number(targetId));
+    toastStore.addSuccessToast(res?.message || t("ohda.common.operationSuccess"));
+    showDeleteDialog.value = false;
   } catch (err) {
     console.error("Delete product error:", err);
-    toastStore.addErrorToast(err?.response?.data?.returnMessage || err?.message || "تعذر حذف المنتج");
-    throw err;
+    if (err?.response?.status === 404 || err?.response?.data?.returnMessage?.includes("غير موجود") || err?.message?.includes("غير موجود")) {
+      inventoryStore.products = inventoryStore.products.filter(p => p.id !== targetId && p.id !== Number(targetId));
+      showDeleteDialog.value = false;
+      toastStore.addSuccessToast("تم تحديث القائمة وإزالة الصنف");
+    } else {
+      toastStore.addErrorToast(err?.response?.data?.returnMessage || err?.message || "تعذر حذف المنتج");
+      throw err;
+    }
   } finally {
     selectedProductForDelete.value = null;
   }

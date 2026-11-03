@@ -12,6 +12,42 @@
     </head>
     <body>
         <div id="app"></div>
+        <script>
+            (function() {
+                window.__RUNTIME_ENV__ = {};
+                function parseEnv(text) {
+                    if (!text) return;
+                    text.split(/\r?\n/).forEach(function(line) {
+                        var trimmed = line.trim();
+                        if (!trimmed || trimmed.startsWith('#')) return;
+                        var match = trimmed.match(/^([\w.-]+)\s*=\s*(.*)?$/);
+                        if (match) {
+                            var key = match[1];
+                            var val = (match[2] || '').trim().replace(/^["'](.*)["']$/, '$1');
+                            window.__RUNTIME_ENV__[key] = val;
+                        }
+                    });
+                }
+                try {
+                    var xhr = new XMLHttpRequest();
+                    xhr.open('GET', '/.env.production?v=' + Date.now(), false);
+                    xhr.send(null);
+                    if (xhr.status >= 200 && xhr.status < 300) {
+                        parseEnv(xhr.responseText);
+                    } else {
+                        var xhr2 = new XMLHttpRequest();
+                        xhr2.open('GET', '/.env?v=' + Date.now(), false);
+                        xhr2.send(null);
+                        if (xhr2.status >= 200 && xhr2.status < 300) {
+                            parseEnv(xhr2.responseText);
+                        }
+                    }
+                } catch (e) {
+                    // Fallback to build-time env
+                }
+            })();
+        </script>
+        <script src="/config.js"></script>
         <script type="module" src="/src/main.js"></script>
     </body>
 </html>

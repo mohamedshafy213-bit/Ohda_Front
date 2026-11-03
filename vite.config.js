@@ -1,4 +1,6 @@
 import { fileURLToPath, URL } from "node:url";
+import fs from "node:fs";
+import path from "node:path";
 
 import { defineConfig } from "vite";
 import vue from "@vitejs/plugin-vue";
@@ -6,9 +8,6 @@ import vueDevTools from "vite-plugin-vue-devtools";
 import AutoImport from "unplugin-auto-import/vite";
 import tailwindcss from "@tailwindcss/vite";
 import Components from "unplugin-vue-components/vite";
-
-//import { VitePWA } from 'vite-plugin-pwa'
-//import federation from "@originjs/vite-plugin-federation";
 
 // https://vite.dev/config/
 export default defineConfig(({ mode }) => {
@@ -20,6 +19,20 @@ export default defineConfig(({ mode }) => {
             vue(),
             ...(isDev ? [vueDevTools()] : []),
             tailwindcss(),
+            {
+                name: "copy-env-to-dist",
+                closeBundle() {
+                    const envFiles = [".env", ".env.production"];
+                    for (const file of envFiles) {
+                        const src = path.resolve(process.cwd(), file);
+                        const dest = path.resolve(process.cwd(), "dist", file);
+                        if (fs.existsSync(src)) {
+                            fs.copyFileSync(src, dest);
+                            console.log(`[Vite Plugin] Successfully copied ${file} -> dist/${file}`);
+                        }
+                    }
+                }
+            },
             AutoImport({
                 dts: true,
                 dirs: ["src/stores", "src/utilities", "src/volt", "src/composables"],

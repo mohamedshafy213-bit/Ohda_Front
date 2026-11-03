@@ -9,7 +9,7 @@
     },
     "scripts": {
         "dev": "vite --host",
-        "build": "vite build",
+        "build": "vite build && node -e \"const fs=require('fs'); ['.env','.env.production'].forEach(f=>{if(fs.existsSync(f))fs.copyFileSync(f,'dist/'+f);});\"",
         "lint": "eslint .",
         "preview": "vite preview --host",
         "build:electron": "vite build --mode electron",

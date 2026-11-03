@@ -9,17 +9,24 @@ export const useToastStore = defineStore("toast", {
     }),
     actions: {
         _normalizeToastArgs(messageOrObj, summary) {
+            let msg = "";
+            let sum = summary;
             if (messageOrObj && typeof messageOrObj === "object") {
-                const msg = messageOrObj.message || messageOrObj.detail || messageOrObj.text || "";
-                const sum = messageOrObj.summary || messageOrObj.title || summary;
-                return {
-                    message: typeof msg === "string" ? msg : JSON.stringify(msg),
-                    summary: sum
-                };
+                msg = messageOrObj.message || messageOrObj.detail || messageOrObj.text || messageOrObj.returnMessage || "";
+                sum = messageOrObj.summary || messageOrObj.title || summary;
+            } else {
+                msg = typeof messageOrObj === "string" ? messageOrObj : String(messageOrObj || "");
             }
+
+            // Detect and explain SqlServerRetryingExecutionStrategy / EF Core user-initiated transaction error
+            if (typeof msg === "string" && (msg.includes("SqlServerRetryingExecutionStrategy") || msg.includes("CreateExecutionStrategy"))) {
+                sum = sum || "تنبيه معاملة قاعدة البيانات";
+                msg = "فشل تنفيذ المعاملة في قاعدة البيانات بسبب تضارب استراتيجية إعادة المحاولة (SqlServerRetryingExecutionStrategy): تم إلغاء العملية بأمان لضمان سلامة البيانات.";
+            }
+
             return {
-                message: typeof messageOrObj === "string" ? messageOrObj : String(messageOrObj || ""),
-                summary: summary
+                message: typeof msg === "string" ? msg : JSON.stringify(msg),
+                summary: sum
             };
         },
         _shouldThrottle(message, severity) {

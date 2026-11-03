@@ -126,7 +126,7 @@
                 ></div>
               </div>
               <span class="text-[10px] text-brand-gray dark:text-slate-400 font-mono block">
-                {{ $t('ohda.inventory.safetyPercentage', { percent: getSafePercentage(data) }) }}
+                {{ getSafePercentageLabel(data) }}
               </span>
             </div>
           </template>
@@ -143,8 +143,113 @@
             </span>
           </template>
         </Column>
+
+        <!-- Actions Column -->
+        <Column :header="$t('ohda.common.actions') || 'الإجراءات'" class="w-24 text-center">
+          <template #body="{ data }">
+            <div class="flex items-center justify-center gap-1">
+              <button
+                type="button"
+                @click="promptAdjustStock(data)"
+                class="p-1.5 rounded-lg text-brand-dark dark:text-slate-300 hover:text-brand-accent hover:bg-brand-soft/60 dark:hover:bg-white/10 transition-colors cursor-pointer"
+                title="تعديل الرصيد"
+              >
+                <Edit3 class="w-4 h-4" />
+              </button>
+              <button
+                type="button"
+                @click="promptDeleteProduct(data)"
+                class="p-1.5 rounded-lg text-brand-dark dark:text-slate-300 hover:text-red-600 hover:bg-red-500/10 transition-colors cursor-pointer"
+                title="حذف الصنف ورصيده"
+              >
+                <Trash class="w-4 h-4" />
+              </button>
+            </div>
+          </template>
+        </Column>
       </DataTable>
     </div>
+
+    <!-- Adjust Stock Dialog -->
+    <Dialog
+      v-model:visible="showAdjustModal"
+      modal
+      :header="'تعديل رصيد المخزون'"
+      class="max-w-md w-full !bg-brand-white dark:!bg-brand-dark !border-brand-gray/15 !text-brand-dark dark:!text-white rounded-3xl overflow-hidden shadow-2xl"
+    >
+      <div v-if="selectedProductForAdjust" class="p-2 space-y-4 text-xs">
+        <div class="p-3 bg-brand-light dark:bg-white/5 rounded-2xl border border-brand-gray/10 space-y-1">
+          <div class="font-bold text-sm text-brand-dark dark:text-white">{{ selectedProductForAdjust.name }}</div>
+          <div class="text-[11px] text-brand-gray font-mono">SKU: {{ selectedProductForAdjust.sku }}</div>
+          <div class="text-[11px] text-brand-accent font-bold">
+            الرصيد الحالي بالمخزن: {{ selectedProductForAdjust.quantity || selectedProductForAdjust.amount || 0 }}
+          </div>
+        </div>
+
+        <div class="space-y-1.5">
+          <label class="block font-semibold text-brand-dark dark:text-slate-200">الرصيد الجديد بالمخزون:</label>
+          <input
+            type="number"
+            min="0"
+            v-model.number="newStockQuantity"
+            class="w-full px-3.5 py-2.5 rounded-xl border border-brand-gray/20 dark:border-white/10 bg-white dark:bg-white/5 text-brand-dark dark:text-white font-mono font-bold text-sm focus:outline-none focus:border-brand-accent"
+          />
+        </div>
+
+        <!-- Quick actions buttons -->
+        <div class="flex flex-wrap gap-2 pt-1">
+          <button
+            type="button"
+            @click="newStockQuantity = 0"
+            class="px-2.5 py-1 rounded-lg text-[11px] font-bold bg-red-500/10 text-red-600 hover:bg-red-500/20 border border-red-500/20 cursor-pointer"
+          >
+            تصفية الرصيد إلى (0)
+          </button>
+          <button
+            type="button"
+            @click="newStockQuantity = (selectedProductForAdjust.quantity || selectedProductForAdjust.amount || 0) + 5"
+            class="px-2.5 py-1 rounded-lg text-[11px] font-bold bg-brand-soft text-brand-accent hover:bg-brand-soft/80 border border-brand-accent/20 cursor-pointer"
+          >
+            +5 إضافة
+          </button>
+          <button
+            type="button"
+            @click="newStockQuantity = (selectedProductForAdjust.quantity || selectedProductForAdjust.amount || 0) + 10"
+            class="px-2.5 py-1 rounded-lg text-[11px] font-bold bg-brand-soft text-brand-accent hover:bg-brand-soft/80 border border-brand-accent/20 cursor-pointer"
+          >
+            +10 إضافة
+          </button>
+        </div>
+
+        <div class="flex items-center justify-end gap-2 pt-4 border-t border-brand-gray/10">
+          <button
+            type="button"
+            @click="showAdjustModal = false"
+            class="px-4 py-2 rounded-xl text-xs font-semibold text-brand-gray hover:bg-brand-light dark:hover:bg-white/5 transition-colors cursor-pointer"
+          >
+            إلغاء
+          </button>
+          <Button
+            type="button"
+            :disabled="isSubmittingAdjust"
+            @click="submitStockAdjustment"
+            class="!bg-brand-accent hover:!bg-brand-accent/90 !text-brand-dark !font-bold !rounded-xl !px-5 !py-2 !text-xs shadow-md cursor-pointer"
+          >
+            حفظ الرصيد
+          </Button>
+        </div>
+      </div>
+    </Dialog>
+
+    <!-- Delete Confirmation Dialog -->
+    <DeleteDialog
+      v-model="showDeleteDialog"
+      :itemType="'الصنف'"
+      :itemName="selectedProductForDelete?.name || ''"
+      :canDelete="true"
+      :warningMessage="(selectedProductForDelete?.quantity ?? selectedProductForDelete?.amount ?? 0) > 0 ? `سيتم حذف هذا الصنف ورصيده في المخزون (${selectedProductForDelete?.quantity ?? selectedProductForDelete?.amount ?? 0}) نهائياً.` : ''"
+      :confirm="handleDeleteProduct"
+    />
 
     <!-- Import PDF Dialog -->
     <Dialog
@@ -204,6 +309,8 @@ import { useI18n } from "vue-i18n";
 import axios from "@/utilities/apiClient";
 import EmptyState from "@/components/EmptyState.vue";
 import LoadingSkeleton from "@/components/LoadingSkeleton.vue";
+import DeleteDialog from "@/components/DeleteDialog.vue";
+import { Edit3, Trash } from "lucide-vue-next";
 
 const { t } = useI18n();
 const inventoryStore = useOhdaInventoryStore();
@@ -214,6 +321,14 @@ const stockFilter = ref("all");
 const showPdfModal = ref(false);
 const uploadingPdf = ref(false);
 const pdfInput = ref(null);
+
+const showAdjustModal = ref(false);
+const selectedProductForAdjust = ref(null);
+const newStockQuantity = ref(0);
+const isSubmittingAdjust = ref(false);
+
+const showDeleteDialog = ref(false);
+const selectedProductForDelete = ref(null);
 
 onMounted(() => {
   inventoryStore.fetchProducts();
@@ -293,13 +408,73 @@ function getSafePercentage(product) {
   if (!product) return 0;
   const min = getMinThreshold(product);
   const qty = Number(product.quantity || product.amount || 0);
-  const target = min * 3;
-  if (!target || target <= 0) return 100;
-  return Math.max(0, Math.round((qty / target) * 100));
+  if (min <= 0) return 100;
+  return Math.round((qty / min) * 100);
 }
 
 function getBarWidth(product) {
   return Math.min(100, Math.max(0, getSafePercentage(product)));
+}
+
+function getSafePercentageLabel(product) {
+  const qty = Number(product?.quantity || product?.amount || 0);
+  const min = getMinThreshold(product);
+  const percent = getSafePercentage(product);
+  if (qty === 0) return "0% (نفد الرصيد)";
+  if (qty < min) return `${percent}% من حد الأمان (منخفض)`;
+  if (qty === min) return "100% (عند حد الأمان)";
+  return `${percent}% من حد الأمان (متوفر)`;
+}
+
+function promptAdjustStock(product) {
+  selectedProductForAdjust.value = product;
+  newStockQuantity.value = Number(product.quantity || product.amount || 0);
+  showAdjustModal.value = true;
+}
+
+async function submitStockAdjustment() {
+  if (!selectedProductForAdjust.value) return;
+  isSubmittingAdjust.value = true;
+  try {
+    const res = await inventoryStore.adjustStock(
+      selectedProductForAdjust.value.id,
+      newStockQuantity.value
+    );
+    if (res && res.success) {
+      toastStore.addSuccessToast(res.message || "تم تحديث رصيد المخزون بنجاح");
+      showAdjustModal.value = false;
+    } else {
+      toastStore.addErrorToast(res?.message || "فشل تحديث الرصيد");
+    }
+  } catch (err) {
+    toastStore.addErrorToast(err?.message || "فشل تحديث الرصيد");
+  } finally {
+    isSubmittingAdjust.value = false;
+  }
+}
+
+function promptDeleteProduct(product) {
+  selectedProductForDelete.value = product;
+  showDeleteDialog.value = true;
+}
+
+async function handleDeleteProduct() {
+  if (!selectedProductForDelete.value) return;
+  try {
+    const res = await inventoryStore.deleteProduct(selectedProductForDelete.value.id);
+    if (res && res.success === false) {
+      toastStore.addErrorToast(res.message || "تعذر حذف الصنف لوجود ارتباطات سارية");
+      return res;
+    }
+    toastStore.addSuccessToast("تم حذف الصنف ورصيده في المخزن بنجاح");
+    await inventoryStore.fetchProducts();
+    await inventoryStore.fetchInventory();
+  } catch (err) {
+    toastStore.addErrorToast(err?.response?.data?.returnMessage || err?.message || "تعذر حذف الصنف");
+    throw err;
+  } finally {
+    selectedProductForDelete.value = null;
+  }
 }
 
 function getStockColorClass(product) {

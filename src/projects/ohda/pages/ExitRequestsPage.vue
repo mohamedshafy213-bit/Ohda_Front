@@ -12,7 +12,7 @@
         </p>
       </div>
 
-      <div class="flex items-center gap-2">
+      <div v-if="canCreateRequest" class="flex items-center gap-2">
         <Button
           @click="openCreateModal"
           class="!bg-brand-accent hover:!bg-brand-accent/90 !text-brand-dark !font-bold !rounded-xl !px-4 !py-2.5 !text-xs flex items-center gap-2 shadow-md shadow-brand-accent/10 cursor-pointer"
@@ -243,7 +243,10 @@
 
             <Column field="requestedByUsername" :header="$t('ohda.exitRequests.requestedBy')">
               <template #body="{ data }">
-                <span class="font-semibold text-brand-dark">{{ data.requestedByUsername || 'مستخدم' }}</span>
+                <div class="flex flex-col">
+                  <span class="font-semibold text-brand-dark">{{ data.requestedByPersonName || data.requestedByUsername || 'مستخدم' }}</span>
+                  <span v-if="data.requestedByUserId" class="font-mono text-[10px] text-brand-gray">عسكري: {{ data.requestedByUserId }}</span>
+                </div>
               </template>
             </Column>
 
@@ -372,7 +375,10 @@
 
           <Column field="requestedByUsername" :header="$t('ohda.exitRequests.requestedBy')">
             <template #body="{ data }">
-              <span class="font-semibold text-brand-dark">{{ data.requestedByUsername || 'مستخدم' }}</span>
+              <div class="flex flex-col">
+                <span class="font-semibold text-brand-dark">{{ data.requestedByPersonName || data.requestedByUsername || 'مستخدم' }}</span>
+                <span v-if="data.requestedByUserId" class="font-mono text-[10px] text-brand-gray">عسكري: {{ data.requestedByUserId }}</span>
+              </div>
             </template>
           </Column>
 
@@ -880,7 +886,10 @@
           </div>
           <div>
             <span class="text-brand-gray block mb-0.5">أنشئ بواسطة</span>
-            <span class="font-bold text-brand-dark">{{ selectedRequest.requestedByUsername || 'مستخدم' }}</span>
+            <div class="flex flex-col">
+              <span class="font-bold text-brand-dark">{{ selectedRequest.requestedByPersonName || selectedRequest.requestedByUsername || 'مستخدم' }}</span>
+              <span v-if="selectedRequest.requestedByUserId" class="font-mono text-xs text-brand-gray">الرقم العسكري: {{ selectedRequest.requestedByUserId }}</span>
+            </div>
           </div>
           <div>
             <span class="text-brand-gray block mb-0.5">تاريخ الطلب</span>
@@ -1028,70 +1037,12 @@
       </div>
     </Dialog>
 
-    <!-- MODAL 3: APPROVAL TIMELINE / AUDIT TRAIL HISTORY MODAL -->
-    <Dialog v-model:visible="showTimelineModal" modal :header="`سجل ومسار موافقات الطلب #${timelineRequest?.id}`" class="!bg-brand-white !border-brand-gray/15 max-w-lg w-full !text-brand-dark">
-      <div v-if="timelineRequest" class="space-y-4 text-xs pt-2">
-        <div class="p-3 bg-brand-light/60 rounded-xl border border-brand-gray/15 flex items-center justify-between">
-          <div>
-            <span class="text-[10px] text-brand-gray block">المستلم والمستودع:</span>
-            <span class="font-bold text-xs text-brand-dark">{{ timelineRequest.recipientName }} ({{ timelineRequest.departmentName || '-' }})</span>
-          </div>
-          <div>
-            <span class="text-[10px] text-brand-gray block text-end">تاريخ الإنشاء:</span>
-            <span class="font-bold text-xs text-brand-dark font-mono">{{ formatDateShort(timelineRequest.insertDate) }}</span>
-          </div>
-        </div>
-
-        <!-- Vertical Stepper Timeline -->
-        <div class="space-y-4 relative py-2 pr-4 border-r-2 border-brand-gray/20 mr-2">
-          <div
-            v-for="(item, idx) in parsedApprovalTrail"
-            :key="idx"
-            class="relative flex items-start gap-3"
-          >
-            <!-- Step Bullet Icon -->
-            <div
-              class="absolute -right-[23px] w-6 h-6 rounded-full flex items-center justify-center text-white text-[10px] font-black shadow-sm"
-              :style="{ backgroundColor: getTrailBulletColor(item.action) }"
-            >
-              <Check v-if="item.action === 'Approved' || item.action === 'Confirmed'" class="w-3.5 h-3.5" />
-              <X v-else-if="item.action === 'Rejected'" class="w-3.5 h-3.5" />
-              <Clock v-else class="w-3.5 h-3.5" />
-            </div>
-
-            <!-- Content Card -->
-            <div class="flex-1 p-3 rounded-xl bg-brand-light/40 border border-brand-gray/15 space-y-1">
-              <div class="flex items-center justify-between">
-                <span class="font-bold text-xs text-brand-dark">
-                  {{ item.stepName || `الخطوة ${item.stepOrder}` }}
-                </span>
-                <span class="font-mono text-[10px] text-brand-gray">
-                  {{ formatDate(item.date) }}
-                </span>
-              </div>
-
-              <div class="text-[11px] text-brand-gray flex items-center gap-1.5">
-                <span class="font-semibold text-brand-dark">{{ item.userName || `User #${item.userId}` }}</span>
-                <span>•</span>
-                <span class="font-bold" :style="{ color: getTrailBulletColor(item.action) }">
-                  {{ getTrailActionLabel(item.action) }}
-                </span>
-              </div>
-
-              <p v-if="item.notes" class="text-[10px] text-brand-gray mt-1 p-1.5 rounded bg-brand-white border border-brand-gray/10 italic">
-                "{{ item.notes }}"
-              </p>
-            </div>
-          </div>
-        </div>
-
-        <div class="flex items-center justify-end pt-3 border-t border-brand-gray/10">
-          <SecondaryButton type="button" @click="showTimelineModal = false">
-            إغلاق السجل
-          </SecondaryButton>
-        </div>
-      </div>
-    </Dialog>
+    <!-- MODAL 3: WORKFLOW TRAIL MODAL (من اعتمد ومن لم يعتمد بعد) -->
+    <WorkflowTrailModal
+      v-model="showTimelineModal"
+      :request="timelineRequest"
+      request-type="exit"
+    />
 
     <!-- Requester Custody Receipt & Compass Documentation Confirmation Dialog -->
     <ConfirmDialog
@@ -1138,6 +1089,7 @@ import { useOhdaApprovalConfigStore } from "../stores/useOhdaApprovalConfigStore
 import { apiGet } from "@/utilities/fetchApi";
 import { useToastStore } from "@/stores/toastStore";
 import ConfirmDialog from "@/components/ConfirmDialog.vue";
+import WorkflowTrailModal from "../components/WorkflowTrailModal.vue";
 
 const authStore = useOhdaAuthStore();
 const inventoryStore = useOhdaInventoryStore();
@@ -1537,60 +1489,131 @@ function getSummaryLabel(key) {
   return "مرحلة 1";
 }
 
-// Approval Trail parsing & timeline
+// Approval Trail parsing & comprehensive 4-step timeline (من اعتمد ومن لم يعتمد بعد)
 const parsedApprovalTrail = computed(() => {
   if (!timelineRequest.value) return [];
-  const trailStr = timelineRequest.value.approvalTrail;
-  if (!trailStr) {
-    // Fallback synthesized trail
-    return [
-      {
-        stepOrder: 1,
-        stepName: "تقديم الطلب",
-        action: "Created",
-        userName: timelineRequest.value.requestedByUsername || "مقدم الطلب",
-        date: timelineRequest.value.insertDate,
-        notes: timelineRequest.value.purpose
-      }
-    ];
+  const req = timelineRequest.value;
+  let trailRecords = [];
+  if (req.approvalTrail) {
+    try {
+      const parsed = typeof req.approvalTrail === "string" ? JSON.parse(req.approvalTrail) : req.approvalTrail;
+      if (Array.isArray(parsed)) trailRecords = parsed;
+    } catch (_) {}
   }
-  try {
-    const raw = typeof trailStr === "string" ? JSON.parse(trailStr) : trailStr;
-    if (!Array.isArray(raw)) return [];
-    return raw
-      .map(s => ({
-        stepOrder: s.stepOrder ?? s.StepOrder ?? 1,
-        stepName: s.stepName ?? s.StepName ?? s.step ?? "",
-        role: s.role ?? s.Role ?? "",
-        action: s.action ?? s.Action ?? "Approved",
-        userId: s.userId ?? s.UserId,
-        userName: s.userName ?? s.UserName ?? s.user ?? "-",
-        date: s.date ?? s.Date ?? null,
-        notes: s.notes ?? s.Notes ?? ""
-      }))
-      .filter(s => s.stepName || s.action || s.userName !== "-");
-  } catch (_) {
-    return [];
+
+  const step1Rec = trailRecords.find(r => (r.StepOrder === 1 || r.stepOrder === 1));
+  const step2Rec = trailRecords.find(r => (r.StepOrder === 2 || r.stepOrder === 2));
+  const step3Rec = trailRecords.find(r => (r.StepOrder === 3 || r.stepOrder === 3));
+  const step4Rec = trailRecords.find(r => (r.StepOrder === 4 || r.stepOrder === 4));
+
+  const isRejected = (req.status === 5);
+  const currentStep = req.currentStep || (req.status === 3 || req.status === 4 ? 4 : 2);
+
+  const steps = [];
+
+  // Step 1: Requester
+  steps.push({
+    stepOrder: 1,
+    stepName: "1. تقديم وإنشاء الطلب (مقدم الطلب)",
+    action: "Created",
+    userName: step1Rec?.PersonName || step1Rec?.personName || req.requestedByPersonName || req.requestedByUsername || "مقدم الطلب",
+    militaryNumber: step1Rec?.MilitaryNumber || step1Rec?.militaryNumber || req.requestedByUserId,
+    date: step1Rec?.Date || step1Rec?.date || req.insertDate,
+    notes: step1Rec?.Notes || step1Rec?.notes || req.purpose
+  });
+
+  // Step 2: Manager Review
+  if (step2Rec) {
+    steps.push({
+      stepOrder: 2,
+      stepName: "2. المراجعة والفحص الفني (المدير / الفاحص)",
+      action: step2Rec.Action || step2Rec.action || "Approved",
+      userName: step2Rec.PersonName || step2Rec.personName || step2Rec.UserName || step2Rec.userName || req.managerPersonName || req.managerUsername || "مدير الفرع",
+      militaryNumber: step2Rec.MilitaryNumber || step2Rec.militaryNumber || req.managerId,
+      date: step2Rec.Date || step2Rec.date,
+      notes: step2Rec.Notes || step2Rec.notes || "تمت المراجعة والفحص الفني"
+    });
+  } else {
+    steps.push({
+      stepOrder: 2,
+      stepName: "2. المراجعة والفحص الفني (المدير / الفاحص)",
+      action: isRejected ? "Rejected" : (currentStep === 2 ? "PendingCurrent" : "Pending"),
+      userName: isRejected ? "مرفوض" : (currentStep === 2 ? "قيد المراجعة حالياً من قبل مدير الفرع" : "لم يعتمد بعد"),
+      militaryNumber: null,
+      date: null,
+      notes: isRejected ? req.rejectionReason : (currentStep === 2 ? "بانتظار موافقة وفحص المدير" : "")
+    });
   }
+
+  // Step 3: Supervisor Final Approval
+  if (step3Rec) {
+    steps.push({
+      stepOrder: 3,
+      stepName: "3. الاعتماد النهائي وتجهيز الصرف (المشرف المعتمد)",
+      action: step3Rec.Action || step3Rec.action || "Approved",
+      userName: step3Rec.PersonName || step3Rec.personName || step3Rec.UserName || step3Rec.userName || req.supervisorPersonName || req.supervisorUsername || "المشرف المعتمد",
+      militaryNumber: step3Rec.MilitaryNumber || step3Rec.militaryNumber || req.supervisorId,
+      date: step3Rec.Date || step3Rec.date,
+      notes: step3Rec.Notes || step3Rec.notes || "تم الاعتماد النهائي"
+    });
+  } else {
+    steps.push({
+      stepOrder: 3,
+      stepName: "3. الاعتماد النهائي وتجهيز الصرف (المشرف المعتمد)",
+      action: isRejected ? "Rejected" : (currentStep === 3 ? "PendingCurrent" : "Pending"),
+      userName: isRejected ? "مرفوض" : (currentStep === 3 ? "قيد الاعتماد النهائي من المشرف المعتمد" : "لم يعتمد بعد"),
+      militaryNumber: null,
+      date: null,
+      notes: isRejected ? req.rejectionReason : (currentStep === 3 ? "بانتظار توقيع المشرف المعتمد" : "")
+    });
+  }
+
+  // Step 4: Requester Confirmation
+  if (step4Rec || req.isRequesterConfirmed || req.status === 4) {
+    steps.push({
+      stepOrder: 4,
+      stepName: "4. تأكيد واستلام العهدة في البوصلة (صاحب الطلب)",
+      action: "Confirmed",
+      userName: step4Rec?.PersonName || step4Rec?.personName || step1Rec?.PersonName || req.requestedByPersonName || req.requestedByUsername || "صاحب الطلب",
+      militaryNumber: step4Rec?.MilitaryNumber || step4Rec?.militaryNumber || req.requestedByUserId,
+      date: step4Rec?.Date || step4Rec?.date || req.requesterConfirmedDate,
+      notes: "تم استلام وصرف العهدة وتوثيقها ببوصلة الأجهزة"
+    });
+  } else {
+    steps.push({
+      stepOrder: 4,
+      stepName: "4. تأكيد واستلام العهدة في البوصلة (صاحب الطلب)",
+      action: (currentStep === 4 && !isRejected) ? "PendingCurrent" : "Pending",
+      userName: (currentStep === 4 && !isRejected) ? "بانتظار تأكيد واستلام صاحب الطلب" : "لم يتم الاستلام بعد",
+      militaryNumber: null,
+      date: null,
+      notes: (currentStep === 4 && !isRejected) ? "تم صدور الاعتماد! يرجى النقر على 'تأكيد واستلام العهدة' لإتمام الإجراء" : ""
+    });
+  }
+
+  return steps;
 });
+
+function getTrailBulletColor(action) {
+  if (action === "Approved" || action === "Confirmed") return "#10B981";
+  if (action === "Created") return "#3B82F6";
+  if (action === "Rejected") return "#EF4444";
+  if (action === "PendingCurrent") return "#F59E0B";
+  return "#94A3B8";
+}
+
+function getTrailActionLabel(action) {
+  if (action === "Approved") return "تم الاعتماد";
+  if (action === "Confirmed") return "تم تأكيد الاستلام";
+  if (action === "Created") return "تم الإنشاء";
+  if (action === "Rejected") return "مرفوض";
+  if (action === "PendingCurrent") return "قيد الإجراء حالياً";
+  return "لم يعتمد بعد";
+}
 
 function openTimelineModal(request) {
   timelineRequest.value = request;
   showTimelineModal.value = true;
-}
-
-function getTrailBulletColor(action) {
-  if (action === "Approved" || action === "Confirmed") return "#10B981";
-  if (action === "Rejected") return "#EF4444";
-  return "#3B82F6";
-}
-
-function getTrailActionLabel(action) {
-  if (action === "Created") return "إنشاء وتقديم الطلب";
-  if (action === "Approved") return "تم الاعتماد والموافقة";
-  if (action === "Rejected") return "تم رفض الطلب";
-  if (action === "Confirmed") return "تم تأكيد الاستلام وتوثيق البوصلة";
-  return action;
 }
 
 // Creation & Scanner Handling
@@ -1883,6 +1906,14 @@ async function handleCreateExit() {
     return;
   }
 
+  // Validate that approval workflow is configured with assigned groups
+  const exitConfigs = (approvalConfigStore.configs || []).filter(c => c.requestType === 2 && c.isActive && !c.isDeleted);
+  const unassignedSteps = exitConfigs.filter(c => !c.userGroupId || c.userGroupId <= 0);
+  if (exitConfigs.length === 0 || unassignedSteps.length > 0) {
+    toastStore.addErrorToast("لا يمكن تقديم طلب الصرف: مسار الاعتماد غير مكتمل أو توجد مراحل بدون مجموعات مستخدمين مسندة في إعدادات الموافقات. يرجى مراجعة إعدادات الموافقات أولاً.");
+    return;
+  }
+
   isSubmitting.value = true;
   try {
     const result = await requestsStore.createExitRequest(createForm.value, authStore.user);
@@ -1930,8 +1961,25 @@ async function viewDetails(request) {
 
 const canReviewSelectedRequest = computed(() => {
   if (!selectedRequest.value) return false;
-  if (selectedRequest.value.status === 1 && (canApproveAsManager.value || canApproveAsSupervisor.value || authStore.isAdmin)) return true;
-  if (selectedRequest.value.status === 3 && canApproveAsSupervisor.value) return true;
+  if (authStore.isAdmin || authStore.isSuperAdmin) return true;
+  const req = selectedRequest.value;
+  if (req.status === 4 || req.status === 5 || req.isRequesterConfirmed) return false;
+
+  const currentStep = req.currentStep || (req.status === 3 ? 3 : 2);
+  const config = (approvalConfigStore.configs || []).find(
+    c => c.requestType === 2 && c.stepOrder === currentStep && c.isActive && !c.isDeleted
+  );
+  if (!config) {
+    return canApproveAsManager.value || canApproveAsSupervisor.value;
+  }
+
+  const myMilitary = authStore.user?.militaryNumber || authStore.user?.id;
+  const myGroupId = authStore.user?.userGroupId;
+
+  if (config.userGroupId && myGroupId && config.userGroupId === myGroupId) return true;
+  if (config.eligibleUsers && config.eligibleUsers.length > 0) {
+    return config.eligibleUsers.some(u => String(u.militaryNumber) === String(myMilitary));
+  }
   return false;
 });
 
@@ -2084,17 +2132,42 @@ function formatSelectedDateLabel(dateKey) {
 }
 
 const canApproveAsManager = computed(() => {
-  if (authStore.isAdmin) return true;
+  if (authStore.isAdmin || authStore.isSuperAdmin) return true;
   const userGroupId = authStore.user?.userGroupId || authStore.user?.userGroup?.id;
-  if (!userGroupId) return false;
-  return approvalConfigStore.configs.some(c => c.isActive && c.requestType === 2 && c.userGroupId === userGroupId && c.workflowRole === 2);
+  const myMilitary = authStore.user?.militaryNumber || authStore.user?.id;
+  return approvalConfigStore.configs.some(c =>
+    c.isActive && !c.isDeleted && c.requestType === 2 && c.workflowRole === 2 &&
+    ((userGroupId && c.userGroupId === userGroupId) || (c.eligibleUsers?.some(u => String(u.militaryNumber) === String(myMilitary))))
+  );
 });
 
 const canApproveAsSupervisor = computed(() => {
-  if (authStore.isAdmin) return true;
+  if (authStore.isAdmin || authStore.isSuperAdmin) return true;
   const userGroupId = authStore.user?.userGroupId || authStore.user?.userGroup?.id;
-  if (!userGroupId) return false;
-  return approvalConfigStore.configs.some(c => c.isActive && c.requestType === 2 && c.userGroupId === userGroupId && c.workflowRole === 3);
+  const myMilitary = authStore.user?.militaryNumber || authStore.user?.id;
+  return approvalConfigStore.configs.some(c =>
+    c.isActive && !c.isDeleted && c.requestType === 2 && c.workflowRole === 3 &&
+    ((userGroupId && c.userGroupId === userGroupId) || (c.eligibleUsers?.some(u => String(u.militaryNumber) === String(myMilitary))))
+  );
+});
+
+const canCreateRequest = computed(() => {
+  if (authStore.isAdmin || authStore.isSuperAdmin) return true;
+  const userGroupId = authStore.user?.userGroupId || authStore.user?.userGroup?.id;
+  if (!userGroupId) {
+    return !authStore.isManager && !authStore.isSupervisor;
+  }
+  const hasRequesterConfig = approvalConfigStore.configs.some(
+    c => c.isActive && c.requestType === 2 && c.userGroupId === userGroupId && c.workflowRole === 1
+  );
+  if (hasRequesterConfig) return true;
+
+  const isApproverOnly = approvalConfigStore.configs.some(
+    c => c.isActive && c.requestType === 2 && c.userGroupId === userGroupId && (c.workflowRole === 2 || c.workflowRole === 3)
+  );
+  if (isApproverOnly) return false;
+
+  return !authStore.isManager && !authStore.isSupervisor;
 });
 </script>
 
