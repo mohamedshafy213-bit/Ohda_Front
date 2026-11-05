@@ -213,7 +213,7 @@
           <DataTable :value="group.requests" class="w-full text-xs">
             <Column field="id" :header="$t('ohda.exitRequests.requestID')" style="width: 80px">
               <template #body="{ data }">
-                <span class="font-mono text-brand-accent font-bold cursor-pointer hover:underline" @click="viewDetails(data)">
+                <span class="font-mono text-brand-accent font-bold cursor-pointer hover:underline" @click="openTimelineModal(data)" title="معاينة مسار الاعتماد">
                   #{{ data.id }}
                 </span>
               </template>
@@ -278,7 +278,8 @@
                     borderColor: getStepColor(data.currentStep || data.status, data.status, data.isRequesterConfirmed) + '40',
                     color: getStepColor(data.currentStep || data.status, data.status, data.isRequesterConfirmed)
                   }"
-                  @click="viewDetails(data)"
+                  @click="openTimelineModal(data)"
+                  title="معاينة مسار الاعتماد"
                 >
                   <span
                     class="w-1.5 h-1.5 rounded-full"
@@ -314,13 +315,7 @@
                     <History class="w-3.5 h-3.5 text-brand-accent" />
                   </button>
 
-                  <Button
-                    @click="viewDetails(data)"
-                    class="!px-2.5 !py-1 !bg-brand-light hover:!bg-brand-gray/10 !text-brand-dark !border !border-brand-gray/20 !rounded-lg !text-[11px] !font-bold flex items-center gap-1 cursor-pointer"
-                  >
-                    <Eye class="w-3 h-3 text-brand-accent" />
-                    <span>التفاصيل</span>
-                  </Button>
+
                 </div>
               </template>
             </Column>
@@ -341,7 +336,7 @@
         >
           <Column field="id" :header="$t('ohda.exitRequests.requestID')" style="width: 80px">
             <template #body="{ data }">
-              <span class="font-mono text-brand-accent font-bold cursor-pointer hover:underline" @click="viewDetails(data)">
+              <span class="font-mono text-brand-accent font-bold cursor-pointer hover:underline" @click="openTimelineModal(data)" title="معاينة مسار الاعتماد">
                 #{{ data.id }}
               </span>
             </template>
@@ -413,7 +408,8 @@
                   borderColor: getStepColor(data.currentStep || data.status, data.status, data.isRequesterConfirmed) + '40',
                   color: getStepColor(data.currentStep || data.status, data.status, data.isRequesterConfirmed)
                 }"
-                @click="viewDetails(data)"
+                @click="openTimelineModal(data)"
+                title="معاينة مسار الاعتماد"
               >
                 <span
                   class="w-1.5 h-1.5 rounded-full"
@@ -452,13 +448,7 @@
                   <History class="w-3.5 h-3.5 text-brand-accent" />
                 </button>
 
-                <Button
-                  @click="viewDetails(data)"
-                  class="!px-2.5 !py-1 !bg-brand-light hover:!bg-brand-gray/10 !text-brand-dark !border !border-brand-gray/20 !rounded-lg !text-[11px] !font-bold flex items-center gap-1 cursor-pointer"
-                >
-                  <Eye class="w-3 h-3 text-brand-accent" />
-                  <span>التفاصيل</span>
-                </Button>
+
               </div>
             </template>
           </Column>
@@ -635,7 +625,7 @@
         <DataTable :value="filteredRequests" class="bg-brand-white border border-brand-gray/10 rounded-2xl overflow-hidden shadow-sm text-xs">
           <Column field="id" :header="$t('ohda.exitRequests.requestID')" style="width: 80px">
             <template #body="{ data }">
-              <span class="font-mono text-brand-accent font-bold cursor-pointer hover:underline" @click="viewDetails(data)">
+              <span class="font-mono text-brand-accent font-bold cursor-pointer hover:underline" @click="openTimelineModal(data)" title="معاينة مسار الاعتماد">
                 #{{ data.id }}
               </span>
             </template>
@@ -676,9 +666,14 @@
                 >
                   تأكيد وتسكين
                 </Button>
-                <Button @click="viewDetails(data)" class="!px-2.5 !py-1 !bg-brand-light !text-brand-dark !rounded-lg !text-[11px]">
-                  التفاصيل
-                </Button>
+                <button
+                  type="button"
+                  @click="openTimelineModal(data)"
+                  class="p-1.5 rounded-lg bg-brand-light hover:bg-brand-gray/15 text-brand-dark text-[11px] font-bold flex items-center gap-1 border border-brand-gray/15 cursor-pointer transition-colors"
+                  title="معاينة سجل ومسار الموافقات"
+                >
+                  <History class="w-3.5 h-3.5 text-brand-accent" />
+                </button>
               </div>
             </template>
           </Column>
@@ -956,171 +951,7 @@
       </div>
     </Dialog>
 
-    <!-- MODAL 2: REQUEST DETAILS & PARTIAL APPROVAL -->
-    <Dialog v-model:visible="showDetailsModal" modal :header="`تفاصيل طلب التوريد #${selectedRequest?.id}`" class="!bg-brand-white !border-brand-gray/15 max-w-3xl w-full !text-brand-dark">
-      <div v-if="selectedRequest" class="space-y-6 text-xs">
-        <!-- Header Info Grid -->
-        <div class="grid grid-cols-2 sm:grid-cols-3 gap-4 bg-brand-light p-4 rounded-xl border border-brand-gray/10">
-          <div>
-            <span class="text-brand-gray block mb-0.5">مصدر التوريد</span>
-            <span class="font-bold text-brand-dark">{{ selectedRequest.fromSource }}</span>
-          </div>
-          <div>
-            <span class="text-brand-gray block mb-0.5">رقم الفاتورة</span>
-            <span class="font-bold text-brand-dark font-mono">{{ selectedRequest.invoiceNumber || '-' }}</span>
-          </div>
-          <div>
-            <span class="text-brand-gray block mb-0.5">القسم المستلم</span>
-            <span class="font-bold text-brand-dark">{{ selectedRequest.departmentName || '-' }}</span>
-          </div>
-          <div>
-            <span class="text-brand-gray block mb-0.5">الملاحظات</span>
-            <span class="font-bold text-brand-dark">{{ selectedRequest.notes || '-' }}</span>
-          </div>
-          <div>
-            <span class="text-brand-gray block mb-0.5">استلم بواسطة</span>
-            <div class="flex flex-col">
-              <span class="font-bold text-brand-dark">{{ selectedRequest.receivedByPersonName || selectedRequest.receivedByUsername || 'مستخدم' }}</span>
-              <span v-if="selectedRequest.receivedByUserId" class="font-mono text-xs text-brand-gray">الرقم العسكري: {{ selectedRequest.receivedByUserId }}</span>
-            </div>
-          </div>
-          <div>
-            <span class="text-brand-gray block mb-0.5">تاريخ التوريد</span>
-            <span class="font-bold text-brand-dark font-mono">{{ formatDate(selectedRequest.insertDate) }}</span>
-          </div>
-          <div>
-            <span class="text-brand-gray block mb-0.5">توثيق البوصلة</span>
-            <span class="font-bold" :class="selectedRequest.isRequesterConfirmed ? 'text-emerald-600' : 'text-amber-600'">
-              {{ selectedRequest.isRequesterConfirmed ? 'تم التوثيق والتسكين' : 'بانتظار تأكيد المستلم' }}
-            </span>
-          </div>
-        </div>
 
-        <!-- Line Items Table -->
-        <div class="space-y-2">
-          <span class="font-bold text-brand-dark block text-sm">أصناف وعناصر طلب التوريد:</span>
-          <div class="border border-brand-gray/10 rounded-xl overflow-hidden">
-            <DataTable :value="selectedRequest.items" class="text-xs">
-              <Column field="productName" header="اسم الصنف"></Column>
-              <Column field="productSKU" header="SKU" class="font-mono"></Column>
-              <Column field="productStateName" header="حالة المنتج"></Column>
-              <Column field="quantity" header="الكمية المطلوبة">
-                <template #body="{ data }">
-                  <span class="font-bold text-brand-accent text-sm">+{{ data.quantity }}</span>
-                </template>
-              </Column>
-              <Column header="حالة العنصر">
-                <template #body="{ data }">
-                  <span class="px-2.5 py-0.5 rounded text-[10px] font-bold border inline-block" :class="getItemStatusClass(data.status)">
-                    {{ getItemStatusLabel(data.status) }}
-                  </span>
-                </template>
-              </Column>
-
-              <!-- Partial Approval Action Columns -->
-              <Column v-if="canReviewSelectedRequest" header="قرار الاعتماد (جزئي)">
-                <template #body="{ data }">
-                  <div class="flex items-center gap-1">
-                    <button
-                      type="button"
-                      @click="toggleItemDecision(data.id, 5)"
-                      class="px-2 py-1 rounded text-[10px] font-bold cursor-pointer transition-colors"
-                      :class="getItemDecision(data.id) === 5 ? 'bg-brand-soft text-brand-accent border border-brand-accent/30' : 'bg-brand-light text-brand-gray border border-brand-gray/10 hover:text-brand-dark'"
-                    >
-                      موافق
-                    </button>
-                    <button
-                      type="button"
-                      @click="toggleItemDecision(data.id, 4)"
-                      class="px-2 py-1 rounded text-[10px] font-bold cursor-pointer transition-colors"
-                      :class="getItemDecision(data.id) === 4 ? 'bg-red-500/10 text-red-600 border border-red-500/30' : 'bg-brand-light text-brand-gray border border-brand-gray/10 hover:text-brand-dark'"
-                    >
-                      مرفوض
-                    </button>
-                  </div>
-                </template>
-              </Column>
-            </DataTable>
-          </div>
-        </div>
-
-        <!-- Rejection Reason input (When reviewing) -->
-        <div v-if="canReviewSelectedRequest" class="space-y-2">
-          <label class="block font-semibold text-brand-dark">سبب الرفض (إلزامي في حال رفض أي صنف أو رفض كلي):</label>
-          <Textarea v-model="rejectionReason" rows="2" class="w-full !bg-brand-light !border-brand-gray/25 focus:!border-brand-accent !text-brand-dark" placeholder="أدخل سبب الرفض بالتفصيل هنا..." />
-        </div>
-
-        <!-- Dialog Footer Actions -->
-        <div class="flex flex-col sm:flex-row items-center justify-between gap-3 pt-4 border-t border-brand-gray/10">
-          <div class="flex items-center gap-2">
-            <span class="text-xs text-brand-gray">حالة الطلب:</span>
-            <span
-              class="px-2.5 py-0.5 rounded font-bold border inline-block text-[10px]"
-              :style="{
-                backgroundColor: getStepColor(selectedRequest.currentStep || selectedRequest.status, selectedRequest.status, selectedRequest.isRequesterConfirmed) + '15',
-                borderColor: getStepColor(selectedRequest.currentStep || selectedRequest.status, selectedRequest.status, selectedRequest.isRequesterConfirmed) + '40',
-                color: getStepColor(selectedRequest.currentStep || selectedRequest.status, selectedRequest.status, selectedRequest.isRequesterConfirmed)
-              }"
-            >
-              {{ getStatusLabel(selectedRequest) }}
-            </span>
-          </div>
-
-          <div class="flex flex-wrap items-center gap-2">
-            <SecondaryButton type="button" @click="showDetailsModal = false">
-              إغلاق
-            </SecondaryButton>
-
-            <!-- Requester Confirmation Button in Details Modal -->
-            <template v-if="canRequesterConfirm(selectedRequest)">
-              <Button
-                @click="handleRequesterConfirm(selectedRequest)"
-                :disabled="isSubmitting"
-                :loading="isSubmitting"
-                class="!bg-emerald-600 hover:!bg-emerald-700 !text-white !font-bold flex items-center gap-1.5 shadow-sm"
-              >
-                <CheckCircle2 class="w-4 h-4" />
-                تأكيد واستلام وتسكين بالمستودع والبوصلة
-              </Button>
-            </template>
-
-            <!-- 1-Step Direct Final Approval -->
-            <template v-if="selectedRequest.status === 1 && (canApproveAsSupervisor || authStore.isAdmin)">
-              <Button
-                @click="directSingleStepEntryApproval"
-                :disabled="isSubmitting"
-                :loading="isSubmitting"
-                class="!bg-emerald-600 hover:!bg-emerald-700 !text-white !font-bold flex items-center gap-1.5 shadow-sm"
-                title="اعتماد نهائي وتسكين مباشر للأصناف بالمستودع فوراً دون الحاجة لمراجعة إدارية"
-              >
-                <CheckCheck class="w-4 h-4" />
-                اعتماد نهائي وتسكين مباشر (خطوة واحدة)
-              </Button>
-            </template>
-
-            <!-- Manager Stage Approvals -->
-            <template v-if="selectedRequest.status === 1 && canApproveAsManager">
-              <Button @click="submitApprovalDecisions(true)" :disabled="isSubmitting" :loading="isSubmitting" class="!bg-brand-accent hover:!bg-brand-accent/90 !text-brand-dark !font-bold">
-                تقديم قرارات المدير
-              </Button>
-              <Button @click="rejectEntireRequest" :disabled="isSubmitting" :loading="isSubmitting" class="!bg-red-500 hover:!bg-red-600 !text-white !font-bold">
-                رفض كلي للطلب
-              </Button>
-            </template>
-
-            <!-- Supervisor Stage Approvals -->
-            <template v-if="selectedRequest.status === 3 && canApproveAsSupervisor">
-              <Button @click="submitApprovalDecisions(false)" :disabled="isSubmitting" :loading="isSubmitting" class="!bg-brand-accent hover:!bg-brand-accent/90 !text-brand-dark !font-bold">
-                توثيق واعتماد المشرف النهائي
-              </Button>
-              <Button @click="rejectEntireRequest" :disabled="isSubmitting" :loading="isSubmitting" class="!bg-red-500 hover:!bg-red-600 !text-white !font-bold">
-                رفض كلي للطلب
-              </Button>
-            </template>
-          </div>
-        </div>
-      </div>
-    </Dialog>
 
     <!-- MODAL 3: WORKFLOW TRAIL MODAL (من اعتمد ومن لم يعتمد بعد) -->
     <WorkflowTrailModal
@@ -1136,9 +967,7 @@ import { ref, computed, onMounted, onUnmounted, watch } from "vue";
 import {
   Download,
   Plus,
-  Eye,
   Zap,
-  CheckCheck,
   CheckCircle2,
   Trash2,
   QrCode,
@@ -1178,12 +1007,8 @@ const selectedCalendarDate = ref(null); // 'YYYY-MM-DD'
 
 // Modals
 const showCreateModal = ref(false);
-const showDetailsModal = ref(false);
 const showTimelineModal = ref(false);
-const selectedRequest = ref(null);
 const timelineRequest = ref(null);
-const rejectionReason = ref("");
-const itemDecisions = ref({});
 const confirmingId = ref(null);
 const isSubmitting = ref(false);
 
@@ -1292,7 +1117,7 @@ function getStepColor(stepOrder, status, isRequesterConfirmed = false) {
 function getStepTitle(request) {
   if (request.status === 4) return "مرفوض";
   if (request.isRequesterConfirmed) return "مكتمل ومسكن بالبوصلة";
-  if (request.status === 2 || request.currentStep === 4) return "بانتظار تأكيد واستلام المستلم";
+  if (request.status === 2 || request.status === 5 || request.currentStep === 4) return "معتمد بالكامل - بانتظار تأكيد واستلام المستلم";
   if (request.status === 3 || request.currentStep === 3) return "بانتظار الاعتماد النهائي";
   return "بانتظار مراجعة وتدقيق المدير";
 }
@@ -1300,7 +1125,7 @@ function getStepTitle(request) {
 function getStatusLabel(request) {
   if (request.status === 4) return "مرفوض";
   if (request.isRequesterConfirmed) return "تم الاستلام وتسكين المخزون";
-  if (request.status === 2 || request.currentStep === 4) return "معتمد بالكامل (جاهز للتسكين)";
+  if (request.status === 2 || request.status === 5 || request.currentStep === 4) return "معتمد بالكامل (جاهز للتسكين)";
   if (request.status === 3) return "موافقة المدير (مرحلة 2)";
   if (request.status === 1) return "قيد الانتظار (مرحلة 1)";
   return "غير معروف";
@@ -1310,7 +1135,7 @@ function getStatusLabel(request) {
 function canRequesterConfirm(request) {
   if (!request) return false;
   if (request.isRequesterConfirmed || request.status === 4) return false;
-  const isApproved = request.status === 2 || request.currentStep === 4;
+  const isApproved = request.status === 2 || request.status === 5 || request.currentStep === 4;
   if (!isApproved) return false;
 
   const currentUserId = authStore.user?.militaryNumber || authStore.user?.id;
@@ -1328,11 +1153,8 @@ async function handleRequesterConfirm(request) {
   try {
     const res = await requestsStore.requesterConfirmEntry(request.id);
     if (res.success) {
-      if (showDetailsModal.value && selectedRequest.value?.id === request.id) {
-        selectedRequest.value.isRequesterConfirmed = true;
-        selectedRequest.value.status = 2;
-      }
       alert(res.message || "تم تأكيد الاستلام وتسكين المخزون وتوثيق الأجهزة في البوصلة بنجاح!");
+      await requestsStore.fetchEntryRequests();
     } else {
       alert(res.message || "فشل تأكيد الاستلام");
     }
@@ -1346,7 +1168,7 @@ const tabs = computed(() => [
   { id: "all", name: "جميع الطلبات", count: requestsStore.entryRequests.length },
   { id: "pending", name: "المرحلة 1 (تقديم)", count: requestsStore.entryRequests.filter(r => r.status === 1).length, colorHex: "#3B82F6" },
   { id: "managerApproved", name: "المرحلة 2 (موافقة المدير)", count: requestsStore.entryRequests.filter(r => r.status === 3).length, colorHex: "#F59E0B" },
-  { id: "readyConfirm", name: "بانتظار تأكيد التسكين", count: requestsStore.entryRequests.filter(r => (r.status === 2 || r.currentStep === 4) && !r.isRequesterConfirmed).length, colorHex: "#10B981" },
+  { id: "readyConfirm", name: "معتمد (بانتظار تأكيد التسكين)", count: requestsStore.entryRequests.filter(r => (r.status === 2 || r.status === 5 || r.currentStep === 4) && !r.isRequesterConfirmed).length, colorHex: "#10B981" },
   { id: "confirmed", name: "موثق بالبوصلة (مكتمل)", count: requestsStore.entryRequests.filter(r => r.isRequesterConfirmed).length, colorHex: "#059669" },
   { id: "rejected", name: "مرفوض", count: requestsStore.entryRequests.filter(r => r.status === 4).length, colorHex: "#EF4444" }
 ]);
@@ -1357,7 +1179,7 @@ const filteredRequests = computed(() => {
 
   if (activeTab.value === "pending") list = list.filter(r => r.status === 1);
   else if (activeTab.value === "managerApproved") list = list.filter(r => r.status === 3);
-  else if (activeTab.value === "readyConfirm") list = list.filter(r => (r.status === 2 || r.currentStep === 4) && !r.isRequesterConfirmed);
+  else if (activeTab.value === "readyConfirm") list = list.filter(r => (r.status === 2 || r.status === 5 || r.currentStep === 4) && !r.isRequesterConfirmed);
   else if (activeTab.value === "confirmed") list = list.filter(r => r.isRequesterConfirmed);
   else if (activeTab.value === "rejected") list = list.filter(r => r.status === 4);
 
@@ -1520,7 +1342,7 @@ function getCellStatusSummary(requests) {
     let key = "pending";
     if (r.status === 4) key = "rejected";
     else if (r.isRequesterConfirmed) key = "confirmed";
-    else if (r.status === 2 || r.currentStep === 4) key = "readyConfirm";
+    else if (r.status === 2 || r.status === 5 || r.currentStep === 4) key = "readyConfirm";
     else if (r.status === 3) key = "managerApproved";
 
     summary[key] = (summary[key] || 0) + 1;
@@ -2080,141 +1902,6 @@ function removeSerialFromFormItems(item) {
   }
 }
 
-// View Details & Decisions
-async function viewDetails(request) {
-  try {
-    const res = await apiGet(`/api/ProductEntryRequest/${request.id}`);
-    if (res?.data?.isDone && res.data.singleObject) {
-      selectedRequest.value = res.data.singleObject;
-    } else {
-      selectedRequest.value = request;
-    }
-  } catch (_) {
-    selectedRequest.value = request;
-  }
-
-  rejectionReason.value = "";
-  itemDecisions.value = {};
-  if (selectedRequest.value.items) {
-    selectedRequest.value.items.forEach(i => {
-      itemDecisions.value[i.id] = i.status === 4 ? 4 : 5;
-    });
-  }
-
-  showDetailsModal.value = true;
-}
-
-const canReviewSelectedRequest = computed(() => {
-  if (!selectedRequest.value) return false;
-  if (selectedRequest.value.status === 1 && (canApproveAsManager.value || canApproveAsSupervisor.value || authStore.isAdmin)) return true;
-  if (selectedRequest.value.status === 3 && canApproveAsSupervisor.value) return true;
-  return false;
-});
-
-async function directSingleStepEntryApproval() {
-  if (isSubmitting.value) return;
-  if (!confirm("هل تريد اعتماد وتسكين هذا التوريد نهائياً في خطوة واحدة؟")) return;
-
-  const itemsPayload = Object.keys(itemDecisions.value).map(key => ({
-    itemId: parseInt(key),
-    status: itemDecisions.value[key] || 5
-  }));
-
-  isSubmitting.value = true;
-  try {
-    const result = await requestsStore.supervisorApproveEntry(selectedRequest.value.id, authStore.user, { items: itemsPayload });
-    if (result.success) {
-      showDetailsModal.value = false;
-      await Promise.all([
-        requestsStore.fetchEntryRequests(),
-        inventoryStore.fetchProducts(),
-        inventoryStore.fetchCategories()
-      ]);
-    } else {
-      alert(result.message || "فشل الاعتماد المباشر للتوريد.");
-    }
-  } finally {
-    isSubmitting.value = false;
-  }
-}
-
-function toggleItemDecision(itemId, status) {
-  itemDecisions.value[itemId] = status;
-}
-
-function getItemDecision(itemId) {
-  return itemDecisions.value[itemId] || 5;
-}
-
-async function submitApprovalDecisions(isManager) {
-  if (isSubmitting.value) return;
-  const itemsPayload = Object.keys(itemDecisions.value).map(key => ({
-    itemId: parseInt(key),
-    status: itemDecisions.value[key]
-  }));
-
-  const anyRejected = itemsPayload.some(i => i.status === 4);
-  if (anyRejected && !rejectionReason.value) {
-    alert("يرجى إدخال سبب الرفض لوجود أصناف مرفوضة.");
-    return;
-  }
-
-  isSubmitting.value = true;
-  try {
-    let result;
-    if (isManager) {
-      result = await requestsStore.managerApproveEntry(selectedRequest.value.id, authStore.user, { items: itemsPayload });
-    } else {
-      result = await requestsStore.supervisorApproveEntry(selectedRequest.value.id, authStore.user, { items: itemsPayload });
-    }
-
-    if (result.success) {
-      showDetailsModal.value = false;
-      await requestsStore.fetchEntryRequests();
-      await inventoryStore.fetchProducts();
-    } else {
-      alert(result.message || "فشل تقديم قرارات الاعتماد.");
-    }
-  } finally {
-    isSubmitting.value = false;
-  }
-}
-
-async function rejectEntireRequest() {
-  if (isSubmitting.value) return;
-  if (!rejectionReason.value) {
-    alert("يرجى إدخال سبب الرفض أولاً.");
-    return;
-  }
-  isSubmitting.value = true;
-  try {
-    const result = await requestsStore.rejectEntryRequest(selectedRequest.value.id, rejectionReason.value, authStore.user);
-    if (result.success) {
-      showDetailsModal.value = false;
-      await requestsStore.fetchEntryRequests();
-      await inventoryStore.fetchProducts();
-    } else {
-      alert(result.message || "فشل رفض الطلب");
-    }
-  } finally {
-    isSubmitting.value = false;
-  }
-}
-
-function getItemStatusClass(status) {
-  if (status === 1) return "bg-brand-light text-brand-gray border-brand-gray/10";
-  if (status === 5) return "bg-brand-soft text-brand-accent border-brand-accent/15";
-  if (status === 4) return "bg-red-500/10 text-red-600 border-red-500/15";
-  return "bg-brand-light text-brand-gray";
-}
-
-function getItemStatusLabel(status) {
-  if (status === 1) return "قيد الانتظار";
-  if (status === 5) return "تمت الموافقة";
-  if (status === 4) return "مرفوض";
-  return "غير معروف";
-}
-
 function formatDate(dStr) {
   if (!dStr) return "-";
   try {
@@ -2255,25 +1942,7 @@ function formatSelectedDateLabel(dateKey) {
   }
 }
 
-const canApproveAsManager = computed(() => {
-  if (authStore.isAdmin || authStore.isSuperAdmin) return true;
-  const userGroupId = authStore.user?.userGroupId || authStore.user?.userGroup?.id;
-  const myMilitary = authStore.user?.militaryNumber || authStore.user?.id;
-  return approvalConfigStore.configs.some(c =>
-    c.isActive && !c.isDeleted && c.requestType === 1 && c.workflowRole === 2 &&
-    ((userGroupId && c.userGroupId === userGroupId) || (c.eligibleUsers?.some(u => String(u.militaryNumber) === String(myMilitary))))
-  );
-});
 
-const canApproveAsSupervisor = computed(() => {
-  if (authStore.isAdmin || authStore.isSuperAdmin) return true;
-  const userGroupId = authStore.user?.userGroupId || authStore.user?.userGroup?.id;
-  const myMilitary = authStore.user?.militaryNumber || authStore.user?.id;
-  return approvalConfigStore.configs.some(c =>
-    c.isActive && !c.isDeleted && c.requestType === 1 && c.workflowRole === 3 &&
-    ((userGroupId && c.userGroupId === userGroupId) || (c.eligibleUsers?.some(u => String(u.militaryNumber) === String(myMilitary))))
-  );
-});
 
 const canCreateRequest = computed(() => {
   if (authStore.isAdmin || authStore.isSuperAdmin) return true;

@@ -255,7 +255,6 @@ export const importIcons = (app) => {
     app.component("OctagonX", OctagonX);
     app.component("HousePlus", HousePlus);
     app.component("Building2", Building2);
-    app.component("Activity", Activity);
     app.component("BriefcaseBusiness", BriefcaseBusiness);
     app.component("ScrollText", ScrollText);
     app.component("ClipboardCheck", ClipboardCheck);
@@ -377,11 +376,8 @@ export const importIcons = (app) => {
     app.component("FolderClosed", FolderClosed);
     app.component("Dices", Dices);
     app.component("Compass", Compass);
-    app.component("explore", Compass);
     app.component("Explore", Compass);
     app.component("Boxes", Boxes);
     app.component("QrCode", QrCode);
     app.component("Truck", Truck);
-    app.component("Building2", Building2);
-    app.component("Activity", Activity);
 };

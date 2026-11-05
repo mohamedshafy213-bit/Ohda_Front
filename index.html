@@ -1,53 +1,22 @@
 <!DOCTYPE html>
 <html lang="" dir="rtl">
-    <head>
-        <meta charset="UTF-8" />
-        <meta name="viewport" content="width=device-width,initial-scale=1" />
-        <title>Student Information System</title>
-        <meta name="description" content="Student Information System">
-        <link rel="icon" href="/favicon.ico" />
-        <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
-        <link rel="mask-icon" href="/safari-pinned-tab.svg" color="#000000" />
-        <meta name="theme-color" content="#000000" />
-    </head>
-    <body>
-        <div id="app"></div>
-        <script>
-            (function() {
-                window.__RUNTIME_ENV__ = {};
-                function parseEnv(text) {
-                    if (!text) return;
-                    text.split(/\r?\n/).forEach(function(line) {
-                        var trimmed = line.trim();
-                        if (!trimmed || trimmed.startsWith('#')) return;
-                        var match = trimmed.match(/^([\w.-]+)\s*=\s*(.*)?$/);
-                        if (match) {
-                            var key = match[1];
-                            var val = (match[2] || '').trim().replace(/^["'](.*)["']$/, '$1');
-                            window.__RUNTIME_ENV__[key] = val;
-                        }
-                    });
-                }
-                try {
-                    var xhr = new XMLHttpRequest();
-                    xhr.open('GET', '/.env.production?v=' + Date.now(), false);
-                    xhr.send(null);
-                    if (xhr.status >= 200 && xhr.status < 300) {
-                        parseEnv(xhr.responseText);
-                    } else {
-                        var xhr2 = new XMLHttpRequest();
-                        xhr2.open('GET', '/.env?v=' + Date.now(), false);
-                        xhr2.send(null);
-                        if (xhr2.status >= 200 && xhr2.status < 300) {
-                            parseEnv(xhr2.responseText);
-                        }
-                    }
-                } catch (e) {
-                    // Fallback to build-time env
-                }
-            })();
-        </script>
-        <script src="/config.js"></script>
-        <script type="module" src="/src/main.js"></script>
-    </body>
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>نظام العهدة وإدارة المخزون</title>
+    <meta name="description" content="نظام العهدة وإدارة المخزون - Ohda Inventory System">
+    <link rel="icon" type="image/x-icon" href="/favicon.ico" />
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
+    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
+    <meta name="theme-color" content="#21C87A" />
+</head>
+
+<body>
+    <div id="app"></div>
+    <script src="/config.js"></script>
+    <script type="module" src="/src/main.js"></script>
+</body>
+
 </html>

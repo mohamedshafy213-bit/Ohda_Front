@@ -311,13 +311,13 @@
                     <History class="w-3.5 h-3.5 text-brand-accent" />
                   </button>
 
-                  <Button
+                  <!-- <Button
                     @click="viewDetails(data)"
                     class="!px-2.5 !py-1 !bg-brand-light hover:!bg-brand-gray/10 !text-brand-dark !border !border-brand-gray/20 !rounded-lg !text-[11px] !font-bold flex items-center gap-1 cursor-pointer"
                   >
                     <Eye class="w-3 h-3 text-brand-accent" />
                     <span>التفاصيل</span>
-                  </Button>
+                  </Button> -->
                 </div>
               </template>
             </Column>

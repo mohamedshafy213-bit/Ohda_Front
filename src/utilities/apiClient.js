@@ -2,7 +2,11 @@ import axios from "axios";
 import { useToastStore } from "@/stores/toastStore";
 import i18n from "@/i18n";
 
-const ROOT_URL = import.meta.env.VITE_ROOT_URL || "https://localhost:7048";
+const ROOT_URL =
+  (typeof window !== "undefined" &&
+    (window.__RUNTIME_ENV__?.VITE_ROOT_URL || window.__APP_CONFIG__?.VITE_ROOT_URL)) ||
+  import.meta.env.VITE_ROOT_URL ||
+  "http://localhost:5146/";
 
 const apiClient = axios.create({
   baseURL: ROOT_URL,

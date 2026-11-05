@@ -1,6 +1,6 @@
 export default {
     en: {
-        appTitle: "Student Information System",
+        appTitle: "Ohda Information System",
         activate: "Activate",
         deactivate: "Deactivate",
         add: "Add",

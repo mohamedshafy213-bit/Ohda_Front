@@ -146,9 +146,9 @@
             </div>
           </template>
 
-          <Column field="id" header="رقم الطلب" sortable>
+          <Column field="id" header="رقم الطلب" sortable style="width: 90px">
             <template #body="{ data }">
-              <span class="font-mono font-bold text-brand-accent">#{{ data.id }}</span>
+              <span class="font-mono font-bold text-brand-accent cursor-pointer hover:underline" @click="viewDetails(data, 'exit')" title="عرض تفاصيل الطلب">#{{ data.id }}</span>
             </template>
           </Column>
 
@@ -197,33 +197,44 @@
             </template>
           </Column>
 
-          <Column header="الإجراءات" headerClass="text-center" bodyClass="text-center">
+          <Column header="الإجراءات" headerClass="text-center" bodyClass="text-center" style="width: 250px">
             <template #body="{ data }">
-              <div v-if="canUserApproveStep(data, 'exit')" class="flex items-center justify-center gap-2">
+              <div class="flex items-center justify-center gap-1.5">
                 <Button
-                  @click="openApproveModal(data, 'exit')"
-                  class="!bg-emerald-500 hover:!bg-emerald-600 !text-white !font-bold !rounded-xl !px-3 !py-1.5 !text-xs flex items-center gap-1 cursor-pointer shadow-sm"
+                  @click="viewDetails(data, 'exit')"
+                  class="!px-2.5 !py-1 !bg-brand-light hover:!bg-brand-gray/10 !text-brand-dark !border !border-brand-gray/20 !rounded-lg !text-[11px] !font-bold flex items-center gap-1 cursor-pointer"
+                  title="عرض تفاصيل الطلب"
                 >
-                  <Check class="w-3.5 h-3.5" />
-                  <span>تصديق</span>
+                  <Eye class="w-3 h-3 text-brand-accent" />
+                  <span>التفاصيل</span>
                 </Button>
 
-                <Button
-                  @click="openRejectModal(data, 'exit')"
-                  class="!bg-red-500/10 hover:!bg-red-500/20 !text-red-600 !border !border-red-500/30 !font-bold !rounded-xl !px-3 !py-1.5 !text-xs flex items-center gap-1 cursor-pointer"
-                >
-                  <X class="w-3.5 h-3.5" />
-                  <span>رفض</span>
-                </Button>
-              </div>
-              <div v-else class="flex items-center justify-center">
-                <span
-                  class="px-2.5 py-1 rounded-lg text-[10px] font-semibold bg-brand-light text-brand-gray border border-brand-gray/20 flex items-center gap-1"
-                  :title="`هذا الطلب بانتظار تصديق مجموعة: ${getStepAssignedGroupName(data, 'exit')}`"
-                >
-                  <Lock class="w-3 h-3 text-brand-gray" />
-                  <span>مخصص لـ: {{ getStepAssignedGroupName(data, 'exit') }}</span>
-                </span>
+                <template v-if="canUserApproveStep(data, 'exit')">
+                  <Button
+                    @click="openApproveModal(data, 'exit')"
+                    class="!bg-emerald-500 hover:!bg-emerald-600 !text-white !font-bold !rounded-xl !px-2.5 !py-1 !text-[11px] flex items-center gap-1 cursor-pointer shadow-sm"
+                  >
+                    <Check class="w-3.5 h-3.5" />
+                    <span>تصديق</span>
+                  </Button>
+
+                  <Button
+                    @click="openRejectModal(data, 'exit')"
+                    class="!bg-red-500/10 hover:!bg-red-500/20 !text-red-600 !border !border-red-500/30 !font-bold !rounded-xl !px-2.5 !py-1 !text-[11px] flex items-center gap-1 cursor-pointer"
+                  >
+                    <X class="w-3.5 h-3.5" />
+                    <span>رفض</span>
+                  </Button>
+                </template>
+                <template v-else>
+                  <span
+                    class="px-2 py-1 rounded-lg text-[10px] font-semibold bg-brand-light text-brand-gray border border-brand-gray/20 flex items-center gap-1"
+                    :title="`هذا الطلب بانتظار تصديق مجموعة: ${getStepAssignedGroupName(data, 'exit')}`"
+                  >
+                    <Lock class="w-3 h-3 text-brand-gray" />
+                    <span>{{ getStepAssignedGroupName(data, 'exit') }}</span>
+                  </span>
+                </template>
               </div>
             </template>
           </Column>
@@ -248,9 +259,9 @@
             </div>
           </template>
 
-          <Column field="id" header="رقم الطلب" sortable>
+          <Column field="id" header="رقم الطلب" sortable style="width: 90px">
             <template #body="{ data }">
-              <span class="font-mono font-bold text-brand-accent">#{{ data.id }}</span>
+              <span class="font-mono font-bold text-brand-accent cursor-pointer hover:underline" @click="viewDetails(data, 'entry')" title="عرض تفاصيل الطلب">#{{ data.id }}</span>
             </template>
           </Column>
 
@@ -299,33 +310,44 @@
             </template>
           </Column>
 
-          <Column header="الإجراءات" headerClass="text-center" bodyClass="text-center">
+          <Column header="الإجراءات" headerClass="text-center" bodyClass="text-center" style="width: 250px">
             <template #body="{ data }">
-              <div v-if="canUserApproveStep(data, 'entry')" class="flex items-center justify-center gap-2">
+              <div class="flex items-center justify-center gap-1.5">
                 <Button
-                  @click="openApproveModal(data, 'entry')"
-                  class="!bg-emerald-500 hover:!bg-emerald-600 !text-white !font-bold !rounded-xl !px-3 !py-1.5 !text-xs flex items-center gap-1 cursor-pointer shadow-sm"
+                  @click="viewDetails(data, 'entry')"
+                  class="!px-2.5 !py-1 !bg-brand-light hover:!bg-brand-gray/10 !text-brand-dark !border !border-brand-gray/20 !rounded-lg !text-[11px] !font-bold flex items-center gap-1 cursor-pointer"
+                  title="عرض تفاصيل الطلب"
                 >
-                  <Check class="w-3.5 h-3.5" />
-                  <span>تصديق</span>
+                  <Eye class="w-3 h-3 text-brand-accent" />
+                  <span>التفاصيل</span>
                 </Button>
 
-                <Button
-                  @click="openRejectModal(data, 'entry')"
-                  class="!bg-red-500/10 hover:!bg-red-500/20 !text-red-600 !border !border-red-500/30 !font-bold !rounded-xl !px-3 !py-1.5 !text-xs flex items-center gap-1 cursor-pointer"
-                >
-                  <X class="w-3.5 h-3.5" />
-                  <span>رفض</span>
-                </Button>
-              </div>
-              <div v-else class="flex items-center justify-center">
-                <span
-                  class="px-2.5 py-1 rounded-lg text-[10px] font-semibold bg-brand-light text-brand-gray border border-brand-gray/20 flex items-center gap-1"
-                  :title="`هذا الطلب بانتظار تصديق مجموعة: ${getStepAssignedGroupName(data, 'entry')}`"
-                >
-                  <Lock class="w-3 h-3 text-brand-gray" />
-                  <span>مخصص لـ: {{ getStepAssignedGroupName(data, 'entry') }}</span>
-                </span>
+                <template v-if="canUserApproveStep(data, 'entry')">
+                  <Button
+                    @click="openApproveModal(data, 'entry')"
+                    class="!bg-emerald-500 hover:!bg-emerald-600 !text-white !font-bold !rounded-xl !px-2.5 !py-1 !text-[11px] flex items-center gap-1 cursor-pointer shadow-sm"
+                  >
+                    <Check class="w-3.5 h-3.5" />
+                    <span>تصديق</span>
+                  </Button>
+
+                  <Button
+                    @click="openRejectModal(data, 'entry')"
+                    class="!bg-red-500/10 hover:!bg-red-500/20 !text-red-600 !border !border-red-500/30 !font-bold !rounded-xl !px-2.5 !py-1 !text-[11px] flex items-center gap-1 cursor-pointer"
+                  >
+                    <X class="w-3.5 h-3.5" />
+                    <span>رفض</span>
+                  </Button>
+                </template>
+                <template v-else>
+                  <span
+                    class="px-2 py-1 rounded-lg text-[10px] font-semibold bg-brand-light text-brand-gray border border-brand-gray/20 flex items-center gap-1"
+                    :title="`هذا الطلب بانتظار تصديق مجموعة: ${getStepAssignedGroupName(data, 'entry')}`"
+                  >
+                    <Lock class="w-3 h-3 text-brand-gray" />
+                    <span>{{ getStepAssignedGroupName(data, 'entry') }}</span>
+                  </span>
+                </template>
               </div>
             </template>
           </Column>
@@ -360,9 +382,9 @@
             </template>
           </Column>
 
-          <Column field="id" header="رقم الطلب" sortable>
+          <Column field="id" header="رقم الطلب" sortable style="width: 90px">
             <template #body="{ data }">
-              <span class="font-mono font-bold text-brand-accent">#{{ data.id }}</span>
+              <span class="font-mono font-bold text-brand-accent cursor-pointer hover:underline" @click="viewDetails(data, data.requestType)" title="عرض تفاصيل الطلب">#{{ data.id }}</span>
             </template>
           </Column>
 
@@ -398,20 +420,236 @@
             </template>
           </Column>
 
-          <Column header="مسار الاعتماد" headerClass="text-center" bodyClass="text-center">
+          <Column header="الإجراءات والمسار" headerClass="text-center" bodyClass="text-center" style="width: 220px">
             <template #body="{ data }">
-              <Button
-                @click="openTrailModal(data, data.requestType)"
-                class="!bg-brand-soft hover:!bg-brand-accent/20 !text-brand-accent !border !border-brand-accent/30 !rounded-xl !px-3 !py-1.5 !text-xs font-bold flex items-center gap-1 cursor-pointer"
-              >
-                <Eye class="w-3.5 h-3.5" />
-                <span>عرض المسار</span>
-              </Button>
+              <div class="flex items-center justify-center gap-1.5">
+                <Button
+                  @click="viewDetails(data, data.requestType)"
+                  class="!px-2.5 !py-1 !bg-brand-light hover:!bg-brand-gray/10 !text-brand-dark !border !border-brand-gray/20 !rounded-lg !text-[11px] !font-bold flex items-center gap-1 cursor-pointer"
+                  title="عرض تفاصيل الطلب"
+                >
+                  <Eye class="w-3 h-3 text-brand-accent" />
+                  <span>التفاصيل</span>
+                </Button>
+
+                <Button
+                  @click="openTrailModal(data, data.requestType)"
+                  class="!bg-brand-soft hover:!bg-brand-accent/20 !text-brand-accent !border !border-brand-accent/30 !rounded-xl !px-3 !py-1 !text-xs font-bold flex items-center gap-1 cursor-pointer"
+                  title="عرض مسار الاعتماد"
+                >
+                  <History class="w-3.5 h-3.5" />
+                  <span>المسار</span>
+                </Button>
+              </div>
             </template>
           </Column>
         </DataTable>
       </div>
     </div>
+
+    <!-- DIALOG 0: FULL DETAILS MODAL -->
+    <Dialog
+      v-model:visible="showDetailsDialog"
+      modal
+      :header="`تفاصيل ${selectedDetailType === 'exit' ? 'طلب صرف العهدة' : 'طلب توريد العهدة'} #${selectedDetailItem?.id || ''}`"
+      class="!bg-brand-white !border-brand-gray/15 max-w-3xl w-full !text-brand-dark"
+    >
+      <div v-if="detailLoading" class="p-8 text-center text-brand-gray flex flex-col items-center justify-center gap-2">
+        <RotateCw class="w-8 h-8 text-brand-accent animate-spin" />
+        <span class="text-xs font-bold">جاري تحميل كامل بيانات الطلب...</span>
+      </div>
+
+      <div v-else-if="selectedDetailItem" class="space-y-5 text-xs pt-1">
+        <!-- Header Info Grid -->
+        <div class="grid grid-cols-2 sm:grid-cols-3 gap-3 bg-brand-light p-4 rounded-xl border border-brand-gray/10">
+          <div>
+            <span class="text-[10px] text-brand-gray block mb-0.5">
+              {{ selectedDetailType === 'exit' ? 'مقدم الطلب' : 'مقدم الطلب / الاستلام' }}
+            </span>
+            <span class="font-bold text-brand-dark">
+              {{ selectedDetailItem.requestedByPersonName || selectedDetailItem.receivedByPersonName || selectedDetailItem.requestedByUsername || selectedDetailItem.receivedByUsername || 'مستخدم' }}
+            </span>
+            <span v-if="selectedDetailItem.requestedByUserId || selectedDetailItem.receivedByUserId" class="block font-mono text-[10px] text-brand-gray">
+              عسكري: {{ selectedDetailItem.requestedByUserId || selectedDetailItem.receivedByUserId }}
+            </span>
+          </div>
+
+          <div>
+            <span class="text-[10px] text-brand-gray block mb-0.5">
+              {{ selectedDetailType === 'exit' ? 'المستلم والجهة' : 'مصدر التوريد / المورد' }}
+            </span>
+            <span class="font-bold text-brand-dark">
+              {{ selectedDetailItem.recipientName || selectedDetailItem.sourceName || selectedDetailItem.fromSource || '-' }}
+            </span>
+            <span v-if="selectedDetailItem.departmentName" class="block text-[10px] text-brand-gray">
+              القسم: {{ selectedDetailItem.departmentName }}
+            </span>
+          </div>
+
+          <div>
+            <span class="text-[10px] text-brand-gray block mb-0.5">
+              {{ selectedDetailType === 'exit' ? 'رقم السند' : 'رقم الفاتورة / السند' }}
+            </span>
+            <span class="font-bold text-brand-dark font-mono">
+              {{ selectedDetailItem.invoiceNumber || selectedDetailItem.documentNumber || `#${selectedDetailItem.id}` }}
+            </span>
+          </div>
+
+          <div>
+            <span class="text-[10px] text-brand-gray block mb-0.5">تاريخ الطلب</span>
+            <span class="font-bold text-brand-dark font-mono">
+              {{ formatDate(selectedDetailItem.insertDate) }}
+            </span>
+          </div>
+
+          <div>
+            <span class="text-[10px] text-brand-gray block mb-0.5">مرحلة المسار الحالية</span>
+            <span class="font-bold text-brand-dark">
+              {{ getDynamicStepLabel(selectedDetailItem, selectedDetailType) }}
+            </span>
+          </div>
+
+          <div>
+            <span class="text-[10px] text-brand-gray block mb-0.5">توثيق البوصلة</span>
+            <span class="font-bold" :class="selectedDetailItem.isRequesterConfirmed ? 'text-emerald-600' : 'text-amber-600'">
+              {{ selectedDetailItem.isRequesterConfirmed ? 'تم التوثيق بالبوصلة' : 'بانتظار تأكيد المستلم' }}
+            </span>
+          </div>
+
+          <div v-if="selectedDetailItem.notes" class="col-span-2 sm:col-span-3">
+            <span class="text-[10px] text-brand-gray block mb-0.5">الملاحظات</span>
+            <span class="text-brand-dark">{{ selectedDetailItem.notes }}</span>
+          </div>
+        </div>
+
+        <!-- Line Items Table -->
+        <div class="space-y-2">
+          <div class="flex items-center justify-between">
+            <span class="font-bold text-brand-dark text-xs flex items-center gap-2">
+              <Package class="w-4 h-4 text-brand-accent" />
+              أصناف وعناصر الطلب ({{ selectedDetailItem.items?.length || 0 }} صنف):
+            </span>
+            <span v-if="canUserApproveStep(selectedDetailItem, selectedDetailType)" class="text-[10px] text-brand-gray">
+              يمكنك اعتماد أو رفض كل صنف على حدة قبل تأكيد القرار النهائي.
+            </span>
+          </div>
+
+          <div class="border border-brand-gray/15 rounded-xl overflow-hidden shadow-2xs">
+            <table class="w-full text-right border-collapse text-xs">
+              <thead class="bg-brand-light text-brand-gray text-[11px] border-b border-brand-gray/15">
+                <tr>
+                  <th class="p-2.5">اسم الصنف</th>
+                  <th class="p-2.5">SKU / الباركود</th>
+                  <th class="p-2.5">حالة المنتج</th>
+                  <th class="p-2.5 text-center">الكمية</th>
+                  <th class="p-2.5 text-center">حالة العنصر</th>
+                  <th v-if="canUserApproveStep(selectedDetailItem, selectedDetailType)" class="p-2.5 text-center">قرار الاعتماد</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-brand-gray/10 text-xs">
+                <tr v-for="item in (selectedDetailItem.items || [])" :key="item.id" class="hover:bg-brand-light/30">
+                  <td class="p-2.5 font-bold text-brand-dark">
+                    {{ item.productName || item.product?.name || `صنف #${item.productId}` }}
+                    <div v-if="item.serialNumber || (item.notes && item.notes.includes('SN-'))" class="font-mono text-[10px] text-brand-accent font-normal mt-0.5">
+                      {{ item.serialNumber || item.notes }}
+                    </div>
+                  </td>
+                  <td class="p-2.5 font-mono text-brand-gray text-[11px]">
+                    {{ item.productSKU || item.productBarcode || item.product?.sku || '-' }}
+                  </td>
+                  <td class="p-2.5 text-[11px] text-brand-dark">
+                    {{ item.productStateName || item.productState?.name || 'سليم / افتراضي' }}
+                  </td>
+                  <td class="p-2.5 text-center font-mono font-bold text-brand-accent">
+                    {{ item.quantity || 1 }}
+                  </td>
+                  <td class="p-2.5 text-center">
+                    <span
+                      class="px-2 py-0.5 rounded text-[10px] font-bold border inline-block"
+                      :class="getItemStatusBadgeClass(item.status)"
+                    >
+                      {{ getItemStatusLabel(item.status) }}
+                    </span>
+                  </td>
+                  <td v-if="canUserApproveStep(selectedDetailItem, selectedDetailType)" class="p-2.5 text-center">
+                    <div class="flex items-center justify-center gap-1">
+                      <button
+                        type="button"
+                        @click="toggleDetailItemDecision(item.id, 5)"
+                        class="px-2 py-1 rounded text-[10px] font-bold cursor-pointer transition-colors"
+                        :class="getDetailItemDecision(item.id) === 5 ? 'bg-emerald-500/20 text-emerald-700 border border-emerald-500/30 font-black' : 'bg-brand-light text-brand-gray border border-brand-gray/15 hover:text-brand-dark'"
+                      >
+                        موافق
+                      </button>
+                      <button
+                        type="button"
+                        @click="toggleDetailItemDecision(item.id, 4)"
+                        class="px-2 py-1 rounded text-[10px] font-bold cursor-pointer transition-colors"
+                        :class="getDetailItemDecision(item.id) === 4 ? 'bg-red-500/20 text-red-700 border border-red-500/30 font-black' : 'bg-brand-light text-brand-gray border border-brand-gray/15 hover:text-brand-dark'"
+                      >
+                        مرفوض
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Rejection Reason input (When user has approval authority) -->
+        <div v-if="canUserApproveStep(selectedDetailItem, selectedDetailType)" class="space-y-1.5">
+          <label class="block font-semibold text-brand-dark text-xs">
+            سبب الرفض (إلزامي في حال رفض أي صنف أو رفض كلي للطلب):
+          </label>
+          <Textarea
+            v-model="detailRejectionReason"
+            rows="2"
+            class="w-full !bg-brand-light !border-brand-gray/25 focus:!border-brand-accent !text-brand-dark text-xs"
+            placeholder="اكتب سبب الرفض هنا في حال رفض الطلب أو أحد عناصره..."
+          />
+        </div>
+
+        <!-- Dialog Footer Actions -->
+        <div class="flex flex-col sm:flex-row items-center justify-between gap-3 pt-4 border-t border-brand-gray/10">
+          <div class="flex items-center gap-2">
+            <Button
+              @click="openTrailFromDetails"
+              class="!bg-brand-soft hover:!bg-brand-accent/20 !text-brand-accent !border !border-brand-accent/30 !rounded-xl !px-3 !py-1.5 !text-xs font-bold flex items-center gap-1 cursor-pointer"
+            >
+              <History class="w-3.5 h-3.5" />
+              <span>معاينة مسار الاعتماد</span>
+            </Button>
+          </div>
+
+          <div class="flex flex-wrap items-center gap-2">
+            <SecondaryButton type="button" @click="showDetailsDialog = false">
+              إغلاق
+            </SecondaryButton>
+
+            <template v-if="canUserApproveStep(selectedDetailItem, selectedDetailType)">
+              <Button
+                @click="executeRejectionFromDetails"
+                :loading="detailActionLoading"
+                class="!bg-red-500/10 hover:!bg-red-500/20 !text-red-600 !border !border-red-500/30 !font-bold !rounded-xl !px-3.5 !py-1.5 !text-xs flex items-center gap-1 cursor-pointer"
+              >
+                <X class="w-3.5 h-3.5" />
+                <span>رفض كلي للطلب</span>
+              </Button>
+
+              <Button
+                @click="executeApprovalFromDetails"
+                :loading="detailActionLoading"
+                class="!bg-emerald-600 hover:!bg-emerald-700 !text-white !font-bold !rounded-xl !px-4 !py-1.5 !text-xs flex items-center gap-1.5 shadow-sm cursor-pointer"
+              >
+                <Check class="w-3.5 h-3.5" />
+                <span>تصديق واعتماد الطلب</span>
+              </Button>
+            </template>
+          </div>
+        </div>
+      </div>
+    </Dialog>
 
     <!-- DIALOG 1: ACCEPTANCE APPROVAL MODAL -->
     <Dialog
@@ -551,6 +789,7 @@ import { ref, computed, onMounted } from "vue";
 import { useOhdaRequestsStore } from "../stores/useOhdaRequestsStore";
 import { useOhdaAuthStore } from "../stores/useOhdaAuthStore";
 import { useOhdaApprovalConfigStore } from "../stores/useOhdaApprovalConfigStore";
+import { apiGet } from "@/utilities/fetchApi";
 import WorkflowTrailModal from "../components/WorkflowTrailModal.vue";
 import { useToast } from "primevue/usetoast";
 import {
@@ -583,11 +822,18 @@ const actionLoading = ref(false);
 const showApproveDialog = ref(false);
 const showRejectDialog = ref(false);
 const showTrailDialog = ref(false);
+const showDetailsDialog = ref(false);
+const detailLoading = ref(false);
+const detailActionLoading = ref(false);
 
 const activeItem = ref(null);
 const trailItem = ref(null);
+const selectedDetailItem = ref(null);
+const selectedDetailType = ref("exit"); // 'exit' or 'entry'
 const selectedRequestType = ref("exit"); // 'exit' or 'entry'
 const rejectionReason = ref("");
+const detailRejectionReason = ref("");
+const detailItemDecisions = ref({});
 
 onMounted(async () => {
   await refreshData();
@@ -818,7 +1064,179 @@ function openTrailModal(item, type) {
   showTrailDialog.value = true;
 }
 
-// Execute Approval
+// Open Full Request Details
+async function viewDetails(item, type) {
+  selectedDetailType.value = type || "exit";
+  selectedDetailItem.value = item;
+  showDetailsDialog.value = true;
+  detailLoading.value = true;
+  detailRejectionReason.value = "";
+  detailItemDecisions.value = {};
+
+  try {
+    const url = (selectedDetailType.value === "exit")
+      ? `/api/ProductExitRequest/${item.id}`
+      : `/api/ProductEntryRequest/${item.id}`;
+    const res = await apiGet(url);
+    if (res?.data?.isDone && res.data.singleObject) {
+      selectedDetailItem.value = res.data.singleObject;
+    } else {
+      selectedDetailItem.value = item;
+    }
+  } catch (_) {
+    selectedDetailItem.value = item;
+  } finally {
+    detailLoading.value = false;
+  }
+
+  if (selectedDetailItem.value?.items) {
+    selectedDetailItem.value.items.forEach(i => {
+      detailItemDecisions.value[i.id] = (i.status === 4 ? 4 : 5);
+    });
+  }
+}
+
+function toggleDetailItemDecision(itemId, status) {
+  detailItemDecisions.value[itemId] = status;
+}
+
+function getDetailItemDecision(itemId) {
+  return detailItemDecisions.value[itemId] || 5;
+}
+
+function getItemStatusBadgeClass(status) {
+  if (status === 1) return "bg-amber-500/10 text-amber-600 border-amber-500/20";
+  if (status === 5 || status === 2) return "bg-emerald-500/10 text-emerald-600 border-emerald-500/20";
+  if (status === 4) return "bg-red-500/10 text-red-600 border-red-500/20";
+  return "bg-brand-light text-brand-gray border-brand-gray/20";
+}
+
+function getItemStatusLabel(status) {
+  if (status === 1) return "قيد الانتظار";
+  if (status === 5 || status === 2) return "معتمد";
+  if (status === 4) return "مرفوض";
+  return "قيد الإجراء";
+}
+
+function openTrailFromDetails() {
+  if (!selectedDetailItem.value) return;
+  trailItem.value = selectedDetailItem.value;
+  selectedRequestType.value = selectedDetailType.value;
+  showTrailDialog.value = true;
+}
+
+// Execute Approval from Details Modal
+async function executeApprovalFromDetails() {
+  if (!selectedDetailItem.value) return;
+  detailActionLoading.value = true;
+  try {
+    const isExit = selectedDetailType.value === "exit";
+    const req = selectedDetailItem.value;
+
+    const itemsPayload = Object.keys(detailItemDecisions.value).map(k => ({
+      itemId: parseInt(k),
+      status: detailItemDecisions.value[k]
+    }));
+
+    const anyRejected = itemsPayload.some(i => i.status === 4);
+    if (anyRejected && !detailRejectionReason.value.trim()) {
+      toast.add({
+        severity: "warn",
+        summary: "تنبيه",
+        detail: "يرجى كتابة سبب الرفض لوجود أصناف مرفوضة",
+        life: 4000
+      });
+      detailActionLoading.value = false;
+      return;
+    }
+
+    const isManagerStep = req.currentStep === 2 || req.status === 1;
+    let res;
+    if (isExit) {
+      res = isManagerStep
+        ? await requestsStore.managerApproveExit(req.id, authStore.user, { items: itemsPayload, rejectionReason: detailRejectionReason.value.trim() })
+        : await requestsStore.supervisorApproveExit(req.id, authStore.user, { items: itemsPayload, rejectionReason: detailRejectionReason.value.trim() });
+    } else {
+      res = isManagerStep
+        ? await requestsStore.managerApproveEntry(req.id, authStore.user, { items: itemsPayload, rejectionReason: detailRejectionReason.value.trim() })
+        : await requestsStore.supervisorApproveEntry(req.id, authStore.user, { items: itemsPayload, rejectionReason: detailRejectionReason.value.trim() });
+    }
+
+    if (res?.success) {
+      showDetailsDialog.value = false;
+      toast.add({
+        severity: "success",
+        summary: "تم التصديق بنجاح",
+        detail: `تم تصديق واعتماد الطلب #${req.id} وتوثيق اسمك ورقمك العسكري في سجل المسار`,
+        life: 4000
+      });
+      await refreshData();
+    } else {
+      toast.add({
+        severity: "error",
+        summary: "فشل الاعتماد",
+        detail: res?.message || "حدث خطأ أثناء تنفيذ الاعتماد",
+        life: 5000
+      });
+    }
+  } catch (err) {
+    console.error("Approval error", err);
+  } finally {
+    detailActionLoading.value = false;
+  }
+}
+
+// Execute Rejection from Details Modal
+async function executeRejectionFromDetails() {
+  if (!selectedDetailItem.value) return;
+  const reason = detailRejectionReason.value.trim();
+  if (!reason) {
+    toast.add({
+      severity: "warn",
+      summary: "تنبيه",
+      detail: "يرجى كتابة سبب الرفض بالتفصيل قبل تأكيد الرفض",
+      life: 4000
+    });
+    return;
+  }
+
+  detailActionLoading.value = true;
+  try {
+    const isExit = selectedDetailType.value === "exit";
+    const req = selectedDetailItem.value;
+
+    let res;
+    if (isExit) {
+      res = await requestsStore.rejectExitRequest(req.id, reason, authStore.user);
+    } else {
+      res = await requestsStore.rejectEntryRequest(req.id, reason, authStore.user);
+    }
+
+    if (res?.success) {
+      showDetailsDialog.value = false;
+      toast.add({
+        severity: "info",
+        summary: "تم الرفض",
+        detail: `تم رفض الطلب #${req.id} وتسجيل السبب وإشعار مقدم الطلب`,
+        life: 4000
+      });
+      await refreshData();
+    } else {
+      toast.add({
+        severity: "error",
+        summary: "فشل الرفض",
+        detail: res?.message || "حدث خطأ أثناء رفض الطلب",
+        life: 5000
+      });
+    }
+  } catch (err) {
+    console.error("Rejection error", err);
+  } finally {
+    detailActionLoading.value = false;
+  }
+}
+
+// Execute Approval from quick approve modal
 async function executeApproval() {
   if (!activeItem.value) return;
   actionLoading.value = true;
@@ -827,11 +1245,16 @@ async function executeApproval() {
     const req = activeItem.value;
     const itemsPayload = (req.items || []).map(i => ({ itemId: i.id, status: 5 })); // 5 = Approved
 
+    const isManagerStep = req.currentStep === 2 || req.status === 1;
     let res;
     if (isExit) {
-      res = await requestsStore.supervisorApproveExit(req.id, authStore.user, { items: itemsPayload });
+      res = isManagerStep
+        ? await requestsStore.managerApproveExit(req.id, authStore.user, { items: itemsPayload })
+        : await requestsStore.supervisorApproveExit(req.id, authStore.user, { items: itemsPayload });
     } else {
-      res = await requestsStore.supervisorApproveEntry(req.id, authStore.user, { items: itemsPayload });
+      res = isManagerStep
+        ? await requestsStore.managerApproveEntry(req.id, authStore.user, { items: itemsPayload })
+        : await requestsStore.supervisorApproveEntry(req.id, authStore.user, { items: itemsPayload });
     }
 
     if (res?.success) {
@@ -858,7 +1281,7 @@ async function executeApproval() {
   }
 }
 
-// Execute Rejection
+// Execute Rejection from quick reject modal
 async function executeRejection() {
   if (!activeItem.value || !rejectionReason.value.trim()) {
     toast.add({ severity: "warn", summary: "تنبيه", detail: "يرجى إدخال سبب الرفض", life: 3000 });
