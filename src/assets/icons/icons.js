@@ -187,7 +187,9 @@ import {
     ArrowDownLeft,
     Boxes,
     QrCode,
-    Truck
+    Truck,
+    MousePointerClick,
+    PackageOpen
 } from "lucide-vue-next";
 
 export const importIcons = (app) => {
@@ -380,4 +382,6 @@ export const importIcons = (app) => {
     app.component("Boxes", Boxes);
     app.component("QrCode", QrCode);
     app.component("Truck", Truck);
+    app.component("MousePointerClick", MousePointerClick);
+    app.component("PackageOpen", PackageOpen);
 };

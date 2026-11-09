@@ -189,3 +189,193 @@ html[dir="rtl"] *:not(.pi):not(.pi *) {
     -ms-overflow-style: none !important;
     scrollbar-width: none !important;
 }
+
+/* ==========================================================================
+   PrimeVue Unstyled Dialog Global Styles
+   Ensures modal backdrop, centering, solid background, shadow, and visibility
+   ========================================================================== */
+.p-dialog-mask {
+    position: fixed !important;
+    inset: 0 !important;
+    z-index: 1100 !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    background-color: rgba(0, 0, 0, 0.65) !important;
+    backdrop-filter: blur(4px) !important;
+    -webkit-backdrop-filter: blur(4px) !important;
+    padding: 1rem !important;
+}
+
+.p-dialog {
+    position: relative !important;
+    background-color: #FFFFFF !important;
+    color: #101828 !important;
+    border-radius: 1.5rem !important;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.35) !important;
+    border: 1px solid rgba(102, 112, 133, 0.15) !important;
+    display: flex !important;
+    flex-direction: column !important;
+    max-height: 90vh !important;
+    overflow: hidden !important;
+    z-index: 1101 !important;
+}
+
+:root[class="dark"] .p-dialog,
+.dark .p-dialog {
+    background-color: #101828 !important;
+    color: #FFFFFF !important;
+    border-color: rgba(255, 255, 255, 0.1) !important;
+}
+
+.p-dialog-header {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    padding: 1.25rem 1.5rem !important;
+    border-bottom: 1px solid rgba(102, 112, 133, 0.1) !important;
+    font-weight: 700 !important;
+    font-size: 0.95rem !important;
+    background-color: inherit !important;
+}
+
+:root[class="dark"] .p-dialog-header,
+.dark .p-dialog-header {
+    border-bottom-color: rgba(255, 255, 255, 0.08) !important;
+}
+
+.p-dialog-title {
+    font-weight: 700 !important;
+    font-size: 0.95rem !important;
+}
+
+.p-dialog-header-actions {
+    display: flex !important;
+    align-items: center !important;
+    gap: 0.5rem !important;
+}
+
+.p-dialog-close-button,
+.p-dialog-header-icon {
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    width: 2rem !important;
+    height: 2rem !important;
+    border-radius: 0.5rem !important;
+    background: transparent !important;
+    border: none !important;
+    cursor: pointer !important;
+    color: #667085 !important;
+    transition: all 0.2s !important;
+}
+
+.p-dialog-close-button:hover,
+.p-dialog-header-icon:hover {
+    background-color: rgba(0, 0, 0, 0.06) !important;
+    color: #101828 !important;
+}
+
+:root[class="dark"] .p-dialog-close-button:hover,
+.dark .p-dialog-close-button:hover,
+:root[class="dark"] .p-dialog-header-icon:hover,
+.dark .p-dialog-header-icon:hover {
+    background-color: rgba(255, 255, 255, 0.1) !important;
+    color: #FFFFFF !important;
+}
+
+.p-dialog-content {
+    padding: 1.5rem !important;
+    overflow-y: auto !important;
+    flex-grow: 1 !important;
+    background-color: inherit !important;
+}
+
+.p-dialog-footer {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: flex-end !important;
+    gap: 0.75rem !important;
+    padding: 1rem 1.5rem !important;
+    border-top: 1px solid rgba(102, 112, 133, 0.1) !important;
+    background-color: inherit !important;
+}
+
+/* ==========================================================================
+   PrimeVue Unstyled Paginator Global Styles
+   ========================================================================== */
+.p-paginator {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 0.25rem !important;
+    padding: 0.75rem 1rem !important;
+    border-top: 1px solid rgba(102, 112, 133, 0.1) !important;
+    font-size: 0.75rem !important;
+    color: #667085 !important;
+}
+
+:root[class="dark"] .p-paginator,
+.dark .p-paginator {
+    border-top-color: rgba(255, 255, 255, 0.08) !important;
+    color: #94a3b8 !important;
+}
+
+.p-paginator-page,
+.p-paginator-first,
+.p-paginator-prev,
+.p-paginator-next,
+.p-paginator-last {
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    min-width: 2rem !important;
+    height: 2rem !important;
+    padding: 0 0.5rem !important;
+    border-radius: 0.5rem !important;
+    border: 1px solid transparent !important;
+    background: transparent !important;
+    cursor: pointer !important;
+    font-size: 0.75rem !important;
+    font-weight: 600 !important;
+    color: inherit !important;
+    transition: all 0.2s !important;
+}
+
+.p-paginator-page:hover:not(.p-disabled),
+.p-paginator-first:hover:not(.p-disabled),
+.p-paginator-prev:hover:not(.p-disabled),
+.p-paginator-next:hover:not(.p-disabled),
+.p-paginator-last:hover:not(.p-disabled) {
+    background-color: rgba(0, 0, 0, 0.05) !important;
+    color: #101828 !important;
+}
+
+:root[class="dark"] .p-paginator-page:hover:not(.p-disabled),
+.dark .p-paginator-page:hover:not(.p-disabled),
+:root[class="dark"] .p-paginator-first:hover:not(.p-disabled),
+.dark .p-paginator-first:hover:not(.p-disabled),
+:root[class="dark"] .p-paginator-prev:hover:not(.p-disabled),
+.dark .p-paginator-prev:hover:not(.p-disabled),
+:root[class="dark"] .p-paginator-next:hover:not(.p-disabled),
+.dark .p-paginator-next:hover:not(.p-disabled),
+:root[class="dark"] .p-paginator-last:hover:not(.p-disabled),
+.dark .p-paginator-last:hover:not(.p-disabled) {
+    background-color: rgba(255, 255, 255, 0.08) !important;
+    color: #FFFFFF !important;
+}
+
+.p-paginator-page.p-highlight {
+    background-color: #21C87A !important;
+    color: #101828 !important;
+    font-weight: 700 !important;
+}
+
+.p-paginator-page.p-disabled,
+.p-paginator-first.p-disabled,
+.p-paginator-prev.p-disabled,
+.p-paginator-next.p-disabled,
+.p-paginator-last.p-disabled {
+    opacity: 0.35 !important;
+    cursor: not-allowed !important;
+}

@@ -24,6 +24,15 @@
         </router-link>
 
         <Button
+          @click="downloadTemplate"
+          class="!bg-brand-light dark:!bg-white/5 hover:!bg-brand-soft !text-brand-dark dark:!text-white !border !border-brand-gray/20 !rounded-xl !px-3.5 !py-2.5 !text-xs !font-semibold flex items-center gap-2 shadow-xs cursor-pointer"
+          title="تحميل شيت Excel فارغ لإدخال الأصناف واستيرادها مباشرة"
+        >
+          <FileSpreadsheet class="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+          <span>تحميل نموذج Excel فارغ</span>
+        </Button>
+
+        <Button
           @click="exportExcel"
           class="!bg-brand-light dark:!bg-white/5 hover:!bg-brand-soft !text-brand-dark dark:!text-white !border !border-brand-gray/20 !rounded-xl !px-3.5 !py-2.5 !text-xs !font-semibold flex items-center gap-2 shadow-xs"
         >
@@ -604,6 +613,11 @@
       class="max-w-md w-full !bg-brand-white dark:!bg-brand-dark !border-brand-gray/15 !text-brand-dark dark:!text-white rounded-3xl overflow-hidden shadow-2xl"
     >
       <div class="space-y-4 text-xs">
+        <div class="p-3 rounded-xl bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800/40 text-amber-800 dark:text-amber-300 text-[11px] leading-relaxed">
+          <span class="font-bold block mb-1">تعليمات نموذج الاستيراد:</span>
+          الحقول التي بجانبها علامة (*) إلزامية في الشيت (اسم الصنف، رمز الصنف SKU، الباركود، التصنيف). باقي الحقول اختيارية.
+        </div>
+
         <div class="border-2 border-dashed border-brand-gray/30 hover:border-brand-accent rounded-2xl p-8 text-center bg-brand-light dark:bg-white/5 transition-colors">
           <FileSpreadsheet class="w-12 h-12 text-brand-accent mx-auto mb-3" />
           <p class="text-xs font-semibold text-brand-dark dark:text-white mb-1">
@@ -617,8 +631,9 @@
         </div>
 
         <div class="flex items-center justify-between pt-3 text-xs border-t border-brand-gray/10 dark:border-white/10">
-          <Button @click="downloadTemplate" class="!bg-transparent !text-brand-accent hover:!underline">
-            {{ $t('ohda.products.downloadTemplate') }}
+          <Button @click="downloadTemplate" class="!bg-transparent !text-brand-accent hover:!underline flex items-center gap-1.5 cursor-pointer">
+            <Download class="w-3.5 h-3.5" />
+            <span>تحميل نموذج Excel فارغ (*)</span>
           </Button>
           <SecondaryButton @click="showImportModal = false">
             {{ $t('ohda.common.close') }}

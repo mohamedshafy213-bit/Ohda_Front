@@ -735,15 +735,31 @@
             </div>
             
             <DataTable :value="createForm.items" class="text-xs" emptyMessage="لا توجد أصناف مضافة حالياً. استخدم المسح أو الاختيار اليدوي لإضافة أصناف.">
-              <Column field="productName" header="اسم الصنف"></Column>
+              <Column field="productName" header="اسم الصنف">
+                <template #body="{ data }">
+                  <div class="flex items-center gap-1.5 flex-wrap">
+                    <span class="font-bold text-brand-dark">{{ data.productName }}</span>
+                    <span v-if="data.isUntracked" class="px-1.5 py-0.5 rounded text-[9px] font-bold bg-amber-500/15 text-amber-700 border border-amber-500/20">
+                      غير متتبع
+                    </span>
+                    <span v-if="data.packageName" class="px-1.5 py-0.5 rounded text-[9px] font-bold bg-blue-500/15 text-blue-700 border border-blue-500/20">
+                      حزمة: {{ data.packageName }}
+                    </span>
+                  </div>
+                </template>
+              </Column>
               <Column field="quantity" header="الكمية المطلوبة">
                 <template #body="{ data }">
-                  <span class="font-bold text-brand-dark">{{ data.quantity }}</span>
+                  <span v-if="data.isUntracked" class="text-brand-gray font-mono">-</span>
+                  <span v-else class="font-bold text-brand-dark">{{ data.quantity }}</span>
                 </template>
               </Column>
               <Column header="الأرقام التسلسلية المحددة">
                 <template #body="{ data }">
-                  <div class="flex flex-wrap gap-1 max-w-xs">
+                  <span v-if="data.isUntracked" class="text-brand-gray text-[10px] italic">
+                    ملحق بدون سيريالات أو مخزون
+                  </span>
+                  <div v-else class="flex flex-wrap gap-1 max-w-xs">
                     <span v-for="snId in getSerialsForProduct(data.productId)" :key="snId" class="px-1.5 py-0.5 bg-brand-soft text-brand-accent text-[9px] font-mono rounded border border-brand-accent/10 flex items-center gap-1">
                       {{ getSerialNoById(snId) }}
                       <X class="w-2.5 h-2.5 cursor-pointer text-red-500 hover:text-red-700" @click="removeSerialSelection(snId)" />
@@ -756,7 +772,7 @@
               </Column>
               <Column header="إجراء">
                 <template #body="{ index }">
-                  <Button @click="removeRequestItem(index)" class="!p-1.5 !bg-red-500/10 hover:!bg-red-500/20 !text-red-600 !border-0 !rounded-lg">
+                  <Button @click="removeRequestItem(index)" class="!p-1.5 !bg-red-500/10 hover:!bg-red-500/20 !text-red-600 !border-0 !rounded-lg cursor-pointer">
                     <Trash2 class="w-4 h-4" />
                   </Button>
                 </template>
@@ -818,49 +834,177 @@
             <div v-show="isScanning" id="exit-qr-reader" class="rounded-xl overflow-hidden border border-brand-gray/20 bg-black aspect-square max-w-[240px] mx-auto shadow-md"></div>
           </div>
 
-          <!-- Manual Selection Form -->
+          <!-- Manual Selection Form with Tabs (Tracked / Untracked / Package) -->
           <div class="bg-brand-light border border-brand-gray/10 p-4 rounded-xl space-y-3">
-            <span class="font-bold text-brand-dark block">إضافة صنف يدوياً</span>
-            <div>
-              <label class="block text-brand-gray mb-1">اختر الصنف من الكتالوج</label>
-              <Select v-model="manualItem.productId" :options="inventoryStore.products" optionLabel="name" optionValue="id" class="w-full !bg-white" placeholder="حدد المنتج" />
+            <!-- Tabs -->
+            <div class="flex items-center gap-1 bg-brand-white p-1 rounded-xl border border-brand-gray/10 text-xs">
+              <button
+                type="button"
+                @click="manualMode = 'tracked'"
+                class="flex-1 py-1.5 px-2 rounded-lg font-bold transition-all text-center cursor-pointer"
+                :class="manualMode === 'tracked' ? 'bg-brand-accent text-brand-dark shadow-xs' : 'text-brand-gray hover:text-brand-dark'"
+              >
+                متتبع
+              </button>
+              <button
+                type="button"
+                @click="manualMode = 'untracked'"
+                class="flex-1 py-1.5 px-2 rounded-lg font-bold transition-all text-center cursor-pointer"
+                :class="manualMode === 'untracked' ? 'bg-brand-accent text-brand-dark shadow-xs' : 'text-brand-gray hover:text-brand-dark'"
+              >
+                غير متتبع
+              </button>
+              <button
+                type="button"
+                @click="manualMode = 'package'"
+                class="flex-1 py-1.5 px-2 rounded-lg font-bold transition-all text-center cursor-pointer"
+                :class="manualMode === 'package' ? 'bg-brand-accent text-brand-dark shadow-xs' : 'text-brand-gray hover:text-brand-dark'"
+              >
+                حزمة
+              </button>
             </div>
 
-            <div v-if="manualItem.productId" class="space-y-2 pt-2">
-              <div class="flex items-center justify-between text-[11px]">
-                <span class="font-semibold text-brand-dark">حدد الأرقام التسلسلية:</span>
-                <span class="text-brand-accent font-bold font-mono">{{ manualItem.selectedSerials.length }} محدد</span>
-              </div>
-
-              <div v-if="loadingSerials" class="text-center py-2 text-[10px] text-brand-gray">
-                جاري تحميل السيريالات...
-              </div>
-              <div v-else-if="availableSerials.length === 0" class="p-2 text-center text-[10px] text-amber-700 bg-amber-500/10 rounded-lg">
-                لا توجد أجهزة متوفرة بسيريال محدد. سيتم التوزيع تلقائياً.
-              </div>
-              <div v-else class="grid grid-cols-1 gap-1.5 max-h-28 overflow-y-auto border border-brand-gray/20 p-2 rounded-lg bg-white">
-                <label
-                  v-for="s in availableSerials"
-                  :key="s.id"
-                  class="flex items-center gap-2 p-1 border border-brand-gray/10 rounded font-mono text-[9px] select-none cursor-pointer"
-                  :class="manualItem.selectedSerials.includes(s.id) ? 'bg-brand-soft text-brand-dark' : 'text-brand-gray'"
-                >
-                  <input type="checkbox" :value="s.id" v-model="manualItem.selectedSerials" class="rounded text-brand-accent" />
-                  <span class="font-semibold truncate">{{ s.serialNumber }}</span>
-                </label>
-              </div>
-            </div>
-
-            <div class="grid grid-cols-2 gap-2">
+            <!-- Tab 1: Tracked Product -->
+            <div v-if="manualMode === 'tracked'" class="space-y-3">
               <div>
-                <label class="block text-brand-gray mb-1">الكمية</label>
-                <InputNumber v-model="manualItem.quantity" class="w-full" :min="1" />
+                <label class="block text-brand-gray mb-1">اختر الصنف من الكتالوج</label>
+                <Select v-model="manualItem.productId" :options="inventoryStore.products" optionLabel="name" optionValue="id" class="w-full !bg-white" placeholder="حدد المنتج" />
               </div>
-              <div class="flex items-end">
-                <Button @click="addManualItem" class="!w-full !bg-brand-accent hover:!bg-brand-accent/90 !text-brand-dark !font-bold">
-                  إضافة للطلب
-                </Button>
+
+              <div v-if="manualItem.productId" class="space-y-2 pt-1">
+                <div class="flex items-center justify-between text-[11px]">
+                  <span class="font-semibold text-brand-dark">حدد الأرقام التسلسلية:</span>
+                  <span class="text-brand-accent font-bold font-mono">{{ manualItem.selectedSerials.length }} محدد</span>
+                </div>
+
+                <div v-if="loadingSerials" class="text-center py-2 text-[10px] text-brand-gray">
+                  جاري تحميل السيريالات...
+                </div>
+                <div v-else-if="availableSerials.length === 0" class="p-2 text-center text-[10px] text-amber-700 bg-amber-500/10 rounded-lg">
+                  لا توجد أجهزة متوفرة بسيريال محدد. سيتم التوزيع تلقائياً.
+                </div>
+                <div v-else class="grid grid-cols-1 gap-1.5 max-h-28 overflow-y-auto border border-brand-gray/20 p-2 rounded-lg bg-white">
+                  <label
+                    v-for="s in availableSerials"
+                    :key="s.id"
+                    class="flex items-center gap-2 p-1 border border-brand-gray/10 rounded font-mono text-[9px] select-none cursor-pointer"
+                    :class="manualItem.selectedSerials.includes(s.id) ? 'bg-brand-soft text-brand-dark' : 'text-brand-gray'"
+                  >
+                    <input type="checkbox" :value="s.id" v-model="manualItem.selectedSerials" class="rounded text-brand-accent" />
+                    <span class="font-semibold truncate">{{ s.serialNumber }}</span>
+                  </label>
+                </div>
               </div>
+
+              <div class="grid grid-cols-2 gap-2">
+                <div>
+                  <label class="block text-brand-gray mb-1">الكمية</label>
+                  <InputNumber v-model="manualItem.quantity" class="w-full" :min="1" />
+                </div>
+                <div class="flex items-end">
+                  <Button @click="addManualItem" class="!w-full !bg-brand-accent hover:!bg-brand-accent/90 !text-brand-dark !font-bold">
+                    إضافة للطلب
+                  </Button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Tab 2: Untracked Item -->
+            <div v-else-if="manualMode === 'untracked'" class="space-y-3">
+              <div>
+                <label class="block text-brand-gray mb-1">اختر الصنف غير المتتبع</label>
+                <Select
+                  v-model="selectedUntrackedId"
+                  :options="untrackedStore.activeItems"
+                  optionLabel="name"
+                  optionValue="id"
+                  class="w-full !bg-white"
+                  placeholder="مثال: ماوس، كيبورد، كابل..."
+                />
+              </div>
+              <p class="text-[10px] text-brand-gray leading-relaxed">
+                الأصناف غير المتتبعة تُصرف بالاسم فقط ولا يُشترط لها كمية مخزون أو أرقام تسلسلية ولا تؤثر على تقارير الجرد.
+              </p>
+              <Button
+                @click="addUntrackedItem"
+                :disabled="!selectedUntrackedId"
+                class="!w-full !bg-brand-accent hover:!bg-brand-accent/90 !text-brand-dark !font-bold"
+              >
+                إضافة الصنف غير المتتبع
+              </Button>
+            </div>
+
+            <!-- Tab 3: Package Template -->
+            <div v-else class="space-y-3">
+              <div>
+                <label class="block text-brand-gray mb-1">اختر الحزمة (قالب التجهيز)</label>
+                <Select
+                  v-model="selectedPackageId"
+                  @change="onPackageSelect"
+                  :options="packageStore.activePackages"
+                  optionLabel="name"
+                  optionValue="id"
+                  class="w-full !bg-white"
+                  placeholder="مثال: طقم حاسب آلي مكتبي..."
+                />
+              </div>
+
+              <!-- Package Items Checklist Preview -->
+              <div v-if="selectedPackageId && packageSelectedItems.length > 0" class="space-y-2 pt-1">
+                <span class="block text-[11px] font-bold text-brand-dark">محتويات الحزمة (اختر الأجهزة والملحقات المطلوبة):</span>
+                <div class="max-h-52 overflow-y-auto space-y-2 border border-brand-gray/15 p-2.5 rounded-xl bg-white">
+                  <div
+                    v-for="(pItem, pIdx) in packageSelectedItems"
+                    :key="pIdx"
+                    class="p-2 rounded-xl border border-brand-gray/10 hover:border-brand-accent/30 bg-gray-50/50 transition-all text-[11px] space-y-1.5"
+                  >
+                    <div class="flex items-center justify-between">
+                      <label class="flex items-center gap-2 cursor-pointer font-medium text-brand-dark">
+                        <input type="checkbox" v-model="pItem.selected" class="rounded text-brand-accent" />
+                        <span v-if="pItem.untrackedItemId" class="font-bold">
+                          {{ pItem.untrackedItemName }}
+                        </span>
+                        <span v-else class="font-bold">
+                          فئة: {{ pItem.categoryName || 'جهاز متتبع' }} (×{{ pItem.quantity }})
+                        </span>
+                      </label>
+                      <span
+                        class="px-2 py-0.5 rounded-full text-[9px] font-bold"
+                        :class="pItem.untrackedItemId ? 'bg-amber-100 text-amber-700' : 'bg-indigo-100 text-indigo-700'"
+                      >
+                        {{ pItem.untrackedItemId ? 'ملحق غير متتبع' : 'فئة جهاز' }}
+                      </span>
+                    </div>
+
+                    <!-- Product selector for category items -->
+                    <div v-if="pItem.selected && !pItem.untrackedItemId" class="pt-1 pr-5">
+                      <label class="block text-[10px] text-brand-gray mb-1">اختر الجهاز المطلوب من فئة "{{ pItem.categoryName }}":</label>
+                      <select
+                        v-model="pItem.selectedProductId"
+                        class="w-full text-xs rounded-lg border border-brand-gray/25 p-1.5 bg-white text-brand-dark focus:outline-none focus:ring-1 focus:ring-brand-accent cursor-pointer"
+                      >
+                        <option :value="null" disabled>-- اختر الجهاز من هذه الفئة --</option>
+                        <option
+                          v-for="p in getCategoryProducts(pItem.categoryId)"
+                          :key="p.id"
+                          :value="p.id"
+                        >
+                          {{ p.name }} (الرصيد: {{ p.currentStock || 0 }})
+                        </option>
+                      </select>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <Button
+                @click="addPackageItems"
+                :disabled="!selectedPackageId || !packageSelectedItems.some(i => i.selected)"
+                class="!w-full !bg-brand-accent hover:!bg-brand-accent/90 !text-brand-dark !font-bold flex items-center justify-center gap-1.5"
+              >
+                <Boxes class="w-4 h-4" />
+                إدراج عناصر الحزمة في الطلب
+              </Button>
             </div>
           </div>
         </div>
@@ -908,11 +1052,29 @@
           <span class="font-bold text-brand-dark block text-sm">أصناف وعناصر طلب الصرف:</span>
           <div class="border border-brand-gray/10 rounded-xl overflow-hidden">
             <DataTable :value="selectedRequest.items" class="text-xs">
-              <Column field="productName" header="اسم الصنف"></Column>
-              <Column field="productSKU" header="SKU" class="font-mono"></Column>
+              <Column field="productName" header="اسم الصنف">
+                <template #body="{ data }">
+                  <div class="flex items-center gap-1.5 flex-wrap">
+                    <span class="font-bold text-brand-dark">{{ data.untrackedItemName || data.productName }}</span>
+                    <span v-if="data.isUntracked" class="px-1.5 py-0.5 rounded text-[9px] font-bold bg-amber-500/15 text-amber-700 border border-amber-500/20">
+                      غير متتبع
+                    </span>
+                    <span v-if="data.packageName" class="px-1.5 py-0.5 rounded text-[9px] font-bold bg-blue-500/15 text-blue-700 border border-blue-500/20">
+                      حزمة: {{ data.packageName }}
+                    </span>
+                  </div>
+                </template>
+              </Column>
+              <Column field="productSKU" header="SKU" class="font-mono">
+                <template #body="{ data }">
+                  <span v-if="data.isUntracked" class="text-brand-gray">-</span>
+                  <span v-else>{{ data.productSKU || '-' }}</span>
+                </template>
+              </Column>
               <Column header="مكان التخزين (الرف)">
                 <template #body="{ data }">
-                  <span v-if="data.binCode" class="px-2 py-0.5 rounded-lg bg-brand-soft text-brand-accent font-mono font-bold text-[10px] border border-brand-accent/30 inline-flex items-center gap-1">
+                  <span v-if="data.isUntracked" class="text-brand-gray text-[10px]">-</span>
+                  <span v-else-if="data.binCode" class="px-2 py-0.5 rounded-lg bg-brand-soft text-brand-accent font-mono font-bold text-[10px] border border-brand-accent/30 inline-flex items-center gap-1">
                     <Layers class="w-3 h-3" />
                     {{ data.binCode }}
                   </span>
@@ -921,7 +1083,8 @@
               </Column>
               <Column field="quantity" header="الكمية المطلوبة">
                 <template #body="{ data }">
-                  <span class="font-bold text-brand-dark text-sm">{{ data.quantity }}</span>
+                  <span v-if="data.isUntracked" class="text-brand-gray font-mono">-</span>
+                  <span v-else class="font-bold text-brand-dark text-sm">{{ data.quantity }}</span>
                 </template>
               </Column>
               <Column header="حالة العنصر">
@@ -1079,10 +1242,15 @@ import {
   Clock,
   Sparkles,
   ChevronRight,
-  ChevronLeft
+  ChevronLeft,
+  PackageOpen,
+  MousePointerClick,
+  Boxes
 } from "lucide-vue-next";
 import { useOhdaAuthStore } from "../stores/useOhdaAuthStore";
 import { useOhdaInventoryStore } from "../stores/useOhdaInventoryStore";
+import { useOhdaUntrackedItemStore } from "../stores/useOhdaUntrackedItemStore";
+import { useOhdaPackageStore } from "../stores/useOhdaPackageStore";
 import { useOhdaWarehouseBinStore } from "../stores/useOhdaWarehouseBinStore";
 import { useOhdaRequestsStore } from "../stores/useOhdaRequestsStore";
 import { useOhdaApprovalConfigStore } from "../stores/useOhdaApprovalConfigStore";
@@ -1096,7 +1264,15 @@ const inventoryStore = useOhdaInventoryStore();
 const binStore = useOhdaWarehouseBinStore();
 const requestsStore = useOhdaRequestsStore();
 const approvalConfigStore = useOhdaApprovalConfigStore();
+const untrackedStore = useOhdaUntrackedItemStore();
+const packageStore = useOhdaPackageStore();
 const toastStore = useToastStore();
+
+// Selection mode in create modal: 'tracked' | 'untracked' | 'package'
+const manualMode = ref("tracked");
+const selectedUntrackedId = ref(null);
+const selectedPackageId = ref(null);
+const packageSelectedItems = ref([]);
 
 // View and filter states
 const currentView = ref("table"); // 'table' | 'calendar'
@@ -1148,6 +1324,8 @@ onMounted(async () => {
     requestsStore.fetchExitRequests(),
     inventoryStore.fetchProducts(),
     approvalConfigStore.fetchApprovalConfigs(),
+    untrackedStore.fetchItems(),
+    packageStore.fetchPackages(),
     loadDepartments(),
     loadAllInStockSerials()
   ]);
@@ -1882,6 +2060,98 @@ function addManualItem() {
     quantity: 1,
     selectedSerials: []
   };
+}
+
+function addUntrackedItem() {
+  if (!selectedUntrackedId.value) return;
+  const item = untrackedStore.activeItems.find(u => u.id === selectedUntrackedId.value);
+  if (!item) return;
+
+  createForm.value.items.push({
+    productId: null,
+    productName: item.name,
+    quantity: 1,
+    isUntracked: true,
+    untrackedItemName: item.name,
+    packageId: null,
+    packageName: null,
+    selectedSerials: []
+  });
+
+  selectedUntrackedId.value = null;
+  toastStore.addSuccessToast(`تمت إضافة "${item.name}" إلى الطلب`);
+}
+
+function getCategoryProducts(categoryId) {
+  if (!categoryId) return inventoryStore.products;
+  return inventoryStore.products.filter(p => p.categoryId === categoryId);
+}
+
+function onPackageSelect() {
+  packageSelectedItems.value = [];
+  if (!selectedPackageId.value) return;
+  const pkg = packageStore.packages.find(p => p.id === selectedPackageId.value);
+  if (pkg && pkg.items) {
+    packageSelectedItems.value = pkg.items.map(i => {
+      const catProds = i.categoryId ? inventoryStore.products.filter(p => p.categoryId === i.categoryId) : [];
+      return {
+        ...i,
+        selected: true,
+        selectedProductId: i.trackedProductId || (catProds.length > 0 ? catProds[0].id : null)
+      };
+    });
+  }
+}
+
+function addPackageItems() {
+  if (!selectedPackageId.value) return;
+  const pkg = packageStore.packages.find(p => p.id === selectedPackageId.value);
+  if (!pkg) return;
+
+  const itemsToAdd = packageSelectedItems.value.filter(i => i.selected);
+  if (!itemsToAdd.length) {
+    toastStore.addWarningToast("يرجى اختيار عنصر واحد على الأقل من الحزمة");
+    return;
+  }
+
+  // Validate that all selected category items have a chosen product
+  for (const item of itemsToAdd) {
+    if (!item.untrackedItemId && !item.selectedProductId) {
+      toastStore.addWarningToast(`يرجى اختيار الجهاز المطلوب لفئة "${item.categoryName || 'الأجهزة'}"`);
+      return;
+    }
+  }
+
+  for (const item of itemsToAdd) {
+    if (item.untrackedItemId) {
+      createForm.value.items.push({
+        productId: null,
+        productName: item.untrackedItemName,
+        quantity: 1,
+        isUntracked: true,
+        untrackedItemName: item.untrackedItemName,
+        packageId: pkg.id,
+        packageName: pkg.name,
+        selectedSerials: []
+      });
+    } else {
+      const prod = inventoryStore.products.find(p => p.id === item.selectedProductId);
+      createForm.value.items.push({
+        productId: item.selectedProductId,
+        productName: prod?.name || item.trackedProductName || item.categoryName,
+        quantity: Math.max(1, item.quantity),
+        isUntracked: false,
+        untrackedItemName: null,
+        packageId: pkg.id,
+        packageName: pkg.name,
+        selectedSerials: []
+      });
+    }
+  }
+
+  toastStore.addSuccessToast(`تم إدراج ${itemsToAdd.length} عنصر من حزمة "${pkg.name}" بنجاح`);
+  selectedPackageId.value = null;
+  packageSelectedItems.value = [];
 }
 
 function removeRequestItem(index) {

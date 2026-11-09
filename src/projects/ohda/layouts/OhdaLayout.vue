@@ -135,7 +135,7 @@
             >
               <div class="flex items-center gap-2 min-w-0">
                 <component
-                  :is="group.icon || 'Folder'"
+                  :is="getIconComponent(group.icon || 'Folder')"
                   class="w-4 h-4 text-brand-accent group-hover/header:scale-110 transition-transform shrink-0"
                 />
                 <span class="font-bold text-xs sm:text-[13px] text-white/95 group-hover/header:text-brand-accent transition-colors truncate">
@@ -161,7 +161,7 @@
                 :class="$route.path === item.path ? 'bg-brand-accent/15 text-brand-accent border border-brand-accent/30 font-bold shadow-sm' : 'text-slate-400 hover:text-slate-200 hover:bg-white/5'"
               >
                 <div class="flex items-center gap-2.5 min-w-0">
-                  <component :is="item.icon" class="w-4 h-4 shrink-0" :class="$route.path === item.path ? 'text-brand-accent' : 'text-slate-400 group-hover:text-slate-200'" />
+                  <component :is="getIconComponent(item.icon)" class="w-4 h-4 shrink-0" :class="$route.path === item.path ? 'text-brand-accent' : 'text-slate-400 group-hover:text-slate-200'" />
                   <span class="truncate">{{ item.label }}</span>
                 </div>
                 <span
@@ -225,6 +225,13 @@ import { useI18n } from "vue-i18n";
 import PageHelpDrawer from "../components/PageHelpDrawer.vue";
 import ForceChangePasswordDialog from "../components/ForceChangePasswordDialog.vue";
 import { KeyRound } from "lucide-vue-next";
+import * as LucideIcons from "lucide-vue-next";
+
+function getIconComponent(iconName) {
+  if (!iconName) return LucideIcons.FileText;
+  if (typeof iconName !== "string") return iconName;
+  return LucideIcons[iconName] || LucideIcons.FileText;
+}
 
 const router = useRouter();
 const route = useRoute();
@@ -245,7 +252,7 @@ const openGroups = ref({
   entities: true,
   security: true,
   branches: true,
-  other: true
+
 });
 
 function toggleGroup(key) {
@@ -291,14 +298,22 @@ const pageMeta = {
   "/ohda/notifications": { labelKey: "ohda.nav.notifications", icon: "Bell" },
   "/ohda/compass": { labelKey: "ohda.nav.compass", icon: "Compass" },
   "/ohda/branches": { labelKey: "ohda.nav.branches", icon: "Building2" },
-  "/ohda/branches-dashboard": { labelKey: "ohda.nav.branchesDashboard", icon: "Activity" }
+  "/ohda/branches-dashboard": { labelKey: "ohda.nav.branchesDashboard", icon: "Activity" },
+  "/ohda/untracked-items": { labelKey: "ohda.nav.untrackedItems", icon: "MousePointerClick" },
+  "/ohda/packages": { labelKey: "ohda.nav.packages", icon: "PackageOpen" }
 };
 
 const navItems = computed(() => {
   if (!authStore.allowedPaths) return [];
   return authStore.allowedPaths
     .filter(path => authStore.isRouteAllowed(path))
-    .filter(path => !path.toLowerCase().includes("order") && path !== "/ohda/notifications")
+    .filter(path => {
+      const lower = path.toLowerCase();
+      return !lower.includes("order") &&
+             !lower.includes("untracked-products") &&
+             !lower.includes("initial-entry") &&
+             path !== "/ohda/notifications";
+    })
     .map(path => {
       const meta = pageMeta[path];
 
@@ -377,6 +392,8 @@ const groupDefinitions = computed(() => {
       icon: "Boxes",
       paths: [
         "/ohda/products",
+        "/ohda/untracked-items",
+        "/ohda/packages",
         "/ohda/inventory",
         "/ohda/warehouse-bins",
         "/ohda/barcode-print",
@@ -444,19 +461,6 @@ const groupedNav = computed(() => {
     }
   }
 
-  // Any other items not in the explicit categories - only for non-SuperAdmin
-  if (!authStore.isSuperAdmin) {
-    const otherItems = items.filter(it => !usedPaths.has(it.path.toLowerCase()));
-    if (otherItems.length > 0) {
-      groups.push({
-        key: "other",
-        title: currentLocale.value === "ar" ? "أخرى" : "Other",
-        icon: "Folder",
-        items: otherItems
-      });
-    }
-  }
-
   return groups;
 });
 
@@ -485,11 +489,11 @@ watch(
 );
 
 onMounted(async () => {
-  await Promise.all([
+  Promise.allSettled([
     authStore.fetchMyPages(),
     notifStore.fetchMyNotifications(),
     requestsStore.fetchExitRequests(),
     requestsStore.fetchEntryRequests()
-  ]);
+  ]).catch(() => {});
 });
 </script>

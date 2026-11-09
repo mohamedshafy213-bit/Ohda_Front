@@ -15,7 +15,7 @@ export default [
         if (u && (u.role === 0 || u.role === "SuperAdmin" || u.role === "0")) {
           return "/ohda/branches";
         }
-      } catch (e) {}
+      } catch (e) { }
       return "/ohda/dashboard";
     },
     children: [
@@ -98,6 +98,16 @@ export default [
         path: "acceptance",
         name: "OhdaAcceptance",
         component: () => import("./pages/AcceptancePage.vue")
+      },
+      {
+        path: "untracked-items",
+        name: "OhdaUntrackedItems",
+        component: () => import("./pages/UntrackedItemsPage.vue")
+      },
+      {
+        path: "packages",
+        name: "OhdaPackages",
+        component: () => import("./pages/PackagesPage.vue")
       },
       {
         path: "compass",

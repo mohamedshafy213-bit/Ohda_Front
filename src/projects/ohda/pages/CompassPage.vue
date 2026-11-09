@@ -16,6 +16,16 @@
 
         <!-- Action Buttons -->
         <div class="flex flex-wrap items-center gap-2.5">
+          <!-- Add Previous Custody (Initial Entry) Button -->
+          <Button
+            v-if="hasInitialEntryPermission"
+            @click="openAddInitialEntryModal"
+            class="!bg-emerald-600 hover:!bg-emerald-700 !text-white !font-bold !rounded-xl !px-4 !py-2.5 !text-xs flex items-center gap-2 shadow-sm cursor-pointer transition-colors"
+          >
+            <PlusCircle class="w-4 h-4" />
+            إضافة جهاز عهدة سابقة
+          </Button>
+
           <!-- Edit Header & Signatures Settings Button -->
           <Button
             @click="openHeaderConfigModal"
@@ -80,7 +90,7 @@
               </span>
             </div>
 
-            <div v-if="!filtersCollapsed" class="mt-3 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+            <div v-if="!filtersCollapsed" class="mt-3 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
               <div>
                 <label class="block text-[11px] mb-1 font-semibold text-surface-700 dark:text-surface-300">
                   🔍 {{ $t('ohda.compass.textSearch') }}
@@ -90,6 +100,24 @@
                   :placeholder="$t('ohda.compass.searchPlaceholder')"
                   class="w-full text-xs"
                   @input="debouncedSearch"
+                />
+              </div>
+
+              <div>
+                <label class="block text-[11px] mb-1 font-semibold text-surface-700 dark:text-surface-300">
+                  🏷️ نوع القيد / المصدر
+                </label>
+                <Select
+                  v-model="filters.source"
+                  :options="[
+                    { label: 'الكل (جميع القيود)', value: 'All' },
+                    { label: 'صرف نظامي (حركات النظام)', value: 'Normal' },
+                    { label: 'عهدة سابقة (Initial Entry)', value: 'InitialEntry' }
+                  ]"
+                  optionLabel="label"
+                  optionValue="value"
+                  class="w-full text-xs"
+                  @change="performSearch"
                 />
               </div>
 
@@ -214,10 +242,20 @@
           <!-- 2. Model / Product Name (الطراز) -->
           <Column field="productName" :header="$t('ohda.compass.model')">
             <template #body="{ data }">
-              <div class="font-bold text-surface-900 dark:text-surface-100 text-[13px]">
-                {{ data.productName }}
+              <div class="flex items-center gap-2 flex-wrap">
+                <span class="font-bold text-surface-900 dark:text-surface-100 text-[13px]">
+                  {{ data.productName }}
+                </span>
+                <span
+                  v-if="data.source === 'InitialEntry'"
+                  class="px-2 py-0.5 rounded-md text-[10px] font-bold bg-amber-500/15 text-amber-700 dark:text-amber-400 border border-amber-500/30 flex items-center gap-1 shadow-2xs"
+                  title="تم تسجيل هذا الجهاز كعهدة سابقة (لم يؤثر على المخزون)"
+                >
+                  <Clock class="w-3 h-3 text-amber-500" />
+                  عهدة سابقة
+                </span>
               </div>
-              <span v-if="data.categoryName" class="text-[10px] text-surface-400">
+              <span v-if="data.categoryName" class="text-[10px] text-surface-400 block mt-0.5">
                 {{ data.categoryName }}
               </span>
             </template>
@@ -279,16 +317,36 @@
             </template>
           </Column>
 
-          <!-- 8. Actions / Details Eye Icon -->
-          <Column :header="$t('ohda.compass.details')" headerClass="text-center" bodyClass="text-center" style="width: 70px">
+          <!-- 8. Actions / Details & Operations -->
+          <Column :header="$t('ohda.compass.details')" headerClass="text-center" bodyClass="text-center" style="width: 120px">
             <template #body="{ data }">
-              <button
-                @click="openDetailsModal(data)"
-                :title="$t('ohda.compass.viewDetails')"
-                class="w-8 h-8 rounded-xl bg-blue-600 hover:bg-blue-700 text-white flex items-center justify-center transition-all cursor-pointer shadow-xs hover:scale-105 mx-auto"
-              >
-                <Eye class="w-4 h-4 text-white" />
-              </button>
+              <div class="flex items-center justify-center gap-1.5">
+                <button
+                  @click="openDetailsModal(data)"
+                  :title="$t('ohda.compass.viewDetails')"
+                  class="w-8 h-8 rounded-xl bg-blue-600 hover:bg-blue-700 text-white flex items-center justify-center transition-all cursor-pointer shadow-xs hover:scale-105"
+                >
+                  <Eye class="w-4 h-4 text-white" />
+                </button>
+
+                <button
+                  v-if="data.source === 'InitialEntry' && hasInitialEntryPermission"
+                  @click="openEditInitialEntryModal(data)"
+                  title="تعديل قيد العهدة السابقة"
+                  class="w-8 h-8 rounded-xl bg-amber-500 hover:bg-amber-600 text-white flex items-center justify-center transition-all cursor-pointer shadow-xs hover:scale-105"
+                >
+                  <Pencil class="w-3.5 h-3.5 text-white" />
+                </button>
+
+                <button
+                  v-if="data.source === 'InitialEntry' && hasInitialEntryPermission"
+                  @click="confirmDeleteInitialEntry(data)"
+                  title="حذف قيد العهدة السابقة"
+                  class="w-8 h-8 rounded-xl bg-rose-600 hover:bg-rose-700 text-white flex items-center justify-center transition-all cursor-pointer shadow-xs hover:scale-105"
+                >
+                  <Trash2 class="w-3.5 h-3.5 text-white" />
+                </button>
+              </div>
             </template>
           </Column>
         </DataTable>
@@ -565,6 +623,14 @@
             <!-- Movement Type Badge -->
             <div class="flex items-center gap-2">
               <span
+                v-if="selectedItem.source === 'InitialEntry'"
+                class="px-3 py-1 rounded-xl text-xs font-black flex items-center gap-1.5 shadow-2xs bg-amber-500/15 text-amber-700 dark:text-amber-300 border border-amber-500/30"
+              >
+                <Clock class="w-3.5 h-3.5 text-amber-500" />
+                قيد عهدة سابقة (تأسيس أولي)
+              </span>
+              <span
+                v-else
                 class="px-3 py-1 rounded-xl text-xs font-black flex items-center gap-1.5 shadow-2xs"
                 :class="selectedItem.type === 1 
                   ? 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30' 
@@ -576,7 +642,7 @@
               </span>
 
               <span class="px-2.5 py-1 rounded-xl text-[11px] font-mono font-bold bg-white dark:bg-surface-900 border border-surface-200 dark:border-surface-700 text-surface-700 dark:text-surface-300 shadow-2xs">
-                {{ selectedItem.documentNumber || (selectedItem.type === 2 ? `DOC-OUT-${selectedItem.productExitRequestId || selectedItem.id}` : `DOC-IN-${selectedItem.productEntryRequestId || selectedItem.id}`) }}
+                {{ selectedItem.documentNumber || (selectedItem.source === 'InitialEntry' ? `INIT-COMPASS-${selectedItem.id}` : (selectedItem.type === 2 ? `DOC-OUT-${selectedItem.productExitRequestId || selectedItem.id}` : `DOC-IN-${selectedItem.productEntryRequestId || selectedItem.id}`)) }}
               </span>
             </div>
 
@@ -921,6 +987,233 @@
         </div>
       </template>
     </Dialog>
+
+    <!-- Initial Entry Modal Dialog (Add / Edit) -->
+    <Dialog
+      v-model:visible="showInitialEntryModal"
+      modal
+      :header="isEditingInitialEntry ? 'تعديل قيد عهدة سابقة' : 'إضافة جهاز عهدة سابقة (تأسيس أولي)'"
+      class="max-w-lg w-full"
+    >
+      <form @submit.prevent="submitInitialEntry" class="space-y-4 text-xs font-sans">
+        <!-- Explanatory Banner -->
+        <div class="p-3.5 rounded-xl bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800/40 text-amber-800 dark:text-amber-300 flex items-start gap-2.5">
+          <Clock class="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+          <div class="text-[11px] leading-relaxed">
+            <span class="font-bold block mb-0.5">تسجيل مباشر بدون حركة مخزنية:</span>
+            يُستخدم لتسجيل الأجهزة التي صُرفت للأقسام قبل تفعيل النظام. لن يتم خصم أو إضافة كميات في المخزن ولن يتم إنشاء طلب صرف.
+          </div>
+        </div>
+
+        <!-- Cascading Field 1 & 2: Category and Product Selection from Inventory -->
+        <div class="space-y-3.5">
+          <div class="flex items-center justify-between">
+            <span class="text-[11px] font-bold text-surface-800 dark:text-surface-200">
+              تحديد الصنف / الجهاز من المخزون
+            </span>
+            <button
+              type="button"
+              @click="toggleCustomNameMode"
+              class="text-[10px] text-brand-accent hover:underline flex items-center gap-1 cursor-pointer font-semibold"
+            >
+              <Pencil class="w-3 h-3" />
+              <span>{{ isCustomNameMode ? 'الرجوع للاختيار من التصنيفات والمخزون' : 'كتابة اسم صنف مخصص يدوياً' }}</span>
+            </button>
+          </div>
+
+          <!-- Mode A: Cascading Dropdowns: Category then Product -->
+          <div v-if="!isCustomNameMode" class="space-y-3">
+            <!-- Step 1: Category Selection -->
+            <div>
+              <label class="block text-[11px] mb-1 font-bold text-surface-800 dark:text-surface-200">
+                1. التصنيف / الفئة <span class="text-rose-500">*</span>
+              </label>
+              <Select
+                v-model="selectedCategoryId"
+                :options="categoryOptions"
+                optionLabel="name"
+                optionValue="id"
+                filter
+                :filterPlaceholder="'ابحث في التصنيفات...'"
+                placeholder="-- اختر التصنيف أولاً --"
+                class="w-full text-xs font-semibold"
+                @change="onCategoryChange"
+              >
+                <template #option="{ option }">
+                  <div class="flex items-center gap-2 py-0.5">
+                    <Folder class="w-3.5 h-3.5 text-brand-accent shrink-0" />
+                    <span class="font-bold text-xs">{{ option.name }}</span>
+                  </div>
+                </template>
+              </Select>
+            </div>
+
+            <!-- Step 2: Product Selection filtered by Category -->
+            <div>
+              <label class="block text-[11px] mb-1 font-bold text-surface-800 dark:text-surface-200">
+                2. الصنف / الجهاز التابع للتصنيف <span class="text-rose-500">*</span>
+              </label>
+              <Select
+                v-model="selectedProductItem"
+                :options="filteredProductsByCategory"
+                optionLabel="displayName"
+                filter
+                :filterPlaceholder="'ابحث باسم الصنف أو رمزه...'"
+                :placeholder="selectedCategoryId ? '-- اختر المنتج من هذا التصنيف --' : '-- يرجى اختيار التصنيف أعلاه أولاً --'"
+                :disabled="!selectedCategoryId"
+                class="w-full text-xs font-semibold"
+                @change="onProductSelect"
+              >
+                <template #option="{ option }">
+                  <div class="flex items-center justify-between w-full py-0.5">
+                    <div class="flex items-center gap-2 min-w-0">
+                      <Package class="w-3.5 h-3.5 text-brand-accent shrink-0" />
+                      <span class="font-bold text-xs truncate">{{ option.name }}</span>
+                    </div>
+                    <div class="flex items-center gap-1.5 shrink-0 text-[10px]">
+                      <span v-if="option.sku" class="px-1.5 py-0.5 bg-brand-soft rounded text-brand-dark dark:text-brand-accent font-mono font-medium">
+                        {{ option.sku }}
+                      </span>
+                    </div>
+                  </div>
+                </template>
+                <template #empty>
+                  <div class="p-2 text-center text-xs text-brand-gray">
+                    {{ selectedCategoryId ? 'لا توجد منتجات مسجلة تحت هذا التصنيف' : 'يرجى اختيار التصنيف أولاً' }}
+                  </div>
+                </template>
+              </Select>
+            </div>
+          </div>
+
+          <!-- Mode B: Custom Text Input -->
+          <div v-else>
+            <label class="block text-[11px] mb-1 font-bold text-surface-800 dark:text-surface-200">
+              اسم الجهاز أو الصنف المخصص <span class="text-rose-500">*</span>
+            </label>
+            <InputText
+              v-model="initialEntryForm.productName"
+              placeholder="مثال: جهاز حاسب آلي Dell OptiPlex 7090 أو شاشة HP 24"
+              class="w-full text-xs font-semibold"
+              required
+              autofocus
+            />
+          </div>
+        </div>
+
+        <!-- Field 2: Location / Department (DepartmentId) -->
+        <div>
+          <label class="block text-[11px] mb-1 font-bold text-surface-800 dark:text-surface-200">
+            مكان التواجد / الإدارة أو القسم <span class="text-rose-500">*</span>
+          </label>
+          <Select
+            v-model="initialEntryForm.departmentId"
+            :options="departments"
+            optionLabel="name"
+            optionValue="id"
+            placeholder="اختر مكان التواجد / القسم"
+            filter
+            class="w-full text-xs"
+            required
+          />
+        </div>
+
+        <!-- Field 3: Serial Number (SerialNumber) -->
+        <div>
+          <label class="block text-[11px] mb-1 font-semibold text-surface-700 dark:text-surface-300">
+            الرقم المسلسل (S/N) <span class="text-[10px] text-surface-400 font-normal">(اختياري — سيتم التوليد تلقائياً إن تُرِك فارغاً)</span>
+          </label>
+          <InputText
+            v-model="initialEntryForm.serialNumber"
+            placeholder="مثال: SN-DELL-884920 أو اتركه فارغاً"
+            class="w-full text-xs font-mono"
+          />
+        </div>
+
+        <!-- Field 4: Recipient / Holder Name (Optional) -->
+        <div>
+          <label class="block text-[11px] mb-1 font-semibold text-surface-700 dark:text-surface-300">
+            اسم المستلم / حامل العهدة <span class="text-[10px] text-surface-400 font-normal">(اختياري)</span>
+          </label>
+          <InputText
+            v-model="initialEntryForm.recipientName"
+            placeholder="اسم الشخص المستلم للجهاز بالقسم"
+            class="w-full text-xs"
+          />
+        </div>
+
+        <!-- Field 5: Notes (Optional) -->
+        <div>
+          <label class="block text-[11px] mb-1 font-semibold text-surface-700 dark:text-surface-300">
+            ملاحظات إضافية <span class="text-[10px] text-surface-400 font-normal">(اختياري)</span>
+          </label>
+          <textarea
+            v-model="initialEntryForm.notes"
+            rows="2"
+            placeholder="أي تفاصيل أو ملاحظات عن حالة الجهاز"
+            class="w-full text-xs p-2.5 rounded-xl border border-surface-300 dark:border-surface-700 bg-white dark:bg-surface-850 text-surface-900 dark:text-surface-100 focus:outline-none focus:border-brand-accent resize-none transition-colors"
+          ></textarea>
+        </div>
+
+        <!-- Quick Add Keep Open Option (only in Add mode) -->
+        <div v-if="!isEditingInitialEntry" class="pt-2 border-t border-surface-200 dark:border-surface-700">
+          <label class="flex items-center gap-2 cursor-pointer text-xs text-surface-700 dark:text-surface-300 font-medium select-none">
+            <input
+              type="checkbox"
+              v-model="keepOpenAfterSave"
+              class="rounded text-brand-accent focus:ring-brand-accent cursor-pointer w-4 h-4"
+            />
+            <span>إبقاء النافذة مفتوحة لإضافة جهاز آخر لنفس الموقع (إضافة سريعة)</span>
+          </label>
+        </div>
+
+        <div class="flex items-center justify-end gap-2 pt-3 border-t border-surface-200 dark:border-surface-700">
+          <SecondaryButton type="button" @click="showInitialEntryModal = false" :disabled="savingInitialEntry">
+            {{ $t('ohda.common.cancel') }}
+          </SecondaryButton>
+          <Button
+            type="submit"
+            :loading="savingInitialEntry"
+            class="!bg-emerald-600 hover:!bg-emerald-700 !text-white !font-bold !px-5 !py-2.5 !text-xs !rounded-xl cursor-pointer"
+          >
+            {{ isEditingInitialEntry ? 'حفظ التعديلات' : 'تسجيل العهدة السابقة' }}
+          </Button>
+        </div>
+      </form>
+    </Dialog>
+
+    <!-- Confirm Delete Initial Entry Dialog -->
+    <Dialog
+      v-model:visible="showDeleteModal"
+      modal
+      header="تأكيد حذف قيد عهدة سابقة"
+      class="max-w-md w-full"
+    >
+      <div class="space-y-4 text-xs font-sans">
+        <div class="p-3.5 rounded-xl bg-rose-50 dark:bg-rose-950/20 border border-rose-200 dark:border-rose-800/40 text-rose-800 dark:text-rose-300 flex items-start gap-2.5">
+          <Trash2 class="w-4 h-4 text-rose-600 shrink-0 mt-0.5" />
+          <div class="text-[11px] leading-relaxed">
+            هل أنت متأكد من حذف قيد الجهاز <strong>"{{ itemToDelete?.productName }}"</strong> من سجل البوصلة؟
+            <br />
+            <span class="text-rose-600 dark:text-rose-400 font-bold">هذا الإجراء يحذف السجل من البوصلة فقط ولا يمس المخزون.</span>
+          </div>
+        </div>
+      </div>
+      <template #footer>
+        <div class="flex items-center justify-end gap-2">
+          <SecondaryButton @click="showDeleteModal = false" :disabled="deletingInitialEntry">
+            {{ $t('ohda.common.cancel') }}
+          </SecondaryButton>
+          <Button
+            @click="executeDeleteInitialEntry"
+            :loading="deletingInitialEntry"
+            class="!bg-rose-600 hover:!bg-rose-700 !text-white !font-bold !px-4 !py-2 !text-xs !rounded-xl cursor-pointer"
+          >
+            تأكيد الحذف
+          </Button>
+        </div>
+      </template>
+    </Dialog>
   </div>
 </template>
 
@@ -955,17 +1248,85 @@ import {
   FileSpreadsheet,
   Download,
   Upload,
-  Filter
+  Filter,
+  PlusCircle,
+  Pencil,
+  Trash2,
+  MousePointerClick
 } from "lucide-vue-next";
+import { useOhdaAuthStore } from "../stores/useOhdaAuthStore";
+import { useOhdaInventoryStore } from "../stores/useOhdaInventoryStore";
+import { useOhdaUntrackedItemStore } from "../stores/useOhdaUntrackedItemStore";
 
 const { t, locale } = useI18n();
 const toastStore = useToastStore();
+const authStore = useOhdaAuthStore();
+const inventoryStore = useOhdaInventoryStore();
+const untrackedStore = useOhdaUntrackedItemStore();
 const serialCopied = ref(false);
+
+const hasInitialEntryPermission = computed(() => {
+  if (authStore.isSuperAdmin || authStore.isAdmin) return true;
+  const pages = authStore.allowedPages || [];
+  const foundInPages = pages.some(p => {
+    const raw = typeof p === "string" ? p : (p.path || p.route || p.Path || p.Route || "");
+    return raw.toLowerCase().includes("compass") || raw.toLowerCase().includes("initial-entry");
+  });
+  if (foundInPages) return true;
+
+  const paths = authStore.allowedPaths || [];
+  return paths.some(p => p.toLowerCase().includes("compass") || p.toLowerCase().includes("initial-entry"));
+});
 
 const departments = ref([]);
 const productStates = ref([]);
-const filters = ref({ query: '', departmentId: null, type: null, stateId: null, startDate: null, endDate: null });
+const filters = ref({ query: '', departmentId: null, type: null, stateId: null, startDate: null, endDate: null, source: 'All' });
 const filtersCollapsed = ref(false);
+
+// Initial Entry State
+const showInitialEntryModal = ref(false);
+const isEditingInitialEntry = ref(false);
+const editingInitialEntryId = ref(null);
+const savingInitialEntry = ref(false);
+const keepOpenAfterSave = ref(false);
+const selectedProductItem = ref(null);
+const isCustomNameMode = ref(false);
+
+const selectedCategoryId = ref(null);
+
+const initialEntryForm = ref({
+  productName: "",
+  productId: null,
+  departmentId: null,
+  serialNumber: "",
+  recipientName: "",
+  notes: ""
+});
+
+const categoryOptions = computed(() => {
+  return (inventoryStore.categories || []).map(c => ({
+    id: c.id,
+    name: c.name
+  }));
+});
+
+const filteredProductsByCategory = computed(() => {
+  if (!selectedCategoryId.value) return [];
+  return (inventoryStore.products || [])
+    .filter(p => p.categoryId === selectedCategoryId.value)
+    .map(p => ({
+      id: p.id,
+      name: p.name,
+      displayName: p.sku ? `${p.name} (${p.sku})` : p.name,
+      barcode: p.barcode,
+      sku: p.sku,
+      categoryId: p.categoryId
+    }));
+});
+
+const showDeleteModal = ref(false);
+const itemToDelete = ref(null);
+const deletingInitialEntry = ref(false);
 
 const compassLogs = ref([]);
 const loading = ref(false);
@@ -1228,6 +1589,9 @@ function triggerPrint() {
 onMounted(() => {
   loadSavedHeaderConfig();
   performSearch();
+  inventoryStore.fetchProducts();
+  inventoryStore.fetchCategories();
+  untrackedStore.fetchItems();
   (async () => {
     try {
       const d = await apiGet('/api/Department');
@@ -1258,6 +1622,7 @@ function buildQueryParams() {
   if (filters.value.stateId) params.push(`stateId=${filters.value.stateId}`);
   if (filters.value.startDate) params.push(`startDate=${encodeURIComponent(filters.value.startDate)}`);
   if (filters.value.endDate) params.push(`endDate=${encodeURIComponent(filters.value.endDate)}`);
+  if (filters.value.source && filters.value.source !== 'All') params.push(`source=${encodeURIComponent(filters.value.source)}`);
   return params.length ? `?${params.join('&')}` : '';
 }
 
@@ -1278,8 +1643,177 @@ async function performSearch() {
 }
 
 function resetFilters() {
-  filters.value = { query: '', departmentId: null, type: null, stateId: null, startDate: null, endDate: null };
+  filters.value = { query: '', departmentId: null, type: null, stateId: null, startDate: null, endDate: null, source: 'All' };
   performSearch();
+}
+
+// Initial Entry Methods
+function onCategoryChange() {
+  if (selectedProductItem.value && selectedProductItem.value.categoryId !== selectedCategoryId.value) {
+    selectedProductItem.value = null;
+    initialEntryForm.value.productName = "";
+    initialEntryForm.value.productId = null;
+  }
+}
+
+function onProductSelect() {
+  if (selectedProductItem.value) {
+    initialEntryForm.value.productName = selectedProductItem.value.name;
+    initialEntryForm.value.productId = selectedProductItem.value.id;
+  } else {
+    initialEntryForm.value.productName = "";
+    initialEntryForm.value.productId = null;
+  }
+}
+
+function toggleCustomNameMode() {
+  isCustomNameMode.value = !isCustomNameMode.value;
+  if (!isCustomNameMode.value && selectedProductItem.value) {
+    initialEntryForm.value.productName = selectedProductItem.value.name;
+    initialEntryForm.value.productId = selectedProductItem.value.id;
+  }
+}
+
+function openAddInitialEntryModal() {
+  isEditingInitialEntry.value = false;
+  editingInitialEntryId.value = null;
+  selectedCategoryId.value = null;
+  selectedProductItem.value = null;
+  isCustomNameMode.value = false;
+  initialEntryForm.value = {
+    productName: "",
+    productId: null,
+    departmentId: initialEntryForm.value.departmentId || (departments.value[0]?.id ?? null),
+    serialNumber: "",
+    recipientName: "",
+    notes: ""
+  };
+  showInitialEntryModal.value = true;
+}
+
+function openEditInitialEntryModal(item) {
+  isEditingInitialEntry.value = true;
+  editingInitialEntryId.value = item.id;
+  
+  const match = (inventoryStore.products || []).find(
+    p => (item.productId && p.id === item.productId) || 
+         p.name?.trim().toLowerCase() === item.productName?.trim().toLowerCase()
+  );
+
+  if (match) {
+    selectedCategoryId.value = match.categoryId;
+    selectedProductItem.value = {
+      id: match.id,
+      name: match.name,
+      displayName: match.sku ? `${match.name} (${match.sku})` : match.name,
+      barcode: match.barcode,
+      sku: match.sku,
+      categoryId: match.categoryId
+    };
+    isCustomNameMode.value = false;
+  } else {
+    selectedCategoryId.value = null;
+    selectedProductItem.value = null;
+    isCustomNameMode.value = true;
+  }
+
+  initialEntryForm.value = {
+    productName: item.productName || "",
+    productId: match?.id || item.productId || null,
+    departmentId: item.departmentId,
+    serialNumber: item.serialNumber || "",
+    recipientName: item.recipientName || "",
+    notes: item.notes || ""
+  };
+  showInitialEntryModal.value = true;
+}
+
+async function submitInitialEntry() {
+  if (!initialEntryForm.value.productName || !initialEntryForm.value.departmentId) {
+    toastStore.addErrorToast({ title: "يرجى تحديد الصنف والموقع / الإدارة" });
+    return;
+  }
+
+  savingInitialEntry.value = true;
+  try {
+    if (isEditingInitialEntry.value) {
+      const res = await axios.put(`/api/Compass/initial-entry/${editingInitialEntryId.value}`, {
+        productName: initialEntryForm.value.productName,
+        productId: initialEntryForm.value.productId || null,
+        departmentId: initialEntryForm.value.departmentId,
+        serialNumber: initialEntryForm.value.serialNumber || null,
+        recipientName: initialEntryForm.value.recipientName || null,
+        notes: initialEntryForm.value.notes || null
+      });
+      const data = res?.data;
+      if (data?.isDone || data?.IsDone) {
+        toastStore.addSuccessToast({ title: data.returnMessage || "تم تحديث بيانات العهدة السابقة بنجاح" });
+        showInitialEntryModal.value = false;
+        await performSearch();
+      } else {
+        toastStore.addErrorToast({ title: data?.returnMessage || "تعذر تحديث السجل" });
+      }
+    } else {
+      const res = await axios.post("/api/Compass/initial-entry", {
+        productName: initialEntryForm.value.productName,
+        productId: initialEntryForm.value.productId || null,
+        departmentId: initialEntryForm.value.departmentId,
+        serialNumber: initialEntryForm.value.serialNumber || null,
+        recipientName: initialEntryForm.value.recipientName || null,
+        notes: initialEntryForm.value.notes || null,
+        branchId: authStore.branchId || 1
+      });
+      const data = res?.data;
+      if (data?.isDone || data?.IsDone) {
+        toastStore.addSuccessToast({ title: data.returnMessage || "تم تسجيل العهدة السابقة بنجاح" });
+        await performSearch();
+        if (keepOpenAfterSave.value) {
+          initialEntryForm.value.productName = "";
+          initialEntryForm.value.productId = null;
+          initialEntryForm.value.serialNumber = "";
+          initialEntryForm.value.recipientName = "";
+          initialEntryForm.value.notes = "";
+          selectedProductItem.value = null;
+        } else {
+          showInitialEntryModal.value = false;
+        }
+      } else {
+        toastStore.addErrorToast({ title: data?.returnMessage || "تعذر تسجيل العهدة السابقة" });
+      }
+    }
+  } catch (err) {
+    const errorMsg = err?.response?.data?.returnMessage || err?.response?.data?.ReturnMessage || "حدث خطأ أثناء حفظ القيد";
+    toastStore.addErrorToast({ title: errorMsg });
+  } finally {
+    savingInitialEntry.value = false;
+  }
+}
+
+function confirmDeleteInitialEntry(item) {
+  itemToDelete.value = item;
+  showDeleteModal.value = true;
+}
+
+async function executeDeleteInitialEntry() {
+  if (!itemToDelete.value) return;
+  deletingInitialEntry.value = true;
+  try {
+    const res = await axios.delete(`/api/Compass/initial-entry/${itemToDelete.value.id}`);
+    const data = res?.data;
+    if (data?.isDone || data?.IsDone) {
+      toastStore.addSuccessToast({ title: data.returnMessage || "تم حذف قيد العهدة السابقة بنجاح" });
+      showDeleteModal.value = false;
+      itemToDelete.value = null;
+      await performSearch();
+    } else {
+      toastStore.addErrorToast({ title: data?.returnMessage || "تعذر حذف السجل" });
+    }
+  } catch (err) {
+    const errorMsg = err?.response?.data?.returnMessage || err?.response?.data?.ReturnMessage || "حدث خطأ أثناء حذف القيد";
+    toastStore.addErrorToast({ title: errorMsg });
+  } finally {
+    deletingInitialEntry.value = false;
+  }
 }
 
 async function exportToExcel() {
