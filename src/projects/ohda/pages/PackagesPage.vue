@@ -246,20 +246,20 @@
     <div v-else class="bg-brand-white dark:bg-white/5 border border-brand-gray/10 rounded-2xl overflow-hidden shadow-sm">
       <DataTable
         :value="filteredPackages"
-        :paginator="filteredPackages.length > 10"
+        paginator
         :rows="10"
         :rowsPerPageOptions="[5, 10, 20, 50]"
         class="w-full text-xs"
         responsiveLayout="scroll"
       >
-        <Column field="name" :header="$t('ohda.packages.packageName')" sortable>
+        <Column field="name" :header="$t('ohda.packages.packageName')" sortable headerClass="text-start" style="width: 35%">
           <template #body="{ data }">
-            <div class="font-bold text-brand-dark dark:text-white flex items-center gap-3 py-1">
+            <div class="font-bold text-brand-dark dark:text-white flex items-center gap-3 py-1 text-start">
               <div class="w-8 h-8 rounded-xl bg-brand-soft dark:bg-white/10 text-brand-accent flex items-center justify-center shrink-0 border border-brand-accent/20">
                 <PackageOpen class="w-4 h-4" />
               </div>
               <div>
-                <span class="text-sm">{{ data.name }}</span>
+                <span class="text-sm font-bold block">{{ data.name }}</span>
                 <p v-if="data.description" class="text-[11px] text-brand-gray font-normal mt-0.5">
                   {{ data.description }}
                 </p>
@@ -268,9 +268,9 @@
           </template>
         </Column>
 
-        <Column :header="$t('ohda.packages.packageItems')" style="min-width: 320px">
+        <Column :header="$t('ohda.packages.packageItems')" headerClass="text-start" style="width: 45%">
           <template #body="{ data }">
-            <div class="flex flex-wrap gap-1.5 py-1">
+            <div class="flex flex-wrap gap-1.5 py-1 text-start">
               <span
                 v-for="(item, idx) in data.items || []"
                 :key="idx"
@@ -291,21 +291,23 @@
           </template>
         </Column>
 
-        <Column field="isActive" :header="$t('ohda.packages.status')" sortable style="width: 140px; text-align: center">
+        <Column field="isActive" :header="$t('ohda.packages.status')" sortable headerClass="text-center" bodyClass="text-center" style="width: 120px; min-width: 120px">
           <template #body="{ data }">
-            <span
-              class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold border"
-              :class="data.isActive
-                ? 'bg-emerald-500/10 text-emerald-600 border-emerald-500/20'
-                : 'bg-rose-500/10 text-rose-600 border-rose-500/20'"
-            >
-              <span class="w-1.5 h-1.5 rounded-full" :class="data.isActive ? 'bg-emerald-500' : 'bg-rose-500'"></span>
-              {{ data.isActive ? $t('ohda.packages.active') : $t('ohda.packages.inactive') }}
-            </span>
+            <div class="flex items-center justify-center">
+              <span
+                class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold border"
+                :class="data.isActive
+                  ? 'bg-emerald-500/10 text-emerald-600 border-emerald-500/20'
+                  : 'bg-rose-500/10 text-rose-600 border-rose-500/20'"
+              >
+                <span class="w-1.5 h-1.5 rounded-full" :class="data.isActive ? 'bg-emerald-500' : 'bg-rose-500'"></span>
+                {{ data.isActive ? $t('ohda.packages.active') : $t('ohda.packages.inactive') }}
+              </span>
+            </div>
           </template>
         </Column>
 
-        <Column :header="$t('ohda.common.actions')" style="width: 110px; text-align: center">
+        <Column :header="$t('ohda.common.actions')" headerClass="text-center" bodyClass="text-center" style="width: 110px; min-width: 110px">
           <template #body="{ data }">
             <div class="flex items-center justify-center gap-1.5">
               <editButton @click="openEditModal(data)" />
@@ -401,14 +403,14 @@
               <!-- Item Type Segmented Selector -->
               <div class="w-full sm:w-44 shrink-0">
                 <label class="block text-[10px] font-bold text-brand-gray mb-1">نوع المكون</label>
-                <select
+                <Select
                   v-model="row.type"
+                  :options="itemTypeOptions"
+                  optionLabel="label"
+                  optionValue="value"
                   @change="onTypeChange(row)"
-                  class="w-full rounded-xl border border-brand-gray/25 bg-brand-light dark:bg-slate-800 px-3 py-2 text-xs text-brand-dark dark:text-white font-medium focus:outline-none focus:ring-1 focus:ring-brand-accent cursor-pointer"
-                >
-                  <option value="Category">فئة جهاز متتبع (تصنيف)</option>
-                  <option value="Untracked">ملحق غير متتبع (بالاسم)</option>
-                </select>
+                  class="w-full text-xs font-semibold"
+                />
               </div>
 
               <!-- Item Selector Dropdown (Category vs Untracked) -->
@@ -416,29 +418,31 @@
                 <label class="block text-[10px] font-bold text-brand-gray mb-1">
                   {{ row.type === 'Category' ? 'اختر فئة الجهاز من المستودع' : 'اختر الملحق غير المتتبع' }}
                 </label>
-                <select
+                <Select
                   v-if="row.type === 'Category'"
                   v-model="row.categoryId"
-                  class="w-full rounded-xl border border-brand-gray/25 bg-brand-light dark:bg-slate-800 px-3 py-2 text-xs text-brand-dark dark:text-white focus:outline-none focus:ring-1 focus:ring-brand-accent cursor-pointer font-medium"
+                  :options="categories"
+                  optionLabel="name"
+                  optionValue="id"
+                  filter
+                  :filterPlaceholder="'ابحث في فئات الأجهزة...'"
+                  placeholder="-- اختر فئة الأجهزة --"
+                  class="w-full text-xs font-semibold"
                   required
-                >
-                  <option :value="null" disabled>-- اختر فئة الأجهزة --</option>
-                  <option v-for="c in categories" :key="c.id" :value="c.id">
-                    فئة: {{ c.name }}
-                  </option>
-                </select>
+                />
 
-                <select
+                <Select
                   v-else
                   v-model="row.untrackedItemId"
-                  class="w-full rounded-xl border border-brand-gray/25 bg-brand-light dark:bg-slate-800 px-3 py-2 text-xs text-brand-dark dark:text-white focus:outline-none focus:ring-1 focus:ring-brand-accent cursor-pointer font-medium"
+                  :options="untrackedStore.activeItems"
+                  optionLabel="name"
+                  optionValue="id"
+                  filter
+                  :filterPlaceholder="'ابحث في الملحقات غير المتتبعة...'"
+                  placeholder="-- اختر الملحق --"
+                  class="w-full text-xs font-semibold"
                   required
-                >
-                  <option :value="null" disabled>-- اختر الملحق --</option>
-                  <option v-for="u in untrackedStore.activeItems" :key="u.id" :value="u.id">
-                    {{ u.name }}
-                  </option>
-                </select>
+                />
               </div>
 
               <!-- Quantity Field -->
@@ -506,6 +510,7 @@ import { ref, computed, onMounted } from 'vue';
 import { useOhdaPackageStore } from '@/projects/ohda/stores/useOhdaPackageStore';
 import { useOhdaUntrackedItemStore } from '@/projects/ohda/stores/useOhdaUntrackedItemStore';
 import { useOhdaInventoryStore } from '@/projects/ohda/stores/useOhdaInventoryStore';
+import { useOhdaAuthStore } from '@/projects/ohda/stores/useOhdaAuthStore';
 import { useToastStore } from '@/stores/toastStore';
 import {
   PackageOpen,
@@ -522,8 +527,6 @@ import Dialog from 'primevue/dialog';
 import InputText from 'primevue/inputtext';
 import Checkbox from 'primevue/checkbox';
 import Button from 'primevue/button';
-import DataTable from 'primevue/datatable';
-import Column from 'primevue/column';
 import searchField from '@/components/searchField.vue';
 import editButton from '@/components/editButton.vue';
 import deleteButton from '@/components/deleteButton.vue';
@@ -534,7 +537,13 @@ import LoadingSkeleton from '@/components/LoadingSkeleton.vue';
 const packageStore = useOhdaPackageStore();
 const untrackedStore = useOhdaUntrackedItemStore();
 const inventoryStore = useOhdaInventoryStore();
+const authStore = useOhdaAuthStore();
 const toastStore = useToastStore();
+
+const itemTypeOptions = [
+  { label: 'فئة جهاز متتبع (تصنيف)', value: 'Category' },
+  { label: 'ملحق غير متتبع (بالاسم)', value: 'Untracked' }
+];
 
 const searchQuery = ref('');
 const statusFilter = ref('all');
@@ -646,6 +655,7 @@ async function savePackage() {
       name: form.value.name.trim(),
       description: form.value.description?.trim() || null,
       isActive: form.value.isActive,
+      branchId: authStore.user?.branchId || undefined,
       items: form.value.items.map((i) => ({
         categoryId: i.type === 'Category' ? i.categoryId : null,
         trackedProductId: null,

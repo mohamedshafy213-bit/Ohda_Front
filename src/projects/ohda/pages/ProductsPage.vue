@@ -62,7 +62,7 @@
     </div>
 
     <!-- Branch Products Quota Consumption Banner -->
-    <div
+    <!-- <div
       v-if="branchStore.myQuota"
       class="p-4 rounded-2xl border flex flex-col sm:flex-row sm:items-center justify-between gap-3 transition-all"
       :class="branchStore.myQuota.isProductQuotaExceeded
@@ -92,7 +92,7 @@
         </div>
       </div>
 
-      <!-- Quota Progress Bar -->
+      Quota Progress Bar
       <div class="w-full sm:w-48 space-y-1">
         <div class="flex items-center justify-between text-[10px] font-bold">
           <span>{{ $t('ohda.branches.quotaProductProgress') }}</span>
@@ -106,10 +106,10 @@
           ></div>
         </div>
       </div>
-    </div>
+    </div> -->
 
     <!-- Search Bar -->
-    <div class="bg-brand-white dark:bg-white/5 border border-brand-gray/10 p-4 rounded-2xl shadow-sm">
+    <div class="bg-brand-white dark:bg-white/5 border border-brand-gray/10 p-4 rounded-2xl shadow-sm ">
       <searchField v-model="searchQuery" :placeholder="$t('ohda.common.search')" />
     </div>
 
@@ -135,37 +135,39 @@
           />
         </template>
 
-        <Column field="sku" :header="$t('ohda.products.sku')" sortable>
+        <Column field="name" :header="$t('ohda.products.name')" sortable headerClass="text-start">
           <template #body="{ data }">
-            <span class="font-mono text-brand-accent font-semibold select-all">{{ data.sku || '-' }}</span>
+            <span class="font-bold text-brand-dark dark:text-white text-xs block">{{ data.name }}</span>
           </template>
         </Column>
 
-        <Column field="barcode" :header="$t('ohda.products.barcode')" sortable>
+        <Column field="categoryName" :header="$t('ohda.products.category')" sortable headerClass="text-start">
           <template #body="{ data }">
-            <span class="font-mono text-brand-gray dark:text-slate-400 select-all">{{ data.barcode || '-' }}</span>
+            <span class="text-brand-dark dark:text-slate-300 text-xs">{{ data.categoryName || '-' }}</span>
           </template>
         </Column>
 
-        <Column field="name" :header="$t('ohda.products.name')" sortable>
+        <Column field="sku" :header="$t('ohda.products.sku')" sortable headerClass="text-start">
           <template #body="{ data }">
-            <span class="font-bold text-brand-dark dark:text-white">{{ data.name }}</span>
+            <span class="font-mono text-brand-accent font-semibold select-all text-xs">{{ data.sku || '-' }}</span>
           </template>
         </Column>
 
-        <Column field="categoryName" :header="$t('ohda.products.category')" sortable>
+        <Column field="barcode" :header="$t('ohda.products.barcode')" sortable headerClass="text-start">
           <template #body="{ data }">
-            <span class="text-brand-dark dark:text-slate-300">{{ data.categoryName || '-' }}</span>
+            <span class="font-mono text-brand-gray dark:text-slate-400 select-all text-xs">{{ data.barcode || '-' }}</span>
           </template>
         </Column>
 
-        <Column field="supplierName" :header="$t('ohda.products.supplier')" sortable>
+        <Column field="quantity" :header="$t('ohda.products.qty')" sortable headerClass="text-center" bodyClass="text-center" style="width: 100px">
           <template #body="{ data }">
-            <span class="text-brand-gray dark:text-slate-400">{{ data.supplierName || '-' }}</span>
+            <span class="font-bold text-sm font-mono" :class="(data.quantity || 0) <= (data.minThreshold || 5) ? 'text-amber-600' : 'text-brand-accent'">
+              {{ data.quantity || data.amount || 0 }}
+            </span>
           </template>
         </Column>
 
-        <Column :header="$t('ohda.products.inventoryType')">
+        <Column :header="$t('ohda.products.inventoryType')" headerClass="text-center" bodyClass="text-center" style="width: 110px">
           <template #body="{ data }">
             <span class="px-2 py-0.5 rounded-lg text-[10px] font-bold inline-block" :class="data.inventoryType === 2 ? 'bg-amber-500/10 text-amber-700 dark:text-amber-400 border border-amber-500/20' : 'bg-blue-500/10 text-blue-700 dark:text-blue-400 border border-blue-500/20'">
               {{ data.inventoryType === 2 ? $t('ohda.products.fixedAsset') : $t('ohda.products.consumable') }}
@@ -173,7 +175,7 @@
           </template>
         </Column>
 
-        <Column :header="$t('ohda.dashboard.price')">
+        <Column :header="$t('ohda.dashboard.price')" headerClass="text-start">
           <template #body="{ data }">
             <div v-if="data.purchasePrice || data.assetValue || data.unitPrice" class="font-mono text-[11px] space-y-0.5">
               <span v-if="data.unitPrice" class="text-brand-dark dark:text-white font-bold block">{{ data.unitPrice }} {{ $t('ohda.common.sar') }}</span>
@@ -184,16 +186,14 @@
           </template>
         </Column>
 
-        <Column field="quantity" :header="$t('ohda.products.qty')" sortable>
+        <Column field="supplierName" :header="$t('ohda.products.supplier')" sortable headerClass="text-start">
           <template #body="{ data }">
-            <span class="font-bold text-sm font-mono" :class="(data.quantity || 0) <= (data.minThreshold || 5) ? 'text-amber-600' : 'text-brand-accent'">
-              {{ data.quantity || data.amount || 0 }}
-            </span>
+            <span class="text-brand-gray dark:text-slate-400 text-xs">{{ data.supplierName || '-' }}</span>
           </template>
         </Column>
 
         <!-- Actions -->
-        <Column :header="$t('ohda.common.actions')" style="width: 140px">
+        <Column :header="$t('ohda.common.actions')" headerClass="text-center" bodyClass="text-center" style="width: 140px">
           <template #body="{ data }">
             <div class="flex items-center gap-1">
               <!-- Print Barcode Action Button -->
@@ -370,7 +370,7 @@
               </div>
             </label>
 
-            <label
+            <!-- <label
               class="flex items-center gap-2 p-2.5 rounded-xl border cursor-pointer transition-all"
               :class="trackingType === 'general' ? 'bg-brand-accent/15 border-brand-accent text-brand-dark dark:text-white font-bold' : 'border-brand-gray/20 hover:bg-white/5 text-brand-gray'"
             >
@@ -378,7 +378,7 @@
               <div>
                 <span>{{ $t('ohda.products.generalTracking') }}</span>
               </div>
-            </label>
+            </label> -->
           </div>
 
           <!-- 5. Quantity & Serials Setup -->
@@ -401,7 +401,7 @@
                 <label class="block font-semibold text-brand-dark dark:text-white mb-1.5 required">{{ $t('ohda.products.minThreshold') }}</label>
                 <InputNumber
                   v-model="form.minThreshold"
-                  :min="0"
+                  :min="1"
                   required
                   class="w-full !bg-white dark:!bg-brand-dark/80 !border-brand-gray/25 rounded-xl font-mono font-bold"
                 />
@@ -438,14 +438,14 @@
                   <Plus class="w-4 h-4" />
                   <span>اضافة السيريلات ({{ form.amount || 1 }})</span>
                 </button>
-                <button
+                <!-- <button
                   type="button"
                   @click="autoFillSerials"
                   class="px-2.5 py-1.5 rounded-xl bg-white dark:bg-white/10 text-brand-gray hover:text-brand-dark dark:hover:text-white border border-brand-gray/20 font-semibold text-xs flex items-center gap-1 cursor-pointer transition"
                 >
                   <Sparkles class="w-3.5 h-3.5" />
                   <span>توليد تلقائي للكل</span>
-                </button>
+                </button> -->
               </div>
             </div>
           </div>
@@ -467,13 +467,13 @@
                   <QrCode class="w-3.5 h-3.5" />
                   <span>{{ $t('ohda.products.fastScanner') }}</span>
                 </button>
-                <button
+                <!-- <button
                   type="button"
                   @click="autoFillSerials"
                   class="text-[10px] px-2 py-1 rounded-lg bg-brand-light dark:bg-white/10 text-brand-gray hover:text-brand-dark dark:hover:text-white border border-brand-gray/20 font-semibold cursor-pointer transition"
                 >
                   {{ $t('ohda.products.autoFillRemaining') }}
-                </button>
+                </button> -->
                 <button
                   type="button"
                   @click="clearAllSerials"
@@ -541,7 +541,7 @@
 
         <!-- 6. Optional Financials & Pricing Toggle -->
         <div class="p-4 bg-brand-light dark:bg-white/5 rounded-2xl border border-brand-gray/15 space-y-3">
-          <div class="flex items-center justify-between">
+          <!-- <div class="flex items-center justify-between">
             <div>
               <span class="font-bold text-brand-dark dark:text-white text-xs block">
                 {{ $t('ohda.products.pricingInfo') }}
@@ -550,7 +550,7 @@
             </div>
 
             <ToggleSwitch v-model="hasPricing" />
-          </div>
+          </div> -->
 
           <!-- Collapsible Pricing Inputs -->
           <div v-if="hasPricing" class="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2 border-t border-brand-gray/10 dark:border-white/10">
@@ -684,7 +684,9 @@
                 </span>
               </div>
               <div v-if="item.status === 2" class="text-[10px] text-brand-gray space-y-0.5">
-                <span class="truncate text-brand-dark dark:text-white font-medium">{{ item.holderName || '-' }}</span>
+                <span class="truncate text-brand-dark dark:text-white font-medium">
+                  {{ item.recipientName ? `المستلم: ${item.recipientName}` : '' }} {{ item.place ? `(${item.place})` : '' }}
+                </span>
               </div>
             </div>
           </div>

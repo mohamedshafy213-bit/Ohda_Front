@@ -40,16 +40,17 @@
             <!-- Search / Filter Products -->
             <div>
               <label class="block text-[11px] font-semibold text-brand-gray mb-1">اختر الصنف من المخزون</label>
-              <select
+              <Select
                 v-model="selectedProductId"
+                :options="productSelectOptions"
+                optionLabel="displayName"
+                optionValue="id"
+                filter
+                :filterPlaceholder="'ابحث باسم الصنف أو الباركود...'"
+                placeholder="-- اختر الصنف من المخزون --"
+                class="w-full text-xs font-semibold"
                 @change="onProductChange"
-                class="w-full px-3 py-2.5 rounded-xl text-xs bg-brand-light dark:bg-brand-dark/50 border border-brand-gray/25 text-brand-dark dark:text-white focus:outline-none focus:border-brand-accent cursor-pointer font-medium"
-              >
-                <option :value="null" disabled>-- اختر الصنف --</option>
-                <option v-for="p in inventoryStore.products" :key="p.id" :value="p.id">
-                  {{ p.name }} (باركود: {{ p.barcode || p.sku }}) - المتوفر: {{ p.quantity || p.amount || 0 }}
-                </option>
-              </select>
+              />
             </div>
 
             <!-- Selected Product Quick Summary -->
@@ -330,6 +331,13 @@ const printMode = ref("product"); // "product" | "serials"
 const printQuantity = ref(12);
 const productSerials = ref([]);
 const qrMap = ref({});
+
+const productSelectOptions = computed(() => {
+  return (inventoryStore.products || []).map(p => ({
+    ...p,
+    displayName: `${p.name} (باركود: ${p.barcode || p.sku}) - المتوفر: ${p.quantity || p.amount || 0}`
+  }));
+});
 
 const selectedTemplate = ref("thermal_50x25");
 

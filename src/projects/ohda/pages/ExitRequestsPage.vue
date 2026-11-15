@@ -713,18 +713,18 @@
                 <Zap class="w-5 h-5" />
               </div>
               <div>
-                <div class="font-bold text-xs text-brand-dark flex items-center gap-2">
+                <!-- <div class="font-bold text-xs text-brand-dark flex items-center gap-2">
                   <span>صرف مباشر وفوري (اعتماد تلقائي وتوثيق مباشر بالبوصلة)</span>
                   <span v-if="createForm.autoApprove" class="px-2 py-0.5 rounded text-[10px] font-black bg-amber-500/20 text-amber-700">
                     مباشر وفوري
                   </span>
-                </div>
+                </div> -->
                 <p class="text-[11px] text-brand-gray mt-0.5 leading-relaxed">
                   خصم الكميات من المخزون والأرفف فور إنشاء الطلب وتوثيقه كعهدة منصرفة في البوصلة دون الحاجة لدورة موافقة.
                 </p>
               </div>
             </div>
-            <ToggleSwitch v-model="createForm.autoApprove" />
+            <!-- <ToggleSwitch v-model="createForm.autoApprove" /> -->
           </div>
 
           <!-- Added Items List Table -->
@@ -979,19 +979,25 @@
                     <!-- Product selector for category items -->
                     <div v-if="pItem.selected && !pItem.untrackedItemId" class="pt-1 pr-5">
                       <label class="block text-[10px] text-brand-gray mb-1">اختر الجهاز المطلوب من فئة "{{ pItem.categoryName }}":</label>
-                      <select
+                      <Select
                         v-model="pItem.selectedProductId"
-                        class="w-full text-xs rounded-lg border border-brand-gray/25 p-1.5 bg-white text-brand-dark focus:outline-none focus:ring-1 focus:ring-brand-accent cursor-pointer"
+                        :options="getCategoryProducts(pItem.categoryId)"
+                        optionLabel="displayName"
+                        optionValue="id"
+                        filter
+                        :filterPlaceholder="'ابحث عن الجهاز...'"
+                        placeholder="-- اختر الجهاز من هذه الفئة --"
+                        class="w-full text-xs font-semibold"
                       >
-                        <option :value="null" disabled>-- اختر الجهاز من هذه الفئة --</option>
-                        <option
-                          v-for="p in getCategoryProducts(pItem.categoryId)"
-                          :key="p.id"
-                          :value="p.id"
-                        >
-                          {{ p.name }} (الرصيد: {{ p.currentStock || 0 }})
-                        </option>
-                      </select>
+                        <template #option="{ option }">
+                          <div class="flex items-center justify-between w-full py-0.5 text-xs">
+                            <span class="font-bold">{{ option.name }}</span>
+                            <span class="text-[10px] px-2 py-0.5 rounded-full bg-brand-soft text-brand-dark dark:text-brand-accent font-medium">
+                              الرصيد: {{ option.currentStock || 0 }}
+                            </span>
+                          </div>
+                        </template>
+                      </Select>
                     </div>
                   </div>
                 </div>
@@ -1162,19 +1168,6 @@
               </Button>
             </template>
 
-            <!-- 1-Step Direct Final Approval -->
-            <template v-if="selectedRequest.status === 1 && (canApproveAsSupervisor || authStore.isAdmin)">
-              <Button
-                @click="directSingleStepApproval"
-                :disabled="isSubmitting"
-                :loading="isSubmitting"
-                class="!bg-emerald-600 hover:!bg-emerald-700 !text-white !font-bold flex items-center gap-1.5 shadow-sm"
-                title="اعتماد نهائي وصرف مباشر للأصناف فوراً دون الحاجة لمراجعة إدارية"
-              >
-                <CheckCheck class="w-4 h-4" />
-                اعتماد نهائي وصرف مباشر (خطوة واحدة)
-              </Button>
-            </template>
 
             <!-- Manager Stage Approvals -->
             <template v-if="selectedRequest.status === 1 && canApproveAsManager">
@@ -2083,8 +2076,13 @@ function addUntrackedItem() {
 }
 
 function getCategoryProducts(categoryId) {
-  if (!categoryId) return inventoryStore.products;
-  return inventoryStore.products.filter(p => p.categoryId === categoryId);
+  const list = !categoryId
+    ? (inventoryStore.products || [])
+    : (inventoryStore.products || []).filter(p => p.categoryId === categoryId);
+  return list.map(p => ({
+    ...p,
+    displayName: `${p.name} (الرصيد: ${p.currentStock || 0})`
+  }));
 }
 
 function onPackageSelect() {

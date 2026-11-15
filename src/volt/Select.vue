@@ -1,6 +1,8 @@
 <template>
     <PrimeSelect
         showClear
+        filter
+        filterPlaceholder="ابحث..."
         v-bind="$attrs"
         unstyled
         :pt="theme"

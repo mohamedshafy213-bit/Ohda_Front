@@ -7,33 +7,73 @@
             mergeProps: ptViewMerge
         }"
     >
-        <template #paginatorcontainer="{ page, pageCount, pageLinks, changePageCallback, firstPageCallback, lastPageCallback, prevPageCallback, nextPageCallback }">
-            <div class="flex flex-wrap gap-2 items-center justify-center">
-                <SecondaryButton text rounded @click="firstPageCallback" :disabled="page === 0">
-                    <template #icon>
-                        <AngleDoubleLeftIcon />
-                    </template>
-                </SecondaryButton>
-                <SecondaryButton text rounded @click="prevPageCallback" :disabled="page === 0">
-                    <template #icon>
-                        <AngleLeftIcon />
-                    </template>
-                </SecondaryButton>
-                <div class="items-center justify-center gap-2 hidden sm:flex">
-                    <SecondaryButton v-for="pageLink of pageLinks" :key="pageLink" :text="page + 1 !== pageLink" rounded @click="() => changePageCallback(pageLink - 1)" :class="['shrink-0 min-w-10 h-10', { 'bg-highlight!': page + 1 === pageLink }]"
-                        >{{ pageLink }}
-                    </SecondaryButton>
+        <template #paginatorcontainer="{ page, pageCount, pageLinks, changePageCallback, firstPageCallback, lastPageCallback, prevPageCallback, nextPageCallback, totalRecords }">
+            <div class="flex flex-col sm:flex-row items-center justify-between gap-3 px-4 py-3 border-t border-brand-gray/10 text-xs">
+                <!-- Page Info / Count -->
+                <div class="text-brand-gray dark:text-slate-400 text-xs font-medium">
+                    <span v-if="pageCount > 0">
+                        صفحة <strong class="text-brand-dark dark:text-white font-mono">{{ page + 1 }}</strong> من <strong class="text-brand-dark dark:text-white font-mono">{{ pageCount }}</strong>
+                    </span>
+                    <span v-if="totalRecords" class="ms-2 text-[11px] opacity-75">
+                        (إجمالي {{ totalRecords }} سجل)
+                    </span>
                 </div>
-                <SecondaryButton text rounded @click="nextPageCallback" :disabled="page === pageCount! - 1">
-                    <template #icon>
-                        <AngleRightIcon />
-                    </template>
-                </SecondaryButton>
-                <SecondaryButton text rounded @click="lastPageCallback" :disabled="page === pageCount! - 1">
-                    <template #icon>
-                        <AngleDoubleRightIcon />
-                    </template>
-                </SecondaryButton>
+
+                <!-- Pagination Buttons -->
+                <div v-if="pageCount > 1" class="flex items-center gap-1.5" dir="ltr">
+                    <button
+                        type="button"
+                        @click="firstPageCallback"
+                        :disabled="page === 0"
+                        class="p-1.5 rounded-lg border border-brand-gray/15 hover:bg-brand-light dark:hover:bg-white/10 disabled:opacity-30 disabled:pointer-events-none transition cursor-pointer text-brand-dark dark:text-white"
+                        title="الصفحة الأولى"
+                    >
+                        <AngleDoubleLeftIcon class="w-4 h-4 rtl:rotate-180" />
+                    </button>
+                    <button
+                        type="button"
+                        @click="prevPageCallback"
+                        :disabled="page === 0"
+                        class="p-1.5 rounded-lg border border-brand-gray/15 hover:bg-brand-light dark:hover:bg-white/10 disabled:opacity-30 disabled:pointer-events-none transition cursor-pointer text-brand-dark dark:text-white"
+                        title="الصفحة السابقة"
+                    >
+                        <AngleLeftIcon class="w-4 h-4 rtl:rotate-180" />
+                    </button>
+
+                    <div class="flex items-center gap-1">
+                        <button
+                            v-for="pageLink of pageLinks"
+                            :key="pageLink"
+                            type="button"
+                            @click="() => changePageCallback(pageLink - 1)"
+                            class="min-w-8 h-8 px-2 rounded-lg text-xs font-bold font-mono transition cursor-pointer flex items-center justify-center border"
+                            :class="page + 1 === pageLink
+                                ? 'bg-brand-accent text-brand-dark border-brand-accent shadow-xs'
+                                : 'border-brand-gray/15 text-brand-gray dark:text-slate-300 hover:bg-brand-light dark:hover:bg-white/10'"
+                        >
+                            {{ pageLink }}
+                        </button>
+                    </div>
+
+                    <button
+                        type="button"
+                        @click="nextPageCallback"
+                        :disabled="page === pageCount - 1"
+                        class="p-1.5 rounded-lg border border-brand-gray/15 hover:bg-brand-light dark:hover:bg-white/10 disabled:opacity-30 disabled:pointer-events-none transition cursor-pointer text-brand-dark dark:text-white"
+                        title="الصفحة التالية"
+                    >
+                        <AngleRightIcon class="w-4 h-4 rtl:rotate-180" />
+                    </button>
+                    <button
+                        type="button"
+                        @click="lastPageCallback"
+                        :disabled="page === pageCount - 1"
+                        class="p-1.5 rounded-lg border border-brand-gray/15 hover:bg-brand-light dark:hover:bg-white/10 disabled:opacity-30 disabled:pointer-events-none transition cursor-pointer text-brand-dark dark:text-white"
+                        title="الصفحة الأخيرة"
+                    >
+                        <AngleDoubleRightIcon class="w-4 h-4 rtl:rotate-180" />
+                    </button>
+                </div>
             </div>
         </template>
         <template #loadingicon>
@@ -60,10 +100,10 @@ interface Props extends /* @vue-ignore */ DataTableProps {}
 defineProps<Props>();
 
 const theme = ref<DataTablePassThroughOptions>({
-    root: `relative p-flex-scrollable:flex p-flex-scrollable:flex-col p-flex-scrollable:h-full !rounded-2xl`,
-    tableContainer: `p-scrollable:relative p-flex-scrollable:flex p-flex-scrollable:flex-col p-flex-scrollable:flex-1 p-flex-scrollable:h-full !rounded-2xl`,
+    root: `w-full relative p-flex-scrollable:flex p-flex-scrollable:flex-col p-flex-scrollable:h-full !rounded-2xl`,
+    tableContainer: `w-full overflow-x-auto p-scrollable:relative p-flex-scrollable:flex p-flex-scrollable:flex-col p-flex-scrollable:flex-1 p-flex-scrollable:h-full !rounded-2xl`,
     header: `py-3 px-4 border-b border-brand-gray/10 bg-transparent text-brand-dark`,
-    table: `border-spacing-0 w-full border-separate`,
+    table: `border-spacing-0 w-full min-w-full border-separate table-auto`,
     thead: `p-scrollable:bg-brand-light p-scrollable:top-0 p-scrollable:z-10 backdrop-blur`,
     tbody: `p-hoverable:*:hover:bg-brand-light transition-colors p-frozen:sticky p-frozen:z-10`,
     bodyRow: `bg-transparent text-brand-dark p-selectable:cursor-pointer p-selected:bg-brand-soft!`,
@@ -81,9 +121,10 @@ const theme = ref<DataTablePassThroughOptions>({
             p-sorted:bg-brand-soft p-sorted:text-brand-accent
             p-frozen:sticky p-frozen:bg-brand-light p-frozen:z-10
         `,
-        columnHeaderContent: `flex items-center gap-2`,
+        columnHeaderContent: `flex items-center gap-2 group-[.text-center]:justify-center group-[.text-end]:justify-end [&.justify-center]:justify-center [&.justify-end]:justify-end`,
         columnTitle: `font-bold`,
         bodyCell: `text-start py-3 px-4 border-b border-brand-gray/10
+            group-[.text-center]:text-center group-[.text-end]:text-end
             p-frozen:sticky p-frozen:bg-brand-white`,
         bodyCellContent: ``,
         footerCell: `text-start py-3 px-4 border-b border-brand-gray/10

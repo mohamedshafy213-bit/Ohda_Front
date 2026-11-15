@@ -187,7 +187,7 @@ export default {
         unitPrice: "سعر التكلفة / البيع",
         assetValue: "قيمة الأصل",
         qty: "الكمية المتاحة",
-        minThreshold: "حد الأمان للأصناف",
+        minThreshold: "حد الأمان للمنتج",
         inventoryType: "نوع المخزون",
         fixedAsset: "أصل ثابت",
         consumable: "شراء وتوريد",
@@ -206,7 +206,8 @@ export default {
         dragExcel: "قم بسحب ملف Excel هنا أو اضغط للاختيار",
         downloadTemplate: "تحميل نموذج ملف التوريد",
         deleteConfirm: "هل أنت متأكد من حذف هذا الصنف من المخزون؟",
-        emptyState: "لا توجد منتجات مسجلة حالياً. اضغط على '+ إضافة صنف جديد' للبدء."
+        emptyState: "لا توجد منتجات مسجلة حالياً. اضغط على '+ إضافة صنف جديد' للبدء.",
+        devicesCount: "عدد المنتجات"
       },
       inventory: {
         title: "تقرير رصيد المخزون والعهد",

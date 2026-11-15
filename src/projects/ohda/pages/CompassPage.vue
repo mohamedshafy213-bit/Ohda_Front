@@ -339,7 +339,7 @@
                 </button>
 
                 <button
-                  v-if="data.source === 'InitialEntry' && hasInitialEntryPermission"
+                  v-if="data.source === 'InitialEntry' && hasCompassDeletePermission"
                   @click="confirmDeleteInitialEntry(data)"
                   title="حذف قيد العهدة السابقة"
                   class="w-8 h-8 rounded-xl bg-rose-600 hover:bg-rose-700 text-white flex items-center justify-center transition-all cursor-pointer shadow-xs hover:scale-105"
@@ -745,7 +745,7 @@
                     </span>
                   </div>
                   <span class="font-bold text-brand-accent text-xs block truncate mt-0.5">
-                    {{ selectedItem.recipientName || '-' }}
+                    {{ selectedItem.recipientPersonName || selectedItem.recipientName || '-' }}
                   </span>
                   <div class="flex flex-wrap items-center gap-1.5 mt-1 text-[10px]">
                     <span class="inline-flex items-center gap-1 text-surface-700 dark:text-surface-300 font-medium">
@@ -874,7 +874,10 @@
                     </span>
                     <span class="text-surface-300">•</span>
                     <span class="text-[11px] text-surface-500 dark:text-surface-400 truncate">
-                      {{ $t('ohda.compass.byUser') }} <strong class="text-surface-800 dark:text-surface-200">{{ step.userName || step.user || '-' }}</strong>
+                      {{ $t('ohda.compass.byUser') }} <strong class="text-surface-800 dark:text-surface-200">{{ step.personName || step.displayName || '-' }}</strong>
+                      <span v-if="step.militaryNumber || step.userId" class="text-[10px] text-surface-400 font-mono ms-1">
+                        (عسكري: {{ step.militaryNumber || step.userId }})
+                      </span>
                     </span>
                     <span v-if="step.notes" class="text-[10px] text-surface-400 italic truncate hidden sm:inline">
                       ({{ step.notes }})
@@ -1128,6 +1131,27 @@
             placeholder="مثال: SN-DELL-884920 أو اتركه فارغاً"
             class="w-full text-xs font-mono"
           />
+
+          <!-- Quick pick in-stock serial pills -->
+          <div v-if="availableProductSerials.length > 0" class="mt-2 space-y-1">
+            <span class="text-[10px] text-surface-500 dark:text-surface-400 font-semibold block">
+              الأرقام المسلسلة المتوفرة لهذا الصنف في المخزن (انقر للاختيار):
+            </span>
+            <div class="flex flex-wrap gap-1.5 max-h-24 overflow-y-auto p-1.5 bg-surface-50 dark:bg-surface-800 rounded-xl border border-surface-200 dark:border-surface-700">
+              <button
+                v-for="s in availableProductSerials"
+                :key="s.id"
+                type="button"
+                @click="initialEntryForm.serialNumber = s.serialNumber"
+                class="px-2 py-0.5 rounded-lg text-[10px] font-mono font-bold cursor-pointer transition-colors"
+                :class="initialEntryForm.serialNumber === s.serialNumber 
+                  ? 'bg-brand-accent text-surface-900 border border-brand-accent' 
+                  : 'bg-white dark:bg-surface-700 text-surface-700 dark:text-surface-200 border border-surface-200 dark:border-surface-600 hover:border-brand-accent'"
+              >
+                {{ s.serialNumber }}
+              </button>
+            </div>
+          </div>
         </div>
 
         <!-- Field 4: Recipient / Holder Name (Optional) -->
@@ -1266,16 +1290,35 @@ const untrackedStore = useOhdaUntrackedItemStore();
 const serialCopied = ref(false);
 
 const hasInitialEntryPermission = computed(() => {
-  if (authStore.isSuperAdmin || authStore.isAdmin) return true;
   const pages = authStore.allowedPages || [];
   const foundInPages = pages.some(p => {
     const raw = typeof p === "string" ? p : (p.path || p.route || p.Path || p.Route || "");
-    return raw.toLowerCase().includes("compass") || raw.toLowerCase().includes("initial-entry");
+    const lower = raw.toLowerCase().trim();
+    return lower === "/compass/initial-entry" || lower === "/ohda/compass/initial-entry" || lower === "compass.initialentry";
   });
   if (foundInPages) return true;
 
   const paths = authStore.allowedPaths || [];
-  return paths.some(p => p.toLowerCase().includes("compass") || p.toLowerCase().includes("initial-entry"));
+  return paths.some(p => {
+    const lower = p.toLowerCase().trim();
+    return lower === "/compass/initial-entry" || lower === "/ohda/compass/initial-entry" || lower === "compass.initialentry";
+  });
+});
+
+const hasCompassDeletePermission = computed(() => {
+  const pages = authStore.allowedPages || [];
+  const foundInPages = pages.some(p => {
+    const raw = typeof p === "string" ? p : (p.path || p.route || p.Path || p.Route || "");
+    const lower = raw.toLowerCase().trim();
+    return lower === "/compass/delete" || lower === "/ohda/compass/delete" || lower === "/compass/initial-entry" || lower === "/ohda/compass/initial-entry";
+  });
+  if (foundInPages) return true;
+
+  const paths = authStore.allowedPaths || [];
+  return paths.some(p => {
+    const lower = p.toLowerCase().trim();
+    return lower === "/compass/delete" || lower === "/ohda/compass/delete" || lower === "/compass/initial-entry" || lower === "/ohda/compass/initial-entry";
+  });
 });
 
 const departments = ref([]);
@@ -1302,6 +1345,8 @@ const initialEntryForm = ref({
   recipientName: "",
   notes: ""
 });
+
+const availableProductSerials = ref([]);
 
 const categoryOptions = computed(() => {
   return (inventoryStore.categories || []).map(c => ({
@@ -1439,17 +1484,27 @@ const parsedApprovalTrail = computed(() => {
       : selectedItem.value.approvalTrail;
     if (!Array.isArray(raw)) return [];
     return raw
-      .map(s => ({
-        stepOrder: s.stepOrder ?? s.StepOrder ?? 1,
-        stepName: s.stepName ?? s.StepName ?? s.step ?? "",
-        role: s.role ?? s.Role ?? "",
-        action: s.action ?? s.Action ?? "Approved",
-        userId: s.userId ?? s.UserId,
-        userName: s.userName ?? s.UserName ?? s.user ?? s.User ?? "-",
-        date: s.date ?? s.Date ?? null,
-        notes: s.notes ?? s.Notes ?? ""
-      }))
-      .filter(s => s.stepName || s.action || s.userName !== "-");
+      .map(s => {
+        const pName = (s.personName || s.PersonName || s.name || s.Name || '').trim();
+        const uName = (s.userName || s.UserName || s.user || s.User || '').trim();
+        const mNum = s.militaryNumber ?? s.MilitaryNumber ?? s.userId ?? s.UserId ?? null;
+        // The real person name has highest priority, fallback to userName only if personName is absent
+        const displayName = pName || uName || "-";
+        return {
+          stepOrder: s.stepOrder ?? s.StepOrder ?? 1,
+          stepName: s.stepName ?? s.StepName ?? s.step ?? "",
+          role: s.role ?? s.Role ?? "",
+          action: s.action ?? s.Action ?? "Approved",
+          userId: s.userId ?? s.UserId,
+          militaryNumber: mNum,
+          userName: uName || "-",
+          personName: pName || displayName,
+          displayName,
+          date: s.date ?? s.Date ?? null,
+          notes: s.notes ?? s.Notes ?? ""
+        };
+      })
+      .filter(s => s.stepName || s.action || s.displayName !== "-");
   } catch (_) {
     return [];
   }
@@ -1653,16 +1708,25 @@ function onCategoryChange() {
     selectedProductItem.value = null;
     initialEntryForm.value.productName = "";
     initialEntryForm.value.productId = null;
+    availableProductSerials.value = [];
   }
 }
 
-function onProductSelect() {
+async function onProductSelect() {
   if (selectedProductItem.value) {
     initialEntryForm.value.productName = selectedProductItem.value.name;
     initialEntryForm.value.productId = selectedProductItem.value.id;
+    availableProductSerials.value = [];
+    try {
+      const res = await apiGet(`/api/ProductItem/product/${selectedProductItem.value.id}/instock`);
+      if (res?.data?.isDone) {
+        availableProductSerials.value = res.data.objects || (res.data.singleObject ? [res.data.singleObject] : []);
+      }
+    } catch (_) {}
   } else {
     initialEntryForm.value.productName = "";
     initialEntryForm.value.productId = null;
+    availableProductSerials.value = [];
   }
 }
 
@@ -1679,6 +1743,7 @@ function openAddInitialEntryModal() {
   editingInitialEntryId.value = null;
   selectedCategoryId.value = null;
   selectedProductItem.value = null;
+  availableProductSerials.value = [];
   isCustomNameMode.value = false;
   initialEntryForm.value = {
     productName: "",

@@ -26,7 +26,7 @@ export const useOhdaAuthStore = defineStore("ohdaAuth", {
     isSupervisor: (state) => state.user?.role === 3 || state.user?.role === "Supervisor" || state.user?.role === "3",
     isManager: (state) => state.user?.role === 4 || state.user?.role === "Manager" || state.user?.role === "4",
     userName: (state) => state.user?.personName || state.user?.username || "مستخدم",
-    branchId: (state) => state.user?.branchId || 1,
+    branchId: (state) => state.user?.branchId || null,
     branchName: (state) => state.user?.branchName || "",
     allowedPaths: (state) => {
       const isSuper = state.user?.role === 0 || state.user?.role === "SuperAdmin" || state.user?.role === "0";

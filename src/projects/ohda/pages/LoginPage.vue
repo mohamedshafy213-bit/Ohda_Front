@@ -92,8 +92,8 @@ const toastStore = useToastStore();
 const currentLocale = computed(() => getCurrentLocale());
 
 const form = ref({
-  username: "admin",
-  password: "Admin@123"
+  username: "",
+  password: ""
 });
 
 function toggleLanguage() {

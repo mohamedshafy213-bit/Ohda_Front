@@ -25,97 +25,119 @@
       </Button>
     </div>
 
-    <!-- KPI / Statistics Cards -->
-    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
-      <div class="bg-brand-white dark:bg-white/5 border border-brand-gray/10 rounded-2xl p-4 shadow-sm flex items-center gap-3.5">
-        <div class="w-10 h-10 rounded-xl bg-blue-500/10 text-blue-600 dark:text-blue-400 flex items-center justify-center shrink-0">
-          <Tag class="w-5 h-5" />
+    <!-- Status Tabs Beside Each Other (Interactive Cards) -->
+    <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+      <!-- Tab 1: All Items -->
+      <button
+        type="button"
+        @click="statusFilter = 'all'"
+        class="p-4 rounded-2xl border text-start transition-all cursor-pointer flex items-center justify-between group"
+        :class="statusFilter === 'all'
+          ? 'bg-brand-soft/80 dark:bg-white/10 border-brand-accent/50 shadow-sm ring-1 ring-brand-accent/30'
+          : 'bg-brand-white dark:bg-white/5 border-brand-gray/10 hover:border-brand-gray/30 hover:bg-brand-light/50'"
+      >
+        <div class="flex items-center gap-3">
+          <div
+            class="w-10 h-10 rounded-xl flex items-center justify-center shrink-0 transition-colors"
+            :class="statusFilter === 'all' ? 'bg-brand-accent text-brand-dark' : 'bg-blue-500/10 text-blue-600 dark:text-blue-400'"
+          >
+            <Tag class="w-5 h-5" />
+          </div>
+          <div>
+            <span class="text-xs font-bold text-brand-dark dark:text-white block">
+              {{ $t('ohda.common.all') }}
+            </span>
+            <span class="text-[11px] text-brand-gray dark:text-slate-400">
+              كافة الأصناف غير المتتبعة
+            </span>
+          </div>
         </div>
-        <div>
-          <span class="text-[11px] text-brand-gray dark:text-slate-400 font-medium block">
-            {{ $t('ohda.untrackedItems.totalItems') }}
-          </span>
-          <span class="text-lg font-bold text-brand-dark dark:text-white font-mono">
-            {{ untrackedStore.items.length }}
-          </span>
-        </div>
-      </div>
+        <span
+          class="text-sm font-bold font-mono px-2.5 py-1 rounded-xl transition-colors"
+          :class="statusFilter === 'all' ? 'bg-brand-accent/20 text-brand-dark dark:text-brand-accent' : 'bg-brand-light dark:bg-white/10 text-brand-gray dark:text-white'"
+        >
+          {{ untrackedStore.items.length }}
+        </span>
+      </button>
 
-      <div class="bg-brand-white dark:bg-white/5 border border-brand-gray/10 rounded-2xl p-4 shadow-sm flex items-center gap-3.5">
-        <div class="w-10 h-10 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0">
-          <Check class="w-5 h-5" />
+      <!-- Tab 2: Active Items -->
+      <button
+        type="button"
+        @click="statusFilter = 'active'"
+        class="p-4 rounded-2xl border text-start transition-all cursor-pointer flex items-center justify-between group"
+        :class="statusFilter === 'active'
+          ? 'bg-emerald-500/10 border-emerald-500/50 shadow-sm ring-1 ring-emerald-500/30'
+          : 'bg-brand-white dark:bg-white/5 border-brand-gray/10 hover:border-brand-gray/30 hover:bg-brand-light/50'"
+      >
+        <div class="flex items-center gap-3">
+          <div
+            class="w-10 h-10 rounded-xl flex items-center justify-center shrink-0 transition-colors"
+            :class="statusFilter === 'active' ? 'bg-emerald-500 text-white' : 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400'"
+          >
+            <Check class="w-5 h-5" />
+          </div>
+          <div>
+            <span class="text-xs font-bold text-brand-dark dark:text-white block">
+              {{ $t('ohda.untrackedItems.active') }}
+            </span>
+            <span class="text-[11px] text-brand-gray dark:text-slate-400">
+              أصناف نشطة متاحة للصرف
+            </span>
+          </div>
         </div>
-        <div>
-          <span class="text-[11px] text-brand-gray dark:text-slate-400 font-medium block">
-            {{ $t('ohda.untrackedItems.activeCount') }}
-          </span>
-          <span class="text-lg font-bold text-emerald-600 dark:text-emerald-400 font-mono">
-            {{ activeCount }}
-          </span>
-        </div>
-      </div>
+        <span
+          class="text-sm font-bold font-mono px-2.5 py-1 rounded-xl transition-colors"
+          :class="statusFilter === 'active' ? 'bg-emerald-500/25 text-emerald-700 dark:text-emerald-300' : 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400'"
+        >
+          {{ activeCount }}
+        </span>
+      </button>
 
-      <div class="bg-brand-white dark:bg-white/5 border border-brand-gray/10 rounded-2xl p-4 shadow-sm flex items-center gap-3.5">
-        <div class="w-10 h-10 rounded-xl bg-rose-500/10 text-rose-600 dark:text-rose-400 flex items-center justify-center shrink-0">
-          <X class="w-5 h-5" />
+      <!-- Tab 3: Inactive Items -->
+      <button
+        type="button"
+        @click="statusFilter = 'inactive'"
+        class="p-4 rounded-2xl border text-start transition-all cursor-pointer flex items-center justify-between group"
+        :class="statusFilter === 'inactive'
+          ? 'bg-rose-500/10 border-rose-500/50 shadow-sm ring-1 ring-rose-500/30'
+          : 'bg-brand-white dark:bg-white/5 border-brand-gray/10 hover:border-brand-gray/30 hover:bg-brand-light/50'"
+      >
+        <div class="flex items-center gap-3">
+          <div
+            class="w-10 h-10 rounded-xl flex items-center justify-center shrink-0 transition-colors"
+            :class="statusFilter === 'inactive' ? 'bg-rose-500 text-white' : 'bg-rose-500/10 text-rose-600 dark:text-rose-400'"
+          >
+            <X class="w-5 h-5" />
+          </div>
+          <div>
+            <span class="text-xs font-bold text-brand-dark dark:text-white block">
+              {{ $t('ohda.untrackedItems.inactive') }}
+            </span>
+            <span class="text-[11px] text-brand-gray dark:text-slate-400">
+              أصناف معطلة موقوفة مؤقتاً
+            </span>
+          </div>
         </div>
-        <div>
-          <span class="text-[11px] text-brand-gray dark:text-slate-400 font-medium block">
-            {{ $t('ohda.untrackedItems.inactiveCount') }}
-          </span>
-          <span class="text-lg font-bold text-rose-600 dark:text-rose-400 font-mono">
-            {{ inactiveCount }}
-          </span>
-        </div>
-      </div>
+        <span
+          class="text-sm font-bold font-mono px-2.5 py-1 rounded-xl transition-colors"
+          :class="statusFilter === 'inactive' ? 'bg-rose-500/25 text-rose-700 dark:text-rose-300' : 'bg-rose-500/10 text-rose-600 dark:text-rose-400'"
+        >
+          {{ inactiveCount }}
+        </span>
+      </button>
     </div>
 
-    <!-- Quick Tip Banner -->
-    <div class="bg-amber-500/10 border border-amber-500/20 rounded-xl p-3.5 flex items-center gap-3 text-xs text-amber-800 dark:text-amber-300">
-      <Info class="w-4 h-4 shrink-0 text-amber-600 dark:text-amber-400" />
-      <span>{{ $t('ohda.untrackedItems.quickTips') }}</span>
-    </div>
-
-    <!-- Search & Filter Controls -->
-    <div class="bg-brand-white dark:bg-white/5 border border-brand-gray/10 p-4 rounded-2xl shadow-sm flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4">
+    <!-- Search Toolbar & Info Tip -->
+    <div class="flex flex-col md:flex-row md:items-center justify-between gap-3 bg-brand-white dark:bg-white/5 border border-brand-gray/10 p-3.5 rounded-2xl shadow-sm">
       <searchField
         v-model="searchQuery"
         :placeholder="$t('ohda.untrackedItems.searchPlaceholder')"
         class="max-w-md w-full"
       />
 
-      <!-- Filter status pills -->
-      <div class="flex items-center gap-1.5 bg-brand-light dark:bg-white/5 p-1 rounded-xl border border-brand-gray/15 self-start sm:self-auto">
-        <button
-          type="button"
-          @click="statusFilter = 'all'"
-          class="px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer"
-          :class="statusFilter === 'all'
-            ? 'bg-brand-white dark:bg-white/15 text-brand-dark dark:text-white shadow-xs'
-            : 'text-brand-gray hover:text-brand-dark dark:hover:text-white'"
-        >
-          {{ $t('ohda.common.all') }} ({{ untrackedStore.items.length }})
-        </button>
-        <button
-          type="button"
-          @click="statusFilter = 'active'"
-          class="px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer"
-          :class="statusFilter === 'active'
-            ? 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 shadow-xs'
-            : 'text-brand-gray hover:text-brand-dark dark:hover:text-white'"
-        >
-          {{ $t('ohda.untrackedItems.active') }} ({{ activeCount }})
-        </button>
-        <button
-          type="button"
-          @click="statusFilter = 'inactive'"
-          class="px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer"
-          :class="statusFilter === 'inactive'
-            ? 'bg-rose-500/15 text-rose-700 dark:text-rose-400 shadow-xs'
-            : 'text-brand-gray hover:text-brand-dark dark:hover:text-white'"
-        >
-          {{ $t('ohda.untrackedItems.inactive') }} ({{ inactiveCount }})
-        </button>
+      <div class="flex items-center gap-2 text-[11px] text-amber-800 dark:text-amber-300 bg-amber-50 dark:bg-amber-950/20 px-3 py-2 rounded-xl border border-amber-200 dark:border-amber-800/30">
+        <Info class="w-3.5 h-3.5 shrink-0 text-amber-600 dark:text-amber-400" />
+        <span>تضاف الأصناف غير المتتبعة لطلبات الصرف بالاسم ولا تؤثر على أرصدة المستودع</span>
       </div>
     </div>
 
@@ -136,20 +158,20 @@
     <div v-else class="bg-brand-white dark:bg-white/5 border border-brand-gray/10 rounded-2xl overflow-hidden shadow-sm">
       <DataTable
         :value="filteredItems"
-        :paginator="filteredItems.length > 10"
+        paginator
         :rows="10"
         :rowsPerPageOptions="[5, 10, 20, 50]"
         class="w-full text-xs"
         responsiveLayout="scroll"
       >
-        <Column field="name" :header="$t('ohda.untrackedItems.itemName')" sortable>
+        <Column field="name" :header="$t('ohda.untrackedItems.itemName')" sortable headerClass="text-start" style="width: 100%">
           <template #body="{ data }">
-            <div class="font-bold text-brand-dark dark:text-white flex items-center gap-3 py-1">
+            <div class="font-bold text-brand-dark dark:text-white flex items-center gap-3 py-1 text-start">
               <div class="w-8 h-8 rounded-xl bg-brand-soft dark:bg-white/10 text-brand-accent flex items-center justify-center shrink-0 border border-brand-accent/20">
                 <MousePointerClick class="w-4 h-4" />
               </div>
               <div>
-                <span class="text-sm">{{ data.name }}</span>
+                <span class="text-sm font-bold block">{{ data.name }}</span>
                 <span class="block text-[11px] text-brand-gray font-normal">
                   ملحق صرف مباشر بدون تتبع كميات
                 </span>
@@ -158,22 +180,24 @@
           </template>
         </Column>
 
-        <Column field="isActive" :header="$t('ohda.untrackedItems.status')" sortable style="width: 140px; text-align: center">
+        <Column field="isActive" :header="$t('ohda.untrackedItems.status')" sortable headerClass="text-center" bodyClass="text-center" style="width: 140px; min-width: 140px">
           <template #body="{ data }">
-            <button
-              @click="toggleActive(data)"
-              class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold border transition-all cursor-pointer"
-              :class="data.isActive
-                ? 'bg-emerald-500/10 text-emerald-600 border-emerald-500/20 hover:bg-emerald-500/20'
-                : 'bg-rose-500/10 text-rose-600 border-rose-500/20 hover:bg-rose-500/20'"
-            >
-              <span class="w-1.5 h-1.5 rounded-full" :class="data.isActive ? 'bg-emerald-500' : 'bg-rose-500'"></span>
-              {{ data.isActive ? $t('ohda.untrackedItems.active') : $t('ohda.untrackedItems.inactive') }}
-            </button>
+            <div class="flex items-center justify-center">
+              <button
+                @click="toggleActive(data)"
+                class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold border transition-all cursor-pointer"
+                :class="data.isActive
+                  ? 'bg-emerald-500/10 text-emerald-600 border-emerald-500/20 hover:bg-emerald-500/20'
+                  : 'bg-rose-500/10 text-rose-600 border-rose-500/20 hover:bg-rose-500/20'"
+              >
+                <span class="w-1.5 h-1.5 rounded-full" :class="data.isActive ? 'bg-emerald-500' : 'bg-rose-500'"></span>
+                {{ data.isActive ? $t('ohda.untrackedItems.active') : $t('ohda.untrackedItems.inactive') }}
+              </button>
+            </div>
           </template>
         </Column>
 
-        <Column :header="$t('ohda.common.actions')" style="width: 110px; text-align: center">
+        <Column :header="$t('ohda.common.actions')" headerClass="text-center" bodyClass="text-center" style="width: 110px; min-width: 110px">
           <template #body="{ data }">
             <div class="flex items-center justify-center gap-1.5">
               <editButton @click="openEditModal(data)" />
@@ -255,8 +279,6 @@ import Dialog from 'primevue/dialog';
 import InputText from 'primevue/inputtext';
 import Checkbox from 'primevue/checkbox';
 import Button from 'primevue/button';
-import DataTable from 'primevue/datatable';
-import Column from 'primevue/column';
 import searchField from '@/components/searchField.vue';
 import editButton from '@/components/editButton.vue';
 import deleteButton from '@/components/deleteButton.vue';
