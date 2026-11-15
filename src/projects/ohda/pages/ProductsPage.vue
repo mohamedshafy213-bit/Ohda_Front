@@ -193,9 +193,19 @@
         </Column>
 
         <!-- Actions -->
-        <Column :header="$t('ohda.common.actions')" headerClass="text-center" bodyClass="text-center" style="width: 140px">
+        <Column :header="$t('ohda.common.actions')" headerClass="text-center" bodyClass="text-center" style="width: 175px; min-width: 175px">
           <template #body="{ data }">
-            <div class="flex items-center gap-1">
+            <div class="flex items-center justify-center gap-1">
+              <!-- Quick Add Serials Button (+) -->
+              <button
+                type="button"
+                @click="openAddSerialsModal(data)"
+                class="p-1.5 rounded-xl bg-emerald-500/10 hover:bg-emerald-500/25 text-emerald-600 dark:text-emerald-400 transition cursor-pointer flex items-center justify-center border border-emerald-500/20"
+                title="إضافة أرقام مسلسلة / أجهزة جديدة لهذا الصنف (+)"
+              >
+                <Plus class="w-3.5 h-3.5" />
+              </button>
+
               <!-- Print Barcode Action Button -->
               <router-link
                 :to="`/ohda/barcode-print?productId=${data.id}`"
@@ -205,7 +215,7 @@
                 <Printer class="w-3.5 h-3.5" />
               </router-link>
 
-              <!-- View Serials -->
+              <!-- View / Manage Serials -->
               <button
                 type="button"
                 @click="viewProductSerials(data)"
@@ -448,6 +458,40 @@
                 </button> -->
               </div>
             </div>
+            <!-- Edit Mode Serials Management Banner -->
+            <div
+              v-if="isEditing"
+              class="p-4 bg-brand-accent/10 dark:bg-brand-accent/5 rounded-2xl border border-brand-accent/25 space-y-2.5"
+            >
+              <div class="flex items-center justify-between">
+                <span class="text-xs font-bold text-brand-dark dark:text-white flex items-center gap-1.5">
+                  <ScanLine class="w-4 h-4 text-brand-accent" />
+                  <span>الأرقام المسلسلة المسجلة لهذا الصنف ({{ form.amount || form.quantity || 0 }} جهاز)</span>
+                </span>
+                <span class="text-[10px] font-semibold text-brand-gray">إدارة وتعديل السيريالات</span>
+              </div>
+              <p class="text-[11px] text-brand-gray dark:text-slate-300">
+                يمكنك مراجعة الأرقام المسلسلة المسجلة، تصحيح أي سيريال تم إدخاله بالخطأ، حذف أي جهاز، أو إضافة أجهزة وسيريالات جديدة لهذا الصنف.
+              </p>
+              <div class="flex flex-wrap items-center gap-2 pt-1">
+                <button
+                  type="button"
+                  @click="viewProductSerials(form)"
+                  class="px-3.5 py-2 rounded-xl bg-brand-light dark:bg-white/10 hover:bg-brand-soft text-brand-dark dark:text-white border border-brand-gray/20 font-bold text-xs flex items-center gap-1.5 cursor-pointer transition shadow-xs"
+                >
+                  <Eye class="w-4 h-4 text-brand-accent" />
+                  <span>عرض وتعديل وحذف السيريالات</span>
+                </button>
+                <button
+                  type="button"
+                  @click="openAddSerialsModal(form)"
+                  class="px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs flex items-center gap-1.5 cursor-pointer transition shadow-sm"
+                >
+                  <Plus class="w-4 h-4" />
+                  <span>+ إضافة أجهزة / سيريالات جديدة</span>
+                </button>
+              </div>
+            </div>
           </div>
 
           <!-- Serials Inputs Table when "serials" is active and in Add Mode -->
@@ -642,56 +686,132 @@
       </div>
     </Dialog>
 
-    <!-- View Serials Dialog -->
+    <!-- View / Manage Serials Dialog -->
     <Dialog
       v-model:visible="showSerialsModal"
       modal
-      :header="`${$t('ohda.products.viewSerials')}: ${selectedProductForSerials?.name || ''}`"
-      class="max-w-2xl w-full !bg-brand-white dark:!bg-brand-dark !border-brand-gray/15 !text-brand-dark dark:!text-white rounded-3xl overflow-hidden shadow-2xl"
+      :header="`سجل الأجهزة والأرقام المسلسلة: ${selectedProductForSerials?.name || ''}`"
+      class="max-w-3xl w-full !bg-brand-white dark:!bg-brand-dark !border-brand-gray/15 !text-brand-dark dark:!text-white rounded-3xl overflow-hidden shadow-2xl"
     >
-      <div class="space-y-4 text-xs">
+      <div class="space-y-4 text-xs font-sans">
+        <!-- Serials Toolbar: Search + Quick Stats + Add More Button -->
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3 bg-brand-light dark:bg-white/5 rounded-2xl border border-brand-gray/15">
+          <div class="flex items-center gap-2 flex-1 max-w-sm">
+            <searchField
+              v-model="searchSerialQuery"
+              placeholder="ابحث برقم السيريال أو اسم المستلم..."
+              class="w-full text-xs"
+            />
+          </div>
+
+          <div class="flex items-center gap-2">
+            <!-- Count Badges -->
+            <div class="flex items-center gap-1.5 font-mono text-[11px] font-bold">
+              <span class="px-2 py-1 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
+                متاح: {{ serialsInStockCount }}
+              </span>
+              <span class="px-2 py-1 rounded-xl bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20">
+                عهدة: {{ serialsExitedCount }}
+              </span>
+            </div>
+
+            <!-- Add More Serials (+) -->
+            <button
+              type="button"
+              @click="openAddSerialsModal(selectedProductForSerials)"
+              class="px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs flex items-center gap-1.5 shadow-sm cursor-pointer transition transform active:scale-95"
+              title="إضافة أجهزة وأرقام مسلسلة جديدة لهذا الصنف"
+            >
+              <Plus class="w-4 h-4" />
+              <span>إضافة أجهزة جديدة (+)</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Loading -->
         <div v-if="loadingSerials" class="text-center py-8">
           <div class="animate-spin h-6 w-6 border-2 border-brand-accent border-t-transparent rounded-full mx-auto"></div>
           <span class="text-brand-gray dark:text-slate-400 mt-2 block">{{ $t('ohda.common.loading') }}</span>
         </div>
 
-        <div v-else-if="productSerials.length === 0" class="p-8 text-center text-brand-gray dark:text-slate-400 space-y-2">
+        <!-- Empty State -->
+        <div v-else-if="filteredProductSerials.length === 0" class="p-8 text-center text-brand-gray dark:text-slate-400 space-y-3">
           <Package class="w-12 h-12 text-brand-gray/50 mx-auto mb-2" />
-          <p class="font-bold">{{ $t('ohda.common.noData') }}</p>
-          <router-link
-            :to="`/ohda/barcode-print?productId=${selectedProductForSerials?.id}`"
-            class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-brand-accent text-brand-dark font-bold text-xs mt-2"
+          <p class="font-bold">
+            {{ searchSerialQuery ? 'لا توجد أرقام مسلسلة مطابقة للبحث' : 'لا توجد أجهزة مسلسلة مسجلة لهذا الصنف حتى الآن' }}
+          </p>
+          <button
+            type="button"
+            @click="openAddSerialsModal(selectedProductForSerials)"
+            class="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-brand-accent text-brand-dark font-bold text-xs cursor-pointer shadow-sm hover:scale-102 transition"
           >
-            <Printer class="w-3.5 h-3.5" />
-            <span>{{ $t('ohda.nav.barcodePrint') }}</span>
-          </router-link>
+            <Plus class="w-4 h-4" />
+            <span>إضافة أجهزة وأرقام مسلسلة لهذا الصنف الآن</span>
+          </button>
         </div>
 
-        <div v-else class="grid grid-cols-1 md:grid-cols-2 gap-3 max-h-[400px] overflow-y-auto pr-1">
+        <!-- Serials Cards Grid -->
+        <div v-else class="grid grid-cols-1 md:grid-cols-2 gap-2.5 max-h-[420px] overflow-y-auto pr-1">
           <div
-            v-for="item in productSerials"
+            v-for="(item, sIdx) in filteredProductSerials"
             :key="item.id"
-            class="flex items-center gap-3 p-3 bg-brand-light dark:bg-white/5 border border-brand-gray/15 rounded-xl"
+            class="flex items-center justify-between gap-3 p-3 bg-brand-light dark:bg-white/5 border border-brand-gray/15 hover:border-brand-accent/40 rounded-2xl transition group"
           >
             <div class="flex-1 min-w-0 space-y-1">
-              <div class="flex items-center justify-between">
-                <span class="font-mono font-bold text-brand-dark dark:text-white text-xs select-all truncate">{{ item.serialNumber }}</span>
+              <div class="flex items-center gap-2 flex-wrap">
+                <span class="text-[10px] font-mono text-brand-gray font-bold">#{{ sIdx + 1 }}</span>
+                <span class="font-mono font-bold text-brand-dark dark:text-white text-xs select-all truncate">
+                  {{ item.serialNumber }}
+                </span>
+                <button
+                  type="button"
+                  @click="copySerialToClipboard(item.serialNumber)"
+                  class="opacity-0 group-hover:opacity-100 p-1 text-brand-gray hover:text-brand-accent transition cursor-pointer"
+                  title="نسخ السيريال"
+                >
+                  <Copy class="w-3 h-3" />
+                </button>
+              </div>
+
+              <div class="flex items-center gap-2 flex-wrap text-[10px]">
                 <span
-                  class="px-2 py-0.5 rounded-full text-[9px] font-bold border"
-                  :class="item.status === 1 ? 'bg-brand-soft text-brand-accent border-brand-accent/20' : 'bg-red-500/10 text-red-500 border-red-500/20'"
+                  class="px-2 py-0.5 rounded-full font-bold border"
+                  :class="item.status === 1 ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20' : 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20'"
                 >
                   {{ item.status === 1 ? 'متوفر بالمخزن' : 'منصرف كعهدة' }}
                 </span>
-              </div>
-              <div v-if="item.status === 2" class="text-[10px] text-brand-gray space-y-0.5">
-                <span class="truncate text-brand-dark dark:text-white font-medium">
+                <span v-if="item.status === 2" class="text-brand-gray truncate">
                   {{ item.recipientName ? `المستلم: ${item.recipientName}` : '' }} {{ item.place ? `(${item.place})` : '' }}
                 </span>
               </div>
             </div>
+
+            <!-- Item Actions: Edit Serial & Delete Item -->
+            <div class="flex items-center gap-1 shrink-0">
+              <!-- Edit Serial Button -->
+              <button
+                type="button"
+                @click="openEditSerialModal(item)"
+                class="p-1.5 rounded-xl bg-white dark:bg-white/10 hover:bg-brand-soft text-brand-gray hover:text-brand-dark dark:hover:text-white border border-brand-gray/15 transition cursor-pointer"
+                title="تعديل الرقم المسلسل (تصحيح رقم مدخل بالخطأ)"
+              >
+                <Pencil class="w-3.5 h-3.5" />
+              </button>
+
+              <!-- Delete Item Button -->
+              <button
+                type="button"
+                @click="promptDeleteSerial(item)"
+                class="p-1.5 rounded-xl bg-white dark:bg-white/10 hover:bg-rose-500/20 text-brand-gray hover:text-rose-600 border border-brand-gray/15 transition cursor-pointer"
+                title="حذف هذا الجهاز / السيريال وخصمه من رصيد المخزن"
+              >
+                <Trash2 class="w-3.5 h-3.5 text-rose-500" />
+              </button>
+            </div>
           </div>
         </div>
 
+        <!-- Footer -->
         <div class="flex justify-between items-center pt-3 border-t border-brand-gray/10 dark:border-white/10">
           <router-link
             :to="`/ohda/barcode-print?productId=${selectedProductForSerials?.id}`"
@@ -706,6 +826,231 @@
           </SecondaryButton>
         </div>
       </div>
+    </Dialog>
+
+    <!-- Add Serials / Devices to Same Product Dialog (+) -->
+    <Dialog
+      v-model:visible="showAddSerialsModal"
+      modal
+      :header="`إضافة أجهزة وأرقام مسلسلة: ${targetProductForAddSerials?.name || ''}`"
+      class="max-w-2xl w-full !bg-brand-white dark:!bg-brand-dark !border-brand-gray/15 !text-brand-dark dark:!text-white rounded-3xl overflow-hidden shadow-2xl"
+    >
+      <form @submit.prevent="submitAddSerials" class="space-y-4 text-xs font-sans">
+        <!-- Product Context Banner -->
+        <div class="p-3 bg-brand-light dark:bg-white/5 rounded-2xl border border-brand-gray/15 flex items-center justify-between gap-3">
+          <div class="space-y-0.5">
+            <span class="font-bold text-xs text-brand-dark dark:text-white block">
+              {{ targetProductForAddSerials?.name }}
+            </span>
+            <div class="flex items-center gap-2 text-[10px] text-brand-gray font-mono">
+              <span v-if="targetProductForAddSerials?.sku">SKU: {{ targetProductForAddSerials.sku }}</span>
+              <span v-if="targetProductForAddSerials?.barcode">• باركود: {{ targetProductForAddSerials.barcode }}</span>
+            </div>
+          </div>
+          <div class="text-end">
+            <span class="text-[10px] text-brand-gray block">الرصيد الحالي بالمخزن</span>
+            <span class="font-mono font-bold text-sm text-brand-accent">
+              {{ targetProductForAddSerials?.quantity || targetProductForAddSerials?.amount || 0 }} جهاز
+            </span>
+          </div>
+        </div>
+
+        <!-- Mode Selector: Auto-generate / Manual Inputs vs Bulk Paste -->
+        <div class="flex items-center gap-2 border-b border-brand-gray/15 pb-2">
+          <button
+            type="button"
+            @click="addSerialsMode = 'inputs'"
+            class="px-3 py-1.5 rounded-xl font-bold text-xs transition cursor-pointer flex items-center gap-1.5"
+            :class="addSerialsMode === 'inputs' ? 'bg-brand-accent text-brand-dark' : 'bg-brand-light dark:bg-white/5 text-brand-gray hover:text-brand-dark dark:hover:text-white'"
+          >
+            <Boxes class="w-3.5 h-3.5" />
+            <span>إدخال بالعدد وتوليد سيريالات</span>
+          </button>
+          <button
+            type="button"
+            @click="addSerialsMode = 'bulk'"
+            class="px-3 py-1.5 rounded-xl font-bold text-xs transition cursor-pointer flex items-center gap-1.5"
+            :class="addSerialsMode === 'bulk' ? 'bg-brand-accent text-brand-dark' : 'bg-brand-light dark:bg-white/5 text-brand-gray hover:text-brand-dark dark:hover:text-white'"
+          >
+            <FileText class="w-3.5 h-3.5" />
+            <span>لصق مجمع (سيريالات متعددة)</span>
+          </button>
+        </div>
+
+        <!-- Mode A: Count + Slot Inputs -->
+        <div v-if="addSerialsMode === 'inputs'" class="space-y-3">
+          <div class="flex items-center justify-between gap-3">
+            <div class="flex items-center gap-2">
+              <label class="font-bold text-xs">عدد الأجهزة المراد إضافتها:</label>
+              <InputNumber
+                v-model="addSerialsCount"
+                :min="1"
+                :max="500"
+                @update:model-value="syncAddSerialsList"
+                class="w-24 font-mono font-bold"
+              />
+            </div>
+
+            <button
+              type="button"
+              @click="autoFillNewSerials"
+              class="px-3 py-1 rounded-xl bg-brand-light dark:bg-white/10 hover:bg-brand-soft text-brand-dark dark:text-white border border-brand-gray/20 font-semibold text-xs flex items-center gap-1 cursor-pointer transition"
+            >
+              <Sparkles class="w-3.5 h-3.5 text-brand-accent" />
+              <span>توليد أرقام مسلسلة تلقائياً</span>
+            </button>
+          </div>
+
+          <!-- Slots List -->
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-52 overflow-y-auto p-1 bg-white/50 dark:bg-black/20 rounded-2xl border border-brand-gray/10">
+            <div
+              v-for="(s, index) in addSerialsList"
+              :key="index"
+              class="flex items-center gap-1.5 p-1 bg-white dark:bg-brand-dark/70 rounded-xl border border-brand-gray/15"
+            >
+              <span class="text-[10px] font-mono text-brand-gray font-bold w-6 text-center">#{{ index + 1 }}</span>
+              <input
+                v-model="addSerialsList[index]"
+                type="text"
+                placeholder="SN..."
+                class="flex-1 px-2 py-1 text-xs bg-transparent border-none focus:outline-none font-mono font-bold text-brand-dark dark:text-white"
+              />
+              <button
+                type="button"
+                @click="addSerialsList[index] = `SN-${targetProductForAddSerials?.sku || 'ITEM'}-${index + 1}-${Math.floor(1000 + Math.random() * 9000)}`"
+                class="p-1 text-brand-gray hover:text-brand-accent cursor-pointer"
+                title="توليد تلقائي لهذا الحقل"
+              >
+                <Sparkles class="w-3 h-3" />
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Mode B: Bulk Paste Textarea -->
+        <div v-else class="space-y-2">
+          <div class="flex items-center justify-between">
+            <label class="font-bold text-xs">الصق الأرقام المسلسلة هنا (كل سيريال في سطر أو مفصولة بفواصل):</label>
+            <span class="px-2 py-0.5 rounded-lg bg-brand-accent/15 text-brand-accent font-mono font-bold text-[11px]">
+              تم رصد {{ parsedBulkSerialsCount }} رقم تسلسلي
+            </span>
+          </div>
+          <textarea
+            v-model="addSerialsBulkText"
+            rows="6"
+            placeholder="مثال:
+SN-DELL-1001
+SN-DELL-1002
+SN-DELL-1003
+أو مفصولة بفواصل: SN-01, SN-02, SN-03"
+            class="w-full p-3 rounded-2xl border border-brand-gray/25 bg-white dark:bg-brand-dark/50 font-mono text-xs focus:border-brand-accent focus:outline-none resize-none"
+          ></textarea>
+        </div>
+
+        <!-- Dialog Footer -->
+        <div class="flex items-center justify-between pt-3 border-t border-brand-gray/10 dark:border-white/10">
+          <span class="text-[11px] text-brand-gray">
+            سيتم إضافة الأجهزة إلى المخزن وزيادة رصيد الصنف تلقائياً.
+          </span>
+
+          <div class="flex items-center gap-2">
+            <SecondaryButton type="button" @click="showAddSerialsModal = false" :disabled="savingNewSerials">
+              {{ $t('ohda.common.cancel') }}
+            </SecondaryButton>
+            <Button
+              type="submit"
+              :loading="savingNewSerials"
+              class="!bg-emerald-600 hover:!bg-emerald-700 !text-white !font-bold !px-4 !py-2 !text-xs !rounded-xl cursor-pointer"
+            >
+              حفظ وإضافة الأجهزة للمخزن (+)
+            </Button>
+          </div>
+        </div>
+      </form>
+    </Dialog>
+
+    <!-- Edit Single Serial Dialog (Fix Typo in Serial Number) -->
+    <Dialog
+      v-model:visible="showEditSerialModal"
+      modal
+      header="تعديل الرقم المسلسل (تصحيح رقم مدخل بالخطأ)"
+      class="max-w-md w-full !bg-brand-white dark:!bg-brand-dark !border-brand-gray/15 !text-brand-dark dark:!text-white rounded-3xl overflow-hidden shadow-2xl"
+    >
+      <form @submit.prevent="submitEditSerial" class="space-y-4 text-xs font-sans">
+        <div class="p-3 bg-amber-50 dark:bg-amber-950/20 rounded-xl border border-amber-200 dark:border-amber-800/40 text-amber-800 dark:text-amber-300 text-[11px]">
+          تعديل الرقم المسلسل لهذا الجهاز سيحدث تلقائياً السجلات وسجل البوصلة المرتبط به.
+        </div>
+
+        <div>
+          <label class="block font-semibold mb-1 text-brand-gray">الرقم المسلسل الحالي:</label>
+          <span class="font-mono font-bold text-xs p-2 rounded-xl bg-brand-light dark:bg-white/5 border border-brand-gray/20 block select-all">
+            {{ editingSerialItem?.serialNumber }}
+          </span>
+        </div>
+
+        <div>
+          <label class="block font-semibold mb-1 text-brand-dark dark:text-white">الرقم المسلسل الجديد / المصحح <span class="text-rose-500">*</span></label>
+          <InputText
+            v-model="newSerialNumberText"
+            placeholder="أدخل الرقم المسلسل الصحيح..."
+            class="w-full font-mono font-bold text-xs !bg-brand-light dark:!bg-brand-dark/50 !border-brand-gray/25 rounded-xl"
+            required
+            autofocus
+          />
+        </div>
+
+        <div class="flex items-center justify-end gap-2 pt-3 border-t border-brand-gray/10 dark:border-white/10">
+          <SecondaryButton type="button" @click="showEditSerialModal = false" :disabled="savingEditSerial">
+            {{ $t('ohda.common.cancel') }}
+          </SecondaryButton>
+          <Button
+            type="submit"
+            :loading="savingEditSerial"
+            class="!bg-brand-accent !text-brand-dark !font-bold !px-4 !py-2 !text-xs !rounded-xl cursor-pointer"
+          >
+            حفظ التعديل
+          </Button>
+        </div>
+      </form>
+    </Dialog>
+
+    <!-- Delete Single Serial Dialog -->
+    <Dialog
+      v-model:visible="showDeleteSerialModal"
+      modal
+      header="تأكيد حذف الجهاز من الصنف"
+      class="max-w-md w-full !bg-brand-white dark:!bg-brand-dark !border-brand-gray/15 !text-brand-dark dark:!text-white rounded-3xl overflow-hidden shadow-2xl"
+    >
+      <div class="space-y-4 text-xs font-sans">
+        <div class="p-3.5 rounded-2xl bg-rose-50 dark:bg-rose-950/20 border border-rose-200 dark:border-rose-800/40 text-rose-800 dark:text-rose-300 space-y-1.5">
+          <div class="flex items-center gap-2 font-bold text-xs text-rose-700 dark:text-rose-400">
+            <Trash2 class="w-4 h-4" />
+            <span>حذف رقم مسلسل</span>
+          </div>
+          <p class="text-[11px] leading-relaxed">
+            هل أنت متأكد من حذف الجهاز ذو الرقم المسلسل:
+            <strong class="font-mono block text-xs mt-1 select-all">{{ deletingSerialItem?.serialNumber }}</strong>
+          </p>
+          <p class="text-[10px] opacity-80 pt-1 border-t border-rose-200 dark:border-rose-800/40">
+            إذا كان الجهاز متوفراً بالمخزن، سيتم خصم 1 من رصيد هذا الصنف تلقائياً.
+          </p>
+        </div>
+      </div>
+
+      <template #footer>
+        <div class="flex items-center justify-end gap-2">
+          <SecondaryButton @click="showDeleteSerialModal = false" :disabled="isDeletingSerial">
+            {{ $t('ohda.common.cancel') }}
+          </SecondaryButton>
+          <Button
+            @click="executeDeleteSerial"
+            :loading="isDeletingSerial"
+            class="!bg-rose-600 hover:!bg-rose-700 !text-white !font-bold !px-4 !py-2 !text-xs !rounded-xl cursor-pointer"
+          >
+            تأكيد الحذف
+          </Button>
+        </div>
+      </template>
     </Dialog>
 
     <!-- Delete Confirmation Dialog -->
@@ -728,9 +1073,29 @@ import { useOhdaAuthStore } from "../stores/useOhdaAuthStore";
 import { useToastStore } from "@/stores/toastStore";
 import { useI18n } from "vue-i18n";
 import { apiGet } from "@/utilities/fetchApi";
+import axios from "@/utilities/apiClient";
 import DeleteDialog from "@/components/DeleteDialog.vue";
 import EmptyState from "@/components/EmptyState.vue";
 import LoadingSkeleton from "@/components/LoadingSkeleton.vue";
+import {
+  Package,
+  Printer,
+  FileSpreadsheet,
+  Download,
+  Upload,
+  Plus,
+  ScanLine,
+  Sparkles,
+  QrCode,
+  X,
+  Eye,
+  Pencil,
+  Trash2,
+  Copy,
+  Check,
+  Boxes,
+  FileText
+} from "lucide-vue-next";
 
 const { t } = useI18n();
 const inventoryStore = useOhdaInventoryStore();
@@ -743,6 +1108,55 @@ const loadingSerials = ref(false);
 const productSerials = ref([]);
 const selectedProductForSerials = ref(null);
 const productStates = ref([]);
+const searchSerialQuery = ref("");
+
+// Quick stats for serials modal
+const serialsInStockCount = computed(() => {
+  return productSerials.value.filter(s => s.status === 1 || s.status === "InStock").length;
+});
+const serialsExitedCount = computed(() => {
+  return productSerials.value.filter(s => s.status === 2 || s.status === "Exited").length;
+});
+
+const filteredProductSerials = computed(() => {
+  let list = productSerials.value || [];
+  if (!searchSerialQuery.value?.trim()) return list;
+  const q = searchSerialQuery.value.toLowerCase().trim();
+  return list.filter(
+    s => (s.serialNumber && s.serialNumber.toLowerCase().includes(q)) ||
+         (s.recipientName && s.recipientName.toLowerCase().includes(q)) ||
+         (s.place && s.place.toLowerCase().includes(q))
+  );
+});
+
+// Add Serials to same product state (+)
+const showAddSerialsModal = ref(false);
+const targetProductForAddSerials = ref(null);
+const addSerialsMode = ref("inputs"); // 'inputs' | 'bulk'
+const addSerialsCount = ref(1);
+const addSerialsList = ref([""]);
+const addSerialsBulkText = ref("");
+const savingNewSerials = ref(false);
+
+const parsedBulkSerialsCount = computed(() => {
+  if (!addSerialsBulkText.value?.trim()) return 0;
+  return addSerialsBulkText.value
+    .split(/[\r\n,;]+/)
+    .map(s => s.trim())
+    .filter(Boolean)
+    .length;
+});
+
+// Edit single serial state (fix typos)
+const showEditSerialModal = ref(false);
+const editingSerialItem = ref(null);
+const newSerialNumberText = ref("");
+const savingEditSerial = ref(false);
+
+// Delete single serial state
+const showDeleteSerialModal = ref(false);
+const deletingSerialItem = ref(null);
+const isDeletingSerial = ref(false);
 
 const searchQuery = ref("");
 const showModal = ref(false);
@@ -1080,6 +1494,174 @@ async function handleFileUpload(e) {
     } else {
       toastStore.addErrorToast(res.message || t("ohda.common.operationFailed"));
     }
+  }
+}
+
+async function copySerialToClipboard(sn) {
+  if (!sn) return;
+  try {
+    await navigator.clipboard.writeText(sn);
+    toastStore.addSuccessToast(`تم نسخ الرقم التسلسلي: ${sn}`);
+  } catch (_) {
+    toastStore.addInfoToast(`الرقم التسلسلي: ${sn}`);
+  }
+}
+
+function openAddSerialsModal(product) {
+  if (!product) return;
+  targetProductForAddSerials.value = product;
+  addSerialsCount.value = 1;
+  addSerialsList.value = [""];
+  addSerialsBulkText.value = "";
+  addSerialsMode.value = "inputs";
+  showAddSerialsModal.value = true;
+}
+
+function syncAddSerialsList() {
+  const count = Math.max(1, Math.min(500, parseInt(addSerialsCount.value) || 1));
+  const current = [...addSerialsList.value];
+  if (current.length < count) {
+    while (current.length < count) current.push("");
+    addSerialsList.value = current;
+  } else if (current.length > count) {
+    addSerialsList.value = current.slice(0, count);
+  }
+}
+
+function autoFillNewSerials() {
+  syncAddSerialsList();
+  const sku = targetProductForAddSerials.value?.sku || "ITEM";
+  const startIdx = (productSerials.value?.length || 0) + 1;
+  addSerialsList.value = addSerialsList.value.map((val, idx) => {
+    if (val && val.trim()) return val.trim();
+    return `SN-${sku}-${startIdx + idx}-${Math.floor(1000 + Math.random() * 9000)}`;
+  });
+}
+
+async function submitAddSerials() {
+  if (!targetProductForAddSerials.value) return;
+
+  let serials = [];
+  if (addSerialsMode.value === "inputs") {
+    syncAddSerialsList();
+    const sku = targetProductForAddSerials.value?.sku || "ITEM";
+    const startIdx = (productSerials.value?.length || 0) + 1;
+    serials = addSerialsList.value.map((s, idx) => {
+      if (s && s.trim()) return s.trim();
+      return `SN-${sku}-${startIdx + idx}-${Math.floor(1000 + Math.random() * 9000)}`;
+    }).filter(Boolean);
+  } else {
+    serials = addSerialsBulkText.value
+      .split(/[\r\n,;]+/)
+      .map(s => s.trim())
+      .filter(Boolean);
+  }
+
+  if (!serials.length) {
+    toastStore.addErrorToast("يرجى إدخال رقم تسلسلي واحد على الأقل.");
+    return;
+  }
+
+  savingNewSerials.value = true;
+  try {
+    const res = await axios.post("/api/ProductItem/add-serials", {
+      productId: targetProductForAddSerials.value.id,
+      serialNumbers: serials
+    });
+
+    const data = res?.data;
+    if (data?.isDone || data?.IsDone) {
+      toastStore.addSuccessToast(data.returnMessage || "تمت إضافة الأجهزة بنجاح");
+      showAddSerialsModal.value = false;
+      await inventoryStore.fetchProducts();
+
+      // If serials modal is open for this product, refresh its list
+      if (selectedProductForSerials.value && selectedProductForSerials.value.id === targetProductForAddSerials.value.id) {
+        await viewProductSerials(selectedProductForSerials.value);
+      }
+      // If edit modal is open for this product, update its amount
+      if (isEditing.value && editingId.value === targetProductForAddSerials.value.id) {
+        form.value.amount = (form.value.amount || 0) + serials.length;
+        form.value.quantity = form.value.amount;
+      }
+    } else {
+      toastStore.addErrorToast(data?.returnMessage || "تعذر إضافة الأجهزة");
+    }
+  } catch (err) {
+    const msg = err?.response?.data?.returnMessage || err?.response?.data?.ReturnMessage || "حدث خطأ أثناء إضافة السيريالات";
+    toastStore.addErrorToast(msg);
+  } finally {
+    savingNewSerials.value = false;
+  }
+}
+
+function openEditSerialModal(item) {
+  editingSerialItem.value = item;
+  newSerialNumberText.value = item.serialNumber || "";
+  showEditSerialModal.value = true;
+}
+
+async function submitEditSerial() {
+  if (!editingSerialItem.value || !newSerialNumberText.value?.trim()) {
+    toastStore.addErrorToast("الرقم المسلسل الجديد مطلوب");
+    return;
+  }
+
+  savingEditSerial.value = true;
+  try {
+    const res = await axios.put(`/api/ProductItem/${editingSerialItem.value.id}/serial`, {
+      serialNumber: newSerialNumberText.value.trim()
+    });
+
+    const data = res?.data;
+    if (data?.isDone || data?.IsDone) {
+      toastStore.addSuccessToast(data.returnMessage || "تم تعديل الرقم المسلسل بنجاح");
+      editingSerialItem.value.serialNumber = newSerialNumberText.value.trim();
+      showEditSerialModal.value = false;
+    } else {
+      toastStore.addErrorToast(data?.returnMessage || "تعذر تعديل الرقم المسلسل");
+    }
+  } catch (err) {
+    const msg = err?.response?.data?.returnMessage || err?.response?.data?.ReturnMessage || "حدث خطأ أثناء تعديل السيريال";
+    toastStore.addErrorToast(msg);
+  } finally {
+    savingEditSerial.value = false;
+  }
+}
+
+function promptDeleteSerial(item) {
+  deletingSerialItem.value = item;
+  showDeleteSerialModal.value = true;
+}
+
+async function executeDeleteSerial() {
+  if (!deletingSerialItem.value) return;
+
+  isDeletingSerial.value = true;
+  try {
+    const res = await axios.delete(`/api/ProductItem/${deletingSerialItem.value.id}`);
+    const data = res?.data;
+    if (data?.isDone || data?.IsDone) {
+      toastStore.addSuccessToast(data.returnMessage || "تم حذف الجهاز بنجاح");
+      // Remove from serials list
+      productSerials.value = productSerials.value.filter(s => s.id !== deletingSerialItem.value.id);
+      showDeleteSerialModal.value = false;
+      await inventoryStore.fetchProducts();
+
+      // If edit modal is open, decrement amount
+      if (isEditing.value && form.value.amount > 0) {
+        form.value.amount = Math.max(0, form.value.amount - 1);
+        form.value.quantity = form.value.amount;
+      }
+    } else {
+      toastStore.addErrorToast(data?.returnMessage || "تعذر حذف الجهاز");
+    }
+  } catch (err) {
+    const msg = err?.response?.data?.returnMessage || err?.response?.data?.ReturnMessage || "حدث خطأ أثناء حذف الجهاز";
+    toastStore.addErrorToast(msg);
+  } finally {
+    isDeletingSerial.value = false;
+    deletingSerialItem.value = null;
   }
 }
 </script>

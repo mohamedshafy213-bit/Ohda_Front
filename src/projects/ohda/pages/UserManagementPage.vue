@@ -319,15 +319,24 @@
               </template>
             </Column>
 
-            <Column field="username" :header="$t('ohda.users.username')">
+            <Column :header="$t('ohda.militaryRanks.fieldLabel')" field="rank">
               <template #body="{ data }">
-                <span class="font-mono font-bold text-brand-dark">{{ data.username }}</span>
+                <span v-if="getRankLabel(data.rank, t)" class="px-2 py-0.5 rounded text-[11px] font-bold bg-brand-soft text-brand-accent border border-brand-accent/20">
+                  {{ getRankLabel(data.rank, t) }}
+                </span>
+                <span v-else class="text-brand-gray text-[10px]">-</span>
               </template>
             </Column>
 
             <Column field="personName" :header="$t('ohda.users.personName')">
               <template #body="{ data }">
-                <span class="font-semibold text-brand-dark">{{ data.personName }}</span>
+                <span class="font-semibold text-brand-dark">{{ data.personName || data.username }}</span>
+              </template>
+            </Column>
+
+            <Column field="username" :header="$t('ohda.users.username')">
+              <template #body="{ data }">
+                <span class="font-mono text-brand-dark">{{ data.username }}</span>
               </template>
             </Column>
 
@@ -480,13 +489,27 @@
         </div>
 
         <div>
-          <label class="block font-semibold text-brand-dark mb-1">{{ $t('ohda.users.username') }}</label>
-          <InputText v-model="registerForm.username" required class="w-full !bg-brand-light !border-brand-gray/25 focus:!border-brand-accent !text-brand-dark" />
+          <label class="block font-semibold text-brand-dark mb-1">{{ $t('ohda.militaryRanks.fieldLabel') }}</label>
+          <Select
+            v-model="registerForm.rank"
+            :options="militaryRankOptions"
+            optionLabel="label"
+            optionValue="value"
+            :placeholder="$t('ohda.militaryRanks.placeholder')"
+            class="w-full !bg-brand-light !border-brand-gray/25 focus:!border-brand-accent !text-brand-dark"
+            filter
+            showClear
+          />
         </div>
 
         <div>
-          <label class="block font-semibold text-brand-dark mb-1">{{ $t('ohda.users.personName') }}</label>
-          <InputText v-model="registerForm.personName" required class="w-full !bg-brand-light !border-brand-gray/25 focus:!border-brand-accent !text-brand-dark" />
+          <label class="block font-semibold text-brand-dark mb-1">{{ $t('ohda.users.personName') }} *</label>
+          <InputText v-model="registerForm.personName" required class="w-full !bg-brand-light !border-brand-gray/25 focus:!border-brand-accent !text-brand-dark" placeholder="الاسم الثلاثي..." />
+        </div>
+
+        <div>
+          <label class="block font-semibold text-brand-dark mb-1">{{ $t('ohda.users.username') }} *</label>
+          <InputText v-model="registerForm.username" required class="w-full !bg-brand-light !border-brand-gray/25 focus:!border-brand-accent !text-brand-dark font-mono" placeholder="اسم المستخدم للدخول..." />
         </div>
 
         <!-- Branch Selection (for SuperAdmin) or Branch Lock (for Branch Admin) -->
@@ -543,13 +566,27 @@
         </div>
 
         <div>
-          <label class="block font-semibold text-brand-dark mb-1">{{ $t('ohda.users.username') }}</label>
-          <InputText v-model="editForm.username" required class="w-full !bg-brand-light !border-brand-gray/25 focus:!border-brand-accent !text-brand-dark font-mono" />
+          <label class="block font-semibold text-brand-dark mb-1">{{ $t('ohda.militaryRanks.fieldLabel') }}</label>
+          <Select
+            v-model="editForm.rank"
+            :options="militaryRankOptions"
+            optionLabel="label"
+            optionValue="value"
+            :placeholder="$t('ohda.militaryRanks.placeholder')"
+            class="w-full !bg-brand-light !border-brand-gray/25 focus:!border-brand-accent !text-brand-dark"
+            filter
+            showClear
+          />
         </div>
 
         <div>
           <label class="block font-semibold text-brand-dark mb-1">{{ $t('ohda.users.personName') }}</label>
           <InputText v-model="editForm.personName" required class="w-full !bg-brand-light !border-brand-gray/25 focus:!border-brand-accent !text-brand-dark" />
+        </div>
+
+        <div>
+          <label class="block font-semibold text-brand-dark mb-1">{{ $t('ohda.users.username') }}</label>
+          <InputText v-model="editForm.username" required class="w-full !bg-brand-light !border-brand-gray/25 focus:!border-brand-accent !text-brand-dark font-mono" />
         </div>
 
         <!-- Branch Selection (for SuperAdmin) or Branch Display (for Branch Admin) -->
@@ -840,6 +877,7 @@ import { useOhdaUserPermissionStore } from "../stores/useOhdaUserPermissionStore
 import { useOhdaGroupStore } from "../stores/useOhdaGroupStore";
 import { useOhdaBranchStore } from "../stores/useOhdaBranchStore";
 import { useOhdaAuthStore } from "../stores/useOhdaAuthStore";
+import { getMilitaryRankOptions, getRankLabel } from "../constants/militaryRanks";
 
 const userStore = useOhdaUserPermissionStore();
 const groupStore = useOhdaGroupStore();
@@ -987,8 +1025,11 @@ const showUserPermissionsModal = ref(false);
 const selectedUser = ref(null);
 const editingUserId = ref(null);
 
+const militaryRankOptions = computed(() => getMilitaryRankOptions(t));
+
 const registerForm = ref({
   militaryNumber: null,
+  rank: null,
   username: "",
   personName: "",
   email: "",
@@ -1000,6 +1041,7 @@ const registerForm = ref({
 
 const editForm = ref({
   militaryNumber: null,
+  rank: null,
   username: "",
   personName: "",
   email: "",
@@ -1036,6 +1078,7 @@ function openRegisterModal() {
 
   registerForm.value = {
     militaryNumber: null,
+    rank: null,
     username: "",
     personName: "",
     email: "",
@@ -1056,6 +1099,7 @@ async function handleRegisterUser() {
   }
   const payload = {
     ...registerForm.value,
+    rank: registerForm.value.rank ? Number(registerForm.value.rank) : null,
     militaryNumber: registerForm.value.militaryNumber ? String(registerForm.value.militaryNumber).trim() : null,
     email: registerForm.value.email || null
   };
@@ -1082,6 +1126,7 @@ function openEditModal(user) {
   editingUserId.value = user.militaryNumber;
   editForm.value = {
     militaryNumber: user.militaryNumber,
+    rank: user.rank ? Number(user.rank) : null,
     username: user.username || "",
     personName: user.personName || "",
     email: user.email || "",
@@ -1100,6 +1145,7 @@ async function handleUpdateUser() {
   }
   const payload = {
     ...editForm.value,
+    rank: editForm.value.rank ? Number(editForm.value.rank) : null,
     email: editForm.value.email || null
   };
   const res = await userStore.updateUser(editingUserId.value, payload);

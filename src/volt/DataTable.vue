@@ -1,6 +1,7 @@
 <template>
     <DataTable
         ref="el"
+        v-bind="{ ...props, ...$attrs }"
         unstyled
         :pt="theme"
         :ptOptions="{
@@ -97,7 +98,7 @@ import SecondaryButton from './SecondaryButton.vue';
 import { ptViewMerge } from './utils';
 
 interface Props extends /* @vue-ignore */ DataTableProps {}
-defineProps<Props>();
+const props = defineProps<Props>();
 
 const theme = ref<DataTablePassThroughOptions>({
     root: `w-full relative p-flex-scrollable:flex p-flex-scrollable:flex-col p-flex-scrollable:h-full !rounded-2xl`,

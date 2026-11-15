@@ -235,8 +235,16 @@
             <Column field="recipientName" :header="$t('ohda.exitRequests.recipientName')">
               <template #body="{ data }">
                 <div>
-                  <div class="font-semibold text-brand-dark">{{ data.recipientName }}</div>
-                  <div class="text-[10px] text-brand-gray">{{ data.departmentName || '-' }}</div>
+                  <div class="flex items-center gap-1.5 flex-wrap">
+                    <span v-if="getRankLabel(data.recipientRank, t)" class="px-1.5 py-0.5 rounded text-[10px] font-bold bg-brand-soft text-brand-accent border border-brand-accent/20">
+                      {{ getRankLabel(data.recipientRank, t) }}
+                    </span>
+                    <span class="font-semibold text-brand-dark">{{ data.recipientName }}</span>
+                  </div>
+                  <div class="flex items-center gap-2 text-[10px] text-brand-gray mt-0.5">
+                    <span v-if="data.recipientMilitaryNumber" class="font-mono">عسكري: {{ data.recipientMilitaryNumber }}</span>
+                    <span v-if="data.departmentName">• {{ data.departmentName }}</span>
+                  </div>
                 </div>
               </template>
             </Column>
@@ -367,8 +375,16 @@
           <Column field="recipientName" :header="$t('ohda.exitRequests.recipientName')">
             <template #body="{ data }">
               <div>
-                <div class="font-semibold text-brand-dark">{{ data.recipientName }}</div>
-                <div class="text-[10px] text-brand-gray">{{ data.departmentName || '-' }}</div>
+                <div class="flex items-center gap-1.5 flex-wrap">
+                  <span v-if="getRankLabel(data.recipientRank, t)" class="px-1.5 py-0.5 rounded text-[10px] font-bold bg-brand-soft text-brand-accent border border-brand-accent/20">
+                    {{ getRankLabel(data.recipientRank, t) }}
+                  </span>
+                  <span class="font-semibold text-brand-dark">{{ data.recipientName }}</span>
+                </div>
+                <div class="flex items-center gap-2 text-[10px] text-brand-gray mt-0.5">
+                  <span v-if="data.recipientMilitaryNumber" class="font-mono">عسكري: {{ data.recipientMilitaryNumber }}</span>
+                  <span v-if="data.departmentName">• {{ data.departmentName }}</span>
+                </div>
               </div>
             </template>
           </Column>
@@ -641,7 +657,16 @@
             </template>
           </Column>
 
-          <Column field="recipientName" :header="$t('ohda.exitRequests.recipientName')"></Column>
+          <Column field="recipientName" :header="$t('ohda.exitRequests.recipientName')">
+            <template #body="{ data }">
+              <div class="flex items-center gap-1.5 flex-wrap">
+                <span v-if="getRankLabel(data.recipientRank, t)" class="px-1.5 py-0.5 rounded text-[10px] font-bold bg-brand-soft text-brand-accent border border-brand-accent/20">
+                  {{ getRankLabel(data.recipientRank, t) }}
+                </span>
+                <span class="font-medium text-brand-dark">{{ data.recipientName }}</span>
+              </div>
+            </template>
+          </Column>
           <Column field="departmentName" header="القسم"></Column>
           <Column field="requestedByUsername" :header="$t('ohda.exitRequests.requestedBy')"></Column>
 
@@ -685,18 +710,55 @@
       <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 text-xs" @keydown.enter.prevent="">
         <!-- Left Column: Form & Items Table -->
         <div class="lg:col-span-8 space-y-4">
-          <div class="grid grid-cols-3 gap-3 bg-brand-light p-4 rounded-xl border border-brand-gray/10">
-            <div>
-              <label class="block font-semibold text-brand-dark mb-1">{{ $t('ohda.exitRequests.recipientName') }} *</label>
-              <InputText v-model="createForm.recipientName" required class="w-full !bg-brand-white !border-brand-gray/25 focus:!border-brand-accent !text-brand-dark" placeholder="أحمد محمود" />
-            </div>
-            <div>
-              <label class="block font-semibold text-brand-dark mb-1">{{ $t('ohda.exitRequests.recipientDepartment') }} *</label>
-              <Select v-model="createForm.departmentId" :options="departments" optionLabel="name" optionValue="id" class="w-full !bg-brand-white !border-brand-gray/25 focus:!border-brand-accent" placeholder="حدد قسم العمل" required />
-            </div>
-            <div>
-              <label class="block font-semibold text-brand-dark mb-1">الغرض من الصرف *</label>
-              <InputText v-model="createForm.purpose" required class="w-full !bg-brand-white !border-brand-gray/25 focus:!border-brand-accent !text-brand-dark" placeholder="تسليم عهدة موظف جديد" />
+          <div class="bg-brand-light p-4 rounded-xl border border-brand-gray/10">
+            <!-- Recipient Identity & Department (الرقم العسكري، رتبة/درجة، اسم المستلم، الفرع/الجهة المستلمة) -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+              <div>
+                <label class="block font-semibold text-brand-dark mb-1">{{ $t('ohda.militaryRanks.militaryNumber') }}</label>
+                <InputText
+                  v-model="createForm.recipientMilitaryNumber"
+                  type="text"
+                  pattern="[0-9]*"
+                  inputmode="numeric"
+                  @input="onRecipientMilitaryNumberInput"
+                  class="w-full !bg-brand-white !border-brand-gray/25 focus:!border-brand-accent !text-brand-dark font-mono"
+                  placeholder="أدخل الرقم العسكري..."
+                />
+              </div>
+              <div>
+                <label class="block font-semibold text-brand-dark mb-1">{{ $t('ohda.militaryRanks.fieldLabel') }}</label>
+                <Select
+                  v-model="createForm.recipientRank"
+                  :options="militaryRankOptions"
+                  optionLabel="label"
+                  optionValue="value"
+                  :placeholder="$t('ohda.militaryRanks.placeholder')"
+                  class="w-full !bg-brand-white !border-brand-gray/25 focus:!border-brand-accent !text-brand-dark"
+                  filter
+                  showClear
+                />
+              </div>
+              <div>
+                <label class="block font-semibold text-brand-dark mb-1">{{ $t('ohda.exitRequests.recipientName') }} *</label>
+                <InputText
+                  v-model="createForm.recipientName"
+                  required
+                  class="w-full !bg-brand-white !border-brand-gray/25 focus:!border-brand-accent !text-brand-dark"
+                  placeholder="أحمد محمود"
+                />
+              </div>
+              <div>
+                <label class="block font-semibold text-brand-dark mb-1">{{ $t('ohda.exitRequests.recipientDepartment') }} *</label>
+                <Select
+                  v-model="createForm.departmentId"
+                  :options="departments"
+                  optionLabel="name"
+                  optionValue="id"
+                  class="w-full !bg-brand-white !border-brand-gray/25 focus:!border-brand-accent"
+                  placeholder="حدد قسم العمل"
+                  required
+                />
+              </div>
             </div>
           </div>
 
@@ -770,7 +832,16 @@
                   </div>
                 </template>
               </Column>
-              <Column header="إجراء">
+              <Column header="مواصفات الجهاز / ملاحظات" style="min-width: 170px">
+                <template #body="{ data }">
+                  <InputText
+                    v-model="data.notes"
+                    placeholder="مواصفات أو ملاحظات الصنف (اختياري)..."
+                    class="w-full !text-xs !py-1.5 !px-2.5 !bg-brand-white !border-brand-gray/25 focus:!border-brand-accent !text-brand-dark"
+                  />
+                </template>
+              </Column>
+              <Column header="إجراء" style="width: 50px">
                 <template #body="{ index }">
                   <Button @click="removeRequestItem(index)" class="!p-1.5 !bg-red-500/10 hover:!bg-red-500/20 !text-red-600 !border-0 !rounded-lg cursor-pointer">
                     <Trash2 class="w-4 h-4" />
@@ -874,7 +945,12 @@
               <div v-if="manualItem.productId" class="space-y-2 pt-1">
                 <div class="flex items-center justify-between text-[11px]">
                   <span class="font-semibold text-brand-dark">حدد الأرقام التسلسلية:</span>
-                  <span class="text-brand-accent font-bold font-mono">{{ manualItem.selectedSerials.length }} محدد</span>
+                  <div class="flex items-center gap-2">
+                    <span v-if="manualItem.selectedSerials.length > 0" @click="deselectAllSerials" class="text-[10px] text-red-500 hover:underline cursor-pointer">
+                      إلغاء تحديد الكل
+                    </span>
+                    <span class="text-brand-accent font-bold font-mono">{{ manualItem.selectedSerials.length }} محدد</span>
+                  </div>
                 </div>
 
                 <div v-if="loadingSerials" class="text-center py-2 text-[10px] text-brand-gray">
@@ -883,16 +959,68 @@
                 <div v-else-if="availableSerials.length === 0" class="p-2 text-center text-[10px] text-amber-700 bg-amber-500/10 rounded-lg">
                   لا توجد أجهزة متوفرة بسيريال محدد. سيتم التوزيع تلقائياً.
                 </div>
-                <div v-else class="grid grid-cols-1 gap-1.5 max-h-28 overflow-y-auto border border-brand-gray/20 p-2 rounded-lg bg-white">
-                  <label
-                    v-for="s in availableSerials"
-                    :key="s.id"
-                    class="flex items-center gap-2 p-1 border border-brand-gray/10 rounded font-mono text-[9px] select-none cursor-pointer"
-                    :class="manualItem.selectedSerials.includes(s.id) ? 'bg-brand-soft text-brand-dark' : 'text-brand-gray'"
-                  >
-                    <input type="checkbox" :value="s.id" v-model="manualItem.selectedSerials" class="rounded text-brand-accent" />
-                    <span class="font-semibold truncate">{{ s.serialNumber }}</span>
-                  </label>
+                <div v-else class="space-y-2">
+                  <!-- Search / Type Serial input -->
+                  <div class="relative">
+                    <Search class="w-3.5 h-3.5 text-brand-gray absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                    <InputText
+                      v-model="serialSearchQuery"
+                      placeholder="ابحث أو اكتب الرقم التسلسلي..."
+                      class="w-full !text-xs !py-1.5 !pr-8 !pl-7 !bg-white !border-brand-gray/25 focus:!border-brand-accent font-mono"
+                      @keydown.enter.prevent="selectFirstMatchingSerial"
+                    />
+                    <X
+                      v-if="serialSearchQuery"
+                      class="w-3.5 h-3.5 text-brand-gray hover:text-brand-dark absolute left-2.5 top-1/2 -translate-y-1/2 cursor-pointer"
+                      @click="serialSearchQuery = ''"
+                    />
+                  </div>
+
+                  <!-- Selected Serials Chips (if any selected) -->
+                  <div v-if="manualItem.selectedSerials.length > 0" class="flex flex-wrap gap-1 max-h-16 overflow-y-auto p-1.5 bg-brand-soft/60 rounded-lg border border-brand-accent/20">
+                    <span
+                      v-for="sId in manualItem.selectedSerials"
+                      :key="sId"
+                      class="px-1.5 py-0.5 bg-white text-brand-accent font-mono text-[9px] font-bold rounded border border-brand-accent/30 flex items-center gap-1 shadow-2xs"
+                    >
+                      {{ getSerialNoById(sId) }}
+                      <X class="w-2.5 h-2.5 cursor-pointer text-red-500 hover:text-red-700" @click="toggleSerialSelection(sId)" />
+                    </span>
+                  </div>
+
+                  <!-- Search results count & Select All Filtered -->
+                  <div v-if="serialSearchQuery && filteredAvailableSerials.length > 0" class="flex items-center justify-between text-[10px] px-1 text-brand-gray">
+                    <span>نتائج البحث: {{ filteredAvailableSerials.length }} من {{ availableSerials.length }}</span>
+                    <button type="button" @click="selectAllFilteredSerials" class="text-brand-accent font-bold hover:underline cursor-pointer">
+                      تحديد كل النتائج
+                    </button>
+                  </div>
+
+                  <!-- Serials Checkboxes List -->
+                  <div class="grid grid-cols-1 gap-1.5 max-h-36 overflow-y-auto border border-brand-gray/20 p-2 rounded-lg bg-white">
+                    <div v-if="filteredAvailableSerials.length === 0" class="text-center py-2 text-[10px] text-brand-gray">
+                      لا يوجد سيريال يطابق "{{ serialSearchQuery }}"
+                    </div>
+                    <label
+                      v-for="s in filteredAvailableSerials"
+                      :key="s.id"
+                      class="flex items-center justify-between p-1.5 border rounded font-mono text-[10px] select-none cursor-pointer transition-colors"
+                      :class="manualItem.selectedSerials.includes(s.id) ? 'bg-brand-soft/70 border-brand-accent/40 text-brand-dark font-bold' : 'border-brand-gray/10 text-brand-gray hover:bg-brand-light'"
+                    >
+                      <div class="flex items-center gap-2 truncate">
+                        <input
+                          type="checkbox"
+                          :value="s.id"
+                          v-model="manualItem.selectedSerials"
+                          class="rounded text-brand-accent focus:ring-brand-accent cursor-pointer"
+                        />
+                        <span class="truncate">{{ s.serialNumber }}</span>
+                      </div>
+                      <span v-if="s.qrCode && s.qrCode !== s.serialNumber" class="text-[9px] text-brand-gray/70 font-sans">
+                        {{ s.qrCode }}
+                      </span>
+                    </label>
+                  </div>
                 </div>
               </div>
 
@@ -1021,7 +1149,15 @@
     <Dialog v-model:visible="showDetailsModal" modal :header="`تفاصيل طلب الصرف #${selectedRequest?.id}`" class="!bg-brand-white !border-brand-gray/15 max-w-3xl w-full !text-brand-dark">
       <div v-if="selectedRequest" class="space-y-6 text-xs">
         <!-- Header Info Grid -->
-        <div class="grid grid-cols-2 sm:grid-cols-3 gap-4 bg-brand-light p-4 rounded-xl border border-brand-gray/10">
+        <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 bg-brand-light p-4 rounded-xl border border-brand-gray/10">
+          <div v-if="selectedRequest.recipientMilitaryNumber">
+            <span class="text-brand-gray block mb-0.5">الرقم العسكري للمستلم</span>
+            <span class="font-bold text-brand-accent font-mono">{{ selectedRequest.recipientMilitaryNumber }}</span>
+          </div>
+          <div v-if="getRankLabel(selectedRequest.recipientRank, t)">
+            <span class="text-brand-gray block mb-0.5">{{ $t('ohda.militaryRanks.fieldLabel') }}</span>
+            <span class="font-bold text-brand-accent">{{ getRankLabel(selectedRequest.recipientRank, t) }}</span>
+          </div>
           <div>
             <span class="text-brand-gray block mb-0.5">اسم المستلم</span>
             <span class="font-bold text-brand-dark">{{ selectedRequest.recipientName }}</span>
@@ -1030,7 +1166,7 @@
             <span class="text-brand-gray block mb-0.5">{{ $t('ohda.exitRequests.recipientDepartment') }}</span>
             <span class="font-bold text-brand-dark">{{ selectedRequest.departmentName || '-' }}</span>
           </div>
-          <div>
+          <div v-if="selectedRequest.purpose">
             <span class="text-brand-gray block mb-0.5">الغرض من الصرف</span>
             <span class="font-bold text-brand-dark">{{ selectedRequest.purpose }}</span>
           </div>
@@ -1091,6 +1227,14 @@
                 <template #body="{ data }">
                   <span v-if="data.isUntracked" class="text-brand-gray font-mono">-</span>
                   <span v-else class="font-bold text-brand-dark text-sm">{{ data.quantity }}</span>
+                </template>
+              </Column>
+              <Column header="المواصفات / الملاحظات" field="notes">
+                <template #body="{ data }">
+                  <span v-if="data.notes" class="text-brand-dark font-medium bg-brand-light px-2 py-0.5 rounded border border-brand-gray/15">
+                    {{ data.notes }}
+                  </span>
+                  <span v-else class="text-brand-gray text-[10px]">-</span>
                 </template>
               </Column>
               <Column header="حالة العنصر">
@@ -1238,7 +1382,8 @@ import {
   ChevronLeft,
   PackageOpen,
   MousePointerClick,
-  Boxes
+  Boxes,
+  Search
 } from "lucide-vue-next";
 import { useOhdaAuthStore } from "../stores/useOhdaAuthStore";
 import { useOhdaInventoryStore } from "../stores/useOhdaInventoryStore";
@@ -1251,7 +1396,11 @@ import { apiGet } from "@/utilities/fetchApi";
 import { useToastStore } from "@/stores/toastStore";
 import ConfirmDialog from "@/components/ConfirmDialog.vue";
 import WorkflowTrailModal from "../components/WorkflowTrailModal.vue";
+import { useI18n } from "vue-i18n";
+import { useOhdaUserPermissionStore } from "../stores/useOhdaUserPermissionStore";
+import { getMilitaryRankOptions, getRankLabel } from "../constants/militaryRanks";
 
+const { t } = useI18n();
 const authStore = useOhdaAuthStore();
 const inventoryStore = useOhdaInventoryStore();
 const binStore = useOhdaWarehouseBinStore();
@@ -1260,6 +1409,9 @@ const approvalConfigStore = useOhdaApprovalConfigStore();
 const untrackedStore = useOhdaUntrackedItemStore();
 const packageStore = useOhdaPackageStore();
 const toastStore = useToastStore();
+const userPermStore = useOhdaUserPermissionStore();
+
+const militaryRankOptions = computed(() => getMilitaryRankOptions(t));
 
 // Selection mode in create modal: 'tracked' | 'untracked' | 'package'
 const manualMode = ref("tracked");
@@ -1319,6 +1471,7 @@ onMounted(async () => {
     approvalConfigStore.fetchApprovalConfigs(),
     untrackedStore.fetchItems(),
     packageStore.fetchPackages(),
+    userPermStore.fetchUsers(),
     loadDepartments(),
     loadAllInStockSerials()
   ]);
@@ -1789,6 +1942,8 @@ function openTimelineModal(request) {
 
 // Creation & Scanner Handling
 const createForm = ref({
+  recipientMilitaryNumber: null,
+  recipientRank: null,
   recipientName: "",
   purpose: "",
   departmentId: null,
@@ -1797,16 +1952,85 @@ const createForm = ref({
   autoApprove: false
 });
 
+function onRecipientMilitaryNumberInput() {
+  const val = createForm.value.recipientMilitaryNumber ? String(createForm.value.recipientMilitaryNumber).trim() : "";
+  if (!val) return;
+  const matchedUser = userPermStore.users.find(u => String(u.militaryNumber) === val);
+  if (matchedUser) {
+    if (!createForm.value.recipientName || createForm.value.recipientName === "أحمد محمود") {
+      createForm.value.recipientName = matchedUser.personName || matchedUser.username;
+    }
+    if (matchedUser.rank) {
+      createForm.value.recipientRank = Number(matchedUser.rank);
+    }
+  }
+}
+
 const manualItem = ref({
   productId: null,
   quantity: 1,
   selectedSerials: []
 });
 
+const serialSearchQuery = ref("");
+
+const filteredAvailableSerials = computed(() => {
+  if (!serialSearchQuery.value || !serialSearchQuery.value.trim()) {
+    return availableSerials.value;
+  }
+  const q = serialSearchQuery.value.trim().toLowerCase();
+  return availableSerials.value.filter(s =>
+    (s.serialNumber && s.serialNumber.toLowerCase().includes(q)) ||
+    (s.qrCode && s.qrCode.toLowerCase().includes(q))
+  );
+});
+
+function selectFirstMatchingSerial() {
+  if (filteredAvailableSerials.value.length === 1) {
+    const s = filteredAvailableSerials.value[0];
+    if (!manualItem.value.selectedSerials.includes(s.id)) {
+      manualItem.value.selectedSerials.push(s.id);
+    }
+    serialSearchQuery.value = "";
+  } else if (filteredAvailableSerials.value.length > 1) {
+    const exact = filteredAvailableSerials.value.find(s =>
+      s.serialNumber?.toLowerCase() === serialSearchQuery.value.trim().toLowerCase()
+    );
+    if (exact) {
+      if (!manualItem.value.selectedSerials.includes(exact.id)) {
+        manualItem.value.selectedSerials.push(exact.id);
+      }
+      serialSearchQuery.value = "";
+    }
+  }
+}
+
+function toggleSerialSelection(serialId) {
+  const idx = manualItem.value.selectedSerials.indexOf(serialId);
+  if (idx > -1) {
+    manualItem.value.selectedSerials.splice(idx, 1);
+  } else {
+    manualItem.value.selectedSerials.push(serialId);
+  }
+}
+
+function selectAllFilteredSerials() {
+  filteredAvailableSerials.value.forEach(s => {
+    if (!manualItem.value.selectedSerials.includes(s.id)) {
+      manualItem.value.selectedSerials.push(s.id);
+    }
+  });
+}
+
+function deselectAllSerials() {
+  manualItem.value.selectedSerials = [];
+}
+
 watch(() => manualItem.value.productId, async (newVal) => {
   manualItem.value.selectedSerials = [];
   manualItem.value.quantity = 1;
   availableSerials.value = [];
+  serialSearchQuery.value = "";
   if (!newVal) return;
 
   loadingSerials.value = true;
@@ -1836,7 +2060,7 @@ function getSerialsForProduct(productId) {
 }
 
 function getSerialNoById(id) {
-  const sn = allInStockSerials.value.find(s => s.id === id);
+  const sn = allInStockSerials.value.find(s => s.id === id) || availableSerials.value.find(s => s.id === id);
   return sn ? sn.serialNumber : `#${id}`;
 }
 
@@ -1857,6 +2081,8 @@ function removeSerialSelection(id) {
 function openCreateModal() {
   const isFlowDisabled = localStorage.getItem("ohda_approval_flow_enabled_exit") === "false";
   createForm.value = {
+    recipientMilitaryNumber: null,
+    recipientRank: null,
     recipientName: "",
     purpose: "",
     departmentId: null,
@@ -1869,6 +2095,7 @@ function openCreateModal() {
     quantity: 1,
     selectedSerials: []
   };
+  serialSearchQuery.value = "";
   showCreateModal.value = true;
 }
 
@@ -1949,7 +2176,7 @@ async function handleHardwareScan() {
           productId: matchedSerial.productId,
           productName: prod ? prod.name : "منتج",
           quantity: 1,
-          notes: "تم الإضافة بالماسح"
+          notes: ""
         });
       }
       playBeep();
@@ -1984,7 +2211,7 @@ const onCodeScanned = (decodedText) => {
         productId: product.id,
         productName: product.name,
         quantity: 1,
-        notes: "مضاف بالمسح الضوئي"
+        notes: ""
       });
     }
     scanFeedback.value = `تمت إضافة: ${product.name} (+1)`;
@@ -2008,7 +2235,7 @@ const onCodeScanned = (decodedText) => {
           productId: prod.id,
           productName: prod.name,
           quantity: 1,
-          notes: `سريال: ${decodedText}`
+          notes: ""
         });
       }
       scanFeedback.value = `سريال محدد: ${decodedText} (${prod.name})`;
@@ -2036,7 +2263,7 @@ function addManualItem() {
       productId: product.id,
       productName: product.name,
       quantity: requested,
-      notes: "إدخال يدوي"
+      notes: ""
     });
   }
 
@@ -2053,6 +2280,7 @@ function addManualItem() {
     quantity: 1,
     selectedSerials: []
   };
+  serialSearchQuery.value = "";
 }
 
 function addUntrackedItem() {
@@ -2068,7 +2296,8 @@ function addUntrackedItem() {
     untrackedItemName: item.name,
     packageId: null,
     packageName: null,
-    selectedSerials: []
+    selectedSerials: [],
+    notes: ""
   });
 
   selectedUntrackedId.value = null;
@@ -2130,7 +2359,8 @@ function addPackageItems() {
         untrackedItemName: item.untrackedItemName,
         packageId: pkg.id,
         packageName: pkg.name,
-        selectedSerials: []
+        selectedSerials: [],
+        notes: ""
       });
     } else {
       const prod = inventoryStore.products.find(p => p.id === item.selectedProductId);
@@ -2142,7 +2372,8 @@ function addPackageItems() {
         untrackedItemName: null,
         packageId: pkg.id,
         packageName: pkg.name,
-        selectedSerials: []
+        selectedSerials: [],
+        notes: ""
       });
     }
   }
@@ -2169,8 +2400,8 @@ async function handleCreateExit() {
     toastStore.addWarningToast("يرجى إضافة صنف واحد على الأقل للمتابعة.");
     return;
   }
-  if (!createForm.value.recipientName || !createForm.value.departmentId || !createForm.value.purpose) {
-    toastStore.addWarningToast("يرجى ملء جميع الحقول الإلزامية.");
+  if (!createForm.value.recipientName || !createForm.value.departmentId) {
+    toastStore.addWarningToast("يرجى ملء جميع الحقول الإلزامية (اسم المستلم والفرع / الجهة).");
     return;
   }
 
@@ -2184,7 +2415,12 @@ async function handleCreateExit() {
 
   isSubmitting.value = true;
   try {
-    const result = await requestsStore.createExitRequest(createForm.value, authStore.user);
+    const payload = {
+      ...createForm.value,
+      recipientMilitaryNumber: createForm.value.recipientMilitaryNumber ? Number(createForm.value.recipientMilitaryNumber) : null,
+      recipientRank: createForm.value.recipientRank ? Number(createForm.value.recipientRank) : null
+    };
+    const result = await requestsStore.createExitRequest(payload, authStore.user);
     if (result.success) {
       showCreateModal.value = false;
       await stopScanner();

@@ -1826,7 +1826,7 @@ async function submitInitialEntry() {
         serialNumber: initialEntryForm.value.serialNumber || null,
         recipientName: initialEntryForm.value.recipientName || null,
         notes: initialEntryForm.value.notes || null,
-        branchId: authStore.branchId || 1
+        branchId: authStore.branchId || undefined
       });
       const data = res?.data;
       if (data?.isDone || data?.IsDone) {

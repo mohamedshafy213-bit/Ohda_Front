@@ -159,12 +159,13 @@
       <DataTable
         :value="filteredItems"
         paginator
+        :alwaysShowPaginator="true"
         :rows="10"
         :rowsPerPageOptions="[5, 10, 20, 50]"
         class="w-full text-xs"
-        responsiveLayout="scroll"
+        tableStyle="width: 100%; min-width: 100%; table-layout: fixed;"
       >
-        <Column field="name" :header="$t('ohda.untrackedItems.itemName')" sortable headerClass="text-start" style="width: 100%">
+        <Column field="name" :header="$t('ohda.untrackedItems.itemName')" sortable headerClass="text-start" style="width: 65%">
           <template #body="{ data }">
             <div class="font-bold text-brand-dark dark:text-white flex items-center gap-3 py-1 text-start">
               <div class="w-8 h-8 rounded-xl bg-brand-soft dark:bg-white/10 text-brand-accent flex items-center justify-center shrink-0 border border-brand-accent/20">
@@ -180,7 +181,7 @@
           </template>
         </Column>
 
-        <Column field="isActive" :header="$t('ohda.untrackedItems.status')" sortable headerClass="text-center" bodyClass="text-center" style="width: 140px; min-width: 140px">
+        <Column field="isActive" :header="$t('ohda.untrackedItems.status')" sortable headerClass="text-center" bodyClass="text-center" style="width: 20%; min-width: 120px">
           <template #body="{ data }">
             <div class="flex items-center justify-center">
               <button
@@ -197,7 +198,7 @@
           </template>
         </Column>
 
-        <Column :header="$t('ohda.common.actions')" headerClass="text-center" bodyClass="text-center" style="width: 110px; min-width: 110px">
+        <Column :header="$t('ohda.common.actions')" headerClass="text-center" bodyClass="text-center" style="width: 15%; min-width: 110px">
           <template #body="{ data }">
             <div class="flex items-center justify-center gap-1.5">
               <editButton @click="openEditModal(data)" />
