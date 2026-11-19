@@ -268,6 +268,7 @@ const currentLocale = computed(() => getCurrentLocale());
 const pageMeta = {
   "/ohda/dashboard": { labelKey: "ohda.nav.dashboard", icon: "LayoutDashboard" },
   "/ohda/products": { labelKey: "ohda.nav.products", icon: "Package" },
+  "/ohda/services": { labelKey: "ohda.nav.services", icon: "Wrench" },
   "/ohda/warehouse-bins": { labelKey: "ohda.nav.warehouseBins", icon: "Layers" },
   "/ohda/inventory": { labelKey: "ohda.nav.inventory", icon: "Boxes" },
   "/ohda/exit-requests": { 
@@ -391,6 +392,7 @@ const groupDefinitions = computed(() => {
       icon: "Boxes",
       paths: [
         "/ohda/products",
+        "/ohda/services",
         "/ohda/untracked-items",
         "/ohda/packages",
         "/ohda/inventory",

@@ -5,6 +5,7 @@ export default {
       nav: {
         dashboard: "لوحة التحكم",
         products: "المنتجات وقطع الغيار",
+        services: "الخدمات والصيانة",
         warehouseBins: "أماكن وأرفف التخزين",
         inventory: "رصيد المخزون",
         exitRequests: "طلبات صرف المواد وقطع الغيار",
@@ -595,6 +596,7 @@ export default {
       nav: {
         dashboard: "Dashboard",
         products: "Products & Parts",
+        services: "Services & Maintenance",
         warehouseBins: "Storage Bins",
         inventory: "Stock Inventory",
         exitRequests: "Parts & Materials Requests",
