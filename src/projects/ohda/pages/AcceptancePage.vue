@@ -121,7 +121,7 @@
         <div class="relative w-full sm:w-64">
           <InputText
             v-model="searchQuery"
-            placeholder="بحث برقم الطلب، الاسم، أو العسكري..."
+            placeholder="بحث برقم الطلب، الاسم، أو المعرف..."
             class="w-full !bg-brand-light !border-brand-gray/25 focus:!border-brand-accent !text-brand-dark text-xs !rounded-xl pr-8 pl-3 py-1.5"
           />
           <Search class="w-3.5 h-3.5 text-brand-gray absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
@@ -715,7 +715,7 @@
           <div>
             <span class="font-bold block">تأكيد التصديق والاعتماد</span>
             <p class="text-[11px] opacity-90 mt-0.5">
-              بالنقر على "اعتماد وتصديق الطلب"، سيتم توثيق اسمك ورقمك العسكري في سجل مسار الاعتمادات وينتقل الطلب إلى المرحلة التالية بنجاح.
+              بالنقر على "اعتماد وتصديق الطلب"، سيتم توثيق اسمك ومعرفك في سجل مسار الاعتمادات وينتقل الطلب إلى المرحلة التالية بنجاح.
             </p>
           </div>
         </div>
@@ -1167,7 +1167,7 @@ async function executeApprovalFromDetails() {
       toast.add({
         severity: "success",
         summary: "تم التصديق بنجاح",
-        detail: `تم تصديق واعتماد الطلب #${req.id} وتوثيق اسمك ورقمك العسكري في سجل المسار`,
+        detail: `تم تصديق واعتماد الطلب #${req.id} وتوثيق اسمك ومعرفك في سجل المسار`,
         life: 4000
       });
       await refreshData();
@@ -1262,7 +1262,7 @@ async function executeApproval() {
       toast.add({
         severity: "success",
         summary: "تم التصديق بنجاح",
-        detail: `تم تصديق واعتماد الطلب #${req.id} وتوثيق اسمك ورقمك العسكري في سجل المسار`,
+        detail: `تم تصديق واعتماد الطلب #${req.id} وتوثيق اسمك ومعرفك في سجل المسار`,
         life: 4000
       });
       await refreshData();

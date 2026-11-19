@@ -313,18 +313,24 @@
         <!-- Users Table -->
         <div class="bg-brand-white border border-brand-gray/10 rounded-2xl overflow-hidden shadow-sm">
           <DataTable :value="filteredUsers" paginator :rows="10" :rowsPerPageOptions="[5, 10, 20, 50]" class="w-full text-xs">
-            <Column field="militaryNumber" header="الرقم العسكري">
+            <Column field="id" header="المعرف">
               <template #body="{ data }">
-                <span class="font-mono font-bold text-brand-accent">{{ data.militaryNumber }}</span>
+                <span class="font-mono font-bold text-brand-accent">#{{ data.id || data.militaryNumber }}</span>
               </template>
             </Column>
 
-            <Column :header="$t('ohda.militaryRanks.fieldLabel')" field="rank">
+            <Column header="المسمى الوظيفي" field="jobTitle">
               <template #body="{ data }">
-                <span v-if="getRankLabel(data.rank, t)" class="px-2 py-0.5 rounded text-[11px] font-bold bg-brand-soft text-brand-accent border border-brand-accent/20">
-                  {{ getRankLabel(data.rank, t) }}
+                <span v-if="data.jobTitle" class="px-2 py-0.5 rounded text-[11px] font-bold bg-brand-soft text-brand-accent border border-brand-accent/20">
+                  {{ data.jobTitle }}
                 </span>
                 <span v-else class="text-brand-gray text-[10px]">-</span>
+              </template>
+            </Column>
+
+            <Column field="phoneNumber" header="الهاتف">
+              <template #body="{ data }">
+                <span class="font-mono text-brand-dark">{{ data.phoneNumber || '-' }}</span>
               </template>
             </Column>
 
@@ -484,22 +490,13 @@
     <Dialog v-model:visible="showRegisterModal" modal :header="$t('ohda.users.registerUser')" class="!bg-brand-white !border-brand-gray/15 max-w-md w-full !text-brand-dark">
       <form @submit.prevent="handleRegisterUser" class="space-y-4 text-xs">
         <div>
-          <label class="block font-semibold text-brand-dark mb-1">الرقم العسكري *</label>
-          <InputText v-model="registerForm.militaryNumber" type="text" pattern="[0-9]*" inputmode="numeric" required class="w-full !bg-brand-light !border-brand-gray/25 focus:!border-brand-accent !text-brand-dark font-mono" placeholder="أدخل الرقم العسكري..." />
+          <label class="block font-semibold text-brand-dark mb-1">المسمى الوظيفي</label>
+          <InputText v-model="registerForm.jobTitle" class="w-full !bg-brand-light !border-brand-gray/25 focus:!border-brand-accent !text-brand-dark" placeholder="ميكانيكي / كهربائي / كاشير..." />
         </div>
 
         <div>
-          <label class="block font-semibold text-brand-dark mb-1">{{ $t('ohda.militaryRanks.fieldLabel') }}</label>
-          <Select
-            v-model="registerForm.rank"
-            :options="militaryRankOptions"
-            optionLabel="label"
-            optionValue="value"
-            :placeholder="$t('ohda.militaryRanks.placeholder')"
-            class="w-full !bg-brand-light !border-brand-gray/25 focus:!border-brand-accent !text-brand-dark"
-            filter
-            showClear
-          />
+          <label class="block font-semibold text-brand-dark mb-1">رقم الهاتف</label>
+          <InputText v-model="registerForm.phoneNumber" class="w-full !bg-brand-light !border-brand-gray/25 focus:!border-brand-accent !text-brand-dark font-mono" placeholder="01xxxxxxxxx" />
         </div>
 
         <div>
@@ -561,22 +558,18 @@
     <Dialog v-model:visible="showEditModal" modal header="تعديل بيانات المستخدم ومجموعة الصلاحيات" class="!bg-brand-white !border-brand-gray/15 max-w-md w-full !text-brand-dark">
       <form @submit.prevent="handleUpdateUser" class="space-y-4 text-xs">
         <div>
-          <label class="block font-semibold text-brand-dark mb-1">الرقم العسكري (غير قابل للتعديل)</label>
+          <label class="block font-semibold text-brand-dark mb-1">معرف المستخدم</label>
           <InputText :value="editingUserId" disabled class="w-full !bg-brand-light/50 !border-brand-gray/25 !text-brand-gray font-mono font-bold" />
         </div>
 
         <div>
-          <label class="block font-semibold text-brand-dark mb-1">{{ $t('ohda.militaryRanks.fieldLabel') }}</label>
-          <Select
-            v-model="editForm.rank"
-            :options="militaryRankOptions"
-            optionLabel="label"
-            optionValue="value"
-            :placeholder="$t('ohda.militaryRanks.placeholder')"
-            class="w-full !bg-brand-light !border-brand-gray/25 focus:!border-brand-accent !text-brand-dark"
-            filter
-            showClear
-          />
+          <label class="block font-semibold text-brand-dark mb-1">المسمى الوظيفي</label>
+          <InputText v-model="editForm.jobTitle" class="w-full !bg-brand-light !border-brand-gray/25 focus:!border-brand-accent !text-brand-dark" placeholder="ميكانيكي / كهربائي / كاشير..." />
+        </div>
+
+        <div>
+          <label class="block font-semibold text-brand-dark mb-1">رقم الهاتف</label>
+          <InputText v-model="editForm.phoneNumber" class="w-full !bg-brand-light !border-brand-gray/25 focus:!border-brand-accent !text-brand-dark font-mono" placeholder="01xxxxxxxxx" />
         </div>
 
         <div>
@@ -652,7 +645,7 @@
 
             <Button
               v-if="isPageAllowedForUser(selectedUser, page.id)"
-              @click="toggleUserPageAccess(selectedUser.militaryNumber || selectedUser.id, page.id, false)"
+              @click="toggleUserPageAccess(selectedUser.id || selectedUser.militaryNumber, page.id, false)"
               class="!px-3 !py-1 !bg-red-500/10 hover:!bg-red-500/20 !text-red-600 !border !border-red-500/30 !rounded-lg !text-xs !font-bold flex items-center gap-1"
             >
               <X class="w-3.5 h-3.5" />
@@ -660,7 +653,7 @@
             </Button>
             <Button
               v-else
-              @click="toggleUserPageAccess(selectedUser.militaryNumber || selectedUser.id, page.id, true)"
+              @click="toggleUserPageAccess(selectedUser.id || selectedUser.militaryNumber, page.id, true)"
               class="!px-3 !py-1 !bg-brand-soft hover:!bg-brand-accent/20 !text-brand-accent !border !border-brand-accent/30 !rounded-lg !text-xs !font-bold flex items-center gap-1"
             >
               <Check class="w-3.5 h-3.5" />
@@ -877,7 +870,6 @@ import { useOhdaUserPermissionStore } from "../stores/useOhdaUserPermissionStore
 import { useOhdaGroupStore } from "../stores/useOhdaGroupStore";
 import { useOhdaBranchStore } from "../stores/useOhdaBranchStore";
 import { useOhdaAuthStore } from "../stores/useOhdaAuthStore";
-import { getMilitaryRankOptions, getRankLabel } from "../constants/militaryRanks";
 
 const userStore = useOhdaUserPermissionStore();
 const groupStore = useOhdaGroupStore();
@@ -986,7 +978,9 @@ const filteredUsers = computed(() => {
     list = list.filter(u =>
       (u.username && u.username.toLowerCase().includes(q)) ||
       (u.personName && u.personName.toLowerCase().includes(q)) ||
-      (u.militaryNumber && u.militaryNumber.toString().includes(q)) ||
+      (u.id && u.id.toString().includes(q)) ||
+      (u.jobTitle && u.jobTitle.toLowerCase().includes(q)) ||
+      (u.phoneNumber && u.phoneNumber.includes(q)) ||
       (u.email && u.email.toLowerCase().includes(q)) ||
       (u.branchName && u.branchName.toLowerCase().includes(q))
     );
@@ -1025,11 +1019,10 @@ const showUserPermissionsModal = ref(false);
 const selectedUser = ref(null);
 const editingUserId = ref(null);
 
-const militaryRankOptions = computed(() => getMilitaryRankOptions(t));
-
 const registerForm = ref({
-  militaryNumber: null,
-  rank: null,
+  id: null,
+  jobTitle: "",
+  phoneNumber: "",
   username: "",
   personName: "",
   email: "",
@@ -1040,11 +1033,15 @@ const registerForm = ref({
 });
 
 const editForm = ref({
-  militaryNumber: null,
-  rank: null,
+  id: null,
+  jobTitle: "",
+  phoneNumber: "",
   username: "",
   personName: "",
   email: "",
+  password: "",
+  role: 2,
+  branchId: null,
   password: "",
   role: 2,
   branchId: null,
@@ -1077,8 +1074,9 @@ function openRegisterModal() {
     : (authStore.user?.branchId || branchStore.myQuota?.branchId || 1);
 
   registerForm.value = {
-    militaryNumber: null,
-    rank: null,
+    id: null,
+    jobTitle: "",
+    phoneNumber: "",
     username: "",
     personName: "",
     email: "",
@@ -1099,8 +1097,8 @@ async function handleRegisterUser() {
   }
   const payload = {
     ...registerForm.value,
-    rank: registerForm.value.rank ? Number(registerForm.value.rank) : null,
-    militaryNumber: registerForm.value.militaryNumber ? String(registerForm.value.militaryNumber).trim() : null,
+    jobTitle: registerForm.value.jobTitle?.trim() || null,
+    phoneNumber: registerForm.value.phoneNumber?.trim() || null,
     email: registerForm.value.email || null
   };
   const res = await userStore.registerUser(payload);
@@ -1123,10 +1121,12 @@ async function handleRegisterUser() {
 }
 
 function openEditModal(user) {
-  editingUserId.value = user.militaryNumber;
+  const userId = user.id || user.militaryNumber;
+  editingUserId.value = userId;
   editForm.value = {
-    militaryNumber: user.militaryNumber,
-    rank: user.rank ? Number(user.rank) : null,
+    id: userId,
+    jobTitle: user.jobTitle || "",
+    phoneNumber: user.phoneNumber || "",
     username: user.username || "",
     personName: user.personName || "",
     email: user.email || "",
@@ -1145,7 +1145,8 @@ async function handleUpdateUser() {
   }
   const payload = {
     ...editForm.value,
-    rank: editForm.value.rank ? Number(editForm.value.rank) : null,
+    jobTitle: editForm.value.jobTitle?.trim() || null,
+    phoneNumber: editForm.value.phoneNumber?.trim() || null,
     email: editForm.value.email || null
   };
   const res = await userStore.updateUser(editingUserId.value, payload);
@@ -1169,7 +1170,7 @@ async function handleUpdateUser() {
 
 async function openUserPermissionsModal(user) {
   selectedUser.value = user;
-  await userStore.fetchUserPermissions(user.militaryNumber);
+  await userStore.fetchUserPermissions(user.id || user.militaryNumber);
   showUserPermissionsModal.value = true;
 }
 
@@ -1206,7 +1207,7 @@ function promptDeleteUser(user) {
 
 async function executeDeleteUser() {
   if (!userToDelete.value) return;
-  const res = await userStore.deleteUser(userToDelete.value.militaryNumber);
+  const res = await userStore.deleteUser(userToDelete.value.id || userToDelete.value.militaryNumber);
   showDeleteUserDialog.value = false;
   if (res?.success) {
     toast.add({

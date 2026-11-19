@@ -336,8 +336,8 @@ export const pageGuides = {
         stepNumber: 3,
         titleAr: "الاعتماد النهائي",
         titleEn: "Supervisor Sign-off",
-        detailAr: "يقوم المشرف باعتماد الطلب؛ عندئذ يقوم النظام تلقائياً بتوليد الأرقام التسلسلية، زيادة الرصيد، وتسجيل حركة بوصلة رسمية.",
-        detailEn: "Upon supervisor approval, serial numbers are generated, stock increments, and compass logs are recorded."
+        detailAr: "يقوم المشرف باعتماد الطلب؛ عندئذ يقوم النظام تلقائياً بتوليد الأرقام التسلسلية، زيادة الرصيد، وتسجيل حركة المخزون الرسمية.",
+        detailEn: "Upon supervisor approval, serial numbers are generated, stock increments, and stock movement logs are recorded."
       }
     ],
     rules: [
@@ -408,8 +408,8 @@ export const pageGuides = {
         stepNumber: 3,
         titleAr: "تسليم العهدة",
         titleEn: "Handover & Dispatch",
-        detailAr: "بعد الاعتماد النهائي، يتحول الجهاز في البوصلة إلى حالة 'منصرف كعهدة' ويُسجل باسم المستلم.",
-        detailEn: "Upon approval, the item state becomes 'Exited (In Custody)' linked to the recipient in the Compass."
+        detailAr: "بعد الاعتماد النهائي، يتحول الصنف إلى حالة 'منصرف' ويُسجل باسم المستلم.",
+        detailEn: "Upon approval, the item state becomes 'Exited' linked to the recipient."
       }
     ],
     rules: [
@@ -418,64 +418,6 @@ export const pageGuides = {
         titleEn: "Strict Negative Stock Block",
         tipAr: "يمنع النظام تماماً صرف أي كمية تفوق الرصيد الفعلي المتوفر بالمستودع.",
         tipEn: "The system strictly prevents approvals if requested quantities exceed available in-stock balances."
-      }
-    ]
-  },
-
-  "/ohda/compass": {
-    path: "/ohda/compass",
-    titleAr: "بوصلة الحركة وتتبع العهد (Compass Audit Log)",
-    titleEn: "Compass Movement & Custody Tracking",
-    icon: "Compass",
-    summaryAr: "السجل الرقمي الدقيق لجميع حركات المنظومة. يمثل الشفافية والمساءلة؛ حيث يسجل كل حركة دخول أو خروج أو صيانة لأي جهاز بسيرياله، مستلمه، ومكانه.",
-    summaryEn: "Master digital audit trail. Records every entry, exit, transfer, and maintenance event per serial number.",
-    whoUsesAr: "المراجعون الداخليون، إدارة الأصول، مدراء المستودعات، والمدققون.",
-    whoUsesEn: "Internal Auditors, Asset Managers, Warehouse Chiefs, and Compliance Teams.",
-    actions: [
-      {
-        nameAr: "البحث برقم السيريال أو الباركود",
-        nameEn: "Search by Serial / Barcode",
-        icon: "Search",
-        descriptionAr: "الوصول لتاريخ حياة أي جهاز من أول يوم دخل فيه للمستودع حتى موقعه الحالي.",
-        descriptionEn: "Trace full lifecycle history of any device from initial receiving to its current holder."
-      },
-      {
-        nameAr: "الفلترة حسب نوع الحركة والقسم",
-        nameEn: "Filter by Movement Type",
-        icon: "Filter",
-        descriptionAr: "تصفية الحركات (إدخال توريد، صرف عهدة، إرجاع، صيانة) حسب القسم أو الفترة الزمنية.",
-        descriptionEn: "Filter movements by type (Entry, Exit, Return, Maintenance) and department."
-      },
-      {
-        nameAr: "تصدير سجل الحركات",
-        nameEn: "Export Audit Log",
-        icon: "Download",
-        descriptionAr: "تحميل تقرير الحركات الرسمية في ملف إكسل لتقديمه للجان التفتيش والجرد.",
-        descriptionEn: "Download official movement reports as Excel for audits and committee reviews."
-      }
-    ],
-    steps: [
-      {
-        stepNumber: 1,
-        titleAr: "تتبع جهاز معين",
-        titleEn: "Locate Specific Asset",
-        detailAr: "أدخل الرقم التسلسلي في حقل البحث لتعرف فوراً: مع من هذا الجهاز الآن؟ وفي أي قسم أو رف؟",
-        detailEn: "Enter the serial number in the search bar to see instantly who holds the device and its current place."
-      },
-      {
-        stepNumber: 2,
-        titleAr: "استعراض مسار التدقيق",
-        titleEn: "Audit Verification",
-        detailAr: "اضغط على الحركة لمشاهدة رقم السند المرتبط بها وتاريخ الحركة واسم المستخدم الذي نفذها.",
-        detailEn: "Click on any log record to view linked request ID, execution timestamp, and operator identity."
-      }
-    ],
-    rules: [
-      {
-        titleAr: "سجل غير قابل للتعديل",
-        titleEn: "Immutable Ledger",
-        tipAr: "سجلات البوصلة تُنشأ تلقائياً ولا يمكن تعديلها أو حذفها يدويّاً لضمان النزاهة والرقابة المؤسسية.",
-        tipEn: "Compass logs are system-generated and immutable to ensure legal compliance and audit integrity."
       }
     ]
   },
@@ -587,7 +529,7 @@ export const pageGuides = {
     titleAr: "إدارة المستخدمين والأدوار والصلاحيات",
     titleEn: "User Accounts & Permission Groups",
     icon: "Users",
-    summaryAr: "إدارة حسابات منسوبي النظام، تحديد الرتب والأدوار (مدير، مشرف، موظف)، وتعيين مجموعات الصلاحيات والصفحات المسموح بزيارتها.",
+    summaryAr: "إدارة حسابات منسوبي النظام، تحديد المسميات الوظيفية والأدوار (مدير، مشرف، موظف)، وتعيين مجموعات الصلاحيات والصفحات المسموح بزيارتها.",
     summaryEn: "Staff identity management. Configure roles (Admin, Manager, Supervisor, Employee) and page-level security permissions.",
     whoUsesAr: "مدير النظام (System Administrator).",
     whoUsesEn: "System Administrator.",
@@ -596,7 +538,7 @@ export const pageGuides = {
         nameAr: "إضافة مستخدم جديد (+)",
         nameEn: "Add New User (+)",
         icon: "UserPlus",
-        descriptionAr: "تسجيل موظف جديد بالرقم العسكري/الوظيفي، اسم المستخدم، البريد، والدور الوظيفي.",
+        descriptionAr: "تسجيل موظف جديد بالمعرف الوظيفي، اسم المستخدم، البريد، والمسمى الوظيفي.",
         descriptionEn: "Create new user account with employee ID, username, email, and security role."
       },
       {

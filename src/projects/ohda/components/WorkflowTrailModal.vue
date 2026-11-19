@@ -13,8 +13,8 @@
           <span class="font-bold text-sm text-brand-dark block">
             {{ requesterName }}
           </span>
-          <span v-if="requesterMilitary" class="font-mono text-[11px] text-brand-gray block">
-            الرقم العسكري: {{ requesterMilitary }}
+          <span v-if="requesterUserId" class="font-mono text-[11px] text-brand-gray block">
+            المعرف: #{{ requesterUserId }}
           </span>
         </div>
 
@@ -126,8 +126,8 @@
                   <div class="flex items-center gap-1.5 font-bold text-brand-dark">
                     <span class="text-brand-gray text-[11px]">المعتمد:</span>
                     <span class="text-emerald-700 text-sm font-black">{{ step.approverPersonName }}</span>
-                    <span v-if="step.approverMilitary" class="font-mono text-[11px] text-brand-gray">
-                      (عسكري: {{ step.approverMilitary }})
+                    <span v-if="step.approverUserId" class="font-mono text-[11px] text-brand-gray">
+                      (#{{ step.approverUserId }})
                     </span>
                     <span class="inline-flex items-center justify-center w-5 h-5 rounded-full bg-emerald-600 text-white font-bold text-[11px] shadow-xs">
                       ✔
@@ -154,12 +154,12 @@
                   <div v-if="step.eligibleUsers && step.eligibleUsers.length > 0" class="flex flex-wrap gap-1.5 mt-2">
                     <div
                       v-for="u in step.eligibleUsers"
-                      :key="u.militaryNumber"
+                      :key="u.id || u.militaryNumber"
                       class="px-2.5 py-1 rounded-xl bg-brand-white border border-amber-500/30 text-brand-dark font-bold text-xs flex items-center gap-1.5 shadow-2xs"
                     >
                       <UserCheck class="w-3.5 h-3.5 text-amber-600" />
                       <span>{{ u.personName || u.username }}</span>
-                      <span class="font-mono text-[10px] text-brand-gray font-normal">({{ u.militaryNumber }})</span>
+                      <span class="font-mono text-[10px] text-brand-gray font-normal">(#{{ u.id || u.militaryNumber }})</span>
                     </div>
                   </div>
                   <div v-else class="text-[11px] text-amber-800 mt-1 font-semibold">
@@ -182,7 +182,7 @@
                 <div class="flex items-center gap-1.5 font-bold">
                   <X class="w-4 h-4 text-red-600" />
                   <span>تم رفض الطلب بواسطة: {{ step.approverPersonName }}</span>
-                  <span v-if="step.approverMilitary" class="font-mono text-[10px]">({{ step.approverMilitary }})</span>
+                  <span v-if="step.approverUserId" class="font-mono text-[10px]">(#{{ step.approverUserId }})</span>
                 </div>
                 <p v-if="step.notes" class="text-[11px] mt-1 font-semibold">
                   سبب الرفض: "{{ step.notes }}"
@@ -197,7 +197,7 @@
       <div class="flex items-center justify-between pt-3 border-t border-brand-gray/10">
         <div class="text-[11px] text-brand-gray flex items-center gap-1.5">
           <ShieldCheck class="w-4 h-4 text-brand-accent" />
-          <span>مسار موثق ومحمى بصلاحيات المجموعات والأرقام العسكرية</span>
+          <span>مسار موثق ومحمى بالصلاحيات الإدارية</span>
         </div>
         <SecondaryButton type="button" @click="visible = false">
           إغلاق النافذة
@@ -259,10 +259,10 @@ const requesterName = computed(() => {
   return r.requestedByPersonName || r.receivedByPersonName || r.personName || r.requestedByUsername || r.receivedByUsername || r.username || "مقدم الطلب";
 });
 
-const requesterMilitary = computed(() => {
+const requesterUserId = computed(() => {
   const r = requestItem.value;
   if (!r) return null;
-  return r.requestedByUserId || r.receivedByUserId || r.militaryNumber || null;
+  return r.requestedByUserId || r.receivedByUserId || r.userId || r.id || null;
 });
 
 const partyName = computed(() => {
@@ -353,7 +353,7 @@ const computedSteps = computed(() => {
     }
 
     const approverPersonName = record?.PersonName || record?.personName || record?.UserName || record?.userName || (stepOrder === 1 ? requesterName.value : "المعتمد");
-    const approverMilitary = record?.MilitaryNumber || record?.militaryNumber || record?.UserId || record?.userId || (stepOrder === 1 ? requesterMilitary.value : null);
+    const approverUserId = record?.UserId || record?.userId || record?.MilitaryNumber || record?.militaryNumber || (stepOrder === 1 ? requesterUserId.value : null);
     const actionDate = record?.Date || record?.date || (stepOrder === 1 ? req.insertDate : null);
     const notes = record?.Notes || record?.notes || (stepOrder === 1 ? (req.purpose || req.notes) : null);
 
@@ -365,7 +365,7 @@ const computedSteps = computed(() => {
       state,
       statusLabel,
       approverPersonName,
-      approverMilitary,
+      approverUserId,
       actionDate,
       notes
     };

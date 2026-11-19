@@ -18,7 +18,7 @@ export const useOhdaRequestsStore = defineStore("ohdaRequests", {
   getters: {
     myReturnedExitRequestsCount: (state) => {
       const auth = useOhdaAuthStore();
-      const userId = auth.user?.militaryNumber || auth.user?.id;
+      const userId = auth.user?.id || auth.user?.militaryNumber;
       const username = auth.user?.username?.toLowerCase();
       return state.exitRequests.filter(r => {
         const isMine = (userId && r.requestedByUserId === userId) ||
@@ -28,7 +28,7 @@ export const useOhdaRequestsStore = defineStore("ohdaRequests", {
     },
     myReturnedEntryRequestsCount: (state) => {
       const auth = useOhdaAuthStore();
-      const userId = auth.user?.militaryNumber || auth.user?.id;
+      const userId = auth.user?.id || auth.user?.militaryNumber;
       const username = auth.user?.username?.toLowerCase();
       return state.entryRequests.filter(r => {
         const isMine = (userId && (r.receivedByUserId === userId || r.requestedByUserId === userId)) ||
@@ -38,7 +38,7 @@ export const useOhdaRequestsStore = defineStore("ohdaRequests", {
     },
     pendingExitRequestsCount: (state) => {
       const auth = useOhdaAuthStore();
-      const userId = auth.user?.militaryNumber || auth.user?.id;
+      const userId = auth.user?.id || auth.user?.militaryNumber;
       const username = auth.user?.username?.toLowerCase();
       const myReturned = state.exitRequests.filter(r => {
         const isMine = (userId && r.requestedByUserId === userId) ||
@@ -58,7 +58,7 @@ export const useOhdaRequestsStore = defineStore("ohdaRequests", {
     },
     pendingEntryRequestsCount: (state) => {
       const auth = useOhdaAuthStore();
-      const userId = auth.user?.militaryNumber || auth.user?.id;
+      const userId = auth.user?.id || auth.user?.militaryNumber;
       const username = auth.user?.username?.toLowerCase();
       const myReturned = state.entryRequests.filter(r => {
         const isMine = (userId && (r.receivedByUserId === userId || r.requestedByUserId === userId)) ||

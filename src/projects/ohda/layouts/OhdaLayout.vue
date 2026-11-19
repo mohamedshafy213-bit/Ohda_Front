@@ -215,7 +215,7 @@
 </template>
 
 <script setup>
-import { ref, computed, watch } from "vue";
+import { ref, computed, watch, onMounted } from "vue";
 import { useRouter, useRoute } from "vue-router";
 import { setLocale, getCurrentLocale } from "@/i18n";
 import { useOhdaAuthStore } from "../stores/useOhdaAuthStore";
@@ -296,7 +296,6 @@ const pageMeta = {
   "/ohda/product-states": { labelKey: "ohda.nav.productStates", icon: "Activity" },
   "/ohda/approval-config": { labelKey: "ohda.nav.approvalConfig", icon: "Settings" },
   "/ohda/notifications": { labelKey: "ohda.nav.notifications", icon: "Bell" },
-  "/ohda/compass": { labelKey: "ohda.nav.compass", icon: "Compass" },
   "/ohda/branches": { labelKey: "ohda.nav.branches", icon: "Building2" },
   "/ohda/branches-dashboard": { labelKey: "ohda.nav.branchesDashboard", icon: "Activity" },
   "/ohda/untracked-items": { labelKey: "ohda.nav.untrackedItems", icon: "MousePointerClick" },
@@ -427,8 +426,7 @@ const groupDefinitions = computed(() => {
       paths: [
         "/ohda/users",
         "/ohda/approval-config",
-        "/ohda/product-states",
-        "/ohda/compass"
+        "/ohda/product-states"
       ]
     }
   ];

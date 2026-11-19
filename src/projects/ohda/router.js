@@ -109,11 +109,7 @@ export default [
         name: "OhdaPackages",
         component: () => import("./pages/PackagesPage.vue")
       },
-      {
-        path: "compass",
-        name: "OhdaCompass",
-        component: () => import("./pages/CompassPage.vue")
-      },
+
       {
         path: "branches",
         name: "OhdaBranches",

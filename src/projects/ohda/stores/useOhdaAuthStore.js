@@ -18,7 +18,7 @@ export const useOhdaAuthStore = defineStore("ohdaAuth", {
   }),
   getters: {
     isAuthenticated: (state) => !!state.token || !!state.user,
-    userId: (state) => state.user?.militaryNumber || state.user?.id || 0,
+    userId: (state) => state.user?.id || state.user?.militaryNumber || 0,
     currentRole: (state) => state.user?.role ?? 2,
     isSuperAdmin: (state) => state.user?.role === 0 || state.user?.role === "SuperAdmin" || state.user?.role === "0",
     isAdmin: (state) => state.user?.role === 1 || state.user?.role === "Admin" || state.user?.role === "1" || state.user?.role === 0 || state.user?.role === "SuperAdmin" || state.user?.role === "0",
@@ -51,8 +51,7 @@ export const useOhdaAuthStore = defineStore("ohdaAuth", {
             "/ohda/users",
             "/ohda/departments",
             "/ohda/product-states",
-            "/ohda/approval-config",
-            "/ohda/compass"
+            "/ohda/approval-config"
           ];
         }
         return ["/ohda/dashboard"];

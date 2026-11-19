@@ -236,14 +236,10 @@
               <template #body="{ data }">
                 <div>
                   <div class="flex items-center gap-1.5 flex-wrap">
-                    <span v-if="getRankLabel(data.recipientRank, t)" class="px-1.5 py-0.5 rounded text-[10px] font-bold bg-brand-soft text-brand-accent border border-brand-accent/20">
-                      {{ getRankLabel(data.recipientRank, t) }}
-                    </span>
                     <span class="font-semibold text-brand-dark">{{ data.recipientName }}</span>
                   </div>
-                  <div class="flex items-center gap-2 text-[10px] text-brand-gray mt-0.5">
-                    <span v-if="data.recipientMilitaryNumber" class="font-mono">عسكري: {{ data.recipientMilitaryNumber }}</span>
-                    <span v-if="data.departmentName">• {{ data.departmentName }}</span>
+                  <div v-if="data.departmentName" class="text-[10px] text-brand-gray mt-0.5">
+                    <span>{{ data.departmentName }}</span>
                   </div>
                 </div>
               </template>
@@ -253,7 +249,7 @@
               <template #body="{ data }">
                 <div class="flex flex-col">
                   <span class="font-semibold text-brand-dark">{{ data.requestedByPersonName || data.requestedByUsername || 'مستخدم' }}</span>
-                  <span v-if="data.requestedByUserId" class="font-mono text-[10px] text-brand-gray">عسكري: {{ data.requestedByUserId }}</span>
+                  <span v-if="data.requestedByUserId" class="font-mono text-[10px] text-brand-gray">#{{ data.requestedByUserId }}</span>
                 </div>
               </template>
             </Column>
@@ -376,14 +372,10 @@
             <template #body="{ data }">
               <div>
                 <div class="flex items-center gap-1.5 flex-wrap">
-                  <span v-if="getRankLabel(data.recipientRank, t)" class="px-1.5 py-0.5 rounded text-[10px] font-bold bg-brand-soft text-brand-accent border border-brand-accent/20">
-                    {{ getRankLabel(data.recipientRank, t) }}
-                  </span>
                   <span class="font-semibold text-brand-dark">{{ data.recipientName }}</span>
                 </div>
-                <div class="flex items-center gap-2 text-[10px] text-brand-gray mt-0.5">
-                  <span v-if="data.recipientMilitaryNumber" class="font-mono">عسكري: {{ data.recipientMilitaryNumber }}</span>
-                  <span v-if="data.departmentName">• {{ data.departmentName }}</span>
+                <div v-if="data.departmentName" class="text-[10px] text-brand-gray mt-0.5">
+                  <span>{{ data.departmentName }}</span>
                 </div>
               </div>
             </template>
@@ -393,7 +385,7 @@
             <template #body="{ data }">
               <div class="flex flex-col">
                 <span class="font-semibold text-brand-dark">{{ data.requestedByPersonName || data.requestedByUsername || 'مستخدم' }}</span>
-                <span v-if="data.requestedByUserId" class="font-mono text-[10px] text-brand-gray">عسكري: {{ data.requestedByUserId }}</span>
+                <span v-if="data.requestedByUserId" class="font-mono text-[10px] text-brand-gray">#{{ data.requestedByUserId }}</span>
               </div>
             </template>
           </Column>
@@ -659,12 +651,7 @@
 
           <Column field="recipientName" :header="$t('ohda.exitRequests.recipientName')">
             <template #body="{ data }">
-              <div class="flex items-center gap-1.5 flex-wrap">
-                <span v-if="getRankLabel(data.recipientRank, t)" class="px-1.5 py-0.5 rounded text-[10px] font-bold bg-brand-soft text-brand-accent border border-brand-accent/20">
-                  {{ getRankLabel(data.recipientRank, t) }}
-                </span>
-                <span class="font-medium text-brand-dark">{{ data.recipientName }}</span>
-              </div>
+              <span class="font-medium text-brand-dark">{{ data.recipientName }}</span>
             </template>
           </Column>
           <Column field="departmentName" header="القسم"></Column>
@@ -711,52 +698,27 @@
         <!-- Left Column: Form & Items Table -->
         <div class="lg:col-span-8 space-y-4">
           <div class="bg-brand-light p-4 rounded-xl border border-brand-gray/10">
-            <!-- Recipient Identity & Department (الرقم العسكري، رتبة/درجة، اسم المستلم، الفرع/الجهة المستلمة) -->
-            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-              <div>
-                <label class="block font-semibold text-brand-dark mb-1">{{ $t('ohda.militaryRanks.militaryNumber') }}</label>
-                <InputText
-                  v-model="createForm.recipientMilitaryNumber"
-                  type="text"
-                  pattern="[0-9]*"
-                  inputmode="numeric"
-                  @input="onRecipientMilitaryNumberInput"
-                  class="w-full !bg-brand-white !border-brand-gray/25 focus:!border-brand-accent !text-brand-dark font-mono"
-                  placeholder="أدخل الرقم العسكري..."
-                />
-              </div>
-              <div>
-                <label class="block font-semibold text-brand-dark mb-1">{{ $t('ohda.militaryRanks.fieldLabel') }}</label>
-                <Select
-                  v-model="createForm.recipientRank"
-                  :options="militaryRankOptions"
-                  optionLabel="label"
-                  optionValue="value"
-                  :placeholder="$t('ohda.militaryRanks.placeholder')"
-                  class="w-full !bg-brand-white !border-brand-gray/25 focus:!border-brand-accent !text-brand-dark"
-                  filter
-                  showClear
-                />
-              </div>
+            <!-- Recipient Identity & Department (اسم المستلم، الفرع/القسم المستلم) -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
                 <label class="block font-semibold text-brand-dark mb-1">{{ $t('ohda.exitRequests.recipientName') }} *</label>
                 <InputText
                   v-model="createForm.recipientName"
                   required
                   class="w-full !bg-brand-white !border-brand-gray/25 focus:!border-brand-accent !text-brand-dark"
-                  placeholder="أحمد محمود"
+                  placeholder="اسم المستلم / العميل / الفني..."
                 />
               </div>
               <div>
-                <label class="block font-semibold text-brand-dark mb-1">{{ $t('ohda.exitRequests.recipientDepartment') }} *</label>
+                <label class="block font-semibold text-brand-dark mb-1">{{ $t('ohda.exitRequests.recipientDepartment') }}</label>
                 <Select
                   v-model="createForm.departmentId"
                   :options="departments"
                   optionLabel="name"
                   optionValue="id"
                   class="w-full !bg-brand-white !border-brand-gray/25 focus:!border-brand-accent"
-                  placeholder="حدد قسم العمل"
-                  required
+                  placeholder="حدد القسم (اختياري)"
+                  showClear
                 />
               </div>
             </div>
@@ -1150,14 +1112,6 @@
       <div v-if="selectedRequest" class="space-y-6 text-xs">
         <!-- Header Info Grid -->
         <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 bg-brand-light p-4 rounded-xl border border-brand-gray/10">
-          <div v-if="selectedRequest.recipientMilitaryNumber">
-            <span class="text-brand-gray block mb-0.5">الرقم العسكري للمستلم</span>
-            <span class="font-bold text-brand-accent font-mono">{{ selectedRequest.recipientMilitaryNumber }}</span>
-          </div>
-          <div v-if="getRankLabel(selectedRequest.recipientRank, t)">
-            <span class="text-brand-gray block mb-0.5">{{ $t('ohda.militaryRanks.fieldLabel') }}</span>
-            <span class="font-bold text-brand-accent">{{ getRankLabel(selectedRequest.recipientRank, t) }}</span>
-          </div>
           <div>
             <span class="text-brand-gray block mb-0.5">اسم المستلم</span>
             <span class="font-bold text-brand-dark">{{ selectedRequest.recipientName }}</span>
@@ -1174,7 +1128,7 @@
             <span class="text-brand-gray block mb-0.5">أنشئ بواسطة</span>
             <div class="flex flex-col">
               <span class="font-bold text-brand-dark">{{ selectedRequest.requestedByPersonName || selectedRequest.requestedByUsername || 'مستخدم' }}</span>
-              <span v-if="selectedRequest.requestedByUserId" class="font-mono text-xs text-brand-gray">الرقم العسكري: {{ selectedRequest.requestedByUserId }}</span>
+              <span v-if="selectedRequest.requestedByUserId" class="font-mono text-xs text-brand-gray">#{{ selectedRequest.requestedByUserId }}</span>
             </div>
           </div>
           <div>
@@ -1182,9 +1136,9 @@
             <span class="font-bold text-brand-dark font-mono">{{ formatDate(selectedRequest.insertDate) }}</span>
           </div>
           <div>
-            <span class="text-brand-gray block mb-0.5">توثيق البوصلة</span>
+            <span class="text-brand-gray block mb-0.5">حالة التسليم</span>
             <span class="font-bold" :class="selectedRequest.isRequesterConfirmed ? 'text-emerald-600' : 'text-amber-600'">
-              {{ selectedRequest.isRequesterConfirmed ? 'تم التوثيق والاستلام' : 'بانتظار تأكيد المستلم' }}
+              {{ selectedRequest.isRequesterConfirmed ? 'تم التسليم' : 'بانتظار التأكيد' }}
             </span>
           </div>
         </div>
@@ -1398,7 +1352,6 @@ import ConfirmDialog from "@/components/ConfirmDialog.vue";
 import WorkflowTrailModal from "../components/WorkflowTrailModal.vue";
 import { useI18n } from "vue-i18n";
 import { useOhdaUserPermissionStore } from "../stores/useOhdaUserPermissionStore";
-import { getMilitaryRankOptions, getRankLabel } from "../constants/militaryRanks";
 
 const { t } = useI18n();
 const authStore = useOhdaAuthStore();
@@ -1410,8 +1363,6 @@ const untrackedStore = useOhdaUntrackedItemStore();
 const packageStore = useOhdaPackageStore();
 const toastStore = useToastStore();
 const userPermStore = useOhdaUserPermissionStore();
-
-const militaryRankOptions = computed(() => getMilitaryRankOptions(t));
 
 // Selection mode in create modal: 'tracked' | 'untracked' | 'package'
 const manualMode = ref("tracked");
@@ -1942,8 +1893,6 @@ function openTimelineModal(request) {
 
 // Creation & Scanner Handling
 const createForm = ref({
-  recipientMilitaryNumber: null,
-  recipientRank: null,
   recipientName: "",
   purpose: "",
   departmentId: null,
@@ -1951,20 +1900,6 @@ const createForm = ref({
   selectedProductItemIds: [],
   autoApprove: false
 });
-
-function onRecipientMilitaryNumberInput() {
-  const val = createForm.value.recipientMilitaryNumber ? String(createForm.value.recipientMilitaryNumber).trim() : "";
-  if (!val) return;
-  const matchedUser = userPermStore.users.find(u => String(u.militaryNumber) === val);
-  if (matchedUser) {
-    if (!createForm.value.recipientName || createForm.value.recipientName === "أحمد محمود") {
-      createForm.value.recipientName = matchedUser.personName || matchedUser.username;
-    }
-    if (matchedUser.rank) {
-      createForm.value.recipientRank = Number(matchedUser.rank);
-    }
-  }
-}
 
 const manualItem = ref({
   productId: null,
@@ -2081,8 +2016,6 @@ function removeSerialSelection(id) {
 function openCreateModal() {
   const isFlowDisabled = localStorage.getItem("ohda_approval_flow_enabled_exit") === "false";
   createForm.value = {
-    recipientMilitaryNumber: null,
-    recipientRank: null,
     recipientName: "",
     purpose: "",
     departmentId: null,
@@ -2416,9 +2349,7 @@ async function handleCreateExit() {
   isSubmitting.value = true;
   try {
     const payload = {
-      ...createForm.value,
-      recipientMilitaryNumber: createForm.value.recipientMilitaryNumber ? Number(createForm.value.recipientMilitaryNumber) : null,
-      recipientRank: createForm.value.recipientRank ? Number(createForm.value.recipientRank) : null
+      ...createForm.value
     };
     const result = await requestsStore.createExitRequest(payload, authStore.user);
     if (result.success) {
