@@ -35,6 +35,11 @@ export default [
         component: () => import("./pages/ServicesPage.vue")
       },
       {
+        path: "jobs",
+        name: "OhdaJobCards",
+        component: () => import("./pages/JobCardsPage.vue")
+      },
+      {
         path: "warehouse-bins",
         name: "OhdaWarehouseBins",
         component: () => import("./pages/WarehouseBinsPage.vue")

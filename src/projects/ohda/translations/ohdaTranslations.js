@@ -4,6 +4,7 @@ export default {
       systemTitle: "نظام إدارة ورشة الصيانة والعناية بالسيارات",
       nav: {
         dashboard: "لوحة التحكم",
+        jobs: "أوامر الشغل والفواتير",
         products: "المنتجات وقطع الغيار",
         services: "الخدمات والصيانة",
         warehouseBins: "أماكن وأرفف التخزين",
@@ -595,6 +596,7 @@ export default {
       systemTitle: "Auto Workshop & Car Care Management",
       nav: {
         dashboard: "Dashboard",
+        jobs: "Job Cards & Invoices",
         products: "Products & Parts",
         services: "Services & Maintenance",
         warehouseBins: "Storage Bins",

@@ -41,6 +41,7 @@ export const useOhdaAuthStore = defineStore("ohdaAuth", {
             "/ohda/branches",
             "/ohda/products",
             "/ohda/services",
+            "/ohda/jobs",
             "/ohda/warehouse-bins",
             "/ohda/inventory",
             "/ohda/exit-requests",
@@ -85,6 +86,7 @@ export const useOhdaAuthStore = defineStore("ohdaAuth", {
       // If products or inventory are accessible, ensure barcode-print and warehouse-bins are accessible
       if (paths.includes("/ohda/products") || paths.includes("/ohda/inventory") || paths.includes("/ohda/scan")) {
         if (!paths.includes("/ohda/services")) paths.push("/ohda/services");
+        if (!paths.includes("/ohda/jobs")) paths.push("/ohda/jobs");
         if (!paths.includes("/ohda/barcode-print")) paths.push("/ohda/barcode-print");
         if (!paths.includes("/ohda/warehouse-bins")) paths.push("/ohda/warehouse-bins");
       }
