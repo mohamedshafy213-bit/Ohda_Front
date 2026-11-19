@@ -8,21 +8,23 @@ export const useOhdaInventoryStore = defineStore("ohdaInventory", {
     suppliers: [],
     inventoryReport: [],
     dashboardMetrics: null,
+    movements: [],
+    lowStockList: [],
     loading: false
   }),
 
   getters: {
     totalProductsCount: (state) => state.products.length,
-    totalStockQuantity: (state) => state.products.reduce((acc, p) => acc + (p.quantity || 0), 0),
-    totalFinancialAssetValue: (state) => state.products.reduce((acc, p) => acc + ((p.quantity || 0) * (p.unitPrice || 0)), 0),
-    lowStockProducts: (state) => state.products.filter((p) => (p.quantity || 0) <= (p.minThreshold || 5)),
-    lowStockCount: (state) => state.products.filter((p) => (p.quantity || 0) <= (p.minThreshold || 5)).length,
+    totalStockQuantity: (state) => state.products.reduce((acc, p) => acc + (Number(p.currentQuantity ?? p.quantity) || 0), 0),
+    totalFinancialAssetValue: (state) => state.products.reduce((acc, p) => acc + ((Number(p.currentQuantity ?? p.quantity) || 0) * (Number(p.costPrice ?? p.purchasePrice) || 0)), 0),
+    lowStockProducts: (state) => state.products.filter((p) => (Number(p.currentQuantity ?? p.quantity) || 0) <= (Number(p.minQuantity ?? p.minThreshold) || 5)),
+    lowStockCount: (state) => state.products.filter((p) => (Number(p.currentQuantity ?? p.quantity) || 0) <= (Number(p.minQuantity ?? p.minThreshold) || 5)).length,
 
     categoryDistribution: (state) => {
       const counts = {};
       state.products.forEach((p) => {
         const cat = p.categoryName || "عام";
-        counts[cat] = (counts[cat] || 0) + (p.quantity || 0);
+        counts[cat] = (counts[cat] || 0) + (Number(p.currentQuantity ?? p.quantity) || 0);
       });
       return counts;
     }
@@ -41,13 +43,77 @@ export const useOhdaInventoryStore = defineStore("ohdaInventory", {
           const raw = Array.isArray(data) ? data : [data];
           this.products = raw.map(p => ({
             ...p,
-            minThreshold: (p.minThreshold != null && p.minThreshold !== "") ? Number(p.minThreshold) : 5
+            costPrice: p.purchasePrice ?? p.costPrice ?? 0,
+            sellingPrice: p.unitPrice ?? p.sellingPrice ?? 0,
+            unit: p.unit || "قطعة",
+            currentQuantity: Number(p.currentQuantity ?? p.quantity ?? 0),
+            quantity: Number(p.currentQuantity ?? p.quantity ?? 0),
+            minQuantity: Number((p.minQuantity != null && p.minQuantity !== "") ? p.minQuantity : (p.minThreshold || 5)),
+            minThreshold: Number((p.minQuantity != null && p.minQuantity !== "") ? p.minQuantity : (p.minThreshold || 5))
           }));
         }
       } catch (err) {
         console.warn("Fetch products API offline, keeping active state", err);
       } finally {
         this.loading = false;
+      }
+    },
+
+    async recordStockMovement(movementPayload) {
+      this.loading = true;
+      try {
+        const res = await apiPost("/api/Product/stock-movement", movementPayload);
+        if (res?.data?.isDone) {
+          await this.fetchProducts();
+          return { success: true, message: res?.data?.returnMessage || "تم تسجيل حركة المخزون بنجاح" };
+        }
+        return { success: false, message: res?.data?.returnMessage || "فشل تسجيل حركة المخزون" };
+      } catch (err) {
+        console.warn("Record stock movement API failed", err);
+        return { success: false, message: err?.response?.data?.returnMessage || "فشل تسجيل حركة المخزون" };
+      } finally {
+        this.loading = false;
+      }
+    },
+
+    async fetchProductMovements(productId) {
+      try {
+        const res = await apiGet(`/api/Product/${productId}/movements`);
+        if (res?.data?.isDone) {
+          return res.data.objects || [];
+        }
+        return [];
+      } catch (err) {
+        console.warn("Fetch product movements API failed", err);
+        return [];
+      }
+    },
+
+    async fetchLowStockProducts() {
+      try {
+        const res = await apiGet("/api/Product/low-stock");
+        if (res?.data?.isDone) {
+          this.lowStockList = res.data.objects || [];
+          return this.lowStockList;
+        }
+        return [];
+      } catch (err) {
+        console.warn("Fetch low stock API failed", err);
+        return [];
+      }
+    },
+
+    async quickUpdateProduct(payload) {
+      try {
+        const res = await apiPost("/api/Product/quick-update", payload);
+        if (res?.data?.isDone) {
+          await this.fetchProducts();
+          return { success: true, message: res?.data?.returnMessage || "تم التحديث بنجاح" };
+        }
+        return { success: false, message: res?.data?.returnMessage || "فشل التحديث" };
+      } catch (err) {
+        console.warn("Quick update product API failed", err);
+        return { success: false, message: err?.response?.data?.returnMessage || "فشل التحديث" };
       }
     },
 
