@@ -1,417 +1,282 @@
 <template>
-  <div class="dashboard-root space-y-6">
-    <!-- Header -->
-    <div class="dash-header flex flex-col md:flex-row md:items-center justify-between gap-4 bg-brand-white p-6 rounded-2xl border border-brand-gray/10 shadow-sm">
+  <div class="space-y-6">
+    <!-- Header Title & Action Toolbar -->
+    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-brand-white dark:bg-white/5 p-6 rounded-2xl border border-brand-gray/10 shadow-sm print:hidden">
       <div>
-        <h1 class="text-2xl font-bold text-brand-dark flex items-center gap-3">
-          <LayoutGrid class="w-7 h-7 text-brand-accent" />
-          {{ $t('ohda.nav.dashboard') }}
+        <h1 class="text-2xl font-bold text-brand-dark dark:text-white flex items-center gap-3">
+          <Wrench class="w-7 h-7 text-brand-accent" />
+          <span>لوحة التحكم ومؤشرات أداء الورشة</span>
         </h1>
-        <p class="text-xs text-brand-gray mt-1">
-          {{ $t('ohda.systemTitle') }} — {{ $t('ohda.auth.welcome') }}
-          <span class="font-semibold text-brand-accent">{{ authStore.userName }}</span>
-          ({{ authStore.user?.roleName || 'User' }})
-          <span v-if="authStore.branchName" class="mx-1">•</span>
-          <span v-if="authStore.branchName" class="font-semibold text-brand-dark">{{ authStore.branchName }}</span>
+        <p class="text-xs text-brand-gray dark:text-slate-400 mt-1">
+          نظام إدارة ورشة الصيانة والعناية بالسيارات — مرحباً بك
+          <span class="font-bold text-brand-accent">{{ authStore.userName }}</span>
+          ({{ authStore.user?.roleName || 'مدير الورشة' }})
         </p>
       </div>
-      <div class="flex items-center gap-3">
-        <router-link to="/ohda/exit-requests">
-          <Button class="!bg-brand-soft hover:!bg-brand-accent/20 !text-brand-accent !border !border-brand-accent/30 !rounded-xl !px-4 !py-2 !text-xs !font-semibold flex items-center gap-2">
+
+      <!-- Quick Action Buttons -->
+      <div class="flex flex-wrap items-center gap-2">
+        <router-link to="/ohda/jobs">
+          <Button class="!bg-brand-accent hover:!bg-brand-accent/90 !text-brand-dark !font-bold !rounded-xl !px-3.5 !py-2 !text-xs flex items-center gap-1.5 shadow-md shadow-brand-accent/10 cursor-pointer">
             <Plus class="w-4 h-4" />
-            {{ $t('ohda.exitRequests.createRequest') }}
+            <span>+ أمر شغل جديد</span>
           </Button>
         </router-link>
-        <router-link to="/ohda/scan">
-          <Button class="!bg-brand-light hover:!bg-brand-light/80 !text-brand-dark !border !border-brand-gray/20 !rounded-xl !px-4 !py-2 !text-xs !font-semibold flex items-center gap-2">
-            <Barcode class="w-4 h-4" />
-            {{ $t('ohda.nav.scan') }}
+
+        <router-link to="/ohda/expenses">
+          <Button class="!bg-red-500/10 hover:!bg-red-500/20 !text-red-600 dark:!text-red-400 !border !border-red-500/25 !font-bold !rounded-xl !px-3.5 !py-2 !text-xs flex items-center gap-1.5 cursor-pointer">
+            <Receipt class="w-4 h-4" />
+            <span>+ تسجيل مصروف</span>
+          </Button>
+        </router-link>
+
+        <router-link to="/ohda/finance">
+          <Button class="!bg-purple-600/10 hover:!bg-purple-600/20 !text-purple-600 dark:!text-purple-400 !border !border-purple-500/25 !font-bold !rounded-xl !px-3.5 !py-2 !text-xs flex items-center gap-1.5 cursor-pointer">
+            <Scale class="w-4 h-4" />
+            <span>تقفيل الكاش</span>
           </Button>
         </router-link>
       </div>
     </div>
 
-    <!-- KPI Stat Cards - 6 cards -->
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
-      <div v-for="(card, idx) in kpiCards" :key="idx"
-           class="kpi-card group relative bg-brand-white border rounded-2xl p-5 overflow-hidden shadow-sm transition-all duration-300 hover:shadow-lg hover:-translate-y-1"
-           :style="{ borderColor: card.borderColor + '30' }">
-        <!-- Gradient glow on hover -->
-        <div class="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"
-             :style="{ background: `radial-gradient(ellipse at 50% 0%, ${card.color}15 0%, transparent 70%)` }"></div>
-        
-        <div class="relative z-10">
-          <div class="flex items-center justify-between mb-3">
-            <div class="w-10 h-10 rounded-xl flex items-center justify-center border transition-transform duration-300 group-hover:scale-110"
-                 :style="{ backgroundColor: card.color + '12', borderColor: card.color + '25', color: card.color }">
-              <component :is="card.icon" class="w-5 h-5" />
+    <!-- 7 Core Workshop KPIs (User Explicit Requirements) -->
+    <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-3">
+      <!-- 1. Today's Sales -->
+      <div class="bg-brand-white dark:bg-white/5 p-4 rounded-2xl border border-brand-gray/10 shadow-sm flex flex-col justify-between">
+        <div class="flex items-center justify-between text-emerald-600 dark:text-emerald-400 mb-2">
+          <span class="text-[11px] font-bold">مبيعات اليوم</span>
+          <Banknote class="w-4 h-4" />
+        </div>
+        <span class="text-base font-bold font-mono text-emerald-600 dark:text-emerald-400">
+          {{ formatCurrency(todaySales) }}
+        </span>
+      </div>
+
+      <!-- 2. This Month's Sales -->
+      <div class="bg-brand-white dark:bg-white/5 p-4 rounded-2xl border border-brand-gray/10 shadow-sm flex flex-col justify-between">
+        <div class="flex items-center justify-between text-blue-600 dark:text-blue-400 mb-2">
+          <span class="text-[11px] font-bold">مبيعات الشهر</span>
+          <TrendingUp class="w-4 h-4" />
+        </div>
+        <span class="text-base font-bold font-mono text-blue-600 dark:text-blue-400">
+          {{ formatCurrency(monthSales) }}
+        </span>
+      </div>
+
+      <!-- 3. This Month's Expenses -->
+      <div class="bg-brand-white dark:bg-white/5 p-4 rounded-2xl border border-brand-gray/10 shadow-sm flex flex-col justify-between">
+        <div class="flex items-center justify-between text-red-600 dark:text-red-400 mb-2">
+          <span class="text-[11px] font-bold">مصروفات الشهر</span>
+          <Receipt class="w-4 h-4" />
+        </div>
+        <span class="text-base font-bold font-mono text-red-600 dark:text-red-400">
+          {{ formatCurrency(monthExpenses) }}
+        </span>
+      </div>
+
+      <!-- 4. Net Profit -->
+      <div class="bg-brand-white dark:bg-white/5 p-4 rounded-2xl border border-brand-gray/10 shadow-sm flex flex-col justify-between" :class="netProfit >= 0 ? 'bg-emerald-500/5' : 'bg-red-500/5'">
+        <div class="flex items-center justify-between mb-2" :class="netProfit >= 0 ? 'text-emerald-600' : 'text-red-500'">
+          <span class="text-[11px] font-bold">صافي الربح</span>
+          <Wallet class="w-4 h-4" />
+        </div>
+        <span class="text-base font-bold font-mono" :class="netProfit >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-600 dark:text-red-400'">
+          {{ formatCurrency(netProfit) }}
+        </span>
+      </div>
+
+      <!-- 5. Unpaid Customer Balances -->
+      <div class="bg-brand-white dark:bg-white/5 p-4 rounded-2xl border border-brand-gray/10 shadow-sm flex flex-col justify-between">
+        <div class="flex items-center justify-between text-amber-600 dark:text-amber-400 mb-2">
+          <span class="text-[11px] font-bold">ديون عملاء معلقة</span>
+          <Clock class="w-4 h-4" />
+        </div>
+        <span class="text-base font-bold font-mono text-amber-600 dark:text-amber-400">
+          {{ formatCurrency(unpaidBalances) }}
+        </span>
+      </div>
+
+      <!-- 6. Low Stock Items -->
+      <router-link to="/ohda/products" class="bg-brand-white dark:bg-white/5 p-4 rounded-2xl border border-brand-gray/10 shadow-sm flex flex-col justify-between hover:border-red-500/40 transition-colors">
+        <div class="flex items-center justify-between text-rose-500 mb-2">
+          <span class="text-[11px] font-bold">نواقص المخزن</span>
+          <AlertTriangle class="w-4 h-4" />
+        </div>
+        <div class="flex items-baseline gap-1">
+          <span class="text-base font-bold font-mono text-rose-600 dark:text-rose-400">
+            {{ lowStockCount }}
+          </span>
+          <span class="text-[10px] text-slate-400">صنف ناقص</span>
+        </div>
+      </router-link>
+
+      <!-- 7. Open Jobs in Workshop -->
+      <router-link to="/ohda/jobs" class="bg-brand-white dark:bg-white/5 p-4 rounded-2xl border border-brand-gray/10 shadow-sm flex flex-col justify-between hover:border-brand-accent/40 transition-colors">
+        <div class="flex items-center justify-between text-sky-600 dark:text-sky-400 mb-2">
+          <span class="text-[11px] font-bold">سيارات بالورشة</span>
+          <Car class="w-4 h-4" />
+        </div>
+        <div class="flex items-baseline gap-1">
+          <span class="text-base font-bold font-mono text-sky-600 dark:text-sky-400">
+            {{ openJobsCount }}
+          </span>
+          <span class="text-[10px] text-slate-400">أمر مفتوح</span>
+        </div>
+      </router-link>
+    </div>
+
+    <!-- Chart: Daily Income vs Expenses (User Explicit Requirement) -->
+    <div class="bg-brand-white dark:bg-white/5 p-6 rounded-2xl border border-brand-gray/10 shadow-sm space-y-4">
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-brand-gray/10 pb-4">
+        <div>
+          <h2 class="text-sm font-bold text-brand-dark dark:text-white flex items-center gap-2">
+            <BarChart3 class="w-5 h-5 text-brand-accent" />
+            <span>مقارنة الإيرادات والمصروفات اليومية (Income vs Expenses)</span>
+          </h2>
+          <p class="text-[11px] text-slate-400 mt-0.5">
+            حركة المبيعات المحصلة مقابل المصروفات خلال الأيام الماضية
+          </p>
+        </div>
+
+        <div class="flex items-center gap-4 text-xs">
+          <div class="flex items-center gap-1.5">
+            <span class="w-3 h-3 rounded-md bg-emerald-500 inline-block"></span>
+            <span class="text-slate-600 dark:text-slate-300 font-bold">الإيرادات والتحصيل</span>
+          </div>
+          <div class="flex items-center gap-1.5">
+            <span class="w-3 h-3 rounded-md bg-red-400 inline-block"></span>
+            <span class="text-slate-600 dark:text-slate-300 font-bold">المصروفات</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- CSS / SVG Bar Chart -->
+      <div class="pt-4">
+        <div class="flex items-end gap-2 md:gap-4 h-52">
+          <div
+            v-for="(day, idx) in dailyChartData"
+            :key="idx"
+            class="flex-1 flex flex-col items-center gap-1.5 group cursor-default"
+          >
+            <!-- Bars Container -->
+            <div class="w-full flex items-end justify-center gap-1 h-44 relative">
+              <!-- Income Bar -->
+              <div
+                class="w-full max-w-[18px] rounded-t-md bg-emerald-500/85 hover:bg-emerald-500 transition-all duration-300 relative"
+                :style="{ height: `${day.incomeHeight}%` }"
+              >
+                <!-- Tooltip -->
+                <div class="absolute -top-7 left-1/2 -translate-x-1/2 bg-black/90 text-white text-[9px] px-1.5 py-0.5 rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-20 font-mono">
+                  +{{ formatCurrency(day.income) }}
+                </div>
+              </div>
+
+              <!-- Expense Bar -->
+              <div
+                class="w-full max-w-[18px] rounded-t-md bg-red-400/85 hover:bg-red-500 transition-all duration-300 relative"
+                :style="{ height: `${day.expenseHeight}%` }"
+              >
+                <!-- Tooltip -->
+                <div class="absolute -top-7 left-1/2 -translate-x-1/2 bg-black/90 text-white text-[9px] px-1.5 py-0.5 rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-20 font-mono">
+                  -{{ formatCurrency(day.expense) }}
+                </div>
+              </div>
             </div>
-            <span v-if="card.trend !== null" class="text-[10px] font-bold px-2 py-0.5 rounded-full"
-                  :class="card.trend >= 0 ? 'bg-emerald-50 text-emerald-600' : 'bg-red-50 text-red-500'">
-              {{ card.trend >= 0 ? '▲' : '▼' }} {{ Math.abs(card.trend) }}%
+
+            <!-- Date Label -->
+            <span class="text-[10px] text-slate-400 font-mono whitespace-nowrap">
+              {{ day.label }}
             </span>
           </div>
-          <div class="text-2xl font-bold mb-0.5 transition-colors duration-300" :style="{ color: card.valueColor || '#101828' }">
-            <span class="counter-value">{{ card.value }}</span>
-            <span v-if="card.suffix" class="text-xs font-normal text-brand-gray ms-1">{{ card.suffix }}</span>
-          </div>
-          <span class="text-[11px] text-brand-gray leading-tight block">{{ card.label }}</span>
         </div>
       </div>
     </div>
 
-    <!-- Charts Row: Donut | Bar Chart | Warehouse Gauge -->
-    <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
-      
-      <!-- Category Distribution - Donut Chart -->
-      <div class="lg:col-span-3 bg-brand-white border border-brand-gray/10 rounded-2xl p-5 shadow-sm">
-        <h2 class="text-sm font-bold text-brand-dark mb-5 flex items-center gap-2">
-          <Package class="w-4 h-4 text-brand-accent" />
-          توزيع المنتجات حسب الفئات
-        </h2>
-        
-        <div v-if="categoryEntries.length" class="flex flex-col items-center">
-          <!-- SVG Donut Chart -->
-          <div class="relative w-44 h-44 mb-5">
-            <svg viewBox="0 0 42 42" class="w-full h-full donut-chart">
-              <circle cx="21" cy="21" r="15.5" fill="transparent" stroke="#F1F5F9" stroke-width="5" />
-              <circle v-for="(seg, i) in donutSegments" :key="i"
-                      cx="21" cy="21" r="15.5" fill="transparent"
-                      :stroke="seg.color"
-                      stroke-width="5"
-                      :stroke-dasharray="seg.dashArray"
-                      :stroke-dashoffset="seg.dashOffset"
-                      stroke-linecap="round"
-                      class="donut-segment transition-all duration-700"
-                      :style="{ animationDelay: `${i * 150}ms` }" />
-            </svg>
-            <!-- Center Label -->
-            <div class="absolute inset-0 flex flex-col items-center justify-center">
-              <span class="text-2xl font-bold text-brand-dark">{{ inventoryStore.totalProductsCount }}</span>
-              <span class="text-[10px] text-brand-gray">إجمالي الأصناف</span>
-            </div>
-          </div>
-          
-          <!-- Legend -->
-          <div class="w-full space-y-2">
-            <div v-for="(seg, i) in donutSegments" :key="'legend-' + i"
-                 class="flex items-center justify-between text-xs group/legend cursor-default hover:bg-brand-light rounded-lg px-2 py-1.5 transition-colors">
+    <!-- 2 Column Section: Active Workshop Cars & Low-Stock Alerts -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <!-- Section 1: Active Cars in Workshop (Open Jobs) -->
+      <div class="bg-brand-white dark:bg-white/5 p-5 rounded-2xl border border-brand-gray/10 shadow-sm space-y-4">
+        <div class="flex items-center justify-between border-b border-brand-gray/10 pb-3">
+          <h2 class="text-sm font-bold text-brand-dark dark:text-white flex items-center gap-2">
+            <Car class="w-4 h-4 text-sky-500" />
+            <span>السيارات وأوامر الشغل الحالية بالورشة</span>
+          </h2>
+          <router-link to="/ohda/jobs" class="text-xs text-brand-accent hover:underline font-bold">
+            عرض الكل ({{ openJobsList.length }})
+          </router-link>
+        </div>
+
+        <div v-if="openJobsList.length === 0" class="text-center py-8 text-xs text-slate-400">
+          لا يوجد سيارات قيد الصيانة بالورشة حالياً
+        </div>
+
+        <div v-else class="space-y-2 max-h-72 overflow-y-auto pr-1">
+          <div
+            v-for="job in openJobsList.slice(0, 5)"
+            :key="job.id"
+            class="p-3 rounded-xl bg-black/5 dark:bg-white/5 border border-brand-gray/10 flex items-center justify-between hover:border-brand-accent/30 transition-colors"
+          >
+            <div>
               <div class="flex items-center gap-2">
-                <span class="w-2.5 h-2.5 rounded-full inline-block shrink-0" :style="{ backgroundColor: seg.color }"></span>
-                <span class="text-brand-dark font-medium">{{ seg.name }}</span>
-              </div>
-              <span class="font-bold" :style="{ color: seg.color }">{{ seg.count }}</span>
-            </div>
-          </div>
-        </div>
-        <div v-else class="flex flex-col items-center justify-center py-12 text-brand-gray">
-          <Package class="w-10 h-10 mb-3 opacity-30" />
-          <span class="text-xs">لا توجد بيانات تصنيفات</span>
-        </div>
-      </div>
-
-      <!-- Request Activity Bar Chart -->
-      <div class="lg:col-span-5 bg-brand-white border border-brand-gray/10 rounded-2xl p-5 shadow-sm">
-        <div class="flex items-center justify-between mb-5">
-          <h2 class="text-sm font-bold text-brand-dark flex items-center gap-2">
-            <TrendingUp class="w-4 h-4 text-brand-accent" />
-            حركة الطلبات
-          </h2>
-          <div class="flex items-center gap-4 text-[10px]">
-            <span class="flex items-center gap-1.5">
-              <span class="w-2.5 h-2.5 rounded-sm bg-emerald-500 inline-block"></span>
-              طلبات إدخال
-            </span>
-            <span class="flex items-center gap-1.5">
-              <span class="w-2.5 h-2.5 rounded-sm bg-rose-400 inline-block"></span>
-              طلبات صرف
-            </span>
-          </div>
-        </div>
-
-        <div class="flex items-end gap-1.5 h-40">
-          <div v-for="(bar, i) in barChartData" :key="i" class="flex-1 flex flex-col items-center gap-1">
-            <div class="w-full flex gap-0.5 items-end" style="height: 128px;">
-              <!-- Entry bar -->
-              <div class="flex-1 rounded-t-md bg-emerald-500/80 hover:bg-emerald-500 transition-all duration-500 cursor-default relative group/bar"
-                   :style="{ height: bar.entryHeight + '%', animationDelay: i * 80 + 'ms' }"
-                   :class="{ 'bar-animate': mounted }">
-                <div class="absolute -top-6 left-1/2 -translate-x-1/2 bg-brand-dark text-white text-[9px] px-1.5 py-0.5 rounded opacity-0 group-hover/bar:opacity-100 transition-opacity whitespace-nowrap">
-                  {{ bar.entry }}
-                </div>
-              </div>
-              <!-- Exit bar -->
-              <div class="flex-1 rounded-t-md bg-rose-400/80 hover:bg-rose-400 transition-all duration-500 cursor-default relative group/bar"
-                   :style="{ height: bar.exitHeight + '%', animationDelay: i * 80 + 50 + 'ms' }"
-                   :class="{ 'bar-animate': mounted }">
-                <div class="absolute -top-6 left-1/2 -translate-x-1/2 bg-brand-dark text-white text-[9px] px-1.5 py-0.5 rounded opacity-0 group-hover/bar:opacity-100 transition-opacity whitespace-nowrap">
-                  {{ bar.exit }}
-                </div>
-              </div>
-            </div>
-            <span class="text-[9px] text-brand-gray">{{ bar.label }}</span>
-          </div>
-        </div>
-
-        <!-- Summary mini stats -->
-        <div class="grid grid-cols-3 gap-3 mt-5 pt-4 border-t border-brand-gray/10">
-          <div class="text-center">
-            <span class="block text-lg font-bold text-emerald-600">{{ totalApprovedEntry }}</span>
-            <span class="text-[10px] text-brand-gray">إدخال معتمد</span>
-          </div>
-          <div class="text-center">
-            <span class="block text-lg font-bold text-rose-500">{{ totalApprovedExit }}</span>
-            <span class="text-[10px] text-brand-gray">صرف معتمد</span>
-          </div>
-          <div class="text-center">
-            <span class="block text-lg font-bold text-amber-500">{{ totalPending }}</span>
-            <span class="text-[10px] text-brand-gray">قيد الانتظار</span>
-          </div>
-        </div>
-      </div>
-
-      <!-- Warehouse Capacity Gauge -->
-      <div class="lg:col-span-4 bg-brand-white border border-brand-gray/10 rounded-2xl p-5 shadow-sm">
-        <h2 class="text-sm font-bold text-brand-dark mb-5 flex items-center gap-2">
-          <Warehouse class="w-4 h-4 text-brand-accent" />
-          سعة المستودع
-        </h2>
-        
-        <div class="flex flex-col items-center">
-          <!-- Radial Gauge SVG -->
-          <div class="relative w-48 h-48 mb-4">
-            <svg viewBox="0 0 42 42" class="w-full h-full -rotate-90">
-              <!-- Track -->
-              <circle cx="21" cy="21" r="17" fill="transparent" stroke="#F1F5F9" stroke-width="3.5" />
-              <!-- Used capacity -->
-              <circle cx="21" cy="21" r="17" fill="transparent"
-                      :stroke="capacityColor"
-                      stroke-width="3.5"
-                      :stroke-dasharray="capacityDash"
-                      stroke-dashoffset="0"
-                      stroke-linecap="round"
-                      class="gauge-fill transition-all duration-1000" />
-              <!-- Inner track -->
-              <circle cx="21" cy="21" r="13" fill="transparent" stroke="#F1F5F9" stroke-width="2.5" />
-              <!-- Occupied bins -->
-              <circle cx="21" cy="21" r="13" fill="transparent"
-                      :stroke="'#6366F1'"
-                      stroke-width="2.5"
-                      :stroke-dasharray="occupiedBinsDash"
-                      stroke-dashoffset="0"
-                      stroke-linecap="round"
-                      class="gauge-fill transition-all duration-1000" style="animation-delay: 300ms" />
-            </svg>
-            <!-- Center -->
-            <div class="absolute inset-0 flex flex-col items-center justify-center">
-              <span class="text-3xl font-bold" :style="{ color: capacityColor }">{{ capacityPercent }}%</span>
-              <span class="text-[10px] text-brand-gray">نسبة الاستخدام</span>
-            </div>
-          </div>
-          
-          <!-- Warehouse Stats Grid -->
-          <div class="w-full grid grid-cols-2 gap-3">
-            <div class="bg-brand-light rounded-xl p-3 text-center border border-brand-gray/5">
-              <span class="block text-lg font-bold text-brand-dark">{{ binStore.totalBinsCount }}</span>
-              <span class="text-[10px] text-brand-gray">إجمالي الأرفف</span>
-            </div>
-            <div class="bg-indigo-50 rounded-xl p-3 text-center border border-indigo-100">
-              <span class="block text-lg font-bold text-indigo-600">{{ binStore.occupiedBinsCount }}</span>
-              <span class="text-[10px] text-brand-gray">أرفف مشغولة</span>
-            </div>
-            <div class="bg-emerald-50 rounded-xl p-3 text-center border border-emerald-100">
-              <span class="block text-lg font-bold text-emerald-600">{{ binStore.emptyBinsCount }}</span>
-              <span class="text-[10px] text-brand-gray">أرفف فارغة</span>
-            </div>
-            <div class="bg-amber-50 rounded-xl p-3 text-center border border-amber-100">
-              <span class="block text-lg font-bold text-amber-600">{{ binStore.totalRemainingSpace }}</span>
-              <span class="text-[10px] text-brand-gray">سعة متبقية</span>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Bottom Row: Activity Timeline + Low Stock Alerts -->
-    <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
-      
-      <!-- Recent Activity Timeline -->
-      <div class="lg:col-span-5 bg-brand-white border border-brand-gray/10 rounded-2xl p-5 shadow-sm">
-        <div class="flex items-center justify-between mb-5">
-          <h2 class="text-sm font-bold text-brand-dark flex items-center gap-2">
-            <Activity class="w-4 h-4 text-brand-accent" />
-            آخر النشاطات
-          </h2>
-          <span class="text-[10px] text-brand-gray bg-brand-light px-2.5 py-1 rounded-full">آخر 10 أحداث</span>
-        </div>
-
-        <div v-if="recentActivities.length" class="space-y-0">
-          <div v-for="(act, i) in recentActivities" :key="i"
-               class="flex items-start gap-3 py-3 group/act hover:bg-brand-light/50 rounded-lg px-2 transition-colors -mx-2 cursor-default"
-               :class="{ 'border-b border-brand-gray/5': i < recentActivities.length - 1 }">
-            <!-- Timeline dot -->
-            <div class="relative flex flex-col items-center pt-0.5">
-              <div class="w-3 h-3 rounded-full border-2 shrink-0 transition-transform group-hover/act:scale-125"
-                   :style="{ borderColor: act.color, backgroundColor: act.color + '25' }"></div>
-              <div v-if="i < recentActivities.length - 1" class="w-px flex-1 bg-brand-gray/10 mt-1" style="min-height: 16px"></div>
-            </div>
-            <!-- Content -->
-            <div class="flex-1 min-w-0">
-              <div class="flex items-center gap-2 mb-0.5">
-                <span class="text-xs font-semibold text-brand-dark">{{ act.title }}</span>
-                <span class="text-[9px] px-1.5 py-0.5 rounded-full font-bold"
-                      :style="{ backgroundColor: act.color + '15', color: act.color }">
-                  {{ act.badge }}
+                <span class="text-xs font-bold text-brand-dark dark:text-white">{{ job.customerName }}</span>
+                <span class="text-[10px] font-mono px-2 py-0.5 rounded bg-brand-accent/15 text-brand-dark dark:text-brand-accent font-bold">
+                  {{ job.carPlate }}
                 </span>
               </div>
-              <p class="text-[11px] text-brand-gray truncate">{{ act.description }}</p>
-              <span class="text-[9px] text-brand-gray/60 mt-0.5 block">{{ act.time }}</span>
+              <div class="text-[11px] text-slate-400 mt-0.5">
+                {{ job.carModel || 'سيارة' }} • أمر: <span class="font-mono">{{ job.jobNumber }}</span>
+              </div>
+            </div>
+
+            <div class="text-end">
+              <span
+                class="px-2 py-0.5 rounded-full text-[9px] font-bold"
+                :class="job.status === 2 ? 'bg-emerald-500/15 text-emerald-600' : 'bg-amber-500/15 text-amber-600'"
+              >
+                {{ job.status === 2 ? 'جاهزة للتسليم' : 'قيد الصيانة' }}
+              </span>
+              <span class="block text-xs font-mono font-bold text-slate-700 dark:text-slate-300 mt-1">
+                {{ formatCurrency(job.totalAmount) }}
+              </span>
             </div>
           </div>
-        </div>
-        <div v-else class="flex flex-col items-center justify-center py-16 text-brand-gray">
-          <Activity class="w-10 h-10 mb-3 opacity-20" />
-          <span class="text-xs">لا توجد نشاطات حديثة</span>
         </div>
       </div>
 
-      <!-- Low Stock Alerts Table -->
-      <div class="lg:col-span-7 bg-brand-white border border-brand-gray/10 rounded-2xl p-5 shadow-sm flex flex-col justify-between">
-        <div>
-          <!-- Header -->
-          <div class="flex flex-wrap items-center justify-between gap-3 mb-4 pb-3 border-b border-brand-gray/10">
-            <div class="flex items-center gap-3">
-              <div class="w-10 h-10 rounded-xl bg-amber-500/10 text-amber-600 flex items-center justify-center border border-amber-500/20 shrink-0">
-                <AlertTriangle class="w-5 h-5" />
-              </div>
-              <div>
-                <div class="flex items-center gap-2">
-                  <h2 class="text-sm font-bold text-brand-dark">تنبيهات انخفاض المخزون</h2>
-                  <span v-if="inventoryStore.lowStockCount" 
-                        class="text-[10px] bg-amber-500/15 text-amber-700 font-bold px-2.5 py-0.5 rounded-full border border-amber-500/25">
-                    {{ inventoryStore.lowStockCount }} صنف بحاجة للتوريد
-                  </span>
-                </div>
-                <p class="text-[11px] text-brand-gray mt-0.5">الأصناف التي وصلت أو قاربت على النفاذ عن الحد الأدنى المحدد</p>
-              </div>
-            </div>
-            <router-link to="/ohda/inventory" class="group text-xs text-brand-accent hover:text-brand-accent/80 font-semibold flex items-center gap-1.5 transition-colors">
-              <span>عرض المخزون الكامل</span>
-              <ChevronLeft class="w-3.5 h-3.5 transition-transform group-hover:-translate-x-1" />
-            </router-link>
-          </div>
-
-          <!-- Table Container -->
-          <div v-if="inventoryStore.lowStockProducts.length" class="overflow-hidden rounded-xl border border-brand-gray/10">
-            <DataTable 
-              :value="inventoryStore.lowStockProducts" 
-              paginator 
-              :rows="5" 
-              class="w-full text-xs"
-              stripedRows
-            >
-              <!-- Name & SKU Column -->
-              <Column field="name" header="اسم الصنف" class="text-start">
-                <template #body="{ data }">
-                  <div class="flex flex-col py-0.5">
-                    <span class="font-bold text-brand-dark text-xs truncate max-w-[200px]" :title="data.name">{{ data.name }}</span>
-                    <div class="flex items-center gap-2 mt-0.5">
-                      <span class="font-mono text-[10px] text-brand-gray bg-brand-light px-1.5 py-0.5 rounded border border-brand-gray/10 select-all">
-                        {{ data.sku || '—' }}
-                      </span>
-                      <span class="text-[10px] text-brand-gray/80 truncate max-w-[120px]">
-                        {{ data.categoryName || 'عام' }}
-                      </span>
-                    </div>
-                  </div>
-                </template>
-              </Column>
-
-              <!-- Stock & Min Threshold Level -->
-              <Column header="الرصيد / الحد الأدنى" class="text-center">
-                <template #body="{ data }">
-                  <div class="flex flex-col items-center justify-center">
-                    <div class="flex items-center gap-1 font-mono text-xs">
-                      <span class="font-black" :class="data.quantity === 0 ? 'text-red-600' : 'text-amber-600'">
-                        {{ data.quantity }}
-                      </span>
-                      <span class="text-brand-gray/60">/</span>
-                      <span class="text-brand-gray text-[11px] font-medium">{{ data.minThreshold || 5 }}</span>
-                    </div>
-                    <!-- Mini Stock Progress Bar -->
-                    <div class="w-20 bg-brand-gray/15 rounded-full h-1.5 mt-1 overflow-hidden">
-                      <div 
-                        class="h-full rounded-full transition-all duration-300"
-                        :class="data.quantity === 0 ? 'bg-red-500 w-0' : (data.quantity <= Math.floor((data.minThreshold || 5) * 0.5) ? 'bg-rose-500' : 'bg-amber-500')"
-                        :style="{ width: `${Math.min(100, Math.max(6, ((data.quantity || 0) / (data.minThreshold || 5)) * 100))}%` }"
-                      ></div>
-                    </div>
-                  </div>
-                </template>
-              </Column>
-
-              <!-- Status Badge -->
-              <Column header="الحالة" class="text-center">
-                <template #body="{ data }">
-                  <span v-if="data.quantity === 0"
-                        class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold bg-red-50 text-red-700 border border-red-200">
-                    <span class="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse"></span>
-                    نفد المخزون
-                  </span>
-                  <span v-else-if="data.quantity <= Math.floor((data.minThreshold || 5) * 0.5)"
-                        class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold bg-rose-50 text-rose-700 border border-rose-200">
-                    <span class="w-1.5 h-1.5 rounded-full bg-rose-500"></span>
-                    رصيد حرج
-                  </span>
-                  <span v-else
-                        class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold bg-amber-50 text-amber-800 border border-amber-200">
-                    <span class="w-1.5 h-1.5 rounded-full bg-amber-500"></span>
-                    منخفض
-                  </span>
-                </template>
-              </Column>
-
-              <!-- Quick Action Link -->
-              <Column header="الإجراء" class="text-center w-24">
-                <template #body="{ data }">
-                  <router-link 
-                    to="/ohda/entry-requests" 
-                    class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[10px] font-bold bg-brand-soft text-brand-accent hover:bg-brand-accent/20 transition-colors shadow-xs"
-                    :title="`إنشاء طلب إدخال وتوريد لـ ${data.name}`"
-                  >
-                    <Plus class="w-3 h-3" />
-                    <span>توريد</span>
-                  </router-link>
-                </template>
-              </Column>
-            </DataTable>
-          </div>
-
-          <!-- Empty State when no low stock items -->
-          <div v-else class="flex flex-col items-center justify-center py-12 px-4 text-center">
-            <div class="w-14 h-14 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center mb-3 border border-emerald-100 shadow-sm">
-              <CheckCircle class="w-7 h-7 text-emerald-500" />
-            </div>
-            <h3 class="text-sm font-bold text-brand-dark mb-1">المخزون في حالة ممتازة ومستقرة</h3>
-            <p class="text-xs text-brand-gray max-w-sm">
-              لا توجد أي أصناف وصلت لحد إعادة الطلب أو نفدت من المستودع حالياً.
-            </p>
-          </div>
+      <!-- Section 2: Low-Stock Inventory Warning -->
+      <div class="bg-brand-white dark:bg-white/5 p-5 rounded-2xl border border-brand-gray/10 shadow-sm space-y-4">
+        <div class="flex items-center justify-between border-b border-brand-gray/10 pb-3">
+          <h2 class="text-sm font-bold text-brand-dark dark:text-white flex items-center gap-2">
+            <AlertTriangle class="w-4 h-4 text-rose-500" />
+            <span>تنبيهات الأصناف تحت حد الأمان بالمخزن</span>
+          </h2>
+          <router-link to="/ohda/products" class="text-xs text-brand-accent hover:underline font-bold">
+            إدارة المخزن
+          </router-link>
         </div>
-      </div>
-    </div>
 
-    <!-- Quick Stats Footer -->
-    <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-      <div v-for="(stat, i) in quickStats" :key="i"
-           class="bg-brand-white border border-brand-gray/10 rounded-xl p-4 shadow-sm flex items-center gap-3 hover:border-brand-accent/20 transition-colors cursor-default">
-        <div class="w-9 h-9 rounded-lg flex items-center justify-center shrink-0"
-             :style="{ backgroundColor: stat.color + '12', color: stat.color }">
-          <component :is="stat.icon" class="w-4.5 h-4.5" />
+        <div v-if="inventoryStore.lowStockProducts.length === 0" class="text-center py-8 text-xs text-slate-400">
+          جميع الأصناف متوفرة ورصيد المخزن في الحدود الآمنة الممتازة!
         </div>
-        <div>
-          <span class="block text-sm font-bold text-brand-dark">{{ stat.value }}</span>
-          <span class="text-[10px] text-brand-gray">{{ stat.label }}</span>
+
+        <div v-else class="space-y-2 max-h-72 overflow-y-auto pr-1">
+          <div
+            v-for="prod in inventoryStore.lowStockProducts.slice(0, 5)"
+            :key="prod.id"
+            class="p-3 rounded-xl bg-red-500/5 border border-red-500/20 flex items-center justify-between"
+          >
+            <div>
+              <span class="text-xs font-bold text-brand-dark dark:text-white block">{{ prod.name }}</span>
+              <span class="text-[10px] text-slate-400 block">{{ prod.categoryName || 'عام' }} [{{ prod.sku }}]</span>
+            </div>
+
+            <div class="text-end">
+              <span class="text-xs font-mono font-bold text-red-600 dark:text-red-400 block">
+                {{ prod.currentQuantity }} {{ prod.unit || 'قطعة' }}
+              </span>
+              <span class="text-[9px] text-slate-400 block">حد الأمان: {{ prod.minQuantity || 5 }}</span>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -421,347 +286,146 @@
 <script setup>
 import { ref, computed, onMounted } from "vue";
 import { useOhdaAuthStore } from "../stores/useOhdaAuthStore";
+import { useOhdaJobCardStore } from "../stores/useOhdaJobCardStore";
+import { useOhdaExpenseStore } from "../stores/useOhdaExpenseStore";
 import { useOhdaInventoryStore } from "../stores/useOhdaInventoryStore";
-import { useOhdaRequestsStore } from "../stores/useOhdaRequestsStore";
-import { useOhdaWarehouseBinStore } from "../stores/useOhdaWarehouseBinStore";
-
+import { useOhdaFinanceStore } from "../stores/useOhdaFinanceStore";
+import Button from "primevue/button";
 import {
-  LayoutGrid, Plus, Barcode, Box, TrendingUp, AlertTriangle, Clock, Package,
-  Warehouse, Activity, ChevronLeft, CheckCircle,
-  ShoppingCart, ArrowUpRight, ArrowDownLeft, Users, Layers, Tag
+  Wrench,
+  Plus,
+  Receipt,
+  Scale,
+  Banknote,
+  TrendingUp,
+  Wallet,
+  Clock,
+  AlertTriangle,
+  Car,
+  BarChart3
 } from "lucide-vue-next";
-import Column from "primevue/column";
 
 const authStore = useOhdaAuthStore();
+const jobStore = useOhdaJobCardStore();
+const expenseStore = useOhdaExpenseStore();
 const inventoryStore = useOhdaInventoryStore();
-const requestsStore = useOhdaRequestsStore();
-const binStore = useOhdaWarehouseBinStore();
+const financeStore = useOhdaFinanceStore();
 
-const mounted = ref(false);
-
-// ─── KPI Cards ───
-const kpiCards = computed(() => [
-  {
-    label: "إجمالي الأصناف",
-    value: inventoryStore.totalProductsCount,
-    icon: Box,
-    color: "#21C87A",
-    borderColor: "#21C87A",
-    valueColor: "#101828",
-    trend: null,
-    suffix: "صنف"
-  },
-  {
-    label: "إجمالي كمية المخزون",
-    value: inventoryStore.totalStockQuantity.toLocaleString(),
-    icon: Layers,
-    color: "#6366F1",
-    borderColor: "#6366F1",
-    valueColor: "#101828",
-    trend: null,
-    suffix: "وحدة"
-  },
-  {
-    label: "القيمة المالية للعهدة",
-    value: inventoryStore.totalFinancialAssetValue.toLocaleString(),
-    icon: TrendingUp,
-    color: "#0EA5E9",
-    borderColor: "#0EA5E9",
-    valueColor: "#101828",
-    trend: null,
-    suffix: "ريال"
-  },
-  {
-    label: "تنبيهات انخفاض المخزون",
-    value: inventoryStore.lowStockCount,
-    icon: AlertTriangle,
-    color: "#F59E0B",
-    borderColor: "#F59E0B",
-    valueColor: inventoryStore.lowStockCount > 0 ? "#D97706" : "#101828",
-    trend: null,
-    suffix: "صنف"
-  },
-  {
-    label: "طلبات صرف معلقة",
-    value: requestsStore.exitRequests.filter(r => r.status === 1 || r.status === 3).length,
-    icon: ArrowUpRight,
-    color: "#F43F5E",
-    borderColor: "#F43F5E",
-    valueColor: "#101828",
-    trend: null,
-    suffix: null
-  },
-  {
-    label: "طلبات إدخال معلقة",
-    value: requestsStore.entryRequests.filter(r => r.status === 1 || r.status === 3).length,
-    icon: ArrowDownLeft,
-    color: "#10B981",
-    borderColor: "#10B981",
-    valueColor: "#101828",
-    trend: null,
-    suffix: null
-  }
-]);
-
-// ─── Donut Chart Data ───
-const donutColors = ["#21C87A", "#6366F1", "#F59E0B", "#0EA5E9", "#F43F5E", "#8B5CF6", "#14B8A6", "#EC4899", "#EF4444", "#84CC16"];
-
-const categoryEntries = computed(() => {
-  const dist = inventoryStore.categoryDistribution;
-  return Object.entries(dist).map(([name, count], i) => ({
-    name,
-    count,
-    color: donutColors[i % donutColors.length]
-  }));
-});
-
-const donutSegments = computed(() => {
-  const total = inventoryStore.totalStockQuantity || 1;
-  const circumference = 2 * Math.PI * 15.5; // ~97.39
-  let accumulated = 0;
-
-  return categoryEntries.value.map(entry => {
-    const pct = entry.count / total;
-    const segLen = pct * circumference;
-    const gap = 1.5; // gap between segments
-    const dashArray = `${Math.max(0, segLen - gap)} ${circumference - Math.max(0, segLen - gap)}`;
-    const dashOffset = -accumulated + circumference * 0.25; // start from top
-    accumulated += segLen;
-
-    return {
-      name: entry.name,
-      count: entry.count,
-      color: entry.color,
-      dashArray,
-      dashOffset
-    };
-  });
-});
-
-// ─── Bar Chart (Request Activity) ───
-const statusLabels = { 0: "جديد", 1: "بانتظار المدير", 2: "معتمد", 3: "بانتظار المشرف", 4: "مرفوض" };
-
-const barChartData = computed(() => {
-  // Group requests by status for a meaningful breakdown
-  const statuses = [0, 1, 3, 2, 4];
-  const labels = ["جديد", "مدير", "مشرف", "معتمد", "مرفوض"];
-  
-  const maxVal = Math.max(
-    ...statuses.map(s => requestsStore.exitRequests.filter(r => r.status === s).length),
-    ...statuses.map(s => requestsStore.entryRequests.filter(r => r.status === s).length),
-    1
-  );
-
-  return statuses.map((s, i) => {
-    const entry = requestsStore.entryRequests.filter(r => r.status === s).length;
-    const exit = requestsStore.exitRequests.filter(r => r.status === s).length;
-    return {
-      label: labels[i],
-      entry,
-      exit,
-      entryHeight: Math.max(4, (entry / maxVal) * 100),
-      exitHeight: Math.max(4, (exit / maxVal) * 100)
-    };
-  });
-});
-
-const totalApprovedEntry = computed(() => requestsStore.entryRequests.filter(r => r.status === 2).length);
-const totalApprovedExit = computed(() => requestsStore.exitRequests.filter(r => r.status === 2).length);
-const totalPending = computed(() => requestsStore.totalPendingRequestsCount);
-
-// ─── Warehouse Capacity Gauge ───
-const capacityPercent = computed(() => {
-  const total = binStore.totalCapacity || 0;
-  const used = binStore.totalItemsInBins || 0;
-  if (total === 0) return 0;
-  return Math.round((used / total) * 100);
-});
-
-const capacityColor = computed(() => {
-  const pct = capacityPercent.value;
-  if (pct >= 90) return "#EF4444";
-  if (pct >= 70) return "#F59E0B";
-  return "#21C87A";
-});
-
-const capacityDash = computed(() => {
-  const circumference = 2 * Math.PI * 17; // ~106.81
-  const fill = (capacityPercent.value / 100) * circumference;
-  return `${fill} ${circumference - fill}`;
-});
-
-const occupiedBinsDash = computed(() => {
-  const circumference = 2 * Math.PI * 13; // ~81.68
-  const total = binStore.totalBinsCount || 1;
-  const pct = binStore.occupiedBinsCount / total;
-  const fill = pct * circumference;
-  return `${fill} ${circumference - fill}`;
-});
-
-// ─── Recent Activity Timeline ───
-const recentActivities = computed(() => {
-  const activities = [];
-  const colorMap = {
-    0: "#6366F1",  // New
-    1: "#F59E0B",  // Awaiting Manager
-    2: "#21C87A",  // Approved
-    3: "#0EA5E9",  // Awaiting Supervisor
-    4: "#EF4444"   // Rejected
-  };
-  const badgeMap = {
-    0: "جديد",
-    1: "بانتظار المدير",
-    2: "معتمد",
-    3: "بانتظار المشرف",
-    4: "مُرتجع"
-  };
-
-  // Combine exit and entry requests
-  const allRequests = [
-    ...requestsStore.exitRequests.map(r => ({ ...r, type: "exit" })),
-    ...requestsStore.entryRequests.map(r => ({ ...r, type: "entry" }))
-  ];
-
-  // Sort by insertDate or id descending
-  allRequests.sort((a, b) => {
-    const dateA = a.insertDate || a.createdAt || "";
-    const dateB = b.insertDate || b.createdAt || "";
-    if (dateA && dateB) return new Date(dateB) - new Date(dateA);
-    return (b.id || 0) - (a.id || 0);
-  });
-
-  // Take top 10
-  allRequests.slice(0, 10).forEach(req => {
-    const isExit = req.type === "exit";
-    const productNames = req.items?.map(it => it.productName).filter(Boolean).join("، ") 
-                        || req.productName 
-                        || `طلب #${req.id}`;
-    activities.push({
-      title: isExit ? "طلب صرف" : "طلب إدخال",
-      badge: badgeMap[req.status] || "غير معروف",
-      color: colorMap[req.status] || "#667085",
-      description: productNames,
-      time: formatDate(req.insertDate || req.createdAt)
-    });
-  });
-
-  return activities;
-});
-
-function formatDate(dateStr) {
-  if (!dateStr) return "";
-  try {
-    const d = new Date(dateStr);
-    if (isNaN(d.getTime())) return dateStr;
-    const now = new Date();
-    const diffMs = now - d;
-    const diffMins = Math.floor(diffMs / 60000);
-    if (diffMins < 1) return "الآن";
-    if (diffMins < 60) return `منذ ${diffMins} دقيقة`;
-    const diffHours = Math.floor(diffMins / 60);
-    if (diffHours < 24) return `منذ ${diffHours} ساعة`;
-    const diffDays = Math.floor(diffHours / 24);
-    if (diffDays < 7) return `منذ ${diffDays} يوم`;
-    return d.toLocaleDateString("ar-SA", { month: "short", day: "numeric" });
-  } catch {
-    return dateStr;
-  }
-}
-
-// ─── Quick Stats Footer ───
-const quickStats = computed(() => [
-  {
-    label: "إجمالي طلبات الصرف",
-    value: requestsStore.exitRequests.length,
-    icon: ArrowUpRight,
-    color: "#F43F5E"
-  },
-  {
-    label: "إجمالي طلبات الإدخال",
-    value: requestsStore.entryRequests.length,
-    icon: ArrowDownLeft,
-    color: "#10B981"
-  },
-  {
-    label: "إجمالي الفئات",
-    value: inventoryStore.categories.length || Object.keys(inventoryStore.categoryDistribution).length,
-    icon: Tag,
-    color: "#8B5CF6"
-  },
-  {
-    label: "إجمالي الموردين",
-    value: inventoryStore.suppliers.length,
-    icon: Users,
-    color: "#0EA5E9"
-  }
-]);
-
-// ─── Lifecycle ───
 onMounted(async () => {
   await Promise.all([
+    jobStore.fetchJobs(),
+    expenseStore.fetchExpenses(),
     inventoryStore.fetchProducts(),
-    inventoryStore.fetchDashboardMetrics(),
-    inventoryStore.fetchCategories(),
-    inventoryStore.fetchSuppliers(),
-    requestsStore.fetchExitRequests(),
-    requestsStore.fetchEntryRequests(),
-    binStore.fetchBins()
+    financeStore.fetchAccounts()
   ]);
-  setTimeout(() => { mounted.value = true; }, 100);
+});
+
+function formatCurrency(amount) {
+  if (amount == null) return "0 ج.م";
+  return `${Number(amount).toLocaleString("en-US", { minimumFractionDigits: 0, maximumFractionDigits: 2 })} ج.م`;
+}
+
+// 1. Today's Sales
+const todaySales = computed(() => {
+  const todayStr = new Date().toISOString().split("T")[0];
+  return jobStore.jobs
+    .filter(j => j.status !== 4 && j.insertDate && j.insertDate.startsWith(todayStr))
+    .reduce((sum, j) => sum + (Number(j.paidAmount) || 0), 0);
+});
+
+// 2. This Month's Sales
+const monthSales = computed(() => {
+  const now = new Date();
+  const m = now.getMonth() + 1;
+  const y = now.getFullYear();
+
+  return jobStore.jobs
+    .filter(j => {
+      if (j.status === 4 || !j.insertDate) return false;
+      const d = new Date(j.insertDate);
+      return (d.getMonth() + 1) === m && d.getFullYear() === y;
+    })
+    .reduce((sum, j) => sum + (Number(j.paidAmount) || 0), 0);
+});
+
+// 3. This Month's Expenses
+const monthExpenses = computed(() => {
+  const now = new Date();
+  const m = now.getMonth() + 1;
+  const y = now.getFullYear();
+
+  return expenseStore.expenses
+    .filter(e => {
+      if (!e.expenseDate) return false;
+      const d = new Date(e.expenseDate);
+      return (d.getMonth() + 1) === m && d.getFullYear() === y;
+    })
+    .reduce((sum, e) => sum + (Number(e.amount) || 0), 0);
+});
+
+// 4. Net Profit
+const netProfit = computed(() => {
+  return monthSales.value - monthExpenses.value;
+});
+
+// 5. Unpaid Balances
+const unpaidBalances = computed(() => {
+  return jobStore.totalUnpaidReceivables;
+});
+
+// 6. Low Stock Count
+const lowStockCount = computed(() => {
+  return inventoryStore.lowStockCount;
+});
+
+// 7. Open Jobs
+const openJobsCount = computed(() => {
+  return jobStore.openJobsCount;
+});
+
+const openJobsList = computed(() => {
+  return jobStore.jobs.filter(j => j.status === 1 || j.status === 2);
+});
+
+// Daily Income vs Expense Chart (Past 7 Days)
+const dailyChartData = computed(() => {
+  const days = [];
+  const now = new Date();
+
+  for (let i = 6; i >= 0; i--) {
+    const d = new Date();
+    d.setDate(now.getDate() - i);
+    const dateStr = d.toISOString().split("T")[0];
+    const dayLabel = d.toLocaleDateString("ar-EG", { weekday: "short", day: "numeric" });
+
+    // Income on that date
+    const dayIncome = jobStore.jobs
+      .filter(j => j.status !== 4 && j.insertDate && j.insertDate.startsWith(dateStr))
+      .reduce((sum, j) => sum + (Number(j.paidAmount) || 0), 0);
+
+    // Expense on that date
+    const dayExpense = expenseStore.expenses
+      .filter(e => e.expenseDate && e.expenseDate.startsWith(dateStr))
+      .reduce((sum, e) => sum + (Number(e.amount) || 0), 0);
+
+    days.push({
+      date: dateStr,
+      label: dayLabel,
+      income: dayIncome,
+      expense: dayExpense
+    });
+  }
+
+  // Calculate bar heights proportionally
+  const maxVal = Math.max(
+    ...days.map(d => Math.max(d.income, d.expense)),
+    1000 // min ceiling
+  );
+
+  return days.map(d => ({
+    ...d,
+    incomeHeight: Math.min(Math.round((d.income / maxVal) * 100), 100),
+    expenseHeight: Math.min(Math.round((d.expense / maxVal) * 100), 100)
+  }));
 });
 </script>
-
-<style scoped>
-/* Donut chart entrance animation */
-.donut-segment {
-  animation: donutDraw 1s ease-out forwards;
-  opacity: 0;
-}
-
-@keyframes donutDraw {
-  from { opacity: 0; stroke-dashoffset: 200; }
-  to { opacity: 1; }
-}
-
-/* Gauge fill animation */
-.gauge-fill {
-  animation: gaugeDraw 1.2s ease-out forwards;
-  opacity: 0;
-}
-
-@keyframes gaugeDraw {
-  from { opacity: 0; stroke-dasharray: 0 200; }
-  to { opacity: 1; }
-}
-
-/* Bar chart animation */
-.bar-animate {
-  animation: barGrow 0.8s ease-out forwards;
-}
-
-@keyframes barGrow {
-  from { transform: scaleY(0); transform-origin: bottom; }
-  to { transform: scaleY(1); transform-origin: bottom; }
-}
-
-/* KPI card subtle pulse on the icon */
-.kpi-card:hover .w-10 {
-  animation: iconPulse 0.6s ease-in-out;
-}
-
-@keyframes iconPulse {
-  0%, 100% { transform: scale(1); }
-  50% { transform: scale(1.15); }
-}
-
-/* Smooth counter animation placeholder */
-.counter-value {
-  display: inline-block;
-}
-
-/* Dashboard scrollbar styling */
-.dashboard-root {
-  scrollbar-width: thin;
-  scrollbar-color: #E2E8F0 transparent;
-}
-</style>
