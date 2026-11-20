@@ -54,7 +54,7 @@
         <div>
           <span class="text-[11px] text-brand-gray dark:text-slate-400 block font-medium">متوسط سعر الخدمة</span>
           <span class="text-lg font-bold text-emerald-600 dark:text-emerald-400 font-mono">
-            {{ serviceStore.averagePrice.toLocaleString('en-US', { maximumFractionDigits: 0 }) }} ج.م
+            {{ (Number(serviceStore.averagePrice || 0)).toLocaleString('en-US', { maximumFractionDigits: 0 }) }} ج.م
           </span>
         </div>
       </div>
@@ -65,7 +65,7 @@
         </div>
         <div>
           <span class="text-[11px] text-brand-gray dark:text-slate-400 block font-medium">الخدمات النشطة</span>
-          <span class="text-lg font-bold text-brand-dark dark:text-white font-mono">{{ serviceStore.activeServicesCount }}</span>
+          <span class="text-lg font-bold text-brand-dark dark:text-white font-mono">{{ serviceStore.activeServicesCount || serviceStore.activeServices?.length || 0 }}</span>
         </div>
       </div>
     </div>

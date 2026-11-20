@@ -10,6 +10,7 @@ export const useOhdaServiceStore = defineStore("ohdaServices", {
   getters: {
     totalServicesCount: (state) => state.services.length,
     activeServices: (state) => state.services.filter(s => s.isActive !== false),
+    activeServicesCount: (state) => state.services.filter(s => s.isActive !== false).length,
     categories: (state) => {
       const cats = new Set(state.services.map(s => s.category).filter(Boolean));
       return Array.from(cats);
@@ -18,6 +19,11 @@ export const useOhdaServiceStore = defineStore("ohdaServices", {
       return state.services.filter(s => s.consumedProducts && s.consumedProducts.length > 0).length;
     },
     averageServicePrice: (state) => {
+      if (!state.services.length) return 0;
+      const sum = state.services.reduce((acc, s) => acc + (Number(s.price) || 0), 0);
+      return Math.round(sum / state.services.length);
+    },
+    averagePrice: (state) => {
       if (!state.services.length) return 0;
       const sum = state.services.reduce((acc, s) => acc + (Number(s.price) || 0), 0);
       return Math.round(sum / state.services.length);
