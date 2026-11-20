@@ -5,6 +5,7 @@ export default {
       nav: {
         dashboard: "لوحة التحكم",
         jobs: "أوامر الشغل والفواتير",
+        expenses: "المصروفات والمشتريات",
         products: "المنتجات وقطع الغيار",
         services: "الخدمات والصيانة",
         warehouseBins: "أماكن وأرفف التخزين",
@@ -597,6 +598,7 @@ export default {
       nav: {
         dashboard: "Dashboard",
         jobs: "Job Cards & Invoices",
+        expenses: "Expenses & Purchases",
         products: "Products & Parts",
         services: "Services & Maintenance",
         warehouseBins: "Storage Bins",

@@ -40,6 +40,11 @@ export default [
         component: () => import("./pages/JobCardsPage.vue")
       },
       {
+        path: "expenses",
+        name: "OhdaExpenses",
+        component: () => import("./pages/ExpensesPage.vue")
+      },
+      {
         path: "warehouse-bins",
         name: "OhdaWarehouseBins",
         component: () => import("./pages/WarehouseBinsPage.vue")
