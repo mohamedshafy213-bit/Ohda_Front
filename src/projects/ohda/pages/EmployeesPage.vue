@@ -481,47 +481,48 @@
       </div>
     </div>
 
-    <!-- 1. Modal: Add/Edit Employee -->
-    <Dialog
-      v-model:visible="showEmployeeModal"
-      modal
-      :header="editingEmployeeId ? 'تعديل بيانات الموظف' : 'إضافة موظف / فني جديد'"
-      :style="{ width: '520px' }"
-      class="!rounded-2xl !bg-brand-white dark:!bg-[#1a202c] !text-brand-dark dark:!text-white"
+    <!-- 1. Modal: Add/Edit Employee using OhdaModal -->
+    <OhdaModal
+      :visible="showEmployeeModal"
+      @close="showEmployeeModal = false"
+      :title="editingEmployeeId ? 'تعديل بيانات الموظف' : 'إضافة موظف / فني جديد'"
+      description="إدخال بيانات الموظف، المسمى الوظيفي، والراتب الأساسي ونسبة العمولة"
+      :icon="UserPlus"
+      max-width="max-w-xl"
     >
-      <form @submit.prevent="submitEmployee" class="space-y-4 pt-2">
+      <form @submit.prevent="submitEmployee" id="employeeForm" class="space-y-4 text-xs">
         <!-- Name -->
         <div>
-          <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">اسم الموظف / الفني *</label>
+          <label class="block font-semibold mb-1">اسم الموظف / الفني *</label>
           <input
             type="text"
             v-model="employeeForm.name"
             required
             placeholder="الاسم ثلاثي..."
-            class="w-full text-xs p-2.5 rounded-xl border border-brand-gray/20 dark:border-white/10 bg-transparent text-brand-dark dark:text-white"
+            class="w-full text-xs p-2.5 rounded-xl border border-brand-gray/20 dark:border-white/10 bg-transparent text-brand-dark dark:text-white focus:border-brand-accent transition-all"
           />
         </div>
 
         <!-- Job Title & Phone -->
         <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
           <div>
-            <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">المسمى الوظيفي *</label>
+            <label class="block font-semibold mb-1">المسمى الوظيفي *</label>
             <input
               type="text"
               v-model="employeeForm.jobTitle"
               required
               placeholder="مثال: فني ميكانيكا، كهربائي..."
-              class="w-full text-xs p-2.5 rounded-xl border border-brand-gray/20 dark:border-white/10 bg-transparent text-brand-dark dark:text-white"
+              class="w-full text-xs p-2.5 rounded-xl border border-brand-gray/20 dark:border-white/10 bg-transparent text-brand-dark dark:text-white focus:border-brand-accent transition-all"
             />
           </div>
 
           <div>
-            <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">رقم الهاتف</label>
+            <label class="block font-semibold mb-1">رقم الهاتف</label>
             <input
               type="tel"
               v-model="employeeForm.phone"
               placeholder="01XXXXXXXXX"
-              class="w-full text-xs p-2.5 rounded-xl border border-brand-gray/20 dark:border-white/10 bg-transparent text-brand-dark dark:text-white font-mono"
+              class="w-full text-xs p-2.5 rounded-xl border border-brand-gray/20 dark:border-white/10 bg-transparent text-brand-dark dark:text-white font-mono focus:border-brand-accent transition-all"
             />
           </div>
         </div>
@@ -529,19 +530,19 @@
         <!-- Base Salary & Commission Rate -->
         <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
           <div>
-            <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">الراتب الأساسي الشهري (ج.م) *</label>
+            <label class="block font-semibold mb-1">الراتب الأساسي الشهري (ج.م) *</label>
             <input
               type="number"
               v-model.number="employeeForm.baseSalary"
               min="0"
               step="50"
               required
-              class="w-full text-xs p-2.5 rounded-xl border border-brand-gray/20 dark:border-white/10 bg-transparent text-brand-dark dark:text-white font-mono font-bold"
+              class="w-full text-xs p-2.5 rounded-xl border border-brand-gray/20 dark:border-white/10 bg-transparent text-brand-dark dark:text-white font-mono font-bold focus:border-brand-accent transition-all"
             />
           </div>
 
           <div>
-            <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">نسبة العمولة (%)</label>
+            <label class="block font-semibold mb-1">نسبة العمولة (%)</label>
             <input
               type="number"
               v-model.number="employeeForm.commissionRate"
@@ -549,7 +550,7 @@
               max="100"
               step="0.5"
               placeholder="0%"
-              class="w-full text-xs p-2.5 rounded-xl border border-brand-gray/20 dark:border-white/10 bg-transparent text-brand-dark dark:text-white font-mono"
+              class="w-full text-xs p-2.5 rounded-xl border border-brand-gray/20 dark:border-white/10 bg-transparent text-brand-dark dark:text-white font-mono focus:border-brand-accent transition-all"
             />
           </div>
         </div>
@@ -557,21 +558,21 @@
         <!-- National ID & Hire Date -->
         <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
           <div>
-            <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">الرقم القومي</label>
+            <label class="block font-semibold mb-1">الرقم القومي</label>
             <input
               type="text"
               v-model="employeeForm.nationalId"
               placeholder="الرقم القومي (14 رقم)"
-              class="w-full text-xs p-2.5 rounded-xl border border-brand-gray/20 dark:border-white/10 bg-transparent text-brand-dark dark:text-white font-mono"
+              class="w-full text-xs p-2.5 rounded-xl border border-brand-gray/20 dark:border-white/10 bg-transparent text-brand-dark dark:text-white font-mono focus:border-brand-accent transition-all"
             />
           </div>
 
           <div>
-            <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">تاريخ التعيين</label>
+            <label class="block font-semibold mb-1">تاريخ التعيين</label>
             <input
               type="date"
               v-model="employeeForm.hireDate"
-              class="w-full text-xs p-2.5 rounded-xl border border-brand-gray/20 dark:border-white/10 bg-transparent text-brand-dark dark:text-white"
+              class="w-full text-xs p-2.5 rounded-xl border border-brand-gray/20 dark:border-white/10 bg-transparent text-brand-dark dark:text-white focus:border-brand-accent transition-all"
             />
           </div>
         </div>
@@ -582,56 +583,56 @@
             type="checkbox"
             id="empActive"
             v-model="employeeForm.isActive"
-            class="w-4 h-4 rounded text-brand-accent"
+            class="w-4 h-4 rounded text-brand-accent focus:ring-brand-accent cursor-pointer"
           />
-          <label for="empActive" class="text-xs text-slate-600 dark:text-slate-400 select-none cursor-pointer">
+          <label for="empActive" class="text-xs font-semibold text-brand-dark dark:text-white select-none cursor-pointer">
             الموظف على رأس العمل (نشط)
           </label>
         </div>
 
         <div>
-          <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">ملاحظات</label>
+          <label class="block font-semibold mb-1">ملاحظات</label>
           <input
             type="text"
             v-model="employeeForm.notes"
             placeholder="ملاحظات حول المهارات أو الخبرة..."
-            class="w-full text-xs p-2.5 rounded-xl border border-brand-gray/20 dark:border-white/10 bg-transparent text-brand-dark dark:text-white"
+            class="w-full text-xs p-2.5 rounded-xl border border-brand-gray/20 dark:border-white/10 bg-transparent text-brand-dark dark:text-white focus:border-brand-accent transition-all"
           />
         </div>
-
-        <!-- Submit Buttons -->
-        <div class="flex justify-end gap-2 pt-4 border-t border-brand-gray/10 dark:border-white/10">
-          <Button
-            type="button"
-            @click="showEmployeeModal = false"
-            class="!text-xs !px-4 !py-2 !rounded-xl !text-slate-600 dark:!text-slate-300 !bg-transparent hover:!bg-black/5 dark:hover:!bg-white/5 cursor-pointer"
-          >
-            إلغاء
-          </Button>
-          <Button
-            type="submit"
-            :disabled="hrStore.loading"
-            class="!text-xs !px-5 !py-2 !rounded-xl !bg-brand-accent !text-brand-dark !font-bold cursor-pointer"
-          >
-            <span v-if="!hrStore.loading">{{ editingEmployeeId ? 'حفظ التعديلات' : 'إضافة الموظف' }}</span>
-            <span v-else>جاري الحفظ...</span>
-          </Button>
-        </div>
       </form>
-    </Dialog>
 
-    <!-- 2. Modal: Edit Payroll Item (Bonus / Deductions / Advances) -->
-    <Dialog
-      v-model:visible="showEditPayrollModal"
-      modal
-      header="تعديل بنود الراتب ومستحقات الموظف"
-      :style="{ width: '480px' }"
-      class="!rounded-2xl !bg-brand-white dark:!bg-[#1a202c] !text-brand-dark dark:!text-white"
+      <template #footer="{ close }">
+        <button
+          type="button"
+          @click="close"
+          class="px-4 py-2.5 rounded-xl text-xs font-bold text-slate-500 hover:text-slate-800 dark:hover:text-white cursor-pointer"
+        >
+          إلغاء
+        </button>
+        <button
+          type="submit"
+          form="employeeForm"
+          :disabled="hrStore.loading"
+          class="px-5 py-2.5 rounded-xl text-xs font-bold bg-brand-accent hover:bg-brand-accent/90 text-brand-dark cursor-pointer shadow-sm disabled:opacity-50"
+        >
+          <span>{{ hrStore.loading ? 'جاري الحفظ...' : (editingEmployeeId ? 'حفظ التعديلات' : 'إضافة الموظف') }}</span>
+        </button>
+      </template>
+    </OhdaModal>
+
+    <!-- 2. Modal: Edit Payroll Item using OhdaModal -->
+    <OhdaModal
+      :visible="showEditPayrollModal"
+      @close="showEditPayrollModal = false"
+      title="تعديل بنود الراتب ومستحقات الموظف"
+      description="تعديل المكافآت، العمولات، الخصومات والسلف لهذا الشهر"
+      :icon="Banknote"
+      max-width="max-w-lg"
     >
-      <form @submit.prevent="submitPayrollItem" class="space-y-4 pt-2">
-        <div class="p-3 bg-black/5 dark:bg-white/5 rounded-xl flex items-center justify-between">
+      <form @submit.prevent="submitPayrollItem" id="payrollItemForm" class="space-y-4 text-xs">
+        <div class="p-3 bg-brand-light/60 dark:bg-white/5 rounded-xl flex items-center justify-between border border-brand-gray/10">
           <div>
-            <div class="font-bold text-xs">{{ selectedPayroll?.employeeName }}</div>
+            <div class="font-bold text-xs text-brand-dark dark:text-white">{{ selectedPayroll?.employeeName }}</div>
             <div class="text-[11px] text-slate-400">{{ selectedPayroll?.jobTitle }}</div>
           </div>
           <div class="text-end">
@@ -642,48 +643,48 @@
 
         <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
           <div>
-            <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">المكافآت والحوافز (+)</label>
+            <label class="block font-semibold mb-1">المكافآت والحوافز (+)</label>
             <input
               type="number"
               v-model.number="payrollForm.bonusAmount"
               min="0"
               step="50"
-              class="w-full text-xs p-2.5 rounded-xl border border-brand-gray/20 dark:border-white/10 bg-transparent text-emerald-600 font-mono font-bold"
+              class="w-full text-xs p-2.5 rounded-xl border border-brand-gray/20 dark:border-white/10 bg-transparent text-emerald-600 font-mono font-bold focus:border-brand-accent transition-all"
             />
           </div>
 
           <div>
-            <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">عمولات الصيانة (+)</label>
+            <label class="block font-semibold mb-1">عمولات الصيانة (+)</label>
             <input
               type="number"
               v-model.number="payrollForm.commissionAmount"
               min="0"
               step="50"
-              class="w-full text-xs p-2.5 rounded-xl border border-brand-gray/20 dark:border-white/10 bg-transparent text-blue-600 font-mono font-bold"
+              class="w-full text-xs p-2.5 rounded-xl border border-brand-gray/20 dark:border-white/10 bg-transparent text-blue-600 font-mono font-bold focus:border-brand-accent transition-all"
             />
           </div>
         </div>
 
         <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
           <div>
-            <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">الخصومات والجزاءات (-)</label>
+            <label class="block font-semibold mb-1">الخصومات والجزاءات (-)</label>
             <input
               type="number"
               v-model.number="payrollForm.deductionsAmount"
               min="0"
               step="50"
-              class="w-full text-xs p-2.5 rounded-xl border border-brand-gray/20 dark:border-white/10 bg-transparent text-red-500 font-mono font-bold"
+              class="w-full text-xs p-2.5 rounded-xl border border-brand-gray/20 dark:border-white/10 bg-transparent text-red-500 font-mono font-bold focus:border-brand-accent transition-all"
             />
           </div>
 
           <div>
-            <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">سلفيات مستقطعة (-)</label>
+            <label class="block font-semibold mb-1">سلفيات مستقطعة (-)</label>
             <input
               type="number"
               v-model.number="payrollForm.advancesAmount"
               min="0"
               step="50"
-              class="w-full text-xs p-2.5 rounded-xl border border-brand-gray/20 dark:border-white/10 bg-transparent text-red-500 font-mono font-bold"
+              class="w-full text-xs p-2.5 rounded-xl border border-brand-gray/20 dark:border-white/10 bg-transparent text-red-500 font-mono font-bold focus:border-brand-accent transition-all"
             />
           </div>
         </div>
@@ -697,43 +698,45 @@
         </div>
 
         <div>
-          <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">ملاحظات على الراتب</label>
+          <label class="block font-semibold mb-1">ملاحظات على الراتب</label>
           <input
             type="text"
             v-model="payrollForm.notes"
             placeholder="سبب المكافأة أو الخصم..."
-            class="w-full text-xs p-2.5 rounded-xl border border-brand-gray/20 dark:border-white/10 bg-transparent text-brand-dark dark:text-white"
+            class="w-full text-xs p-2.5 rounded-xl border border-brand-gray/20 dark:border-white/10 bg-transparent text-brand-dark dark:text-white focus:border-brand-accent transition-all"
           />
         </div>
-
-        <div class="flex justify-end gap-2 pt-4 border-t border-brand-gray/10 dark:border-white/10">
-          <Button
-            type="button"
-            @click="showEditPayrollModal = false"
-            class="!text-xs !px-4 !py-2 !rounded-xl !text-slate-600 dark:!text-slate-300 !bg-transparent hover:!bg-black/5 dark:hover:!bg-white/5 cursor-pointer"
-          >
-            إلغاء
-          </Button>
-          <Button
-            type="submit"
-            :disabled="hrStore.loading"
-            class="!text-xs !px-5 !py-2 !rounded-xl !bg-purple-600 hover:!bg-purple-700 !text-white !font-bold cursor-pointer"
-          >
-            حفظ التعديلات
-          </Button>
-        </div>
       </form>
-    </Dialog>
 
-    <!-- 3. Modal: Pay Salary Dialog (Auto Expense Creation) -->
-    <Dialog
-      v-model:visible="showPayModal"
-      modal
-      header="صرف الراتب وتسجيل المصروف"
-      :style="{ width: '450px' }"
-      class="!rounded-2xl !bg-brand-white dark:!bg-[#1a202c] !text-brand-dark dark:!text-white"
+      <template #footer="{ close }">
+        <button
+          type="button"
+          @click="close"
+          class="px-4 py-2.5 rounded-xl text-xs font-bold text-slate-500 hover:text-slate-800 dark:hover:text-white cursor-pointer"
+        >
+          إلغاء
+        </button>
+        <button
+          type="submit"
+          form="payrollItemForm"
+          :disabled="hrStore.loading"
+          class="px-5 py-2.5 rounded-xl text-xs font-bold bg-purple-600 hover:bg-purple-700 text-white cursor-pointer shadow-sm disabled:opacity-50"
+        >
+          حفظ التعديلات
+        </button>
+      </template>
+    </OhdaModal>
+
+    <!-- 3. Modal: Pay Salary using OhdaModal -->
+    <OhdaModal
+      :visible="showPayModal"
+      @close="showPayModal = false"
+      title="صرف الراتب وتسجيل المصروف"
+      description="تأكيد صرف الراتب واختيار طريقة الصرف وتسجيل المصروف آلياً"
+      :icon="Wallet"
+      max-width="max-w-md"
     >
-      <form @submit.prevent="submitPaySalary" class="space-y-4 pt-2">
+      <form @submit.prevent="submitPaySalary" id="paySalaryForm" class="space-y-4 text-xs">
         <div class="p-3 bg-emerald-500/10 border border-emerald-500/20 rounded-xl text-xs text-emerald-800 dark:text-emerald-300">
           <div class="flex items-center justify-between font-bold">
             <span>الموظف: {{ selectedPayroll?.employeeName }}</span>
@@ -745,11 +748,11 @@
         </div>
 
         <div>
-          <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">طريقة الصرف *</label>
+          <label class="block font-semibold mb-1">طريقة الصرف *</label>
           <select
             v-model="payForm.paymentMethod"
             required
-            class="w-full text-xs p-2.5 rounded-xl border border-brand-gray/20 dark:border-white/10 bg-transparent text-brand-dark dark:text-white"
+            class="w-full text-xs p-2.5 rounded-xl border border-brand-gray/20 dark:border-white/10 bg-transparent text-brand-dark dark:text-white focus:border-brand-accent transition-all"
           >
             <option :value="1" class="bg-white dark:bg-slate-800">نقدي من الخزينة (كاش)</option>
             <option :value="3" class="bg-white dark:bg-slate-800">إنستاباي / محفظة إلكترونية</option>
@@ -759,85 +762,87 @@
         </div>
 
         <div>
-          <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">تاريخ الصرف *</label>
+          <label class="block font-semibold mb-1">تاريخ الصرف *</label>
           <input
             type="date"
             v-model="payForm.paymentDate"
             required
-            class="w-full text-xs p-2.5 rounded-xl border border-brand-gray/20 dark:border-white/10 bg-transparent text-brand-dark dark:text-white"
+            class="w-full text-xs p-2.5 rounded-xl border border-brand-gray/20 dark:border-white/10 bg-transparent text-brand-dark dark:text-white focus:border-brand-accent transition-all"
           />
         </div>
 
         <div>
-          <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">ملاحظات الصرف</label>
+          <label class="block font-semibold mb-1">ملاحظات الصرف</label>
           <input
             type="text"
             v-model="payForm.notes"
             placeholder="مثال: تم الصرف نقداً باليد..."
-            class="w-full text-xs p-2.5 rounded-xl border border-brand-gray/20 dark:border-white/10 bg-transparent text-brand-dark dark:text-white"
+            class="w-full text-xs p-2.5 rounded-xl border border-brand-gray/20 dark:border-white/10 bg-transparent text-brand-dark dark:text-white focus:border-brand-accent transition-all"
           />
         </div>
-
-        <div class="flex justify-end gap-2 pt-4 border-t border-brand-gray/10 dark:border-white/10">
-          <Button
-            type="button"
-            @click="showPayModal = false"
-            class="!text-xs !px-4 !py-2 !rounded-xl !text-slate-600 dark:!text-slate-300 !bg-transparent hover:!bg-black/5 dark:hover:!bg-white/5 cursor-pointer"
-          >
-            إلغاء
-          </Button>
-          <Button
-            type="submit"
-            :disabled="hrStore.loading"
-            class="!text-xs !px-5 !py-2 !rounded-xl !bg-emerald-600 hover:!bg-emerald-700 !text-white !font-bold cursor-pointer"
-          >
-            تأكيد الصرف الآن
-          </Button>
-        </div>
       </form>
-    </Dialog>
 
-    <!-- 4. Modal: Confirm Delete Employee -->
-    <Dialog
-      v-model:visible="showDeleteModal"
-      modal
-      header="تأكيد حذف الموظف"
-      :style="{ width: '400px' }"
-      class="!rounded-2xl !bg-brand-white dark:!bg-[#1a202c] !text-brand-dark dark:!text-white"
+      <template #footer="{ close }">
+        <button
+          type="button"
+          @click="close"
+          class="px-4 py-2.5 rounded-xl text-xs font-bold text-slate-500 hover:text-slate-800 dark:hover:text-white cursor-pointer"
+        >
+          إلغاء
+        </button>
+        <button
+          type="submit"
+          form="paySalaryForm"
+          :disabled="hrStore.loading"
+          class="px-5 py-2.5 rounded-xl text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white cursor-pointer shadow-sm disabled:opacity-50"
+        >
+          تأكيد الصرف الآن
+        </button>
+      </template>
+    </OhdaModal>
+
+    <!-- 4. Modal: Delete Confirmation using OhdaModal -->
+    <OhdaModal
+      :visible="showDeleteModal"
+      @close="showDeleteModal = false"
+      title="تأكيد حذف الموظف"
+      description="يرجى الانتباه قبل حذف أي موظف من السجلات"
+      :icon="Trash2"
+      max-width="max-w-md"
     >
-      <div class="space-y-4 pt-2">
-        <p class="text-xs text-slate-600 dark:text-slate-300">
+      <div class="space-y-3 text-xs">
+        <p class="text-slate-600 dark:text-slate-300">
           هل أنت متأكد من حذف الموظف
           <span class="font-bold text-red-600">{{ employeeToDelete?.name }}</span>؟
         </p>
-
-        <div class="flex justify-end gap-2 pt-2">
-          <Button
-            type="button"
-            @click="showDeleteModal = false"
-            class="!text-xs !px-4 !py-2 !rounded-xl !text-slate-600 dark:!text-slate-300 !bg-transparent hover:!bg-black/5 dark:hover:!bg-white/5 cursor-pointer"
-          >
-            إلغاء
-          </Button>
-          <Button
-            type="button"
-            @click="executeDeleteEmployee"
-            class="!text-xs !px-5 !py-2 !rounded-xl !bg-red-600 hover:!bg-red-700 !text-white !font-bold cursor-pointer"
-          >
-            تأكيد الحذف
-          </Button>
-        </div>
       </div>
-    </Dialog>
+
+      <template #footer="{ close }">
+        <button
+          type="button"
+          @click="close"
+          class="px-4 py-2.5 rounded-xl text-xs font-bold text-slate-500 hover:text-slate-800 dark:hover:text-white cursor-pointer"
+        >
+          إلغاء
+        </button>
+        <button
+          type="button"
+          @click="executeDeleteEmployee"
+          class="px-5 py-2.5 rounded-xl text-xs font-bold bg-red-600 hover:bg-red-700 text-white cursor-pointer shadow-sm"
+        >
+          تأكيد الحذف
+        </button>
+      </template>
+    </OhdaModal>
   </div>
 </template>
 
 <script setup>
 import { ref, computed, onMounted } from "vue";
 import { useOhdaHRStore } from "../stores/useOhdaHRStore";
+import OhdaModal from "../components/OhdaModal.vue";
 import LoadingSkeleton from "@/components/LoadingSkeleton.vue";
 import EmptyState from "@/components/EmptyState.vue";
-import Dialog from "primevue/dialog";
 import Button from "primevue/button";
 import InputText from "primevue/inputtext";
 import {

@@ -430,14 +430,14 @@
                 />
               </div>
 
-              <div>
+              <!-- <div>
                 <label class="block font-semibold text-brand-dark mb-1">{{ $t('ohda.branches.adminMilitaryNumber') }}</label>
                 <InputNumber
                   v-model="createForm.adminMilitaryNumber"
                   placeholder="10001"
                   class="w-full !bg-brand-white !border-brand-gray/25 focus:!border-brand-accent font-mono"
                 />
-              </div>
+              </div> -->
             </div>
           </div>
 
@@ -762,7 +762,7 @@ function openCreateModal() {
     adminUsername: "",
     adminEmail: "",
     adminPersonName: "",
-    adminMilitaryNumber: null
+
   });
   showCreateModal.value = true;
 }

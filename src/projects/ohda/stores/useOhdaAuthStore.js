@@ -36,31 +36,40 @@ export const useOhdaAuthStore = defineStore("ohdaAuth", {
         if (isSuper) {
           return [
             "/ohda/dashboard",
-            "/ohda/acceptance",
-            "/ohda/branches-dashboard",
-            "/ohda/branches",
+            "/ohda/jobs",
+            "/ohda/clients",
             "/ohda/products",
             "/ohda/services",
-            "/ohda/jobs",
-            "/ohda/expenses",
-            "/ohda/employees",
-            "/ohda/finance",
-            "/ohda/month-closing",
-            "/ohda/warehouse-bins",
-            "/ohda/inventory",
-            "/ohda/exit-requests",
-            "/ohda/entry-requests",
-            "/ohda/scan",
-            "/ohda/barcode-print",
-            "/ohda/categories",
+            "/ohda/purchases",
+            "/ohda/returns",
             "/ohda/suppliers",
+            "/ohda/categories",
+            "/ohda/finance",
+            "/ohda/expenses",
+            "/ohda/month-closing",
+            "/ohda/employees",
             "/ohda/users",
-            "/ohda/departments",
-            "/ohda/product-states",
-            "/ohda/approval-config"
+            "/ohda/barcode-print",
+            "/ohda/scan",
+            "/ohda/branches-dashboard",
+            "/ohda/branches"
           ];
         }
-        return ["/ohda/dashboard"];
+        return [
+          "/ohda/dashboard",
+          "/ohda/jobs",
+          "/ohda/clients",
+          "/ohda/products",
+          "/ohda/services",
+          "/ohda/purchases",
+          "/ohda/returns",
+          "/ohda/suppliers",
+          "/ohda/categories",
+          "/ohda/finance",
+          "/ohda/expenses",
+          "/ohda/month-closing",
+          "/ohda/employees"
+        ];
       }
 
       // Map whatever pages are assigned to this user to standardized routes
@@ -75,8 +84,11 @@ export const useOhdaAuthStore = defineStore("ohdaAuth", {
         if (norm.length > 5 && norm.endsWith("/")) {
           norm = norm.slice(0, -1);
         }
-        if (norm === "/ohda/orders" || norm === "/ohda/order") {
-          norm = "/ohda/entry-requests";
+        if (norm === "/ohda/orders" || norm === "/ohda/order" || norm === "/ohda/entry-requests") {
+          norm = "/ohda/purchases";
+        }
+        if (norm === "/ohda/exit-requests") {
+          norm = "/ohda/jobs";
         }
         return norm;
       }).filter(Boolean);
@@ -87,16 +99,20 @@ export const useOhdaAuthStore = defineStore("ohdaAuth", {
         if (!paths.includes("/ohda/branches")) paths.push("/ohda/branches");
       }
 
-      // If products or inventory are accessible, ensure barcode-print and warehouse-bins are accessible
-      if (paths.includes("/ohda/products") || paths.includes("/ohda/inventory") || paths.includes("/ohda/scan")) {
-        if (!paths.includes("/ohda/services")) paths.push("/ohda/services");
+      // If products or inventory are accessible, ensure full workshop modules are available
+      if (paths.includes("/ohda/products") || paths.includes("/ohda/inventory") || paths.includes("/ohda/dashboard")) {
         if (!paths.includes("/ohda/jobs")) paths.push("/ohda/jobs");
-        if (!paths.includes("/ohda/expenses")) paths.push("/ohda/expenses");
-        if (!paths.includes("/ohda/employees")) paths.push("/ohda/employees");
+        if (!paths.includes("/ohda/clients")) paths.push("/ohda/clients");
+        if (!paths.includes("/ohda/services")) paths.push("/ohda/services");
+        if (!paths.includes("/ohda/purchases")) paths.push("/ohda/purchases");
+        if (!paths.includes("/ohda/returns")) paths.push("/ohda/returns");
+        if (!paths.includes("/ohda/suppliers")) paths.push("/ohda/suppliers");
         if (!paths.includes("/ohda/finance")) paths.push("/ohda/finance");
+        if (!paths.includes("/ohda/expenses")) paths.push("/ohda/expenses");
         if (!paths.includes("/ohda/month-closing")) paths.push("/ohda/month-closing");
+        if (!paths.includes("/ohda/employees")) paths.push("/ohda/employees");
+        if (!paths.includes("/ohda/categories")) paths.push("/ohda/categories");
         if (!paths.includes("/ohda/barcode-print")) paths.push("/ohda/barcode-print");
-        if (!paths.includes("/ohda/warehouse-bins")) paths.push("/ohda/warehouse-bins");
       }
 
       // Ensure dashboard is always present as base landing

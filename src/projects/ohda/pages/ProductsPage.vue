@@ -16,45 +16,49 @@
       <div class="flex flex-wrap items-center gap-2.5">
         <router-link
           to="/ohda/barcode-print"
-          class="!bg-brand-light dark:!bg-white/5 hover:!bg-brand-soft !text-brand-dark dark:!text-white !border !border-brand-gray/20 !rounded-xl !px-3.5 !py-2.5 !text-xs !font-semibold flex items-center gap-2 transition-all shadow-xs"
+          class="bg-brand-light dark:bg-white/5 hover:bg-brand-soft text-brand-dark dark:text-white border border-brand-gray/20 rounded-xl px-3.5 py-2.5 text-xs font-semibold flex items-center gap-2 transition-all shadow-xs"
           title="طباعة الباركود"
         >
           <Printer class="w-4 h-4 text-brand-accent" />
           <span>طباعة باركود</span>
         </router-link>
 
-        <Button
+        <button
+          type="button"
           @click="downloadTemplate"
-          class="!bg-brand-light dark:!bg-white/5 hover:!bg-brand-soft !text-brand-dark dark:!text-white !border !border-brand-gray/20 !rounded-xl !px-3.5 !py-2.5 !text-xs !font-semibold flex items-center gap-2 shadow-xs cursor-pointer"
+          class="bg-brand-light dark:bg-white/5 hover:bg-brand-soft text-brand-dark dark:text-white border border-brand-gray/20 rounded-xl px-3.5 py-2.5 text-xs font-semibold flex items-center gap-2 shadow-xs cursor-pointer transition-all"
           title="تحميل شيت Excel فارغ لإدخال الأصناف"
         >
           <FileSpreadsheet class="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
           <span>قالب Excel</span>
-        </Button>
+        </button>
 
-        <Button
+        <button
+          type="button"
           @click="exportExcel"
-          class="!bg-brand-light dark:!bg-white/5 hover:!bg-brand-soft !text-brand-dark dark:!text-white !border !border-brand-gray/20 !rounded-xl !px-3.5 !py-2.5 !text-xs !font-semibold flex items-center gap-2 shadow-xs"
+          class="bg-brand-light dark:bg-white/5 hover:bg-brand-soft text-brand-dark dark:text-white border border-brand-gray/20 rounded-xl px-3.5 py-2.5 text-xs font-semibold flex items-center gap-2 shadow-xs cursor-pointer transition-all"
         >
           <Download class="w-4 h-4 text-brand-accent" />
           <span>تصدير Excel</span>
-        </Button>
+        </button>
 
-        <Button
+        <button
+          type="button"
           @click="showImportModal = true"
-          class="!bg-brand-light dark:!bg-white/5 hover:!bg-brand-soft !text-brand-dark dark:!text-white !border !border-brand-gray/20 !rounded-xl !px-3.5 !py-2.5 !text-xs !font-semibold flex items-center gap-2 shadow-xs"
+          class="bg-brand-light dark:bg-white/5 hover:bg-brand-soft text-brand-dark dark:text-white border border-brand-gray/20 rounded-xl px-3.5 py-2.5 text-xs font-semibold flex items-center gap-2 shadow-xs cursor-pointer transition-all"
         >
           <Upload class="w-4 h-4 text-blue-500" />
           <span>استيراد Excel</span>
-        </Button>
+        </button>
 
-        <Button
+        <button
+          type="button"
           @click="openAddModal"
-          class="!bg-brand-accent hover:!bg-brand-accent/90 !text-brand-dark !font-bold !rounded-xl !px-4 !py-2.5 !text-xs flex items-center gap-2 shadow-md shadow-brand-accent/10 transition-opacity cursor-pointer"
+          class="bg-brand-accent hover:bg-brand-accent/90 text-brand-dark font-bold rounded-xl px-4 py-2.5 text-xs flex items-center gap-2 shadow-md shadow-brand-accent/10 transition-all cursor-pointer"
         >
           <Plus class="w-4 h-4" />
           <span>إضافة صنف جديد</span>
-        </Button>
+        </button>
       </div>
     </div>
 
@@ -164,267 +168,258 @@
     <!-- Loading Skeleton -->
     <LoadingSkeleton v-if="inventoryStore.loading && !inventoryStore.products.length" type="table" :count="8" />
 
-    <!-- Products DataTable -->
-    <div v-else class="bg-brand-white dark:bg-white/5 border border-brand-gray/10 rounded-2xl overflow-hidden shadow-sm">
-      <DataTable
-        :value="filteredProducts"
-        paginator
-        :rows="15"
-        :rowsPerPageOptions="[10, 15, 30, 50]"
-        class="w-full text-xs"
-        responsiveLayout="scroll"
-      >
-        <template #empty>
-          <EmptyState
-            title="لا توجد أصناف في المخزن مطابقة لبحثك"
-            icon="Package"
-            actionLabel="إضافة صنف جديد"
-            @action="openAddModal"
-          />
-        </template>
-
-        <!-- Product Name & Category -->
-        <Column field="name" header="الصنف / المنتج" sortable headerClass="text-start">
-          <template #body="{ data }">
-            <div>
-              <span class="font-bold text-brand-dark dark:text-white text-xs block">{{ data.name }}</span>
-              <span class="text-[10px] text-brand-gray dark:text-slate-400">{{ data.categoryName || 'عام' }}</span>
-            </div>
-          </template>
-        </Column>
-
-        <!-- Code / SKU -->
-        <Column field="sku" header="كود الصنف (SKU)" sortable headerClass="text-start" style="width: 140px">
-          <template #body="{ data }">
-            <span class="font-mono text-brand-accent font-semibold select-all text-xs">{{ data.sku || '-' }}</span>
-          </template>
-        </Column>
-
-        <!-- Unit -->
-        <Column field="unit" header="الوحدة" headerClass="text-center" bodyClass="text-center" style="width: 80px">
-          <template #body="{ data }">
-            <span class="px-2 py-0.5 rounded-md bg-slate-100 dark:bg-white/10 text-slate-700 dark:text-slate-300 font-medium text-[11px]">
-              {{ data.unit || 'قطعة' }}
-            </span>
-          </template>
-        </Column>
-
-        <!-- Cost Price (Purchase) -->
-        <Column field="costPrice" header="سعر التكلفة" sortable headerClass="text-start" style="width: 110px">
-          <template #body="{ data }">
-            <span class="font-mono font-semibold text-brand-gray dark:text-slate-400 text-xs">
-              {{ (data.costPrice ?? data.purchasePrice ?? 0).toLocaleString() }} ج.م
-            </span>
-          </template>
-        </Column>
-
-        <!-- Selling Price -->
-        <Column field="sellingPrice" header="سعر البيع" sortable headerClass="text-start" style="width: 130px">
-          <template #body="{ data }">
-            <div class="flex items-center gap-1.5 group">
-              <span class="font-mono font-bold text-brand-dark dark:text-white text-xs">
-                {{ (data.sellingPrice ?? data.unitPrice ?? 0).toLocaleString() }} ج.م
-              </span>
-              <button
-                type="button"
-                @click="openQuickPriceModal(data)"
-                class="opacity-0 group-hover:opacity-100 p-1 text-brand-accent hover:bg-brand-accent/10 rounded cursor-pointer transition"
-                title="تعديل سريع للسعر"
-              >
-                <Edit class="w-3 h-3" />
-              </button>
-            </div>
-          </template>
-        </Column>
-
-        <!-- Current Quantity -->
-        <Column field="currentQuantity" header="الرصيد المتاح" sortable headerClass="text-center" bodyClass="text-center" style="width: 110px">
-          <template #body="{ data }">
-            <div class="inline-flex flex-col items-center">
-              <span
-                class="font-mono font-bold text-sm px-2 py-0.5 rounded-lg"
-                :class="isLowStock(data) ? 'bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30' : 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400'"
-              >
-                {{ data.currentQuantity ?? data.quantity ?? 0 }}
-              </span>
-              <span v-if="isLowStock(data)" class="text-[9px] text-amber-600 dark:text-amber-400 font-bold mt-0.5">
-                (منخفض)
-              </span>
-            </div>
-          </template>
-        </Column>
-
-        <!-- Min Threshold -->
-        <Column field="minQuantity" header="حد الطلب" headerClass="text-center" bodyClass="text-center" style="width: 80px">
-          <template #body="{ data }">
-            <span class="font-mono text-slate-400 text-xs">{{ data.minQuantity ?? data.minThreshold ?? 5 }}</span>
-          </template>
-        </Column>
-
-        <!-- Actions -->
-        <Column header="الإجراءات" headerClass="text-center" bodyClass="text-center" style="width: 170px; min-width: 170px">
-          <template #body="{ data }">
-            <div class="flex items-center justify-center gap-1.5">
-              <!-- Quick Stock Movement Button (+ / -) -->
-              <button
-                type="button"
-                @click="openStockMovementModal(data)"
-                class="px-2 py-1 rounded-xl bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-600 dark:text-emerald-400 text-xs font-bold transition cursor-pointer flex items-center gap-1 border border-emerald-500/25"
-                title="تسجيل حركة مخزون (توريد / تسوية)"
-              >
-                <Plus class="w-3.5 h-3.5" />
-                <span>حركة</span>
-              </button>
-
-              <!-- Movements History Button -->
-              <button
-                type="button"
-                @click="openMovementsHistoryModal(data)"
-                class="p-1.5 rounded-xl bg-brand-light dark:bg-white/5 hover:bg-brand-accent/20 text-brand-gray hover:text-brand-accent transition cursor-pointer border border-brand-gray/15"
-                title="سجل الحركات السابقة"
-              >
-                <History class="w-3.5 h-3.5" />
-              </button>
-
-              <!-- Edit Product -->
-              <button
-                type="button"
-                @click="openEditModal(data)"
-                class="p-1.5 rounded-xl bg-brand-light dark:bg-white/5 hover:bg-brand-soft text-brand-gray hover:text-brand-accent transition cursor-pointer border border-brand-gray/15"
-                title="تعديل بيانات الصنف"
-              >
-                <Edit class="w-3.5 h-3.5" />
-              </button>
-
-              <!-- Delete Product -->
-              <button
-                type="button"
-                @click="promptDelete(data)"
-                class="p-1.5 rounded-xl bg-red-500/10 hover:bg-red-500/20 text-red-500 transition cursor-pointer border border-red-500/20"
-                title="حذف الصنف"
-              >
-                <Trash2 class="w-3.5 h-3.5" />
-              </button>
-            </div>
-          </template>
-        </Column>
-      </DataTable>
-    </div>
-
-    <!-- 1. Add / Edit Product Modal -->
-    <Dialog
-      v-model:visible="showModal"
-      modal
-      :header="isEditing ? 'تعديل بيانات الصنف' : 'إضافة صنف جديد للمخزون'"
-      class="max-w-xl w-full !bg-brand-white dark:!bg-brand-dark !border-brand-gray/15 !text-brand-dark dark:!text-white rounded-3xl overflow-hidden shadow-2xl"
+    <!-- Products DataTable using Reusable OhdaDataTable Component -->
+    <OhdaDataTable
+      v-else
+      :items="filteredProducts"
+      :columns="productColumns"
+      :loading="inventoryStore.loading"
+      empty-title="لا توجد أصناف في المخزن مطابقة لبحثك"
+      empty-message="يمكنك إضافة أصناف جديدة بالضغط على زر إضافة صنف بالأعلى أو استخدام قالب الإكسل."
+      :rows-per-page="15"
     >
-      <form @submit.prevent="saveProduct" class="space-y-4 text-xs pt-2">
-        <!-- Product Name -->
+      <!-- Empty State Action -->
+      <template #empty-action>
+        <button
+          type="button"
+          @click="openAddModal"
+          class="inline-flex items-center gap-2 px-4 py-2 bg-brand-accent text-brand-dark font-bold text-xs rounded-xl shadow-sm cursor-pointer hover:bg-brand-accent/90"
+        >
+          <Plus class="w-4 h-4" />
+          <span>إضافة صنف جديد</span>
+        </button>
+      </template>
+
+      <!-- Name & Category Slot -->
+      <template #name="{ data }">
+        <div>
+          <span class="font-bold text-brand-dark dark:text-white text-xs block">{{ data.name }}</span>
+          <span class="text-[10px] text-brand-gray dark:text-slate-400">{{ data.categoryName || 'عام' }}</span>
+        </div>
+      </template>
+
+      <!-- SKU Slot -->
+      <template #sku="{ data }">
+        <span class="font-mono text-brand-accent font-semibold select-all text-xs bg-brand-soft/50 dark:bg-brand-accent/10 px-2 py-0.5 rounded-md border border-brand-accent/20">
+          {{ data.sku || '-' }}
+        </span>
+      </template>
+
+      <!-- Unit Slot -->
+      <template #unit="{ data }">
+        <span class="px-2 py-0.5 rounded-md bg-slate-100 dark:bg-white/10 text-slate-700 dark:text-slate-300 font-medium text-[11px]">
+          {{ data.unit || 'قطعة' }}
+        </span>
+      </template>
+
+      <!-- Cost Price Slot -->
+      <template #costPrice="{ data }">
+        <span class="font-mono font-semibold text-brand-gray dark:text-slate-400 text-xs">
+          {{ (data.costPrice ?? data.purchasePrice ?? 0).toLocaleString() }} ج.م
+        </span>
+      </template>
+
+      <!-- Selling Price Slot -->
+      <template #sellingPrice="{ data }">
+        <div class="flex items-center gap-1.5 group">
+          <span class="font-mono font-bold text-brand-dark dark:text-white text-xs">
+            {{ (data.sellingPrice ?? data.unitPrice ?? 0).toLocaleString() }} ج.م
+          </span>
+          <button
+            type="button"
+            @click="openQuickPriceModal(data)"
+            class="opacity-0 group-hover:opacity-100 p-1 text-brand-accent hover:bg-brand-accent/10 rounded cursor-pointer transition"
+            title="تعديل سريع للسعر"
+          >
+            <Edit class="w-3 h-3" />
+          </button>
+        </div>
+      </template>
+
+      <!-- Current Quantity Slot -->
+      <template #currentQuantity="{ data }">
+        <div class="inline-flex flex-col items-center">
+          <span
+            class="font-mono font-bold text-xs px-2.5 py-0.5 rounded-lg"
+            :class="isLowStock(data) ? 'bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30 font-black' : 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400'"
+          >
+            {{ data.currentQuantity ?? data.quantity ?? 0 }}
+          </span>
+          <span v-if="isLowStock(data)" class="text-[9px] text-amber-600 dark:text-amber-400 font-bold mt-0.5">
+            (منخفض)
+          </span>
+        </div>
+      </template>
+
+      <!-- Min Quantity Slot -->
+      <template #minQuantity="{ data }">
+        <span class="font-mono text-slate-400 text-xs">{{ data.minQuantity ?? data.minThreshold ?? 5 }}</span>
+      </template>
+
+      <!-- Actions Slot -->
+      <template #actions="{ data }">
+        <div class="flex items-center justify-center gap-1.5">
+          <!-- Quick Stock Movement Button (+ / -) -->
+          <button
+            type="button"
+            @click="openStockMovementModal(data)"
+            class="px-2 py-1 rounded-xl bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-600 dark:text-emerald-400 text-xs font-bold transition cursor-pointer flex items-center gap-1 border border-emerald-500/25"
+            title="تسجيل حركة مخزون (توريد / تسوية)"
+          >
+            <Plus class="w-3.5 h-3.5" />
+            <span>حركة</span>
+          </button>
+
+          <!-- Movements History Button -->
+          <button
+            type="button"
+            @click="openMovementsHistoryModal(data)"
+            class="p-1.5 rounded-xl bg-brand-light dark:bg-white/5 hover:bg-brand-accent/20 text-brand-gray hover:text-brand-accent transition cursor-pointer border border-brand-gray/15"
+            title="سجل الحركات السابقة"
+          >
+            <History class="w-3.5 h-3.5" />
+          </button>
+
+          <!-- Edit Product -->
+          <button
+            type="button"
+            @click="openEditModal(data)"
+            class="p-1.5 rounded-xl bg-brand-light dark:bg-white/5 hover:bg-brand-soft text-brand-gray hover:text-brand-accent transition cursor-pointer border border-brand-gray/15"
+            title="تعديل بيانات الصنف"
+          >
+            <Edit class="w-3.5 h-3.5" />
+          </button>
+
+          <!-- Delete Product -->
+          <button
+            type="button"
+            @click="promptDelete(data)"
+            class="p-1.5 rounded-xl bg-red-500/10 hover:bg-red-500/20 text-red-500 transition cursor-pointer border border-red-500/20"
+            title="حذف الصنف"
+          >
+            <Trash2 class="w-3.5 h-3.5" />
+          </button>
+        </div>
+      </template>
+    </OhdaDataTable>
+
+    <!-- 1. Add / Edit Product Modal using Reusable OhdaModal -->
+    <OhdaModal
+      :visible="showModal"
+      @close="showModal = false"
+      :title="isEditing ? 'تعديل بيانات الصنف' : 'إضافة صنف جديد للمخزون'"
+      description="أدخل تفاصيل الصنف، تصنيفه، أسعار الشراء والبيع، والحد الأدنى للتنبيهات"
+      :icon="Package"
+      max-width="max-w-2xl"
+    >
+      <form @submit.prevent="saveProduct" id="productForm" class="space-y-4 text-xs">
+        <!-- Product Name (Full Width) -->
         <div>
           <label class="block font-semibold text-brand-dark dark:text-white mb-1.5">
             اسم الصنف / المنتج <span class="text-red-500">*</span>
           </label>
-          <InputText
+          <input
             v-model="form.name"
             required
+            type="text"
             placeholder="مثال: زيت محرك شل 5W-40، فلتر زيت كورولا 2020، تيل فرامل أمامي..."
-            class="w-full !bg-brand-light dark:!bg-brand-dark/50 !border-brand-gray/25 focus:!border-brand-accent !text-brand-dark dark:!text-white font-medium rounded-xl"
-            autofocus
+            class="w-full px-3.5 py-2.5 rounded-xl border border-brand-gray/25 bg-brand-light/50 dark:bg-white/5 text-brand-dark dark:text-white font-medium focus:border-brand-accent transition-all text-xs"
           />
         </div>
 
-        <!-- Category & Unit -->
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <!-- Consistent 2-Column Grid -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <!-- Category -->
           <div>
             <label class="block font-semibold text-brand-dark dark:text-white mb-1.5">
               التصنيف / الفئة <span class="text-red-500">*</span>
             </label>
-            <Select
+            <select
               v-model="form.categoryId"
-              :options="inventoryStore.categories"
-              optionLabel="name"
-              optionValue="id"
-              placeholder="اختر التصنيف..."
-              class="w-full !bg-brand-light dark:!bg-brand-dark/50 !border-brand-gray/25 rounded-xl"
-            />
+              required
+              class="w-full px-3.5 py-2.5 rounded-xl border border-brand-gray/25 bg-brand-light/50 dark:bg-brand-dark text-brand-dark dark:text-white text-xs font-medium focus:border-brand-accent transition-all"
+            >
+              <option :value="null" disabled>اختر التصنيف...</option>
+              <option v-for="cat in inventoryStore.categories" :key="cat.id" :value="cat.id">
+                {{ cat.name }}
+              </option>
+            </select>
           </div>
 
+          <!-- Unit -->
           <div>
             <label class="block font-semibold text-brand-dark dark:text-white mb-1.5">
               وحدة القياس <span class="text-red-500">*</span>
             </label>
-            <Select
+            <input
               v-model="form.unit"
-              :options="commonUnits"
-              editable
+              list="unitsList"
               placeholder="اختر أو اكتب الوحدة..."
-              class="w-full !bg-brand-light dark:!bg-brand-dark/50 !border-brand-gray/25 rounded-xl"
+              class="w-full px-3.5 py-2.5 rounded-xl border border-brand-gray/25 bg-brand-light/50 dark:bg-white/5 text-brand-dark dark:text-white text-xs font-medium focus:border-brand-accent transition-all"
             />
+            <datalist id="unitsList">
+              <option v-for="u in commonUnits" :key="u" :value="u" />
+            </datalist>
           </div>
-        </div>
 
-        <!-- Cost Price & Selling Price -->
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <!-- Cost Price -->
           <div>
             <label class="block font-semibold text-brand-dark dark:text-white mb-1.5">
               سعر الشراء / التكلفة (ج.م) <span class="text-red-500">*</span>
             </label>
-            <InputNumber
-              v-model="form.costPrice"
-              :min="0"
-              :minFractionDigits="0"
-              :maxFractionDigits="2"
+            <input
+              v-model.number="form.costPrice"
+              type="number"
+              step="any"
+              min="0"
               placeholder="0.00"
-              class="w-full !bg-brand-light dark:!bg-brand-dark/50 !border-brand-gray/25 rounded-xl font-mono"
+              class="w-full px-3.5 py-2.5 rounded-xl border border-brand-gray/25 bg-brand-light/50 dark:bg-white/5 text-brand-dark dark:text-white font-mono text-xs focus:border-brand-accent transition-all"
             />
           </div>
 
+          <!-- Selling Price -->
           <div>
             <label class="block font-semibold text-brand-dark dark:text-white mb-1.5">
               سعر البيع للعميل (ج.م) <span class="text-red-500">*</span>
             </label>
-            <InputNumber
-              v-model="form.sellingPrice"
-              :min="0"
-              :minFractionDigits="0"
-              :maxFractionDigits="2"
+            <input
+              v-model.number="form.sellingPrice"
+              type="number"
+              step="any"
+              min="0"
               placeholder="0.00"
-              class="w-full !bg-brand-light dark:!bg-brand-dark/50 !border-brand-gray/25 rounded-xl font-mono"
+              class="w-full px-3.5 py-2.5 rounded-xl border border-brand-gray/25 bg-brand-light/50 dark:bg-white/5 text-brand-dark dark:text-white font-mono text-xs font-bold focus:border-brand-accent transition-all"
             />
           </div>
-        </div>
 
-        <!-- Initial Quantity & Min Threshold -->
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <!-- Current / Initial Quantity -->
           <div>
             <label class="block font-semibold text-brand-dark dark:text-white mb-1.5">
               {{ isEditing ? 'الرصيد الحالي' : 'الرصيد المبدئي' }} <span class="text-red-500">*</span>
             </label>
-            <InputNumber
-              v-model="form.currentQuantity"
-              :min="0"
-              :minFractionDigits="0"
-              :maxFractionDigits="2"
-              class="w-full !bg-brand-light dark:!bg-brand-dark/50 !border-brand-gray/25 rounded-xl font-mono font-bold"
+            <input
+              v-model.number="form.currentQuantity"
+              type="number"
+              step="any"
+              min="0"
+              class="w-full px-3.5 py-2.5 rounded-xl border border-brand-gray/25 bg-brand-light/50 dark:bg-white/5 text-brand-dark dark:text-white font-mono text-xs font-bold focus:border-brand-accent transition-all"
             />
           </div>
 
+          <!-- Min Threshold -->
           <div>
             <label class="block font-semibold text-brand-dark dark:text-white mb-1.5">
               حد الطلب (تنبيه نقص الرصيد) <span class="text-red-500">*</span>
             </label>
-            <InputNumber
-              v-model="form.minQuantity"
-              :min="1"
-              :minFractionDigits="0"
-              :maxFractionDigits="2"
-              class="w-full !bg-brand-light dark:!bg-brand-dark/50 !border-brand-gray/25 rounded-xl font-mono"
+            <input
+              v-model.number="form.minQuantity"
+              type="number"
+              min="1"
+              class="w-full px-3.5 py-2.5 rounded-xl border border-brand-gray/25 bg-brand-light/50 dark:bg-white/5 text-brand-dark dark:text-white font-mono text-xs focus:border-brand-accent transition-all"
             />
           </div>
-        </div>
 
-        <!-- SKU and Barcode (Optional with Auto-Generate Helper) -->
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+          <!-- SKU with Generator -->
           <div>
             <div class="flex items-center justify-between mb-1.5">
               <label class="font-semibold text-brand-dark dark:text-white">الكود / SKU (اختياري)</label>
@@ -437,13 +432,14 @@
                 <span>توليد تلقائي</span>
               </button>
             </div>
-            <InputText
+            <input
               v-model="form.sku"
               placeholder="يتم التوليد تلقائياً إذا ترك فارغاً"
-              class="w-full !bg-brand-light dark:!bg-brand-dark/50 !border-brand-gray/25 focus:!border-brand-accent !text-brand-dark dark:!text-white font-mono rounded-xl uppercase"
+              class="w-full px-3.5 py-2.5 rounded-xl border border-brand-gray/25 bg-brand-light/50 dark:bg-white/5 text-brand-dark dark:text-white font-mono text-xs uppercase focus:border-brand-accent transition-all"
             />
           </div>
 
+          <!-- Barcode with Generator -->
           <div>
             <div class="flex items-center justify-between mb-1.5">
               <label class="font-semibold text-brand-dark dark:text-white">الباركود (اختياري)</label>
@@ -456,70 +452,73 @@
                 <span>توليد تلقائي</span>
               </button>
             </div>
-            <InputText
+            <input
               v-model="form.barcode"
               placeholder="مسح أو توليد باركود"
-              class="w-full !bg-brand-light dark:!bg-brand-dark/50 !border-brand-gray/25 focus:!border-brand-accent !text-brand-dark dark:!text-white font-mono rounded-xl"
+              class="w-full px-3.5 py-2.5 rounded-xl border border-brand-gray/25 bg-brand-light/50 dark:bg-white/5 text-brand-dark dark:text-white font-mono text-xs focus:border-brand-accent transition-all"
             />
           </div>
-        </div>
 
-        <!-- Supplier & Description -->
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          <div>
-            <label class="block font-semibold text-brand-dark dark:text-white mb-1.5">المورد (اختياري)</label>
-            <Select
+          <!-- Supplier (Optional) -->
+          <div class="sm:col-span-2">
+            <label class="block font-semibold text-brand-dark dark:text-white mb-1.5">المورد المفضل (اختياري)</label>
+            <select
               v-model="form.supplierId"
-              :options="inventoryStore.suppliers"
-              optionLabel="companyName"
-              optionValue="id"
-              showClear
-              placeholder="اختر المورد..."
-              class="w-full !bg-brand-light dark:!bg-brand-dark/50 !border-brand-gray/25 rounded-xl"
-            />
+              class="w-full px-3.5 py-2.5 rounded-xl border border-brand-gray/25 bg-brand-light/50 dark:bg-brand-dark text-brand-dark dark:text-white text-xs font-medium focus:border-brand-accent transition-all"
+            >
+              <option :value="null">اختر المورد...</option>
+              <option v-for="s in inventoryStore.suppliers" :key="s.id" :value="s.id">
+                {{ s.name }}
+              </option>
+            </select>
           </div>
-          <div>
+
+          <!-- Description (Optional, Full Width) -->
+          <div class="sm:col-span-2">
             <label class="block font-semibold text-brand-dark dark:text-white mb-1.5">ملاحظات / وصف (اختياري)</label>
-            <InputText
+            <textarea
               v-model="form.description"
-              placeholder="مواصفات أو أرقام بديلة..."
-              class="w-full !bg-brand-light dark:!bg-brand-dark/50 !border-brand-gray/25 rounded-xl"
-            />
+              rows="2"
+              placeholder="مواصفات أو أرقام بديلة أو ملاحظات الاستخدام..."
+              class="w-full px-3.5 py-2 rounded-xl border border-brand-gray/25 bg-brand-light/50 dark:bg-white/5 text-brand-dark dark:text-white text-xs focus:border-brand-accent transition-all resize-none"
+            ></textarea>
           </div>
-        </div>
-
-        <!-- Dialog Footer Actions -->
-        <div class="flex items-center justify-end gap-2.5 pt-4 border-t border-brand-gray/10">
-          <Button
-            type="button"
-            @click="showModal = false"
-            class="!bg-brand-light dark:!bg-white/5 hover:!bg-brand-soft !text-brand-dark dark:!text-white !border !border-brand-gray/20 !rounded-xl !px-4 !py-2.5 !text-xs font-semibold cursor-pointer"
-          >
-            إلغاء
-          </Button>
-
-          <Button
-            type="submit"
-            :disabled="saving"
-            class="!bg-brand-accent hover:!bg-brand-accent/90 !text-brand-dark !font-bold !rounded-xl !px-5 !py-2.5 !text-xs flex items-center gap-2 shadow-md cursor-pointer"
-          >
-            <RefreshCw v-if="saving" class="w-4 h-4 animate-spin" />
-            <span>{{ isEditing ? 'حفظ التعديلات' : 'إضافة الصنف' }}</span>
-          </Button>
         </div>
       </form>
-    </Dialog>
 
-    <!-- 2. Stock Movement Modal (+ / -) -->
-    <Dialog
-      v-model:visible="showMovementModal"
-      modal
-      header="تسجيل حركة مخزون جديدة"
-      class="max-w-md w-full !bg-brand-white dark:!bg-brand-dark !border-brand-gray/15 !text-brand-dark dark:!text-white rounded-3xl overflow-hidden shadow-2xl"
+      <!-- Sticky Footer Actions -->
+      <template #footer="{ close }">
+        <button
+          type="button"
+          @click="close"
+          class="px-4 py-2.5 rounded-xl text-xs font-bold text-slate-500 hover:text-slate-800 dark:hover:text-white transition cursor-pointer"
+        >
+          إلغاء
+        </button>
+        <button
+          type="submit"
+          form="productForm"
+          :disabled="saving"
+          class="px-5 py-2.5 rounded-xl text-xs font-bold bg-brand-accent hover:bg-brand-accent/90 text-brand-dark flex items-center gap-2 shadow-sm cursor-pointer transition-all disabled:opacity-50"
+        >
+          <RefreshCw v-if="saving" class="w-4 h-4 animate-spin" />
+          <span>{{ isEditing ? 'حفظ التعديلات' : 'إضافة الصنف' }}</span>
+        </button>
+      </template>
+    </OhdaModal>
+
+    <!-- 2. Stock Movement Modal (+ / -) using OhdaModal -->
+    <OhdaModal
+      :visible="showMovementModal"
+      @close="showMovementModal = false"
+      title="تسجيل حركة مخزون جديدة"
+      description="تسجيل توريد، تسوية جردية، أو مرتجع وتحديث الرصيد مباشرة"
+      :icon="Boxes"
+      max-width="max-w-lg"
     >
-      <div v-if="targetProductForMovement" class="space-y-4 text-xs pt-2">
+      <div v-if="targetProductForMovement" class="space-y-4 text-xs">
         <!-- Target Product Summary -->
-        <div class="p-3 bg-brand-light dark:bg-white/5 rounded-2xl border border-brand-gray/10 flex items-center justify-between">
+        <div class="p-3 bg-brand-light/60 dark:bg-white/5 rounded-2xl border border-brand-gray/10 flex items-center justify-between">
           <div>
             <span class="font-bold text-brand-dark dark:text-white block">{{ targetProductForMovement.name }}</span>
             <span class="text-[10px] text-brand-accent font-mono">{{ targetProductForMovement.sku }}</span>
@@ -574,12 +573,12 @@
         <div class="grid grid-cols-2 gap-3">
           <div>
             <label class="block font-semibold text-brand-dark dark:text-white mb-1.5">الكمية</label>
-            <InputNumber
-              v-model="movementForm.quantity"
-              :min="0.1"
-              :minFractionDigits="0"
-              :maxFractionDigits="2"
-              class="w-full !bg-brand-light dark:!bg-brand-dark/50 !border-brand-gray/25 rounded-xl font-mono font-bold"
+            <input
+              v-model.number="movementForm.quantity"
+              type="number"
+              step="any"
+              min="0.1"
+              class="w-full px-3.5 py-2.5 rounded-xl border border-brand-gray/25 bg-brand-light/50 dark:bg-white/5 font-mono font-bold text-xs text-brand-dark dark:text-white focus:border-brand-accent transition-all"
             />
           </div>
 
@@ -595,54 +594,56 @@
         <div class="space-y-3">
           <div>
             <label class="block font-semibold text-brand-dark dark:text-white mb-1.5">البيان / رقم الفاتورة أو الإذن</label>
-            <InputText
+            <input
               v-model="movementForm.reference"
+              type="text"
               placeholder="مثال: فاتورة توريد رقم 102، تسوية جرد أسبوعي..."
-              class="w-full !bg-brand-light dark:!bg-brand-dark/50 !border-brand-gray/25 rounded-xl"
+              class="w-full px-3.5 py-2.5 rounded-xl border border-brand-gray/25 bg-brand-light/50 dark:bg-white/5 text-xs text-brand-dark dark:text-white focus:border-brand-accent transition-all"
             />
           </div>
 
           <div>
             <label class="block font-semibold text-brand-dark dark:text-white mb-1.5">ملاحظات إضافية (اختياري)</label>
-            <InputText
+            <input
               v-model="movementForm.notes"
+              type="text"
               placeholder="أي تفاصيل أو ملاحظات حول الحركة..."
-              class="w-full !bg-brand-light dark:!bg-brand-dark/50 !border-brand-gray/25 rounded-xl"
+              class="w-full px-3.5 py-2.5 rounded-xl border border-brand-gray/25 bg-brand-light/50 dark:bg-white/5 text-xs text-brand-dark dark:text-white focus:border-brand-accent transition-all"
             />
           </div>
         </div>
-
-        <!-- Action Buttons -->
-        <div class="flex items-center justify-end gap-2.5 pt-3 border-t border-brand-gray/10">
-          <Button
-            type="button"
-            @click="showMovementModal = false"
-            class="!bg-brand-light dark:!bg-white/5 !text-brand-dark dark:!text-white !border !border-brand-gray/20 !rounded-xl !px-4 !py-2.5 !text-xs cursor-pointer"
-          >
-            إلغاء
-          </Button>
-
-          <Button
-            type="button"
-            @click="submitStockMovement"
-            :disabled="savingMovement"
-            class="!bg-emerald-600 hover:!bg-emerald-500 !text-white !font-bold !rounded-xl !px-5 !py-2.5 !text-xs flex items-center gap-2 cursor-pointer shadow-sm"
-          >
-            <RefreshCw v-if="savingMovement" class="w-4 h-4 animate-spin" />
-            <span>تأكيد وتسجيل الحركة</span>
-          </Button>
-        </div>
       </div>
-    </Dialog>
 
-    <!-- 3. Movements History Modal -->
-    <Dialog
-      v-model:visible="showHistoryModal"
-      modal
-      :header="`سجل حركات الصنف: ${targetProductForHistory?.name || ''}`"
-      class="max-w-2xl w-full !bg-brand-white dark:!bg-brand-dark !border-brand-gray/15 !text-brand-dark dark:!text-white rounded-3xl overflow-hidden shadow-2xl"
+      <template #footer="{ close }">
+        <button
+          type="button"
+          @click="close"
+          class="px-4 py-2.5 rounded-xl text-xs font-bold text-slate-500 hover:text-slate-800 dark:hover:text-white transition cursor-pointer"
+        >
+          إلغاء
+        </button>
+        <button
+          type="button"
+          @click="submitStockMovement"
+          :disabled="savingMovement"
+          class="px-5 py-2.5 rounded-xl text-xs font-bold bg-emerald-600 hover:bg-emerald-500 text-white flex items-center gap-2 shadow-sm cursor-pointer transition-all disabled:opacity-50"
+        >
+          <RefreshCw v-if="savingMovement" class="w-4 h-4 animate-spin" />
+          <span>تأكيد وتسجيل الحركة</span>
+        </button>
+      </template>
+    </OhdaModal>
+
+    <!-- 3. Movements History Modal using OhdaModal -->
+    <OhdaModal
+      :visible="showHistoryModal"
+      @close="showHistoryModal = false"
+      :title="`سجل حركات الصنف: ${targetProductForHistory?.name || ''}`"
+      description="تتبع جميع حركات التوريد والصرف والتسويات الجردية السابقة"
+      :icon="History"
+      max-width="max-w-2xl"
     >
-      <div class="space-y-4 text-xs pt-2">
+      <div class="space-y-4 text-xs">
         <div v-if="loadingHistory" class="py-12 text-center text-slate-400">
           <RefreshCw class="w-6 h-6 animate-spin mx-auto mb-2 text-brand-accent" />
           <span>جاري تحميل سجل الحركات...</span>
@@ -691,103 +692,108 @@
             </div>
           </div>
         </div>
-
-        <div class="flex justify-end pt-3 border-t border-brand-gray/10">
-          <Button
-            type="button"
-            @click="showHistoryModal = false"
-            class="!bg-brand-light dark:!bg-white/5 !text-brand-dark dark:!text-white !border !border-brand-gray/20 !rounded-xl !px-4 !py-2 !text-xs cursor-pointer"
-          >
-            إغلاق
-          </Button>
-        </div>
       </div>
-    </Dialog>
 
-    <!-- 4. Quick Price Edit Modal -->
-    <Dialog
-      v-model:visible="showQuickPriceModal"
-      modal
-      header="تعديل سريع لسعر البيع"
-      class="max-w-xs w-full !bg-brand-white dark:!bg-brand-dark !border-brand-gray/15 !text-brand-dark dark:!text-white rounded-3xl overflow-hidden shadow-2xl"
+      <template #footer="{ close }">
+        <button
+          type="button"
+          @click="close"
+          class="px-4 py-2 rounded-xl text-xs font-bold bg-brand-light dark:bg-white/5 text-brand-dark dark:text-white border border-brand-gray/20 cursor-pointer"
+        >
+          إغلاق
+        </button>
+      </template>
+    </OhdaModal>
+
+    <!-- 4. Quick Price Edit Modal using OhdaModal -->
+    <OhdaModal
+      :visible="showQuickPriceModal"
+      @close="showQuickPriceModal = false"
+      title="تعديل سريع لسعر البيع"
+      :subtitle="targetProductForPrice?.name || ''"
+      :icon="Coins"
+      max-width="max-w-sm"
     >
-      <div v-if="targetProductForPrice" class="space-y-4 text-xs pt-2">
-        <p class="font-bold text-brand-dark dark:text-white">{{ targetProductForPrice.name }}</p>
+      <div v-if="targetProductForPrice" class="space-y-3 text-xs">
         <div>
           <label class="block font-semibold text-brand-dark dark:text-white mb-1.5">سعر البيع الجديد (ج.م)</label>
-          <InputNumber
-            v-model="quickSellingPrice"
-            :min="0"
-            :minFractionDigits="0"
-            :maxFractionDigits="2"
-            class="w-full !bg-brand-light dark:!bg-brand-dark/50 !border-brand-gray/25 rounded-xl font-mono font-bold"
+          <input
+            v-model.number="quickSellingPrice"
+            type="number"
+            step="any"
+            min="0"
+            class="w-full px-3.5 py-2.5 rounded-xl border border-brand-gray/25 bg-brand-light/50 dark:bg-white/5 text-brand-dark dark:text-white font-mono font-bold text-sm focus:border-brand-accent transition-all"
             autofocus
           />
         </div>
-
-        <div class="flex items-center justify-end gap-2 pt-2 border-t border-brand-gray/10">
-          <Button
-            type="button"
-            @click="showQuickPriceModal = false"
-            class="!bg-brand-light dark:!bg-white/5 !text-brand-dark dark:!text-white !border !border-brand-gray/20 !rounded-xl !px-3.5 !py-2 !text-xs cursor-pointer"
-          >
-            إلغاء
-          </Button>
-          <Button
-            type="button"
-            @click="submitQuickPrice"
-            class="!bg-brand-accent !text-brand-dark font-bold !rounded-xl !px-4 !py-2 !text-xs cursor-pointer shadow-sm"
-          >
-            حفظ السعر
-          </Button>
-        </div>
       </div>
-    </Dialog>
 
-    <!-- 5. Delete Confirmation Modal -->
-    <Dialog
-      v-model:visible="showDeleteModal"
-      modal
-      header="تأكيد حذف الصنف"
-      class="max-w-md w-full !bg-brand-white dark:!bg-brand-dark !border-brand-gray/15 !text-brand-dark dark:!text-white rounded-3xl overflow-hidden shadow-2xl"
+      <template #footer="{ close }">
+        <button
+          type="button"
+          @click="close"
+          class="px-3.5 py-2 rounded-xl text-xs font-bold text-slate-500 hover:text-slate-800 dark:hover:text-white cursor-pointer"
+        >
+          إلغاء
+        </button>
+        <button
+          type="button"
+          @click="submitQuickPrice"
+          class="px-4 py-2 rounded-xl text-xs font-bold bg-brand-accent text-brand-dark cursor-pointer shadow-sm hover:bg-brand-accent/90"
+        >
+          حفظ السعر
+        </button>
+      </template>
+    </OhdaModal>
+
+    <!-- 5. Delete Confirmation Modal using OhdaModal -->
+    <OhdaModal
+      :visible="showDeleteModal"
+      @close="showDeleteModal = false"
+      title="تأكيد حذف الصنف"
+      description="يرجى الانتباه قبل حذف أي صنف مسجل"
+      :icon="Trash2"
+      max-width="max-w-md"
     >
-      <div class="space-y-4 text-xs pt-2">
+      <div class="space-y-3 text-xs">
         <p class="text-slate-600 dark:text-slate-300">
           هل أنت متأكد من رغبتك في حذف الصنف <strong>"{{ deletingProduct?.name }}"</strong> من المخزن؟
         </p>
-        <p class="text-[11px] text-amber-600 dark:text-amber-400">
+        <p class="text-[11px] text-amber-600 dark:text-amber-400 p-2.5 rounded-xl bg-amber-500/10 border border-amber-500/20">
           ملاحظة: لا يمكن حذف الصنف إذا كان مرتبطاً بفواتير أو أوامر شغل سابقة.
         </p>
-
-        <div class="flex items-center justify-end gap-2.5 pt-3 border-t border-brand-gray/10">
-          <Button
-            type="button"
-            @click="showDeleteModal = false"
-            class="!bg-brand-light dark:!bg-white/5 !text-brand-dark dark:!text-white !border !border-brand-gray/20 !rounded-xl !px-4 !py-2.5 !text-xs cursor-pointer"
-          >
-            إلغاء
-          </Button>
-          <Button
-            type="button"
-            @click="executeDeleteProduct"
-            :disabled="isDeleting"
-            class="!bg-red-600 hover:!bg-red-500 !text-white !font-bold !rounded-xl !px-5 !py-2.5 !text-xs flex items-center gap-2 cursor-pointer shadow-sm"
-          >
-            <RefreshCw v-if="isDeleting" class="w-4 h-4 animate-spin" />
-            <span>نعم، حذف</span>
-          </Button>
-        </div>
       </div>
-    </Dialog>
 
-    <!-- 6. Excel Import Modal -->
-    <Dialog
-      v-model:visible="showImportModal"
-      modal
-      header="استيراد أصناف من ملف إكسل"
-      class="max-w-md w-full !bg-brand-white dark:!bg-brand-dark !border-brand-gray/15 !text-brand-dark dark:!text-white rounded-3xl overflow-hidden shadow-2xl"
+      <template #footer="{ close }">
+        <button
+          type="button"
+          @click="close"
+          class="px-4 py-2.5 rounded-xl text-xs font-bold text-slate-500 hover:text-slate-800 dark:hover:text-white cursor-pointer"
+        >
+          إلغاء
+        </button>
+        <button
+          type="button"
+          @click="executeDeleteProduct"
+          :disabled="isDeleting"
+          class="px-5 py-2.5 rounded-xl text-xs font-bold bg-red-600 hover:bg-red-500 text-white flex items-center gap-2 cursor-pointer shadow-sm disabled:opacity-50"
+        >
+          <RefreshCw v-if="isDeleting" class="w-4 h-4 animate-spin" />
+          <span>نعم، حذف</span>
+        </button>
+      </template>
+    </OhdaModal>
+
+    <!-- 6. Excel Import Modal using OhdaModal -->
+    <OhdaModal
+      :visible="showImportModal"
+      @close="showImportModal = false"
+      title="استيراد أصناف من ملف إكسل"
+      description="رفع ملف أصناف مجمع لإضافتها وتحديث المخزون بنقرة واحدة"
+      :icon="FileSpreadsheet"
+      max-width="max-w-md"
     >
-      <div class="space-y-4 text-xs pt-2">
+      <div class="space-y-4 text-xs">
         <p class="text-slate-600 dark:text-slate-300">
           اختر ملف Excel (.xlsx) يحتوي على الأصناف لإضافتها مباشرة إلى المخزن. يفضل استخدام نموذج Excel المتاح بالأعلى.
         </p>
@@ -796,29 +802,29 @@
           type="file"
           accept=".xlsx,.xls"
           @change="onFileSelected"
-          class="block w-full text-xs text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-brand-accent/20 file:text-brand-accent hover:file:bg-brand-accent/30 cursor-pointer"
+          class="block w-full text-xs text-slate-500 file:mr-4 file:py-2.5 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-brand-accent/20 file:text-brand-accent hover:file:bg-brand-accent/30 cursor-pointer border border-brand-gray/20 rounded-xl p-2 bg-brand-light/50 dark:bg-white/5"
         />
-
-        <div class="flex items-center justify-end gap-2.5 pt-3 border-t border-brand-gray/10">
-          <Button
-            type="button"
-            @click="showImportModal = false"
-            class="!bg-brand-light dark:!bg-white/5 !text-brand-dark dark:!text-white !border !border-brand-gray/20 !rounded-xl !px-4 !py-2.5 !text-xs cursor-pointer"
-          >
-            إلغاء
-          </Button>
-          <Button
-            type="button"
-            @click="submitExcelImport"
-            :disabled="!selectedFile || isImporting"
-            class="!bg-brand-accent !text-brand-dark !font-bold !rounded-xl !px-5 !py-2.5 !text-xs flex items-center gap-2 cursor-pointer shadow-sm"
-          >
-            <RefreshCw v-if="isImporting" class="w-4 h-4 animate-spin" />
-            <span>بدء الاستيراد</span>
-          </Button>
-        </div>
       </div>
-    </Dialog>
+
+      <template #footer="{ close }">
+        <button
+          type="button"
+          @click="close"
+          class="px-4 py-2.5 rounded-xl text-xs font-bold text-slate-500 hover:text-slate-800 dark:hover:text-white cursor-pointer"
+        >
+          إلغاء
+        </button>
+        <button
+          type="button"
+          @click="submitExcelImport"
+          :disabled="!selectedFile || isImporting"
+          class="px-5 py-2.5 rounded-xl text-xs font-bold bg-brand-accent text-brand-dark flex items-center gap-2 cursor-pointer shadow-sm hover:bg-brand-accent/90 disabled:opacity-50"
+        >
+          <RefreshCw v-if="isImporting" class="w-4 h-4 animate-spin" />
+          <span>بدء الاستيراد</span>
+        </button>
+      </template>
+    </OhdaModal>
   </div>
 </template>
 
@@ -826,16 +832,10 @@
 import { ref, computed, onMounted } from "vue";
 import { useOhdaInventoryStore } from "../stores/useOhdaInventoryStore";
 import { useToastStore } from "@/stores/toastStore";
-import DataTable from "primevue/datatable";
-import Column from "primevue/column";
-import Dialog from "primevue/dialog";
-import Button from "primevue/button";
-import InputText from "primevue/inputtext";
-import InputNumber from "primevue/inputnumber";
-import Select from "primevue/select";
+import OhdaDataTable from "../components/OhdaDataTable.vue";
+import OhdaModal from "../components/OhdaModal.vue";
 import searchField from "@/components/searchField.vue";
 import LoadingSkeleton from "@/components/LoadingSkeleton.vue";
-import EmptyState from "@/components/EmptyState.vue";
 
 import {
   Package,
@@ -862,6 +862,18 @@ const selectedCategory = ref(null);
 const filterOnlyLowStock = ref(false);
 
 const commonUnits = ["قطعة", "لتر", "جالون", "طقم", "عبوة", "متر", "كرتونة"];
+
+// Columns Definition for Reusable OhdaDataTable
+const productColumns = [
+  { field: "name", header: "الصنف / المنتج", sortable: true, width: "22%" },
+  { field: "sku", header: "كود الصنف (SKU)", sortable: true, width: "15%" },
+  { field: "unit", header: "الوحدة", align: "center", width: "9%" },
+  { field: "costPrice", header: "سعر التكلفة", sortable: true, width: "12%" },
+  { field: "sellingPrice", header: "سعر البيع", sortable: true, width: "13%" },
+  { field: "currentQuantity", header: "الرصيد المتاح", sortable: true, align: "center", width: "12%" },
+  { field: "minQuantity", header: "حد الطلب", align: "center", width: "8%" },
+  { field: "actions", header: "الإجراءات", align: "center", width: "17%" }
+];
 
 // Add/Edit Form State
 const showModal = ref(false);

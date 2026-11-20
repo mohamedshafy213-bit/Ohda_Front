@@ -326,6 +326,31 @@ export const useOhdaInventoryStore = defineStore("ohdaInventory", {
       }
     },
 
+    async fetchSupplierStatement(id) {
+      try {
+        const res = await apiGet(`/api/Supplier/${id}/statement`);
+        if (res?.data?.isDone && Array.isArray(res.data.objects)) {
+          return res.data.objects;
+        }
+      } catch (err) {
+        console.warn("Fetch supplier statement failed", err);
+      }
+      return [];
+    },
+
+    async recordSupplierPayment(payload) {
+      try {
+        const res = await apiPost("/api/Supplier/record-payment", payload);
+        if (res?.data?.isDone) {
+          await this.fetchSuppliers();
+          return { success: true, message: res.data.returnMessage };
+        }
+        return { success: false, message: res?.data?.returnMessage || "فشل تسجيل سداد المورد" };
+      } catch (err) {
+        return { success: false, message: err?.response?.data?.returnMessage || err.message };
+      }
+    },
+
     // ------------------------------------
     // Inventory & Dashboard (/api/Inventory & /api/Dashboard)
     // ------------------------------------

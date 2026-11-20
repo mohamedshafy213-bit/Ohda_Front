@@ -24,6 +24,18 @@ export default [
         name: "OhdaDashboard",
         component: () => import("./pages/DashboardPage.vue")
       },
+      // Sales & Jobs
+      {
+        path: "jobs",
+        name: "OhdaJobCards",
+        component: () => import("./pages/JobCardsPage.vue")
+      },
+      {
+        path: "clients",
+        name: "OhdaClients",
+        component: () => import("./pages/ClientsPage.vue")
+      },
+      // Inventory & Services
       {
         path: "products",
         name: "OhdaProducts",
@@ -35,64 +47,14 @@ export default [
         component: () => import("./pages/ServicesPage.vue")
       },
       {
-        path: "jobs",
-        name: "OhdaJobCards",
-        component: () => import("./pages/JobCardsPage.vue")
+        path: "purchases",
+        name: "OhdaPurchases",
+        component: () => import("./pages/PurchasesPage.vue")
       },
       {
-        path: "expenses",
-        name: "OhdaExpenses",
-        component: () => import("./pages/ExpensesPage.vue")
-      },
-      {
-        path: "employees",
-        name: "OhdaEmployees",
-        component: () => import("./pages/EmployeesPage.vue")
-      },
-      {
-        path: "finance",
-        name: "OhdaFinance",
-        component: () => import("./pages/FinancePage.vue")
-      },
-      {
-        path: "month-closing",
-        name: "OhdaMonthClosing",
-        component: () => import("./pages/MonthClosingPage.vue")
-      },
-      {
-        path: "warehouse-bins",
-        name: "OhdaWarehouseBins",
-        component: () => import("./pages/WarehouseBinsPage.vue")
-      },
-      {
-        path: "inventory",
-        name: "OhdaInventory",
-        component: () => import("./pages/InventoryPage.vue")
-      },
-      {
-        path: "exit-requests",
-        name: "OhdaExitRequests",
-        component: () => import("./pages/ExitRequestsPage.vue")
-      },
-      {
-        path: "entry-requests",
-        name: "OhdaEntryRequests",
-        component: () => import("./pages/EntryRequestsPage.vue")
-      },
-      {
-        path: "scan",
-        name: "OhdaBarcodeScan",
-        component: () => import("./pages/BarcodeScanPage.vue")
-      },
-      {
-        path: "barcode-print",
-        name: "OhdaBarcodePrint",
-        component: () => import("./pages/BarcodePrintPage.vue")
-      },
-      {
-        path: "categories",
-        name: "OhdaCategories",
-        component: () => import("./pages/CategoriesPage.vue")
+        path: "returns",
+        name: "OhdaReturns",
+        component: () => import("./pages/ReturnsPage.vue")
       },
       {
         path: "suppliers",
@@ -100,46 +62,48 @@ export default [
         component: () => import("./pages/SuppliersPage.vue")
       },
       {
+        path: "categories",
+        name: "OhdaCategories",
+        component: () => import("./pages/CategoriesPage.vue")
+      },
+      {
+        path: "barcode-print",
+        name: "OhdaBarcodePrint",
+        component: () => import("./pages/BarcodePrintPage.vue")
+      },
+      {
+        path: "scan",
+        name: "OhdaBarcodeScan",
+        component: () => import("./pages/BarcodeScanPage.vue")
+      },
+      // Finance & Expenses
+      {
+        path: "finance",
+        name: "OhdaFinance",
+        component: () => import("./pages/FinancePage.vue")
+      },
+      {
+        path: "expenses",
+        name: "OhdaExpenses",
+        component: () => import("./pages/ExpensesPage.vue")
+      },
+      {
+        path: "month-closing",
+        name: "OhdaMonthClosing",
+        component: () => import("./pages/MonthClosingPage.vue")
+      },
+      // HR & Users
+      {
+        path: "employees",
+        name: "OhdaEmployees",
+        component: () => import("./pages/EmployeesPage.vue")
+      },
+      {
         path: "users",
         name: "OhdaUserManagement",
         component: () => import("./pages/UserManagementPage.vue")
       },
-      {
-        path: "departments",
-        name: "OhdaDepartments",
-        component: () => import("./pages/DepartmentManagementPage.vue")
-      },
-      {
-        path: "product-states",
-        name: "OhdaProductStates",
-        component: () => import("./pages/ProductStatePage.vue")
-      },
-      {
-        path: "approval-config",
-        name: "OhdaApprovalConfig",
-        component: () => import("./pages/ApprovalConfigPage.vue")
-      },
-      {
-        path: "approval-requests",
-        name: "OhdaApprovalRequests",
-        component: () => import("./pages/ApprovalRequestsPage.vue")
-      },
-      {
-        path: "acceptance",
-        name: "OhdaAcceptance",
-        component: () => import("./pages/AcceptancePage.vue")
-      },
-      {
-        path: "untracked-items",
-        name: "OhdaUntrackedItems",
-        component: () => import("./pages/UntrackedItemsPage.vue")
-      },
-      {
-        path: "packages",
-        name: "OhdaPackages",
-        component: () => import("./pages/PackagesPage.vue")
-      },
-
+      // Platform / SuperAdmin Branches
       {
         path: "branches",
         name: "OhdaBranches",

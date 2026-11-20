@@ -341,104 +341,103 @@
       </div>
     </div>
 
-    <!-- 1. Modal: Confirm Month Close / Lock -->
-    <Dialog
-      v-model:visible="showCloseModal"
-      modal
-      header="إقفال واعتماد الشهر المالي"
-      :style="{ width: '480px' }"
-      class="!rounded-2xl !bg-brand-white dark:!bg-[#1a202c] !text-brand-dark dark:!text-white"
+    <!-- 1. Modal: Confirm Month Close / Lock using OhdaModal -->
+    <OhdaModal
+      :visible="showCloseModal"
+      @close="showCloseModal = false"
+      title="إقفال واعتماد الشهر المالي"
+      :description="`تأكيد اعتماد وإقفال شهر ${selectedMonth} / ${selectedYear}`"
+      :icon="Lock"
+      max-width="max-w-md"
     >
-      <form @submit.prevent="submitCloseMonth" class="space-y-4 pt-2">
+      <form @submit.prevent="submitCloseMonth" id="closeMonthForm" class="space-y-4 text-xs">
         <div class="p-3 bg-purple-500/10 border border-purple-500/20 rounded-xl text-xs text-purple-800 dark:text-purple-300 space-y-1">
-          <div class="font-bold flex items-center gap-1.5">
-            <Lock class="w-4 h-4" />
-            <span>تأكيد اعتماد وإقفال شهر {{ selectedMonth }} / {{ selectedYear }}</span>
-          </div>
-          <p class="text-[11px] opacity-90">
+          <p class="text-[11px] leading-relaxed">
             سيتم تجميد وحفظ لقطة تاريخية رسمية لكافة مبيعات ومصروفات وصافي أرباح الشهر لحمايتها من أي تعديل مستقبلي.
           </p>
         </div>
 
         <div>
-          <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">ملاحظات الإقفال (اختياري)</label>
+          <label class="block font-semibold mb-1">ملاحظات الإقفال (اختياري)</label>
           <input
             type="text"
             v-model="closingNotes"
             placeholder="مثال: تم الجرد والمطابقة مع المحاسب المالي..."
-            class="w-full text-xs p-2.5 rounded-xl border border-brand-gray/20 dark:border-white/10 bg-transparent text-brand-dark dark:text-white"
+            class="w-full text-xs p-2.5 rounded-xl border border-brand-gray/20 dark:border-white/10 bg-transparent text-brand-dark dark:text-white focus:border-brand-accent transition-all"
           />
         </div>
-
-        <div class="flex justify-end gap-2 pt-4 border-t border-brand-gray/10 dark:border-white/10">
-          <Button
-            type="button"
-            @click="showCloseModal = false"
-            class="!text-xs !px-4 !py-2 !rounded-xl !text-slate-600 dark:!text-slate-300 !bg-transparent hover:!bg-black/5 dark:hover:!bg-white/5 cursor-pointer"
-          >
-            إلغاء
-          </Button>
-          <Button
-            type="submit"
-            :disabled="closingStore.loading"
-            class="!text-xs !px-5 !py-2 !rounded-xl !bg-purple-600 hover:!bg-purple-700 !text-white !font-bold cursor-pointer"
-          >
-            تأكيد الإقفال والاعتماد
-          </Button>
-        </div>
       </form>
-    </Dialog>
 
-    <!-- 2. Modal: Confirm Month Reopen (Admin) -->
-    <Dialog
-      v-model:visible="showReopenModal"
-      modal
-      header="إعادة فتح الشهر المقفل"
-      :style="{ width: '450px' }"
-      class="!rounded-2xl !bg-brand-white dark:!bg-[#1a202c] !text-brand-dark dark:!text-white"
+      <template #footer="{ close }">
+        <button
+          type="button"
+          @click="close"
+          class="px-4 py-2.5 rounded-xl text-xs font-bold text-slate-500 hover:text-slate-800 dark:hover:text-white cursor-pointer"
+        >
+          إلغاء
+        </button>
+        <button
+          type="submit"
+          form="closeMonthForm"
+          :disabled="closingStore.loading"
+          class="px-5 py-2.5 rounded-xl text-xs font-bold bg-purple-600 hover:bg-purple-700 text-white cursor-pointer shadow-sm disabled:opacity-50"
+        >
+          تأكيد الإقفال والاعتماد
+        </button>
+      </template>
+    </OhdaModal>
+
+    <!-- 2. Modal: Confirm Month Reopen (Admin) using OhdaModal -->
+    <OhdaModal
+      :visible="showReopenModal"
+      @close="showReopenModal = false"
+      title="إعادة فتح الشهر المقفل"
+      :description="`إعادة فتح شهر ${selectedMonth} / ${selectedYear}`"
+      :icon="Unlock"
+      max-width="max-w-md"
     >
-      <form @submit.prevent="submitReopenMonth" class="space-y-4 pt-2">
+      <form @submit.prevent="submitReopenMonth" id="reopenMonthForm" class="space-y-4 text-xs">
         <div class="p-3 bg-amber-500/10 border border-amber-500/20 rounded-xl text-xs text-amber-800 dark:text-amber-300">
-          هل تريد بالتأكيد إعادة فتح شهر {{ selectedMonth }} / {{ selectedYear }} للسماح بإجراء تعديلات؟
+          هل تريد بالتأكيد إعادة فتح هذا الشهر للسماح بإجراء تعديلات؟
         </div>
 
         <div>
-          <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">سبب إعادة الفتح *</label>
+          <label class="block font-semibold mb-1">سبب إعادة الفتح *</label>
           <input
             type="text"
             v-model="reopenReason"
             required
             placeholder="اكتب سبب إعادة الفتح للإدارة..."
-            class="w-full text-xs p-2.5 rounded-xl border border-brand-gray/20 dark:border-white/10 bg-transparent text-brand-dark dark:text-white"
+            class="w-full text-xs p-2.5 rounded-xl border border-brand-gray/20 dark:border-white/10 bg-transparent text-brand-dark dark:text-white focus:border-brand-accent transition-all"
           />
         </div>
-
-        <div class="flex justify-end gap-2 pt-4 border-t border-brand-gray/10 dark:border-white/10">
-          <Button
-            type="button"
-            @click="showReopenModal = false"
-            class="!text-xs !px-4 !py-2 !rounded-xl !text-slate-600 dark:!text-slate-300 !bg-transparent hover:!bg-black/5 dark:hover:!bg-white/5 cursor-pointer"
-          >
-            إلغاء
-          </Button>
-          <Button
-            type="submit"
-            :disabled="closingStore.loading"
-            class="!text-xs !px-5 !py-2 !rounded-xl !bg-amber-600 hover:!bg-amber-700 !text-white !font-bold cursor-pointer"
-          >
-            تأكيد إعادة الفتح
-          </Button>
-        </div>
       </form>
-    </Dialog>
+
+      <template #footer="{ close }">
+        <button
+          type="button"
+          @click="close"
+          class="px-4 py-2.5 rounded-xl text-xs font-bold text-slate-500 hover:text-slate-800 dark:hover:text-white cursor-pointer"
+        >
+          إلغاء
+        </button>
+        <button
+          type="submit"
+          form="reopenMonthForm"
+          :disabled="closingStore.loading"
+          class="px-5 py-2.5 rounded-xl text-xs font-bold bg-amber-600 hover:bg-amber-700 text-white cursor-pointer shadow-sm disabled:opacity-50"
+        >
+          تأكيد إعادة الفتح
+        </button>
+      </template>
+    </OhdaModal>
   </div>
 </template>
 
 <script setup>
 import { ref, computed, onMounted } from "vue";
 import { useOhdaClosingStore } from "../stores/useOhdaClosingStore";
-import Dialog from "primevue/dialog";
-import Button from "primevue/button";
+import OhdaModal from "../components/OhdaModal.vue";
 import {
   CalendarCheck2,
   Lock,

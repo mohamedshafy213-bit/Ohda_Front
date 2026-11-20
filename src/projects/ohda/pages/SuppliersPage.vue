@@ -1,281 +1,595 @@
 <template>
   <div class="space-y-6">
-    <!-- Header Title Bar -->
-    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-brand-white dark:bg-white/5 p-6 rounded-2xl border border-brand-gray/10 shadow-sm">
-      <div>
-        <h1 class="text-2xl font-bold text-brand-dark dark:text-white flex items-center gap-3">
-          <Truck class="w-7 h-7 text-brand-accent" />
-          {{ $t('ohda.suppliers.title') }}
-        </h1>
-        <p class="text-xs text-brand-gray dark:text-slate-400 mt-1">
-          {{ $t('ohda.suppliers.subTitle') }}
-        </p>
+    <!-- Header Card -->
+    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-brand-white dark:bg-brand-dark p-6 rounded-3xl border border-brand-gray/15 shadow-xs">
+      <div class="flex items-center gap-3">
+        <div class="w-12 h-12 rounded-2xl bg-brand-soft dark:bg-brand-accent/15 text-brand-accent flex items-center justify-center border border-brand-accent/20 shrink-0">
+          <Truck class="w-6 h-6" />
+        </div>
+        <div>
+          <h1 class="text-xl font-bold text-brand-dark dark:text-white">الموردين وحسابات المشتريات</h1>
+          <p class="text-xs text-brand-gray dark:text-brand-gray/80 mt-0.5">
+            إدارة بيانات الموردين، متابعة مديونيات وفواتير الشراء، سداد الدفعات، وكشوفات الحساب
+          </p>
+        </div>
       </div>
 
-      <Button
-        @click="openAddModal"
-        class="!bg-brand-accent hover:!bg-brand-accent/90 !text-brand-dark !font-bold !rounded-xl !px-4 !py-2.5 !text-xs flex items-center gap-2 shadow-md shadow-brand-accent/10 cursor-pointer"
-      >
-        <Plus class="w-4 h-4" />
-        {{ $t('ohda.suppliers.addSupplier') }}
-      </Button>
-    </div>
-
-    <!-- Search & Filter Bar -->
-    <div class="bg-brand-white dark:bg-white/5 border border-brand-gray/10 p-4 rounded-2xl shadow-sm">
-      <searchField v-model="searchQuery" :placeholder="$t('ohda.common.search')" />
-    </div>
-
-    <!-- Loading Skeleton -->
-    <LoadingSkeleton v-if="inventoryStore.loading" type="cards" :count="6" />
-
-    <!-- Empty State -->
-    <EmptyState
-      v-else-if="filteredSuppliers.length === 0"
-      :title="$t('ohda.suppliers.emptySuppliers')"
-      icon="Truck"
-      :actionLabel="$t('ohda.suppliers.addSupplier')"
-      @action="openAddModal"
-    />
-
-    <!-- Suppliers Grid Cards -->
-    <div v-else class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-      <div
-        v-for="sup in filteredSuppliers"
-        :key="sup.id"
-        class="bg-brand-white dark:bg-white/5 border border-brand-gray/10 rounded-2xl p-5 shadow-sm space-y-4 relative group hover:border-brand-accent/40 dark:hover:border-brand-accent/40 transition-all"
-      >
-        <div class="flex items-center justify-between">
-          <div class="flex items-center gap-3 min-w-0">
-            <div class="w-10 h-10 bg-blue-500/10 dark:bg-blue-500/20 rounded-xl flex items-center justify-center text-blue-600 dark:text-blue-400 border border-blue-500/20 shrink-0">
-              <Truck class="w-5 h-5" />
-            </div>
-            <div class="min-w-0">
-              <h3 class="font-bold text-brand-dark dark:text-white text-sm truncate">{{ sup.companyName }}</h3>
-              <span class="text-xs text-brand-gray dark:text-slate-400 block truncate">{{ sup.contactPerson }}</span>
-            </div>
-          </div>
-
-          <div class="flex items-center gap-1 opacity-85 group-hover:opacity-100 transition-opacity">
-            <editButton @click="editSupplier(sup)" />
-            <deleteButton @click="promptDelete(sup)" />
-          </div>
-        </div>
-
-        <div class="space-y-2 text-xs text-brand-dark dark:text-slate-300 pt-2 border-t border-brand-gray/10 dark:border-white/10">
-          <div v-if="sup.phone" class="flex items-center gap-2">
-            <Phone class="w-3.5 h-3.5 text-brand-accent shrink-0" />
-            <span class="font-mono text-xs">{{ sup.phone }}</span>
-          </div>
-          <div v-if="sup.email" class="flex items-center gap-2 truncate">
-            <Mail class="w-3.5 h-3.5 text-blue-500 shrink-0" />
-            <span class="font-mono text-xs truncate">{{ sup.email }}</span>
-          </div>
-          <div v-if="sup.address" class="flex items-center gap-2">
-            <MapPin class="w-3.5 h-3.5 text-brand-gray shrink-0" />
-            <span class="text-brand-gray dark:text-slate-400 truncate">{{ sup.address }}</span>
-          </div>
-        </div>
+      <div class="flex items-center gap-3">
+        <button
+          type="button"
+          @click="openAddModal"
+          class="px-4 py-2.5 bg-brand-accent hover:bg-brand-accent/90 text-brand-dark font-bold rounded-2xl text-xs flex items-center gap-2 shadow-sm transition-all cursor-pointer"
+        >
+          <Plus class="w-4 h-4" />
+          <span>إضافة مورد جديد</span>
+        </button>
       </div>
     </div>
 
-    <!-- Volt Dialog for Supplier Modal -->
-    <Dialog
-      v-model:visible="showModal"
-      modal
-      :header="isEditing ? $t('ohda.suppliers.editSupplier') : $t('ohda.suppliers.addSupplier')"
-      class="max-w-md w-full !bg-brand-white dark:!bg-brand-dark !border-brand-gray/15 !text-brand-dark dark:!text-white rounded-3xl overflow-hidden shadow-2xl"
+    <!-- Suppliers Table -->
+    <OhdaDataTable
+      :columns="tableColumns"
+      :items="inventoryStore.suppliers"
+      :loading="inventoryStore.loading"
+      :rowsPerPage="10"
+      emptyTitle="لا يوجد موردين مسجلين"
+      emptyMessage="قم بإضافة موردين لتسجيل فواتير الشراء وتوريد قطع الغيار."
+      :emptyIcon="Truck"
     >
-      <form @submit.prevent="saveSupplier" class="space-y-4 text-xs">
+      <template #companyName="{ data }">
         <div>
-          <label class="block font-semibold text-brand-dark dark:text-white mb-1.5 required">
-            {{ $t('ohda.suppliers.companyName') }}
-          </label>
-          <InputText
-            v-model="form.companyName"
-            required
-            class="w-full !bg-brand-light dark:!bg-brand-dark/50 !border-brand-gray/25 focus:!border-brand-accent !text-brand-dark dark:!text-white rounded-xl"
-            autofocus
-          />
+          <span class="font-bold text-brand-dark dark:text-white block">{{ data.companyName }}</span>
+          <span v-if="data.contactName" class="text-[10px] text-brand-gray">
+            المسؤول: {{ data.contactName }}
+          </span>
         </div>
+      </template>
 
-        <div>
-          <label class="block font-semibold text-brand-dark dark:text-white mb-1.5 required">
-            {{ $t('ohda.suppliers.contactPerson') }}
-          </label>
-          <InputText
-            v-model="form.contactPerson"
-            required
-            class="w-full !bg-brand-light dark:!bg-brand-dark/50 !border-brand-gray/25 focus:!border-brand-accent !text-brand-dark dark:!text-white rounded-xl"
-          />
+      <template #phone="{ data }">
+        <span class="font-mono text-xs font-semibold">{{ data.phone || '—' }}</span>
+      </template>
+
+      <template #currentBalance="{ data }">
+        <span
+          class="font-mono font-bold px-2.5 py-1 rounded-xl text-xs"
+          :class="getBalanceBadgeClass(data.currentBalance)"
+        >
+          {{ formatCurrency(Math.abs(data.currentBalance)) }} ج.م
+        </span>
+      </template>
+
+      <template #balanceStatus="{ data }">
+        <span
+          class="text-[11px] font-semibold"
+          :class="data.currentBalance > 0 ? 'text-amber-600 dark:text-amber-400 font-bold' : data.currentBalance < 0 ? 'text-emerald-600' : 'text-brand-gray'"
+        >
+          {{ data.balanceStatus }}
+        </span>
+      </template>
+
+      <template #actions="{ data }">
+        <div class="flex items-center justify-center gap-1.5">
+          <!-- Record Payment to Supplier -->
+          <button
+            type="button"
+            @click="openPaymentModal(data)"
+            class="px-2.5 py-1.5 bg-amber-500/10 hover:bg-amber-500 text-amber-700 hover:text-white rounded-xl text-[11px] font-bold transition-colors cursor-pointer flex items-center gap-1"
+            title="سداد دفعة للمورد"
+          >
+            <Banknote class="w-3.5 h-3.5" />
+            <span>سداد دفعة</span>
+          </button>
+
+          <!-- Statement Action -->
+          <button
+            type="button"
+            @click="openStatementModal(data)"
+            class="p-1.5 rounded-lg text-brand-dark hover:bg-brand-light dark:hover:bg-white/10 transition-colors"
+            title="كشف حساب المورد"
+          >
+            <FileText class="w-4 h-4" />
+          </button>
+
+          <!-- Edit Action -->
+          <button
+            type="button"
+            @click="editSupplier(data)"
+            class="p-1.5 rounded-lg text-brand-dark hover:bg-brand-light dark:hover:bg-white/10 transition-colors"
+            title="تعديل بيانات المورد"
+          >
+            <Edit2 class="w-4 h-4" />
+          </button>
+
+          <!-- Delete Action -->
+          <button
+            type="button"
+            @click="promptDelete(data)"
+            class="p-1.5 rounded-lg text-red-500 hover:bg-red-500/10 transition-colors"
+            title="حذف المورد"
+          >
+            <Trash2 class="w-4 h-4" />
+          </button>
         </div>
+      </template>
 
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+      <template #empty-action>
+        <button
+          type="button"
+          @click="openAddModal"
+          class="px-4 py-2 bg-brand-accent text-brand-dark font-bold text-xs rounded-xl cursor-pointer"
+        >
+          إضافة أول مورد
+        </button>
+      </template>
+    </OhdaDataTable>
+
+    <!-- Create / Edit Supplier Modal -->
+    <OhdaModal
+      v-model:visible="showModal"
+      :title="isEditing ? 'تعديل بيانات المورد' : 'إضافة مورد جديد'"
+      :description="isEditing ? 'تعديل بيانات الشركة ومعلومات الاتصال للمورد' : 'تسجيل شركة توريد أو تاجر قطع غيار جديد'"
+      :icon="Truck"
+      maxWidth="max-w-2xl"
+    >
+      <form id="supplierForm" @submit.prevent="saveSupplier" class="space-y-4">
+        <!-- 2-Column Form Grid -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <label class="block font-semibold text-brand-dark dark:text-white mb-1.5 required">
-              {{ $t('ohda.suppliers.phone') }}
+            <label class="block text-xs font-semibold text-brand-dark dark:text-white mb-1.5">
+              اسم الشركة / المورد <span class="text-red-500">*</span>
             </label>
-            <InputText
-              v-model="form.phone"
+            <input
+              v-model="form.companyName"
+              type="text"
               required
-              class="w-full !bg-brand-light dark:!bg-brand-dark/50 !border-brand-gray/25 focus:!border-brand-accent !text-brand-dark dark:!text-white rounded-xl font-mono"
+              placeholder="مثال: شركة النور لقطع الغيار..."
+              class="w-full bg-brand-light dark:bg-white/5 border border-brand-gray/25 rounded-xl px-3 py-2 text-xs text-brand-dark dark:text-white"
             />
           </div>
+
           <div>
-            <label class="block font-semibold text-brand-dark dark:text-white mb-1.5 required">
-              {{ $t('ohda.suppliers.email') }}
-            </label>
-            <InputText
+            <label class="block text-xs font-semibold text-brand-dark dark:text-white mb-1.5">الشخص المسؤول / مندوب المبيعات</label>
+            <input
+              v-model="form.contactName"
+              type="text"
+              placeholder="اسم مندوب الشركة..."
+              class="w-full bg-brand-light dark:bg-white/5 border border-brand-gray/25 rounded-xl px-3 py-2 text-xs text-brand-dark dark:text-white"
+            />
+          </div>
+
+          <div>
+            <label class="block text-xs font-semibold text-brand-dark dark:text-white mb-1.5">رقم الهاتف</label>
+            <input
+              v-model="form.phone"
+              type="tel"
+              placeholder="01xxxxxxxxx"
+              class="w-full bg-brand-light dark:bg-white/5 border border-brand-gray/25 rounded-xl px-3 py-2 text-xs text-brand-dark dark:text-white font-mono"
+            />
+          </div>
+
+          <div>
+            <label class="block text-xs font-semibold text-brand-dark dark:text-white mb-1.5">الرقم الضريبي / السجل التجاري</label>
+            <input
+              v-model="form.taxNumber"
+              type="text"
+              placeholder="رقم السجل أو البطاقة الضريبية..."
+              class="w-full bg-brand-light dark:bg-white/5 border border-brand-gray/25 rounded-xl px-3 py-2 text-xs text-brand-dark dark:text-white font-mono"
+            />
+          </div>
+
+          <div>
+            <label class="block text-xs font-semibold text-brand-dark dark:text-white mb-1.5">البريد الإلكتروني</label>
+            <input
               v-model="form.email"
               type="email"
-              required
-              class="w-full !bg-brand-light dark:!bg-brand-dark/50 !border-brand-gray/25 focus:!border-brand-accent !text-brand-dark dark:!text-white rounded-xl font-mono"
+              placeholder="info@supplier.com"
+              class="w-full bg-brand-light dark:bg-white/5 border border-brand-gray/25 rounded-xl px-3 py-2 text-xs text-brand-dark dark:text-white"
+            />
+          </div>
+
+          <div v-if="!isEditing">
+            <label class="block text-xs font-semibold text-brand-dark dark:text-white mb-1.5">رصيد افتتاحي مستحق للمورد (ج.م)</label>
+            <input
+              v-model.number="form.initialBalance"
+              type="number"
+              step="0.01"
+              placeholder="0.00"
+              class="w-full bg-brand-light dark:bg-white/5 border border-brand-gray/25 rounded-xl px-3 py-2 text-xs text-brand-dark dark:text-white font-mono"
             />
           </div>
         </div>
 
         <div>
-          <label class="block font-semibold text-brand-dark dark:text-white mb-1.5">
-            {{ $t('ohda.suppliers.address') }}
-          </label>
-          <InputText
+          <label class="block text-xs font-semibold text-brand-dark dark:text-white mb-1.5">العنوان وملاحظات التوريد</label>
+          <input
             v-model="form.address"
-            class="w-full !bg-brand-light dark:!bg-brand-dark/50 !border-brand-gray/25 focus:!border-brand-accent !text-brand-dark dark:!text-white rounded-xl"
+            type="text"
+            placeholder="مقر الشركة أو مواعيد التوريد..."
+            class="w-full bg-brand-light dark:bg-white/5 border border-brand-gray/25 rounded-xl px-3 py-2 text-xs text-brand-dark dark:text-white"
+          />
+        </div>
+      </form>
+
+      <template #footer="{ close }">
+        <button
+          type="button"
+          @click="close"
+          class="px-4 py-2 border border-brand-gray/20 rounded-xl text-xs font-semibold hover:bg-brand-light transition-colors cursor-pointer"
+        >
+          إلغاء
+        </button>
+        <button
+          type="submit"
+          form="supplierForm"
+          :disabled="submitting"
+          class="px-5 py-2 bg-brand-accent hover:bg-brand-accent/90 text-brand-dark font-bold rounded-xl text-xs flex items-center gap-2 cursor-pointer shadow-sm disabled:opacity-50"
+        >
+          <RefreshCw v-if="submitting" class="w-4 h-4 animate-spin" />
+          <span>{{ isEditing ? 'تحديث البيانات' : 'حفظ المورد' }}</span>
+        </button>
+      </template>
+    </OhdaModal>
+
+    <!-- Record Payment to Supplier Modal -->
+    <OhdaModal
+      v-model:visible="showPaymentModal"
+      title="سداد دفعة نقدية للمورد"
+      :description="`المورد: ${targetSupplier?.companyName || ''} - الرصيد المستحق له حالياً: ${formatCurrency(targetSupplier?.currentBalance || 0)} ج.م`"
+      :icon="Banknote"
+      maxWidth="max-w-md"
+    >
+      <form id="supplierPaymentForm" @submit.prevent="submitPaymentForm" class="space-y-4">
+        <div>
+          <label class="block text-xs font-semibold text-brand-dark dark:text-white mb-1.5">
+            المبلغ المسدد (ج.م) <span class="text-red-500">*</span>
+          </label>
+          <input
+            v-model.number="paymentForm.amount"
+            type="number"
+            min="1"
+            step="0.01"
+            required
+            class="w-full bg-brand-light dark:bg-white/5 border border-brand-gray/25 rounded-xl px-3 py-2.5 text-sm font-bold text-amber-600 font-mono"
           />
         </div>
 
-        <div class="flex items-center justify-end gap-2.5 pt-4 border-t border-brand-gray/10 dark:border-white/10">
-          <SecondaryButton type="button" :disabled="isSaving" @click="showModal = false">
-            {{ $t('ohda.common.cancel') }}
-          </SecondaryButton>
-          <Button
-            type="submit"
-            :disabled="isSaving"
-            class="!bg-brand-accent hover:!bg-brand-accent/90 !text-brand-dark !font-bold flex items-center gap-2 shadow-md shadow-brand-accent/15"
-          >
-            <div v-if="isSaving" class="animate-spin rounded-full h-3.5 w-3.5 border-2 border-brand-dark/30 border-t-brand-dark"></div>
-            <span>{{ isSaving ? $t('ohda.common.saving') : $t('ohda.common.save') }}</span>
-          </Button>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-semibold text-brand-dark dark:text-white mb-1.5">طريقة الصرف</label>
+            <select
+              v-model="paymentForm.paymentMethod"
+              class="w-full bg-brand-light dark:bg-white/5 border border-brand-gray/25 rounded-xl px-3 py-2 text-xs text-brand-dark dark:text-white"
+            >
+              <option :value="1">نقدي (كاش)</option>
+              <option :value="2">شيك بنكي</option>
+              <option :value="3">محفظة إنستاباي</option>
+              <option :value="4">تحويل بنكي</option>
+            </select>
+          </div>
+
+          <div>
+            <label class="block text-xs font-semibold text-brand-dark dark:text-white mb-1.5">الصرف من خزينة</label>
+            <select
+              v-model="paymentForm.financialAccountId"
+              class="w-full bg-brand-light dark:bg-white/5 border border-brand-gray/25 rounded-xl px-3 py-2 text-xs text-brand-dark dark:text-white"
+            >
+              <option value="">الخزينة الرئيسية</option>
+              <option v-for="acc in financeStore.accounts" :key="acc.id" :value="acc.id">
+                {{ acc.name }}
+              </option>
+            </select>
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-brand-dark dark:text-white mb-1.5">رقم السند / الشيك (اختياري)</label>
+          <input
+            v-model="paymentForm.reference"
+            type="text"
+            placeholder="سند صرف أو رقم الشيك..."
+            class="w-full bg-brand-light dark:bg-white/5 border border-brand-gray/25 rounded-xl px-3 py-2 text-xs text-brand-dark dark:text-white"
+          />
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-brand-dark dark:text-white mb-1.5">ملاحظات</label>
+          <input
+            v-model="paymentForm.notes"
+            type="text"
+            placeholder="ملاحظات السداد..."
+            class="w-full bg-brand-light dark:bg-white/5 border border-brand-gray/25 rounded-xl px-3 py-2 text-xs text-brand-dark dark:text-white"
+          />
         </div>
       </form>
-    </Dialog>
 
-    <!-- Delete Confirmation Dialog -->
-    <DeleteDialog
-      v-model="showDeleteDialog"
-      :itemType="$t('ohda.suppliers.title')"
-      :itemName="selectedSupplierForDelete?.companyName || ''"
-      :canDelete="getSupplierProductsCount(selectedSupplierForDelete?.id) === 0"
-      :warningMessage="getSupplierProductsCount(selectedSupplierForDelete?.id) > 0 ? `لا يمكن حذف هذا المورد لأنه مرتبط بـ (${getSupplierProductsCount(selectedSupplierForDelete?.id)}) أصناف في المخزون. يرجى تعديل الأصناف أولاً.` : ''"
-      :confirm="handleDelete"
-    />
+      <template #footer="{ close }">
+        <button
+          type="button"
+          @click="close"
+          class="px-4 py-2 border border-brand-gray/20 rounded-xl text-xs font-semibold hover:bg-brand-light transition-colors cursor-pointer"
+        >
+          إلغاء
+        </button>
+        <button
+          type="submit"
+          form="supplierPaymentForm"
+          :disabled="submitting"
+          class="px-5 py-2 bg-amber-600 hover:bg-amber-700 text-white font-bold rounded-xl text-xs flex items-center gap-2 cursor-pointer shadow-sm disabled:opacity-50"
+        >
+          <RefreshCw v-if="submitting" class="w-4 h-4 animate-spin" />
+          <span>تأكيد الصرف للمورد</span>
+        </button>
+      </template>
+    </OhdaModal>
+
+    <!-- Supplier Account Statement Modal -->
+    <OhdaModal
+      v-model:visible="showStatementModal"
+      :title="`كشف حساب المورد: ${targetSupplier?.companyName || ''}`"
+      :description="`المسؤول: ${targetSupplier?.contactName || '—'} - الرصيد القائم: ${formatCurrency(targetSupplier?.currentBalance || 0)} ج.م`"
+      :icon="FileText"
+      maxWidth="max-w-4xl"
+    >
+      <div class="space-y-4">
+        <!-- Balance Summary Bar -->
+        <div class="flex items-center justify-between p-4 bg-brand-light/40 dark:bg-white/5 rounded-2xl border border-brand-gray/10 text-xs">
+          <div>
+            <span class="text-brand-gray block text-[10px]">الرصيد النهائي المستحق للمورد</span>
+            <span
+              class="font-mono font-bold text-base"
+              :class="targetSupplier?.currentBalance > 0 ? 'text-amber-600 dark:text-amber-400' : 'text-emerald-600'"
+            >
+              {{ targetSupplier?.balanceStatus }}
+            </span>
+          </div>
+
+          <button
+            type="button"
+            @click="openPaymentModal(targetSupplier)"
+            class="px-3.5 py-2 bg-amber-600 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 cursor-pointer shadow-xs"
+          >
+            <Banknote class="w-4 h-4" />
+            <span>سداد دفعة الآن</span>
+          </button>
+        </div>
+
+        <!-- Statement Table -->
+        <div class="border border-brand-gray/15 rounded-xl overflow-hidden">
+          <table class="w-full text-right text-xs">
+            <thead class="bg-brand-light/70 dark:bg-white/5 text-brand-gray font-bold">
+              <tr>
+                <th class="py-2.5 px-3">التاريخ</th>
+                <th class="py-2.5 px-3">نوع الحركة</th>
+                <th class="py-2.5 px-3">المرجع / البيان</th>
+                <th class="py-2.5 px-3 text-center text-amber-600">قيمة المشتريات (دائن +)</th>
+                <th class="py-2.5 px-3 text-center text-emerald-600">المسدد / المرتجع (مدين -)</th>
+                <th class="py-2.5 px-3 text-center">الرصيد بعد الحركة</th>
+              </tr>
+            </thead>
+            <tbody v-if="statementLoading" class="divide-y divide-brand-gray/10">
+              <tr v-for="n in 3" :key="n" class="animate-pulse">
+                <td colspan="6" class="py-3 px-3 text-center text-brand-gray">جاري تحميل كشف الحساب...</td>
+              </tr>
+            </tbody>
+            <tbody v-else-if="statementItems.length > 0" class="divide-y divide-brand-gray/10">
+              <tr v-for="(item, idx) in statementItems" :key="idx" class="hover:bg-brand-light/30">
+                <td class="py-2 px-3 font-mono text-[11px]">{{ formatDate(item.date) }}</td>
+                <td class="py-2 px-3 font-semibold">{{ item.type }}</td>
+                <td class="py-2 px-3 text-brand-gray">{{ item.reference }} {{ item.notes ? `(${item.notes})` : '' }}</td>
+                <td class="py-2 px-3 text-center font-mono font-bold text-amber-600">
+                  {{ item.credit > 0 ? `${formatCurrency(item.credit)} ج.م` : '—' }}
+                </td>
+                <td class="py-2 px-3 text-center font-mono font-bold text-emerald-600">
+                  {{ item.debit > 0 ? `${formatCurrency(item.debit)} ج.م` : '—' }}
+                </td>
+                <td class="py-2 px-3 text-center font-mono font-bold text-brand-dark dark:text-white">
+                  {{ formatCurrency(item.balanceAfter) }} ج.م
+                </td>
+              </tr>
+            </tbody>
+            <tbody v-else>
+              <tr>
+                <td colspan="6" class="py-8 text-center text-brand-gray">لا توجد حركات مالية مسجلة لهذا المورد حتى الآن</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <template #footer="{ close }">
+        <button
+          type="button"
+          @click="close"
+          class="px-5 py-2 bg-brand-light dark:bg-white/10 rounded-xl text-xs font-semibold cursor-pointer"
+        >
+          إلغاء
+        </button>
+      </template>
+    </OhdaModal>
   </div>
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from "vue";
+import { ref, onMounted } from "vue";
+import { useToast } from "primevue/usetoast";
 import { useOhdaInventoryStore } from "../stores/useOhdaInventoryStore";
-import { useToastStore } from "@/stores/toastStore";
-import { useI18n } from "vue-i18n";
-import DeleteDialog from "@/components/DeleteDialog.vue";
-import EmptyState from "@/components/EmptyState.vue";
-import LoadingSkeleton from "@/components/LoadingSkeleton.vue";
+import { useOhdaFinanceStore } from "../stores/useOhdaFinanceStore";
+import OhdaDataTable from "../components/OhdaDataTable.vue";
+import OhdaModal from "../components/OhdaModal.vue";
+import {
+  Truck,
+  Plus,
+  Banknote,
+  FileText,
+  Edit2,
+  Trash2,
+  RefreshCw
+} from "lucide-vue-next";
 
-const { t } = useI18n();
+const toast = useToast();
 const inventoryStore = useOhdaInventoryStore();
-const toastStore = useToastStore();
+const financeStore = useOhdaFinanceStore();
 
-const searchQuery = ref("");
 const showModal = ref(false);
+const showPaymentModal = ref(false);
+const showStatementModal = ref(false);
 const isEditing = ref(false);
-const isSaving = ref(false);
-const editingId = ref(null);
+const targetSupplier = ref(null);
+const submitting = ref(false);
+const statementLoading = ref(false);
+const statementItems = ref([]);
 
-const showDeleteDialog = ref(false);
-const selectedSupplierForDelete = ref(null);
+const tableColumns = [
+  { field: "companyName", header: "اسم المورد / الشركة", sortable: true },
+  { field: "phone", header: "رقم الهاتف", width: "140px", sortable: true },
+  { field: "currentBalance", header: "الرصيد القائم", width: "140px", align: "center", sortable: true },
+  { field: "balanceStatus", header: "الحالة المالية للمورد", width: "180px" },
+  { field: "actions", header: "الإجراءات", width: "190px", align: "center" }
+];
 
 const form = ref({
   companyName: "",
-  contactPerson: "",
+  contactName: "",
   phone: "",
   email: "",
-  address: ""
+  taxNumber: "",
+  address: "",
+  initialBalance: 0
 });
 
-onMounted(() => {
-  inventoryStore.fetchSuppliers();
-  inventoryStore.fetchProducts();
+const paymentForm = ref({
+  amount: 0,
+  paymentMethod: 1,
+  financialAccountId: "",
+  reference: "",
+  notes: ""
 });
 
-const filteredSuppliers = computed(() => {
-  if (!searchQuery.value?.trim()) return inventoryStore.suppliers || [];
-  const q = searchQuery.value.toLowerCase().trim();
-  return (inventoryStore.suppliers || []).filter(
-    s => s.companyName?.toLowerCase().includes(q) ||
-         s.contactPerson?.toLowerCase().includes(q) ||
-         s.phone?.toLowerCase().includes(q) ||
-         s.email?.toLowerCase().includes(q) ||
-         s.address?.toLowerCase().includes(q)
-  );
+onMounted(async () => {
+  await Promise.all([
+    inventoryStore.fetchSuppliers(),
+    financeStore.fetchAccounts()
+  ]);
 });
-
-function getSupplierProductsCount(supId) {
-  if (!supId) return 0;
-  return (inventoryStore.products || []).filter(p => p.supplierId === supId).length;
-}
 
 function openAddModal() {
   isEditing.value = false;
-  editingId.value = null;
-  form.value = { companyName: "", contactPerson: "", phone: "", email: "", address: "" };
+  form.value = {
+    companyName: "",
+    contactName: "",
+    phone: "",
+    email: "",
+    taxNumber: "",
+    address: "",
+    initialBalance: 0
+  };
   showModal.value = true;
 }
 
-function editSupplier(sup) {
+function editSupplier(s) {
   isEditing.value = true;
-  editingId.value = sup.id;
-  form.value = { ...sup };
+  targetSupplier.value = s;
+  form.value = {
+    companyName: s.companyName,
+    contactName: s.contactName || "",
+    phone: s.phone || "",
+    email: s.email || "",
+    taxNumber: s.taxNumber || "",
+    address: s.address || ""
+  };
   showModal.value = true;
 }
 
 async function saveSupplier() {
-  if (!form.value.companyName?.trim()) return;
-  isSaving.value = true;
-  try {
-    if (isEditing.value) {
-      await inventoryStore.updateSupplier(editingId.value, form.value);
-    } else {
-      await inventoryStore.addSupplier(form.value);
-    }
-    toastStore.addSuccessToast(t("ohda.common.operationSuccess"));
+  submitting.value = true;
+  let res;
+  if (isEditing.value) {
+    res = await inventoryStore.updateSupplier(targetSupplier.value.id, form.value);
+  } else {
+    res = await inventoryStore.addSupplier(form.value);
+  }
+  submitting.value = false;
+
+  if (res.success) {
+    toast.add({ severity: "success", summary: "تم بنجاح", detail: "تم حفظ بيانات المورد", life: 3000 });
     showModal.value = false;
-  } catch (err) {
-    console.error("Save supplier failed", err);
-  } finally {
-    isSaving.value = false;
+    await inventoryStore.fetchSuppliers();
+  } else {
+    toast.add({ severity: "error", summary: "خطأ", detail: res.message, life: 4000 });
   }
 }
 
-function promptDelete(sup) {
-  selectedSupplierForDelete.value = sup;
-  showDeleteDialog.value = true;
+function openPaymentModal(s) {
+  targetSupplier.value = s;
+  paymentForm.value = {
+    amount: s.currentBalance > 0 ? s.currentBalance : 0,
+    paymentMethod: 1,
+    financialAccountId: "",
+    reference: "",
+    notes: ""
+  };
+  showPaymentModal.value = true;
 }
 
-async function handleDelete() {
-  if (!selectedSupplierForDelete.value) return;
-  try {
-    const res = await inventoryStore.deleteSupplier(selectedSupplierForDelete.value.id);
-    if (res && res.success === false) {
-      toastStore.addErrorToast(res.message || "تعذر حذف المورد");
-      return res;
+async function submitPaymentForm() {
+  if (paymentForm.value.amount <= 0) {
+    toast.add({ severity: "warn", summary: "تنبيه", detail: "يرجى إدخال مبلغ سداد أكبر من صفر", life: 3000 });
+    return;
+  }
+
+  submitting.value = true;
+  const res = await inventoryStore.recordSupplierPayment({
+    supplierId: targetSupplier.value.id,
+    amount: paymentForm.value.amount,
+    paymentMethod: paymentForm.value.paymentMethod,
+    financialAccountId: paymentForm.value.financialAccountId ? parseInt(paymentForm.value.financialAccountId) : null,
+    reference: paymentForm.value.reference,
+    notes: paymentForm.value.notes
+  });
+  submitting.value = false;
+
+  if (res.success) {
+    toast.add({ severity: "success", summary: "تم الصرف", detail: res.message, life: 4000 });
+    showPaymentModal.value = false;
+    await inventoryStore.fetchSuppliers();
+    await financeStore.fetchAccounts();
+  } else {
+    toast.add({ severity: "error", summary: "خطأ", detail: res.message, life: 4000 });
+  }
+}
+
+async function openStatementModal(s) {
+  targetSupplier.value = s;
+  showStatementModal.value = true;
+  statementLoading.value = true;
+  statementItems.value = await inventoryStore.fetchSupplierStatement(s.id);
+  statementLoading.value = false;
+}
+
+async function promptDelete(s) {
+  if (confirm(`هل أنت متأكد من حذف المورد "${s.companyName}"؟`)) {
+    const res = await inventoryStore.deleteSupplier(s.id);
+    if (res.success) {
+      toast.add({ severity: "success", summary: "تم الحذف", detail: "تم حذف المورد بنجاح", life: 3000 });
+    } else {
+      toast.add({ severity: "error", summary: "تعذر الحذف", detail: res.message, life: 4000 });
     }
-    toastStore.addSuccessToast(t("ohda.common.operationSuccess"));
-  } catch (err) {
-    console.error("Delete supplier failed", err);
-    toastStore.addErrorToast(err?.response?.data?.returnMessage || err?.message || "تعذر حذف المورد");
-    throw err;
-  } finally {
-    selectedSupplierForDelete.value = null;
   }
+}
+
+function formatCurrency(val) {
+  if (!val && val !== 0) return "0.00";
+  return Number(val).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+
+function formatDate(val) {
+  if (!val) return "—";
+  return new Date(val).toLocaleDateString("ar-EG", { year: "numeric", month: "short", day: "numeric" });
+}
+
+function getBalanceBadgeClass(val) {
+  if (val > 0) return "bg-amber-500/15 text-amber-700 dark:text-amber-400 border border-amber-500/30";
+  if (val < 0) return "bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 border border-emerald-500/30";
+  return "bg-gray-500/15 text-gray-700 border border-gray-500/30";
 }
 </script>

@@ -8,19 +8,20 @@
           <span>قائمة الخدمات وأسعار الصيانة</span>
         </h1>
         <p class="text-xs text-brand-gray dark:text-slate-400 mt-1">
-          تسعير خدمات الصيانة الميكانيكية، الكهربائية، تغيير الزيوت، الغسيل والتلميع، وربطها بالمواد المستهلكة
+          إدارة باقات وخدمات الورشة، أسعار المصنعيات، والقطع المستهلكة تلقائياً مع كل خدمة
         </p>
       </div>
 
       <!-- Action Buttons -->
       <div class="flex flex-wrap items-center gap-2.5">
-        <Button
+        <button
+          type="button"
           @click="openAddModal"
-          class="!bg-brand-accent hover:!bg-brand-accent/90 !text-brand-dark !font-bold !rounded-xl !px-4 !py-2.5 !text-xs flex items-center gap-2 shadow-md shadow-brand-accent/10 transition-opacity cursor-pointer"
+          class="bg-brand-accent hover:bg-brand-accent/90 text-brand-dark font-bold rounded-xl px-4 py-2.5 text-xs flex items-center gap-2 shadow-md shadow-brand-accent/10 transition-all cursor-pointer"
         >
           <Plus class="w-4 h-4" />
           <span>إضافة خدمة جديدة</span>
-        </Button>
+        </button>
       </div>
     </div>
 
@@ -31,18 +32,18 @@
           <Wrench class="w-5 h-5" />
         </div>
         <div>
-          <span class="text-[11px] text-brand-gray dark:text-slate-400 block font-medium">عدد الخدمات</span>
+          <span class="text-[11px] text-brand-gray dark:text-slate-400 block font-medium">إجمالي الخدمات</span>
           <span class="text-lg font-bold text-brand-dark dark:text-white font-mono">{{ serviceStore.totalServicesCount }}</span>
         </div>
       </div>
 
       <div class="bg-brand-white dark:bg-white/5 p-4 rounded-2xl border border-brand-gray/10 shadow-sm flex items-center gap-3">
         <div class="w-10 h-10 rounded-xl bg-purple-500/10 text-purple-600 dark:text-purple-400 flex items-center justify-center shrink-0">
-          <Tag class="w-5 h-5" />
+          <Layers class="w-5 h-5" />
         </div>
         <div>
           <span class="text-[11px] text-brand-gray dark:text-slate-400 block font-medium">فئات الخدمات</span>
-          <span class="text-lg font-bold text-brand-dark dark:text-white font-mono">{{ availableCategories.length }} فئات</span>
+          <span class="text-lg font-bold text-brand-dark dark:text-white font-mono">{{ availableCategories.length }}</span>
         </div>
       </div>
 
@@ -52,17 +53,19 @@
         </div>
         <div>
           <span class="text-[11px] text-brand-gray dark:text-slate-400 block font-medium">متوسط سعر الخدمة</span>
-          <span class="text-lg font-bold text-emerald-600 dark:text-emerald-400 font-mono">{{ serviceStore.averageServicePrice }} ج.م</span>
+          <span class="text-lg font-bold text-emerald-600 dark:text-emerald-400 font-mono">
+            {{ serviceStore.averagePrice.toLocaleString('en-US', { maximumFractionDigits: 0 }) }} ج.م
+          </span>
         </div>
       </div>
 
       <div class="bg-brand-white dark:bg-white/5 p-4 rounded-2xl border border-brand-gray/10 shadow-sm flex items-center gap-3">
         <div class="w-10 h-10 rounded-xl bg-amber-500/10 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0">
-          <Layers class="w-5 h-5" />
+          <Tag class="w-5 h-5" />
         </div>
         <div>
-          <span class="text-[11px] text-brand-gray dark:text-slate-400 block font-medium">تخصم مواد تلقائياً</span>
-          <span class="text-lg font-bold text-amber-600 dark:text-amber-400 font-mono">{{ serviceStore.servicesWithConsumptionCount }}</span>
+          <span class="text-[11px] text-brand-gray dark:text-slate-400 block font-medium">الخدمات النشطة</span>
+          <span class="text-lg font-bold text-brand-dark dark:text-white font-mono">{{ serviceStore.activeServicesCount }}</span>
         </div>
       </div>
     </div>
@@ -75,7 +78,7 @@
           type="button"
           @click="selectedCategory = null"
           class="px-3.5 py-1.5 rounded-xl text-xs font-semibold transition-all cursor-pointer border"
-          :class="!selectedCategory ? 'bg-brand-accent text-brand-dark border-brand-accent font-bold shadow-xs' : 'bg-brand-white dark:bg-white/5 border-brand-gray/15 text-brand-gray hover:text-brand-dark dark:hover:text-white'"
+          :class="selectedCategory === null ? 'bg-brand-accent text-brand-dark border-brand-accent font-bold shadow-xs' : 'bg-brand-white dark:bg-white/5 border-brand-gray/15 text-brand-gray hover:text-brand-dark dark:hover:text-white'"
         >
           الكل ({{ serviceStore.services.length }})
         </button>
@@ -94,7 +97,7 @@
 
       <!-- Search Field -->
       <div class="bg-brand-white dark:bg-white/5 border border-brand-gray/10 p-3 rounded-2xl shadow-sm flex items-center justify-between gap-3">
-        <searchField v-model="searchQuery" placeholder="ابحث باسم الخدمة أو الفئة أو الوصف..." class="flex-1" />
+        <searchField v-model="searchQuery" placeholder="ابحث باسم الخدمة أو الوصف..." class="flex-1" />
         <span class="text-xs text-brand-gray dark:text-slate-400 font-mono px-2">
           عرض {{ filteredServices.length }} من {{ serviceStore.services.length }}
         </span>
@@ -104,277 +107,255 @@
     <!-- Loading Skeleton -->
     <LoadingSkeleton v-if="serviceStore.loading && !serviceStore.services.length" type="table" :count="6" />
 
-    <!-- Services DataTable -->
-    <div v-else class="bg-brand-white dark:bg-white/5 border border-brand-gray/10 rounded-2xl overflow-hidden shadow-sm">
-      <DataTable
-        :value="filteredServices"
-        paginator
-        :rows="15"
-        :rowsPerPageOptions="[10, 15, 30]"
-        class="w-full text-xs"
-        responsiveLayout="scroll"
-      >
-        <template #empty>
-          <EmptyState
-            title="لا توجد خدمات مضافة حالياً"
-            icon="Wrench"
-            actionLabel="إضافة خدمة جديدة"
-            @action="openAddModal"
-          />
-        </template>
-
-        <!-- Service Name & Description -->
-        <Column field="name" header="الخدمة" sortable headerClass="text-start">
-          <template #body="{ data }">
-            <div>
-              <span class="font-bold text-brand-dark dark:text-white text-xs block">{{ data.name }}</span>
-              <span v-if="data.description" class="text-[11px] text-brand-gray dark:text-slate-400 line-clamp-1 mt-0.5">
-                {{ data.description }}
-              </span>
-            </div>
-          </template>
-        </Column>
-
-        <!-- Category -->
-        <Column field="category" header="الفئة" sortable headerClass="text-start" style="width: 140px">
-          <template #body="{ data }">
-            <span
-              class="px-2.5 py-1 rounded-lg text-[10px] font-bold inline-block"
-              :class="getCategoryBadgeClass(data.category)"
-            >
-              {{ data.category }}
-            </span>
-          </template>
-        </Column>
-
-        <!-- Price -->
-        <Column field="price" header="السعر (المصنعية)" sortable headerClass="text-start" style="width: 130px">
-          <template #body="{ data }">
-            <span class="font-mono font-bold text-emerald-600 dark:text-emerald-400 text-sm">
-              {{ (Number(data.price) || 0).toLocaleString() }} ج.م
-            </span>
-          </template>
-        </Column>
-
-        <!-- Duration -->
-        <Column field="estimatedDurationMinutes" header="المدة التقديرية" sortable headerClass="text-center" bodyClass="text-center" style="width: 120px">
-          <template #body="{ data }">
-            <div class="inline-flex items-center gap-1 text-slate-500 dark:text-slate-400">
-              <Clock class="w-3.5 h-3.5 text-brand-accent" />
-              <span class="font-mono font-bold">{{ data.estimatedDurationMinutes || 30 }} دقيقة</span>
-            </div>
-          </template>
-        </Column>
-
-        <!-- Consumed Products -->
-        <Column header="المواد المستهلكة تلقائياً" headerClass="text-start">
-          <template #body="{ data }">
-            <div v-if="data.consumedProducts && data.consumedProducts.length" class="flex flex-wrap gap-1.5">
-              <span
-                v-for="cp in data.consumedProducts"
-                :key="cp.id || cp.productId"
-                class="px-2 py-0.5 rounded-md bg-brand-light dark:bg-white/10 text-[10px] border border-brand-gray/15 flex items-center gap-1 font-mono"
-              >
-                <Package class="w-3 h-3 text-brand-accent" />
-                <span class="font-sans font-semibold text-brand-dark dark:text-slate-200">{{ cp.productName }}</span>
-                <span class="text-brand-accent font-bold">({{ cp.quantity }} {{ cp.unit }})</span>
-              </span>
-            </div>
-            <span v-else class="text-slate-400 text-[11px]">- لا يوجد (مصنعية فقط) -</span>
-          </template>
-        </Column>
-
-        <!-- Status -->
-        <Column field="isActive" header="الحالة" headerClass="text-center" bodyClass="text-center" style="width: 90px">
-          <template #body="{ data }">
-            <span
-              class="px-2 py-0.5 rounded-full text-[10px] font-bold inline-block"
-              :class="data.isActive !== false ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400' : 'bg-red-500/15 text-red-600'"
-            >
-              {{ data.isActive !== false ? 'متاحة' : 'معطلة' }}
-            </span>
-          </template>
-        </Column>
-
-        <!-- Actions -->
-        <Column header="الإجراءات" headerClass="text-center" bodyClass="text-center" style="width: 110px">
-          <template #body="{ data }">
-            <div class="flex items-center justify-center gap-1.5">
-              <button
-                type="button"
-                @click="openEditModal(data)"
-                class="p-1.5 rounded-xl bg-brand-light dark:bg-white/5 hover:bg-brand-soft text-brand-gray hover:text-brand-accent transition cursor-pointer border border-brand-gray/15"
-                title="تعديل الخدمة"
-              >
-                <Edit class="w-3.5 h-3.5" />
-              </button>
-
-              <button
-                type="button"
-                @click="promptDelete(data)"
-                class="p-1.5 rounded-xl bg-red-500/10 hover:bg-red-500/20 text-red-500 transition cursor-pointer border border-red-500/20"
-                title="حذف الخدمة"
-              >
-                <Trash2 class="w-3.5 h-3.5" />
-              </button>
-            </div>
-          </template>
-        </Column>
-      </DataTable>
-    </div>
-
-    <!-- Add/Edit Service Modal -->
-    <Dialog
-      v-model:visible="showModal"
-      modal
-      :header="isEditing ? 'تعديل بيانات الخدمة' : 'إضافة خدمة صيانة جديدة'"
-      class="max-w-xl w-full !bg-brand-white dark:!bg-brand-dark !border-brand-gray/15 !text-brand-dark dark:!text-white rounded-3xl overflow-hidden shadow-2xl"
+    <!-- Services DataTable using OhdaDataTable -->
+    <OhdaDataTable
+      v-else
+      :items="filteredServices"
+      :columns="serviceColumns"
+      :loading="serviceStore.loading"
+      empty-title="لا توجد خدمات مضافة حالياً"
+      empty-message="يمكنك إضافة خدمات صيانة جديدة بالنقر على الزر أدناه."
+      :rows-per-page="15"
     >
-      <form @submit.prevent="saveService" class="space-y-4 text-xs pt-2">
-        <!-- Service Name -->
+      <template #empty-action>
+        <button
+          type="button"
+          @click="openAddModal"
+          class="inline-flex items-center gap-2 px-4 py-2 bg-brand-accent text-brand-dark font-bold text-xs rounded-xl shadow-sm cursor-pointer hover:bg-brand-accent/90"
+        >
+          <Plus class="w-4 h-4" />
+          <span>إضافة خدمة جديدة</span>
+        </button>
+      </template>
+
+      <!-- Service Name & Description -->
+      <template #name="{ data }">
+        <div>
+          <span class="font-bold text-brand-dark dark:text-white text-xs block">{{ data.name }}</span>
+          <span v-if="data.description" class="text-[11px] text-brand-gray dark:text-slate-400 line-clamp-1 mt-0.5">
+            {{ data.description }}
+          </span>
+        </div>
+      </template>
+
+      <!-- Category -->
+      <template #category="{ data }">
+        <span
+          class="px-2.5 py-1 rounded-lg text-[10px] font-bold inline-block"
+          :class="getCategoryBadgeClass(data.category)"
+        >
+          {{ data.category }}
+        </span>
+      </template>
+
+      <!-- Price -->
+      <template #price="{ data }">
+        <span class="font-mono font-bold text-emerald-600 dark:text-emerald-400 text-sm">
+          {{ (Number(data.price) || 0).toLocaleString() }} ج.م
+        </span>
+      </template>
+
+      <!-- Duration -->
+      <template #estimatedDurationMinutes="{ data }">
+        <div class="inline-flex items-center gap-1 text-slate-500 dark:text-slate-400">
+          <Clock class="w-3.5 h-3.5 text-brand-accent" />
+          <span class="font-mono font-bold">{{ data.estimatedDurationMinutes || 30 }} دقيقة</span>
+        </div>
+      </template>
+
+      <!-- Consumed Products -->
+      <template #consumedProducts="{ data }">
+        <div v-if="data.consumedProducts && data.consumedProducts.length" class="flex flex-wrap gap-1.5">
+          <span
+            v-for="cp in data.consumedProducts"
+            :key="cp.id || cp.productId"
+            class="px-2 py-0.5 rounded-md bg-brand-light dark:bg-white/10 text-[10px] border border-brand-gray/15 flex items-center gap-1 font-mono"
+          >
+            <Package class="w-3 h-3 text-brand-accent" />
+            <span class="font-sans font-semibold text-brand-dark dark:text-slate-200">{{ cp.productName }}</span>
+            <span class="text-brand-accent font-bold">({{ cp.quantity }} {{ cp.unit || 'قطعة' }})</span>
+          </span>
+        </div>
+        <span v-else class="text-slate-400 text-[11px]">- مصنعية فقط -</span>
+      </template>
+
+      <!-- Status -->
+      <template #isActive="{ data }">
+        <span
+          class="px-2 py-0.5 rounded-full text-[10px] font-bold inline-block"
+          :class="data.isActive !== false ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400' : 'bg-red-500/15 text-red-600'"
+        >
+          {{ data.isActive !== false ? 'متاحة' : 'معطلة' }}
+        </span>
+      </template>
+
+      <!-- Actions -->
+      <template #actions="{ data }">
+        <div class="flex items-center justify-center gap-1.5">
+          <button
+            type="button"
+            @click="openEditModal(data)"
+            class="p-1.5 rounded-xl bg-brand-light dark:bg-white/5 hover:bg-brand-soft text-brand-gray hover:text-brand-accent transition cursor-pointer border border-brand-gray/15"
+            title="تعديل الخدمة"
+          >
+            <Edit class="w-3.5 h-3.5" />
+          </button>
+
+          <button
+            type="button"
+            @click="promptDelete(data)"
+            class="p-1.5 rounded-xl bg-red-500/10 hover:bg-red-500/20 text-red-500 transition cursor-pointer border border-red-500/20"
+            title="حذف الخدمة"
+          >
+            <Trash2 class="w-3.5 h-3.5" />
+          </button>
+        </div>
+      </template>
+    </OhdaDataTable>
+
+    <!-- Add/Edit Service Modal using OhdaModal -->
+    <OhdaModal
+      :visible="showModal"
+      @close="showModal = false"
+      :title="isEditing ? 'تعديل بيانات الخدمة' : 'إضافة خدمة صيانة جديدة'"
+      description="أدخل تفاصيل الخدمة، الفئة، سعر المصنعية، والقطع المستهلكة من المخزن"
+      :icon="Wrench"
+      max-width="max-w-2xl"
+    >
+      <form @submit.prevent="saveService" id="serviceForm" class="space-y-4 text-xs">
+        <!-- Service Name (Full Width) -->
         <div>
           <label class="block font-semibold text-brand-dark dark:text-white mb-1.5">
             اسم الخدمة <span class="text-red-500">*</span>
           </label>
-          <InputText
+          <input
             v-model="form.name"
             required
+            type="text"
             placeholder="مثال: تغيير زيت وفلتر، صيانة فرامل، غسيل شامل وتلميع..."
-            class="w-full !bg-brand-light dark:!bg-brand-dark/50 !border-brand-gray/25 focus:!border-brand-accent !text-brand-dark dark:!text-white font-medium rounded-xl"
-            autofocus
+            class="w-full px-3.5 py-2.5 rounded-xl border border-brand-gray/25 bg-brand-light/50 dark:bg-white/5 text-brand-dark dark:text-white font-medium focus:border-brand-accent transition-all text-xs"
           />
         </div>
 
-        <!-- Category & Price -->
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <!-- Consistent 2-Column Grid -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <!-- Category -->
           <div>
             <label class="block font-semibold text-brand-dark dark:text-white mb-1.5">
               فئة الخدمة <span class="text-red-500">*</span>
             </label>
-            <Select
+            <select
               v-model="form.category"
-              :options="commonCategories"
-              editable
-              placeholder="اختر أو اكتب الفئة..."
-              class="w-full !bg-brand-light dark:!bg-brand-dark/50 !border-brand-gray/25 rounded-xl"
-            />
+              required
+              class="w-full px-3.5 py-2.5 rounded-xl border border-brand-gray/25 bg-brand-light/50 dark:bg-brand-dark text-brand-dark dark:text-white text-xs font-medium focus:border-brand-accent transition-all"
+            >
+              <option v-for="cat in availableCategories" :key="cat" :value="cat">
+                {{ cat }}
+              </option>
+            </select>
           </div>
 
+          <!-- Price -->
           <div>
             <label class="block font-semibold text-brand-dark dark:text-white mb-1.5">
-              السعر (ج.م) <span class="text-red-500">*</span>
+              سعر الخدمة / المصنعية (ج.م) <span class="text-red-500">*</span>
             </label>
-            <InputNumber
-              v-model="form.price"
-              :min="0"
-              :minFractionDigits="0"
-              :maxFractionDigits="2"
+            <input
+              v-model.number="form.price"
+              type="number"
+              step="any"
+              min="0"
               placeholder="0.00"
-              class="w-full !bg-brand-light dark:!bg-brand-dark/50 !border-brand-gray/25 rounded-xl font-mono font-bold"
+              class="w-full px-3.5 py-2.5 rounded-xl border border-brand-gray/25 bg-brand-light/50 dark:bg-white/5 text-brand-dark dark:text-white font-mono font-bold text-xs focus:border-brand-accent transition-all"
             />
           </div>
-        </div>
 
-        <!-- Estimated Duration & Active Toggle -->
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <!-- Estimated Duration -->
           <div>
             <label class="block font-semibold text-brand-dark dark:text-white mb-1.5">
               المدة التقديرية (بالدقائق)
             </label>
-            <InputNumber
-              v-model="form.estimatedDurationMinutes"
-              :min="5"
-              :step="5"
+            <input
+              v-model.number="form.estimatedDurationMinutes"
+              type="number"
+              min="5"
+              step="5"
               placeholder="30"
-              class="w-full !bg-brand-light dark:!bg-brand-dark/50 !border-brand-gray/25 rounded-xl font-mono"
+              class="w-full px-3.5 py-2.5 rounded-xl border border-brand-gray/25 bg-brand-light/50 dark:bg-white/5 text-brand-dark dark:text-white font-mono text-xs focus:border-brand-accent transition-all"
             />
           </div>
 
-          <div class="flex items-center gap-2 pt-6">
-            <input
-              type="checkbox"
-              id="isActiveCheck"
-              v-model="form.isActive"
-              class="w-4 h-4 rounded text-brand-accent focus:ring-brand-accent cursor-pointer"
-            />
-            <label for="isActiveCheck" class="font-semibold text-brand-dark dark:text-white cursor-pointer">
-              خدمة نشطة ومتاحة في أوامر الشغل
+          <!-- Is Active Status -->
+          <div class="flex items-center pt-6">
+            <label class="flex items-center gap-2 cursor-pointer select-none">
+              <input
+                type="checkbox"
+                v-model="form.isActive"
+                class="rounded border-brand-gray/30 text-brand-accent focus:ring-brand-accent w-4 h-4 cursor-pointer"
+              />
+              <span class="text-xs font-semibold text-brand-dark dark:text-white">الخدمة متاحة للعمل والحجز حالياً</span>
             </label>
           </div>
+
+          <!-- Description (Full Width) -->
+          <div class="sm:col-span-2">
+            <label class="block font-semibold text-brand-dark dark:text-white mb-1.5">وصف الخدمة وملاحظات (اختياري)</label>
+            <textarea
+              v-model="form.description"
+              rows="2"
+              placeholder="وصف تفصيلي للخدمة أو شروط تقديمها..."
+              class="w-full px-3.5 py-2 rounded-xl border border-brand-gray/25 bg-brand-light/50 dark:bg-white/5 text-brand-dark dark:text-white text-xs focus:border-brand-accent transition-all resize-none"
+            ></textarea>
+          </div>
         </div>
 
-        <!-- Description -->
-        <div>
-          <label class="block font-semibold text-brand-dark dark:text-white mb-1.5">الوصف والتفاصيل (اختياري)</label>
-          <Textarea
-            v-model="form.description"
-            rows="2"
-            placeholder="أي تفاصيل أو خطوات تشملها الخدمة..."
-            class="w-full !bg-brand-light dark:!bg-brand-dark/50 !border-brand-gray/25 rounded-xl"
-          />
-        </div>
-
-        <!-- Consumed Products Builder Section -->
-        <div class="p-3.5 bg-brand-light dark:bg-white/5 rounded-2xl border border-brand-gray/15 space-y-3">
+        <!-- Consumed Products linking -->
+        <div class="p-3 bg-brand-light/60 dark:bg-white/5 rounded-2xl border border-brand-gray/10 space-y-2">
           <div class="flex items-center justify-between">
             <div>
-              <span class="font-bold text-brand-dark dark:text-white block flex items-center gap-1.5">
-                <Package class="w-4 h-4 text-brand-accent" />
-                <span>ربط مواد وقطع غيار مستهلكة تلقائياً (اختياري)</span>
-              </span>
-              <span class="text-[10px] text-brand-gray dark:text-slate-400">
-                يتم خصم هذه الكميات من المخزن تلقائياً عند تنفيذ الخدمة (مثل 4 لتر زيت + 1 فلتر)
-              </span>
+              <span class="font-bold text-brand-dark dark:text-white block">قطع الغيار والزيوت المستهلكة تلقائياً</span>
+              <span class="text-[10px] text-brand-gray">تخصم من المخزن تلقائياً عند تنفيذ أمر الشغل لهذه الخدمة</span>
             </div>
-
             <button
               type="button"
               @click="addConsumedRow"
-              class="px-2.5 py-1 rounded-xl bg-brand-accent/20 hover:bg-brand-accent/30 text-brand-accent font-bold text-xs flex items-center gap-1 cursor-pointer transition"
+              class="px-2.5 py-1 rounded-xl bg-brand-accent/20 hover:bg-brand-accent/30 text-brand-accent text-xs font-bold transition flex items-center gap-1 cursor-pointer"
             >
               <Plus class="w-3.5 h-3.5" />
-              <span>إضافة صنف</span>
+              <span>ربط صنف</span>
             </button>
           </div>
 
           <div v-if="form.consumedProducts.length" class="space-y-2 pt-1">
             <div
-              v-for="(row, idx) in form.consumedProducts"
+              v-for="(cp, idx) in form.consumedProducts"
               :key="idx"
-              class="flex items-center gap-2 p-2 rounded-xl bg-white dark:bg-black/30 border border-brand-gray/15"
+              class="flex items-center gap-2 bg-white dark:bg-brand-dark p-2 rounded-xl border border-brand-gray/15"
             >
-              <!-- Product Select -->
-              <div class="flex-1">
-                <Select
-                  v-model="row.productId"
-                  :options="inventoryStore.products"
-                  optionLabel="name"
-                  optionValue="id"
-                  placeholder="اختر الصنف من المخزن..."
-                  class="w-full !text-xs !rounded-lg"
-                />
-              </div>
+              <select
+                v-model="cp.productId"
+                class="flex-1 px-2.5 py-1.5 rounded-lg border border-brand-gray/25 bg-transparent text-xs text-brand-dark dark:text-white focus:border-brand-accent"
+              >
+                <option v-for="p in inventoryStore.products" :key="p.id" :value="p.id">
+                  {{ p.name }} (متاح: {{ p.currentQuantity ?? p.quantity }})
+                </option>
+              </select>
 
-              <!-- Quantity Input -->
-              <div class="w-24">
-                <InputNumber
-                  v-model="row.quantity"
-                  :min="0.1"
-                  :minFractionDigits="0"
-                  :maxFractionDigits="2"
-                  placeholder="الكمية"
-                  class="w-full !text-xs !font-mono !rounded-lg"
-                />
-              </div>
+              <input
+                v-model.number="cp.quantity"
+                type="number"
+                step="any"
+                min="0.1"
+                placeholder="الكمية"
+                class="w-20 px-2.5 py-1.5 rounded-lg border border-brand-gray/25 bg-transparent text-xs font-mono font-bold text-brand-dark dark:text-white text-center focus:border-brand-accent"
+              />
 
-              <!-- Remove Button -->
               <button
                 type="button"
                 @click="removeConsumedRow(idx)"
-                class="p-1.5 text-red-500 hover:bg-red-500/10 rounded-lg cursor-pointer transition shrink-0"
-                title="إزالة هذا الصنف"
+                class="p-1.5 text-red-500 hover:bg-red-500/10 rounded-lg cursor-pointer"
               >
-                <X class="w-4 h-4" />
+                <X class="w-3.5 h-3.5" />
               </button>
             </div>
           </div>
@@ -382,61 +363,62 @@
             لا توجد أصناف مرتبطة. (الخدمة عبارة عن مصنعية يدوية بدون استهلاك قطع)
           </div>
         </div>
-
-        <!-- Footer Actions -->
-        <div class="flex items-center justify-end gap-2.5 pt-3 border-t border-brand-gray/10">
-          <Button
-            type="button"
-            @click="showModal = false"
-            class="!bg-brand-light dark:!bg-white/5 !text-brand-dark dark:!text-white !border !border-brand-gray/20 !rounded-xl !px-4 !py-2.5 !text-xs cursor-pointer"
-          >
-            إلغاء
-          </Button>
-
-          <Button
-            type="submit"
-            :disabled="saving"
-            class="!bg-brand-accent hover:!bg-brand-accent/90 !text-brand-dark !font-bold !rounded-xl !px-5 !py-2.5 !text-xs flex items-center gap-2 cursor-pointer shadow-sm"
-          >
-            <RefreshCw v-if="saving" class="w-4 h-4 animate-spin" />
-            <span>{{ isEditing ? 'حفظ التعديلات' : 'إضافة الخدمة' }}</span>
-          </Button>
-        </div>
       </form>
-    </Dialog>
 
-    <!-- Delete Confirmation Modal -->
-    <Dialog
-      v-model:visible="showDeleteModal"
-      modal
-      header="تأكيد حذف الخدمة"
-      class="max-w-md w-full !bg-brand-white dark:!bg-brand-dark !border-brand-gray/15 !text-brand-dark dark:!text-white rounded-3xl overflow-hidden shadow-2xl"
+      <template #footer="{ close }">
+        <button
+          type="button"
+          @click="close"
+          class="px-4 py-2.5 rounded-xl text-xs font-bold text-slate-500 hover:text-slate-800 dark:hover:text-white transition cursor-pointer"
+        >
+          إلغاء
+        </button>
+        <button
+          type="submit"
+          form="serviceForm"
+          :disabled="saving"
+          class="px-5 py-2.5 rounded-xl text-xs font-bold bg-brand-accent hover:bg-brand-accent/90 text-brand-dark flex items-center gap-2 cursor-pointer shadow-sm transition-all disabled:opacity-50"
+        >
+          <RefreshCw v-if="saving" class="w-4 h-4 animate-spin" />
+          <span>{{ isEditing ? 'حفظ التعديلات' : 'إضافة الخدمة' }}</span>
+        </button>
+      </template>
+    </OhdaModal>
+
+    <!-- Delete Confirmation Modal using OhdaModal -->
+    <OhdaModal
+      :visible="showDeleteModal"
+      @close="showDeleteModal = false"
+      title="تأكيد حذف الخدمة"
+      description="يرجى الانتباه قبل حذف أي خدمة مسجلة"
+      :icon="Trash2"
+      max-width="max-w-md"
     >
-      <div class="space-y-4 text-xs pt-2">
+      <div class="space-y-3 text-xs">
         <p class="text-slate-600 dark:text-slate-300">
           هل أنت متأكد من رغبتك في حذف الخدمة <strong>"{{ deletingService?.name }}"</strong>؟
         </p>
-
-        <div class="flex items-center justify-end gap-2.5 pt-3 border-t border-brand-gray/10">
-          <Button
-            type="button"
-            @click="showDeleteModal = false"
-            class="!bg-brand-light dark:!bg-white/5 !text-brand-dark dark:!text-white !border !border-brand-gray/20 !rounded-xl !px-4 !py-2.5 !text-xs cursor-pointer"
-          >
-            إلغاء
-          </Button>
-          <Button
-            type="button"
-            @click="executeDeleteService"
-            :disabled="isDeleting"
-            class="!bg-red-600 hover:!bg-red-500 !text-white !font-bold !rounded-xl !px-5 !py-2.5 !text-xs flex items-center gap-2 cursor-pointer shadow-sm"
-          >
-            <RefreshCw v-if="isDeleting" class="w-4 h-4 animate-spin" />
-            <span>نعم، حذف</span>
-          </Button>
-        </div>
       </div>
-    </Dialog>
+
+      <template #footer="{ close }">
+        <button
+          type="button"
+          @click="close"
+          class="px-4 py-2.5 rounded-xl text-xs font-bold text-slate-500 hover:text-slate-800 dark:hover:text-white cursor-pointer"
+        >
+          إلغاء
+        </button>
+        <button
+          type="button"
+          @click="executeDeleteService"
+          :disabled="isDeleting"
+          class="px-5 py-2.5 rounded-xl text-xs font-bold bg-red-600 hover:bg-red-500 text-white flex items-center gap-2 cursor-pointer shadow-sm disabled:opacity-50"
+        >
+          <RefreshCw v-if="isDeleting" class="w-4 h-4 animate-spin" />
+          <span>نعم، حذف</span>
+        </button>
+      </template>
+    </OhdaModal>
   </div>
 </template>
 
@@ -445,17 +427,10 @@ import { ref, computed, onMounted } from "vue";
 import { useOhdaServiceStore } from "../stores/useOhdaServiceStore";
 import { useOhdaInventoryStore } from "../stores/useOhdaInventoryStore";
 import { useToastStore } from "@/stores/toastStore";
-import DataTable from "primevue/datatable";
-import Column from "primevue/column";
-import Dialog from "primevue/dialog";
-import Button from "primevue/button";
-import InputText from "primevue/inputtext";
-import InputNumber from "primevue/inputnumber";
-import Textarea from "primevue/textarea";
-import Select from "primevue/select";
+import OhdaDataTable from "../components/OhdaDataTable.vue";
+import OhdaModal from "../components/OhdaModal.vue";
 import searchField from "@/components/searchField.vue";
 import LoadingSkeleton from "@/components/LoadingSkeleton.vue";
-import EmptyState from "@/components/EmptyState.vue";
 
 import {
   Wrench,
@@ -486,6 +461,16 @@ const commonCategories = [
   "عفشة وتكييف",
   "فحص وتكويد كمبيوتر",
   "كاوتش وضبط زوايا"
+];
+
+const serviceColumns = [
+  { field: "name", header: "الخدمة", sortable: true, width: "24%" },
+  { field: "category", header: "الفئة", sortable: true, width: "15%" },
+  { field: "price", header: "السعر (المصنعية)", sortable: true, width: "14%" },
+  { field: "estimatedDurationMinutes", header: "المدة التقديرية", sortable: true, align: "center", width: "13%" },
+  { field: "consumedProducts", header: "المواد المستهلكة تلقائياً", width: "18%" },
+  { field: "isActive", header: "الحالة", align: "center", width: "8%" },
+  { field: "actions", header: "الإجراءات", align: "center", width: "8%" }
 ];
 
 // Add/Edit State

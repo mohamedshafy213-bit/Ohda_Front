@@ -14,29 +14,32 @@
 
       <!-- Action Buttons -->
       <div class="flex flex-wrap items-center gap-2.5">
-        <Button
+        <button
+          type="button"
           @click="openRecurringConfirm"
-          class="!bg-purple-600/10 hover:!bg-purple-600/20 !text-purple-600 dark:!text-purple-400 !border !border-purple-500/30 !font-bold !rounded-xl !px-3.5 !py-2.5 !text-xs flex items-center gap-1.5 transition-all cursor-pointer"
+          class="bg-purple-600/10 hover:bg-purple-600/20 text-purple-600 dark:text-purple-400 border border-purple-500/30 font-bold rounded-xl px-3.5 py-2.5 text-xs flex items-center gap-1.5 transition-all cursor-pointer"
         >
           <CalendarClock class="w-4 h-4" />
           <span>توليد فواتير الشهر الدورية</span>
-        </Button>
+        </button>
 
-        <Button
+        <button
+          type="button"
           @click="openPurchaseModal"
-          class="!bg-emerald-600/15 hover:!bg-emerald-600/25 !text-emerald-600 dark:!text-emerald-400 !border !border-emerald-500/30 !font-bold !rounded-xl !px-3.5 !py-2.5 !text-xs flex items-center gap-1.5 transition-all cursor-pointer"
+          class="bg-emerald-600/15 hover:bg-emerald-600/25 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 font-bold rounded-xl px-3.5 py-2.5 text-xs flex items-center gap-1.5 transition-all cursor-pointer"
         >
           <PackagePlus class="w-4 h-4" />
           <span>+ شراء وتوريد بضاعة للمخزن</span>
-        </Button>
+        </button>
 
-        <Button
+        <button
+          type="button"
           @click="openAddExpenseModal"
-          class="!bg-brand-accent hover:!bg-brand-accent/90 !text-brand-dark !font-bold !rounded-xl !px-4 !py-2.5 !text-xs flex items-center gap-2 shadow-md shadow-brand-accent/10 transition-opacity cursor-pointer"
+          class="bg-brand-accent hover:bg-brand-accent/90 text-brand-dark font-bold rounded-xl px-4 py-2.5 text-xs flex items-center gap-2 shadow-md shadow-brand-accent/10 transition-all cursor-pointer"
         >
           <Plus class="w-4 h-4" />
           <span>+ تسجيل مصروف جديد</span>
-        </Button>
+        </button>
       </div>
     </div>
 
@@ -110,161 +113,175 @@
       <!-- Search Input -->
       <div class="w-full md:w-72 relative">
         <Search class="w-4 h-4 absolute start-3 top-1/2 -translate-y-1/2 text-slate-400" />
-        <InputText
+        <input
           v-model="searchQuery"
+          type="text"
           placeholder="بحث بالبيان، المورد، أو الفاتورة..."
-          class="!w-full !ps-9 !pe-3 !py-2 !rounded-xl !text-xs !bg-transparent !border-brand-gray/20 dark:!border-white/10"
+          class="w-full ps-9 pe-3 py-2 rounded-xl text-xs bg-transparent border border-brand-gray/20 dark:border-white/10 text-brand-dark dark:text-white focus:border-brand-accent transition-all"
         />
       </div>
     </div>
 
-    <!-- Expenses Data Table -->
-    <div class="bg-brand-white dark:bg-white/5 rounded-2xl border border-brand-gray/10 shadow-sm overflow-hidden">
-      <div v-if="expenseStore.loading" class="p-8">
-        <LoadingSkeleton />
-      </div>
+    <!-- Loading Skeleton -->
+    <LoadingSkeleton v-if="expenseStore.loading && !expenseStore.expenses.length" type="table" :count="6" />
 
-      <div v-else-if="filteredExpenses.length === 0" class="p-12 text-center">
-        <EmptyState
-          title="لا توجد مصروفات مسجلة"
-          description="لم يتم العثور على أي مصروفات أو مشتريات تطابق الفلتر الحالي"
-        />
-      </div>
-
-      <div v-else class="overflow-x-auto">
-        <table class="w-full text-start border-collapse text-xs">
-          <thead>
-            <tr class="bg-black/5 dark:bg-white/5 border-b border-brand-gray/10 text-brand-gray dark:text-slate-400 font-semibold">
-              <th class="p-3.5 text-start">التاريخ</th>
-              <th class="p-3.5 text-start">نوع المصروف</th>
-              <th class="p-3.5 text-start">البيان / التفاصيل</th>
-              <th class="p-3.5 text-start">المورد / المستفيد</th>
-              <th class="p-3.5 text-start">رقم الإيصال</th>
-              <th class="p-3.5 text-start">طريقة الدفع</th>
-              <th class="p-3.5 text-start">المبلغ (ج.م)</th>
-              <th class="p-3.5 text-center">إجراءات</th>
-            </tr>
-          </thead>
-          <tbody class="divide-y divide-brand-gray/10 dark:divide-white/5">
-            <tr
-              v-for="expense in filteredExpenses"
-              :key="expense.id"
-              class="hover:bg-black/5 dark:hover:bg-white/5 transition-colors"
-            >
-              <!-- Date -->
-              <td class="p-3.5 font-mono text-slate-500 dark:text-slate-400 whitespace-nowrap">
-                {{ formatDate(expense.expenseDate) }}
-              </td>
-
-              <!-- Expense Type Badge -->
-              <td class="p-3.5 whitespace-nowrap">
-                <span
-                  class="px-2.5 py-1 rounded-full text-[10px] font-bold border inline-flex items-center gap-1"
-                  :class="getTypeBadgeClasses(expense.expenseType)"
-                >
-                  <component :is="getTypeIcon(expense.expenseType)" class="w-3 h-3" />
-                  {{ expense.expenseTypeName }}
-                </span>
-                <span v-if="expense.isRecurring" class="ms-1 px-1.5 py-0.5 rounded text-[9px] bg-purple-500/10 text-purple-600 dark:text-purple-400 border border-purple-500/20">
-                  شهري
-                </span>
-              </td>
-
-              <!-- Notes / Description & Linked Stock -->
-              <td class="p-3.5 min-w-[200px]">
-                <div class="font-bold text-brand-dark dark:text-white">{{ expense.notes || '-' }}</div>
-                <div v-if="expense.productName" class="text-[11px] text-emerald-600 dark:text-emerald-400 flex items-center gap-1 mt-0.5 font-medium">
-                  <Package class="w-3 h-3" />
-                  <span>توريد مخزن: {{ expense.productName }} ({{ expense.purchasedQuantity }} × {{ expense.unitCost }} ج.م)</span>
-                </div>
-              </td>
-
-              <!-- Supplier / Payee -->
-              <td class="p-3.5 whitespace-nowrap text-slate-700 dark:text-slate-300 font-medium">
-                {{ expense.supplierName || '-' }}
-              </td>
-
-              <!-- Invoice Number -->
-              <td class="p-3.5 whitespace-nowrap font-mono text-slate-600 dark:text-slate-400">
-                {{ expense.invoiceNumber || '-' }}
-              </td>
-
-              <!-- Payment Method -->
-              <td class="p-3.5 whitespace-nowrap">
-                <span class="px-2 py-0.5 rounded-lg text-[10px] font-semibold bg-black/5 dark:bg-white/10 text-slate-700 dark:text-slate-300">
-                  {{ expense.paymentMethodName }}
-                </span>
-              </td>
-
-              <!-- Amount -->
-              <td class="p-3.5 whitespace-nowrap font-mono font-bold text-red-600 dark:text-red-400 text-sm">
-                {{ formatCurrency(expense.amount) }}
-              </td>
-
-              <!-- Actions -->
-              <td class="p-3.5 text-center whitespace-nowrap">
-                <button
-                  @click="confirmDelete(expense)"
-                  class="p-1.5 text-red-500 hover:bg-red-500/10 rounded-lg transition-colors cursor-pointer"
-                  title="حذف المصروف"
-                >
-                  <Trash2 class="w-4 h-4" />
-                </button>
-              </td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-    </div>
-
-    <!-- 1. Modal: Add General Expense -->
-    <Dialog
-      v-model:visible="showAddModal"
-      modal
-      header="تسجيل مصروف جديد"
-      :style="{ width: '520px' }"
-      class="!rounded-2xl !bg-brand-white dark:!bg-[#1a202c] !text-brand-dark dark:!text-white"
+    <!-- Expenses DataTable using OhdaDataTable -->
+    <OhdaDataTable
+      v-else
+      :items="filteredExpenses"
+      :columns="expenseColumns"
+      :loading="expenseStore.loading"
+      empty-title="لا توجد مصروفات مسجلة"
+      empty-message="لم يتم العثور على أي مصروفات تطابق الفلتر الحالي. يمكنك تسجيل مصروف جديد بالأعلى."
+      :rows-per-page="15"
     >
-      <form @submit.prevent="submitGeneralExpense" class="space-y-4 pt-2">
-        <!-- Type Selection -->
-        <div>
-          <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">نوع المصروف *</label>
-          <select
-            v-model="generalForm.expenseType"
-            required
-            class="w-full text-xs p-2.5 rounded-xl border border-brand-gray/20 dark:border-white/10 bg-transparent text-brand-dark dark:text-white focus:outline-none focus:border-brand-accent"
-          >
-            <option :value="3" class="bg-white dark:bg-slate-800">إيجار مقر الورشة</option>
-            <option :value="2" class="bg-white dark:bg-slate-800">فاتورة كهرباء</option>
-            <option :value="1" class="bg-white dark:bg-slate-800">فاتورة مياه (ورشة ومغسلة)</option>
-            <option :value="4" class="bg-white dark:bg-slate-800">إنترنت وهواتف</option>
-            <option :value="6" class="bg-white dark:bg-slate-800">رواتب وأجور</option>
-            <option :value="7" class="bg-white dark:bg-slate-800">صيانة معدات وأجهزة الورشة</option>
-            <option :value="8" class="bg-white dark:bg-slate-800">نثريات ومصروفات أخرى</option>
-          </select>
-        </div>
+      <template #empty-action>
+        <button
+          type="button"
+          @click="openAddExpenseModal"
+          class="inline-flex items-center gap-2 px-4 py-2 bg-brand-accent text-brand-dark font-bold text-xs rounded-xl shadow-sm cursor-pointer hover:bg-brand-accent/90"
+        >
+          <Plus class="w-4 h-4" />
+          <span>تسجيل مصروف جديد</span>
+        </button>
+      </template>
 
-        <!-- Amount & Payment Method -->
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+      <!-- Date -->
+      <template #expenseDate="{ data }">
+        <span class="font-mono text-slate-500 dark:text-slate-400 whitespace-nowrap">
+          {{ formatDate(data.expenseDate) }}
+        </span>
+      </template>
+
+      <!-- Type Badge -->
+      <template #expenseType="{ data }">
+        <div class="flex items-center gap-1 flex-wrap">
+          <span
+            class="px-2.5 py-1 rounded-full text-[10px] font-bold border inline-flex items-center gap-1"
+            :class="getTypeBadgeClasses(data.expenseType)"
+          >
+            <component :is="getTypeIcon(data.expenseType)" class="w-3 h-3" />
+            {{ data.expenseTypeName }}
+          </span>
+          <span v-if="data.isRecurring" class="px-1.5 py-0.5 rounded text-[9px] bg-purple-500/10 text-purple-600 dark:text-purple-400 border border-purple-500/20 font-bold">
+            شهري
+          </span>
+        </div>
+      </template>
+
+      <!-- Details -->
+      <template #notes="{ data }">
+        <div>
+          <div class="font-bold text-brand-dark dark:text-white">{{ data.notes || '-' }}</div>
+          <div v-if="data.productName" class="text-[11px] text-emerald-600 dark:text-emerald-400 flex items-center gap-1 mt-0.5 font-medium">
+            <Package class="w-3 h-3" />
+            <span>توريد مخزن: {{ data.productName }} ({{ data.purchasedQuantity }} × {{ data.unitCost }} ج.م)</span>
+          </div>
+        </div>
+      </template>
+
+      <!-- Supplier -->
+      <template #supplierName="{ data }">
+        <span class="text-slate-700 dark:text-slate-300 font-medium">
+          {{ data.supplierName || '-' }}
+        </span>
+      </template>
+
+      <!-- Invoice Number -->
+      <template #invoiceNumber="{ data }">
+        <span class="font-mono text-slate-600 dark:text-slate-400">
+          {{ data.invoiceNumber || '-' }}
+        </span>
+      </template>
+
+      <!-- Payment Method -->
+      <template #paymentMethodName="{ data }">
+        <span class="px-2 py-0.5 rounded-lg text-[10px] font-semibold bg-black/5 dark:bg-white/10 text-slate-700 dark:text-slate-300">
+          {{ data.paymentMethodName }}
+        </span>
+      </template>
+
+      <!-- Amount -->
+      <template #amount="{ data }">
+        <span class="font-mono font-bold text-red-600 dark:text-red-400 text-sm">
+          {{ formatCurrency(data.amount) }}
+        </span>
+      </template>
+
+      <!-- Actions -->
+      <template #actions="{ data }">
+        <button
+          type="button"
+          @click="confirmDelete(data)"
+          class="p-1.5 text-red-500 hover:bg-red-500/10 rounded-lg transition-colors cursor-pointer"
+          title="حذف المصروف"
+        >
+          <Trash2 class="w-4 h-4" />
+        </button>
+      </template>
+    </OhdaDataTable>
+
+    <!-- 1. Modal: Add General Expense using OhdaModal -->
+    <OhdaModal
+      :visible="showAddModal"
+      @close="showAddModal = false"
+      title="تسجيل مصروف جديد"
+      description="تسجيل فاتورة مرافق، صيانة، إيجار، أو نثريات وتحديد طريقة السداد"
+      :icon="Receipt"
+      max-width="max-w-xl"
+    >
+      <form @submit.prevent="submitGeneralExpense" id="generalExpenseForm" class="space-y-4 text-xs">
+        <!-- 2-Column Grid -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <!-- Type Selection -->
           <div>
-            <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">المبلغ (ج.م) *</label>
+            <label class="block font-semibold mb-1">نوع المصروف *</label>
+            <select
+              v-model="generalForm.expenseType"
+              required
+              class="w-full p-2.5 rounded-xl border border-brand-gray/20 dark:border-white/10 bg-transparent text-brand-dark dark:text-white text-xs focus:border-brand-accent transition-all"
+            >
+              <option :value="3" class="bg-white dark:bg-slate-800">إيجار مقر الورشة</option>
+              <option :value="2" class="bg-white dark:bg-slate-800">فاتورة كهرباء</option>
+              <option :value="1" class="bg-white dark:bg-slate-800">فاتورة مياه (ورشة ومغسلة)</option>
+              <option :value="4" class="bg-white dark:bg-slate-800">إنترنت وهواتف</option>
+              <option :value="7" class="bg-white dark:bg-slate-800">صيانة عدد ومعدات الورشة</option>
+              <option :value="8" class="bg-white dark:bg-slate-800">مصروفات نثرية وضيافة</option>
+            </select>
+          </div>
+
+          <!-- Amount -->
+          <div>
+            <label class="block font-semibold mb-1">المبلغ (ج.م) *</label>
             <input
               type="number"
               v-model.number="generalForm.amount"
               min="0.1"
-              step="0.01"
+              step="any"
               required
               placeholder="0.00"
-              class="w-full text-xs p-2.5 rounded-xl border border-brand-gray/20 dark:border-white/10 bg-transparent text-brand-dark dark:text-white font-mono font-bold"
+              class="w-full p-2.5 rounded-xl border border-brand-gray/20 dark:border-white/10 bg-transparent text-brand-dark dark:text-white font-mono font-bold text-xs focus:border-brand-accent transition-all"
             />
           </div>
 
+          <!-- Expense Date -->
           <div>
-            <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">طريقة الدفع *</label>
+            <label class="block font-semibold mb-1">تاريخ المصروف *</label>
+            <input
+              type="date"
+              v-model="generalForm.expenseDate"
+              required
+              class="w-full p-2.5 rounded-xl border border-brand-gray/20 dark:border-white/10 bg-transparent text-brand-dark dark:text-white text-xs focus:border-brand-accent transition-all"
+            />
+          </div>
+
+          <!-- Payment Method -->
+          <div>
+            <label class="block font-semibold mb-1">طريقة الدفع *</label>
             <select
               v-model="generalForm.paymentMethod"
               required
-              class="w-full text-xs p-2.5 rounded-xl border border-brand-gray/20 dark:border-white/10 bg-transparent text-brand-dark dark:text-white"
+              class="w-full p-2.5 rounded-xl border border-brand-gray/20 dark:border-white/10 bg-transparent text-brand-dark dark:text-white text-xs focus:border-brand-accent transition-all"
             >
               <option :value="1" class="bg-white dark:bg-slate-800">كاش (الخزينة النقدية)</option>
               <option :value="2" class="bg-white dark:bg-slate-800">بطاقة بنكية / فيزا</option>
@@ -273,97 +290,83 @@
               <option :value="5" class="bg-white dark:bg-slate-800">أخرى</option>
             </select>
           </div>
-        </div>
 
-        <!-- Date & Payee / Supplier -->
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+          <!-- Supplier / Payee -->
           <div>
-            <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">التاريخ *</label>
-            <input
-              type="date"
-              v-model="generalForm.expenseDate"
-              required
-              class="w-full text-xs p-2.5 rounded-xl border border-brand-gray/20 dark:border-white/10 bg-transparent text-brand-dark dark:text-white"
-            />
-          </div>
-
-          <div>
-            <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">الجهة / المستفيد</label>
+            <label class="block font-semibold mb-1">الجهة / المستفيد (اختياري)</label>
             <input
               type="text"
               v-model="generalForm.supplierName"
-              placeholder="مثال: شركة الكهرباء، المالك..."
-              class="w-full text-xs p-2.5 rounded-xl border border-brand-gray/20 dark:border-white/10 bg-transparent text-brand-dark dark:text-white"
+              placeholder="مثال: شركة الكهرباء، مالك العقار..."
+              class="w-full p-2.5 rounded-xl border border-brand-gray/20 dark:border-white/10 bg-transparent text-brand-dark dark:text-white text-xs focus:border-brand-accent transition-all"
             />
           </div>
-        </div>
 
-        <!-- Invoice / Receipt Number -->
-        <div>
-          <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">رقم الفاتورة أو الإيصال</label>
-          <input
-            type="text"
-            v-model="generalForm.invoiceNumber"
-            placeholder="رقم الإيصال أو مرجع العملية..."
-            class="w-full text-xs p-2.5 rounded-xl border border-brand-gray/20 dark:border-white/10 bg-transparent text-brand-dark dark:text-white font-mono"
-          />
-        </div>
+          <!-- Invoice / Receipt Number -->
+          <div>
+            <label class="block font-semibold mb-1">رقم الإيصال / الفاتورة (اختياري)</label>
+            <input
+              type="text"
+              v-model="generalForm.invoiceNumber"
+              placeholder="مثال: REC-10293"
+              class="w-full p-2.5 rounded-xl border border-brand-gray/20 dark:border-white/10 bg-transparent text-brand-dark dark:text-white font-mono text-xs focus:border-brand-accent transition-all"
+            />
+          </div>
 
-        <!-- Notes / Description -->
-        <div>
-          <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">بيان المصروف / ملاحظات *</label>
-          <textarea
-            v-model="generalForm.notes"
-            required
-            rows="2"
-            placeholder="اكتب تفاصيل أو سبب الصرف..."
-            class="w-full text-xs p-2.5 rounded-xl border border-brand-gray/20 dark:border-white/10 bg-transparent text-brand-dark dark:text-white"
-          ></textarea>
-        </div>
+          <!-- Notes (Full Width) -->
+          <div class="sm:col-span-2">
+            <label class="block font-semibold mb-1">بيان وتفاصيل المصروف</label>
+            <textarea
+              v-model="generalForm.notes"
+              rows="2"
+              placeholder="اكتب تفاصيل أو سبب الصرف هنا..."
+              class="w-full p-2.5 rounded-xl border border-brand-gray/20 dark:border-white/10 bg-transparent text-brand-dark dark:text-white text-xs focus:border-brand-accent transition-all resize-none"
+            ></textarea>
+          </div>
 
-        <!-- Recurring Checkbox -->
-        <div class="flex items-center gap-2 pt-1">
-          <input
-            type="checkbox"
-            id="isRecurring"
-            v-model="generalForm.isRecurring"
-            class="w-4 h-4 rounded text-brand-accent"
-          />
-          <label for="isRecurring" class="text-xs text-slate-600 dark:text-slate-400 select-none cursor-pointer">
-            مصروف شهري متكرر دورياً
-          </label>
-        </div>
-
-        <!-- Submit Buttons -->
-        <div class="flex justify-end gap-2 pt-4 border-t border-brand-gray/10 dark:border-white/10">
-          <Button
-            type="button"
-            @click="showAddModal = false"
-            class="!text-xs !px-4 !py-2 !rounded-xl !text-slate-600 dark:!text-slate-300 !bg-transparent hover:!bg-black/5 dark:hover:!bg-white/5 cursor-pointer"
-          >
-            إلغاء
-          </Button>
-          <Button
-            type="submit"
-            :disabled="expenseStore.loading"
-            class="!text-xs !px-5 !py-2 !rounded-xl !bg-brand-accent !text-brand-dark !font-bold cursor-pointer"
-          >
-            <span v-if="!expenseStore.loading">حفظ المصروف</span>
-            <span v-else>جاري الحفظ...</span>
-          </Button>
+          <!-- Is Recurring Checkbox (Full Width) -->
+          <div class="sm:col-span-2">
+            <label class="flex items-center gap-2 cursor-pointer select-none">
+              <input
+                type="checkbox"
+                v-model="generalForm.isRecurring"
+                class="rounded border-brand-gray/30 text-brand-accent focus:ring-brand-accent w-4 h-4 cursor-pointer"
+              />
+              <span class="text-xs font-semibold text-brand-dark dark:text-white">تحديد كمصروف شهري ثابت يتكرر كل شهر</span>
+            </label>
+          </div>
         </div>
       </form>
-    </Dialog>
 
-    <!-- 2. Modal: Record Supplier Purchase (Stock Inflow + Expense) -->
-    <Dialog
-      v-model:visible="showPurchaseModal"
-      modal
-      header="تسجيل فاتورة شراء وتوريد بضاعة للمخزن"
-      :style="{ width: '600px' }"
-      class="!rounded-2xl !bg-brand-white dark:!bg-[#1a202c] !text-brand-dark dark:!text-white"
+      <template #footer="{ close }">
+        <button
+          type="button"
+          @click="close"
+          class="px-4 py-2.5 rounded-xl text-xs font-bold text-slate-500 hover:text-slate-800 dark:hover:text-white cursor-pointer"
+        >
+          إلغاء
+        </button>
+        <button
+          type="submit"
+          form="generalExpenseForm"
+          :disabled="expenseStore.loading"
+          class="px-5 py-2.5 rounded-xl text-xs font-bold bg-brand-accent hover:bg-brand-accent/90 text-brand-dark flex items-center gap-2 cursor-pointer shadow-sm disabled:opacity-50"
+        >
+          <span>{{ expenseStore.loading ? 'جاري الحفظ...' : 'حفظ المصروف' }}</span>
+        </button>
+      </template>
+    </OhdaModal>
+
+    <!-- 2. Modal: Record Supplier Purchase using OhdaModal -->
+    <OhdaModal
+      :visible="showPurchaseModal"
+      @close="showPurchaseModal = false"
+      title="تسجيل فاتورة شراء وتوريد بضاعة للمخزن"
+      description="تسجيل فاتورة شراء بضاعة تلقائياً كمصروف وزيادة رصيد المخزن في عملية واحدة"
+      :icon="PackagePlus"
+      max-width="max-w-2xl"
     >
-      <form @submit.prevent="submitSupplierPurchase" class="space-y-4 pt-2">
+      <form @submit.prevent="submitSupplierPurchase" id="purchaseForm" class="space-y-4 text-xs">
         <div class="p-3 bg-emerald-500/10 border border-emerald-500/20 rounded-xl text-xs text-emerald-700 dark:text-emerald-300 flex items-start gap-2">
           <Info class="w-4 h-4 shrink-0 mt-0.5" />
           <span>
@@ -371,14 +374,14 @@
           </span>
         </div>
 
-        <!-- Product Picker -->
+        <!-- Product Picker (Full Width) -->
         <div>
-          <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">الصنف المراد توريده للمخزن *</label>
+          <label class="block font-semibold mb-1">الصنف المراد توريده للمخزن *</label>
           <select
             v-model="purchaseForm.productId"
             required
             @change="onProductSelected"
-            class="w-full text-xs p-2.5 rounded-xl border border-brand-gray/20 dark:border-white/10 bg-transparent text-brand-dark dark:text-white"
+            class="w-full text-xs p-2.5 rounded-xl border border-brand-gray/20 dark:border-white/10 bg-transparent text-brand-dark dark:text-white focus:border-brand-accent transition-all"
           >
             <option value="" disabled selected class="bg-white dark:bg-slate-800">-- اختر الصنف من قائمة المخزن --</option>
             <option
@@ -387,15 +390,15 @@
               :value="p.id"
               class="bg-white dark:bg-slate-800"
             >
-              {{ p.name }} (الرصيد الحالي: {{ p.currentQuantity }} {{ p.unit }}) - [{{ p.sku || 'بدون كود' }}]
+              {{ p.name }} (الرصيد الحالي: {{ p.currentQuantity ?? p.quantity }} {{ p.unit || 'قطعة' }}) - [{{ p.sku || 'بدون كود' }}]
             </option>
           </select>
         </div>
 
-        <!-- Quantity & Unit Cost -->
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+        <!-- 2-Column Grid -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
-            <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">الكمية الموردة *</label>
+            <label class="block font-semibold mb-1">الكمية الموردة *</label>
             <input
               type="number"
               v-model.number="purchaseForm.quantity"
@@ -403,12 +406,12 @@
               step="any"
               required
               placeholder="1"
-              class="w-full text-xs p-2.5 rounded-xl border border-brand-gray/20 dark:border-white/10 bg-transparent text-brand-dark dark:text-white font-mono font-bold"
+              class="w-full text-xs p-2.5 rounded-xl border border-brand-gray/20 dark:border-white/10 bg-transparent text-brand-dark dark:text-white font-mono font-bold focus:border-brand-accent transition-all"
             />
           </div>
 
           <div>
-            <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">سعر تكلفة الوحدة (ج.م) *</label>
+            <label class="block font-semibold mb-1">سعر تكلفة الوحدة (ج.م) *</label>
             <input
               type="number"
               v-model.number="purchaseForm.unitCost"
@@ -416,37 +419,34 @@
               step="0.01"
               required
               placeholder="0.00"
-              class="w-full text-xs p-2.5 rounded-xl border border-brand-gray/20 dark:border-white/10 bg-transparent text-brand-dark dark:text-white font-mono font-bold"
+              class="w-full text-xs p-2.5 rounded-xl border border-brand-gray/20 dark:border-white/10 bg-transparent text-brand-dark dark:text-white font-mono font-bold focus:border-brand-accent transition-all"
             />
           </div>
-        </div>
 
-        <!-- Auto Calculated Total -->
-        <div class="p-3 bg-black/5 dark:bg-white/5 rounded-xl flex items-center justify-between">
-          <span class="text-xs text-slate-600 dark:text-slate-400 font-semibold">إجمالي فاتورة الشراء:</span>
-          <span class="text-base font-bold font-mono text-emerald-600 dark:text-emerald-400">
-            {{ formatCurrency(calculatedPurchaseTotal) }}
-          </span>
-        </div>
+          <!-- Total Preview (Full Width) -->
+          <div class="sm:col-span-2 p-3 bg-brand-light/70 dark:bg-white/5 rounded-xl flex items-center justify-between border border-brand-gray/10">
+            <span class="text-xs text-slate-600 dark:text-slate-400 font-semibold">إجمالي فاتورة الشراء:</span>
+            <span class="text-base font-bold font-mono text-emerald-600 dark:text-emerald-400">
+              {{ formatCurrency(calculatedPurchaseTotal) }}
+            </span>
+          </div>
 
-        <!-- Supplier & Payment Method -->
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
           <div>
-            <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">المورد / الشركة</label>
+            <label class="block font-semibold mb-1">المورد / الشركة</label>
             <input
               type="text"
               v-model="purchaseForm.supplierName"
               placeholder="اسم المورد أو الموزع..."
-              class="w-full text-xs p-2.5 rounded-xl border border-brand-gray/20 dark:border-white/10 bg-transparent text-brand-dark dark:text-white"
+              class="w-full text-xs p-2.5 rounded-xl border border-brand-gray/20 dark:border-white/10 bg-transparent text-brand-dark dark:text-white focus:border-brand-accent transition-all"
             />
           </div>
 
           <div>
-            <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">طريقة السداد *</label>
+            <label class="block font-semibold mb-1">طريقة السداد *</label>
             <select
               v-model="purchaseForm.paymentMethod"
               required
-              class="w-full text-xs p-2.5 rounded-xl border border-brand-gray/20 dark:border-white/10 bg-transparent text-brand-dark dark:text-white"
+              class="w-full text-xs p-2.5 rounded-xl border border-brand-gray/20 dark:border-white/10 bg-transparent text-brand-dark dark:text-white focus:border-brand-accent transition-all"
             >
               <option :value="1" class="bg-white dark:bg-slate-800">كاش (الخزينة النقدية)</option>
               <option :value="2" class="bg-white dark:bg-slate-800">بطاقة بنكية / فيزا</option>
@@ -455,77 +455,73 @@
               <option :value="5" class="bg-white dark:bg-slate-800">أخرى</option>
             </select>
           </div>
-        </div>
 
-        <!-- Invoice Number & Purchase Date -->
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
           <div>
-            <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">رقم فاتورة المورد</label>
+            <label class="block font-semibold mb-1">رقم فاتورة المورد</label>
             <input
               type="text"
               v-model="purchaseForm.invoiceNumber"
               placeholder="مثال: INV-9843"
-              class="w-full text-xs p-2.5 rounded-xl border border-brand-gray/20 dark:border-white/10 bg-transparent text-brand-dark dark:text-white font-mono"
+              class="w-full text-xs p-2.5 rounded-xl border border-brand-gray/20 dark:border-white/10 bg-transparent text-brand-dark dark:text-white font-mono focus:border-brand-accent transition-all"
             />
           </div>
 
           <div>
-            <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">تاريخ الفاتورة والتوريد</label>
+            <label class="block font-semibold mb-1">تاريخ الفاتورة والتوريد</label>
             <input
               type="date"
               v-model="purchaseForm.purchaseDate"
               required
-              class="w-full text-xs p-2.5 rounded-xl border border-brand-gray/20 dark:border-white/10 bg-transparent text-brand-dark dark:text-white"
+              class="w-full text-xs p-2.5 rounded-xl border border-brand-gray/20 dark:border-white/10 bg-transparent text-brand-dark dark:text-white focus:border-brand-accent transition-all"
+            />
+          </div>
+
+          <div class="sm:col-span-2">
+            <label class="block font-semibold mb-1">ملاحظات التوريد</label>
+            <input
+              type="text"
+              v-model="purchaseForm.notes"
+              placeholder="ملاحظات على حالة البضاعة أو الدفعة..."
+              class="w-full text-xs p-2.5 rounded-xl border border-brand-gray/20 dark:border-white/10 bg-transparent text-brand-dark dark:text-white focus:border-brand-accent transition-all"
             />
           </div>
         </div>
-
-        <!-- Notes -->
-        <div>
-          <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">ملاحظات التوريد</label>
-          <input
-            type="text"
-            v-model="purchaseForm.notes"
-            placeholder="ملاحظات على حالة البضاعة أو الدفعة..."
-            class="w-full text-xs p-2.5 rounded-xl border border-brand-gray/20 dark:border-white/10 bg-transparent text-brand-dark dark:text-white"
-          />
-        </div>
-
-        <!-- Submit Buttons -->
-        <div class="flex justify-end gap-2 pt-4 border-t border-brand-gray/10 dark:border-white/10">
-          <Button
-            type="button"
-            @click="showPurchaseModal = false"
-            class="!text-xs !px-4 !py-2 !rounded-xl !text-slate-600 dark:!text-slate-300 !bg-transparent hover:!bg-black/5 dark:hover:!bg-white/5 cursor-pointer"
-          >
-            إلغاء
-          </Button>
-          <Button
-            type="submit"
-            :disabled="expenseStore.loading"
-            class="!text-xs !px-5 !py-2 !rounded-xl !bg-emerald-600 hover:!bg-emerald-700 !text-white !font-bold cursor-pointer"
-          >
-            <span v-if="!expenseStore.loading">تأكيد التوريد وحفظ المصروف</span>
-            <span v-else>جاري التسجيل...</span>
-          </Button>
-        </div>
       </form>
-    </Dialog>
 
-    <!-- 3. Modal: Confirm Monthly Recurring Generation -->
-    <Dialog
-      v-model:visible="showRecurringConfirm"
-      modal
-      header="توليد فواتير الشهر الدورية تلقائياً"
-      :style="{ width: '480px' }"
-      class="!rounded-2xl !bg-brand-white dark:!bg-[#1a202c] !text-brand-dark dark:!text-white"
+      <template #footer="{ close }">
+        <button
+          type="button"
+          @click="close"
+          class="px-4 py-2.5 rounded-xl text-xs font-bold text-slate-500 hover:text-slate-800 dark:hover:text-white cursor-pointer"
+        >
+          إلغاء
+        </button>
+        <button
+          type="submit"
+          form="purchaseForm"
+          :disabled="expenseStore.loading"
+          class="px-5 py-2.5 rounded-xl text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white flex items-center gap-2 cursor-pointer shadow-sm disabled:opacity-50"
+        >
+          <span>{{ expenseStore.loading ? 'جاري التسجيل...' : 'تأكيد التوريد وحفظ المصروف' }}</span>
+        </button>
+      </template>
+    </OhdaModal>
+
+    <!-- 3. Modal: Recurring Expenses Confirmation using OhdaModal -->
+    <OhdaModal
+      :visible="showRecurringConfirm"
+      @close="showRecurringConfirm = false"
+      title="توليد فواتير الشهر الدورية تلقائياً"
+      description="إنشاء قيود المصروفات الثابتة لشهر الحالي بضغطة زر واحدة"
+      :icon="CalendarClock"
+      max-width="max-w-md"
     >
-      <div class="space-y-3 pt-2">
-        <p class="text-xs text-slate-600 dark:text-slate-300">
+      <div class="space-y-3 text-xs">
+        <p class="text-slate-600 dark:text-slate-300">
           سيقوم النظام تلقائياً بإنشاء القيود والمصروفات الشهرية الثابتة لشهر الحالي:
         </p>
 
-        <ul class="text-xs space-y-1.5 p-3 rounded-xl bg-purple-500/10 border border-purple-500/20 text-purple-800 dark:text-purple-300 font-semibold">
+        <ul class="space-y-1.5 p-3 rounded-xl bg-purple-500/10 border border-purple-500/20 text-purple-800 dark:text-purple-300 font-semibold">
           <li class="flex items-center justify-between">
             <span>• إيجار مقر الورشة الشهري</span>
             <span class="font-mono">12,000 ج.م</span>
@@ -547,60 +543,60 @@
         <p class="text-[11px] text-slate-400">
           ملاحظة: إذا كانت الفواتير قد تم توليدها مسبقاً لهذا الشهر فلن يتم تكرارها.
         </p>
-
-        <div class="flex justify-end gap-2 pt-4 border-t border-brand-gray/10 dark:border-white/10">
-          <Button
-            type="button"
-            @click="showRecurringConfirm = false"
-            class="!text-xs !px-4 !py-2 !rounded-xl !text-slate-600 dark:!text-slate-300 !bg-transparent hover:!bg-black/5 dark:hover:!bg-white/5 cursor-pointer"
-          >
-            إلغاء
-          </Button>
-          <Button
-            type="button"
-            @click="confirmGenerateRecurring"
-            :disabled="expenseStore.loading"
-            class="!text-xs !px-5 !py-2 !rounded-xl !bg-purple-600 hover:!bg-purple-700 !text-white !font-bold cursor-pointer"
-          >
-            <span v-if="!expenseStore.loading">تأكيد التوليد الآن</span>
-            <span v-else>جاري التوليد...</span>
-          </Button>
-        </div>
       </div>
-    </Dialog>
 
-    <!-- 4. Modal: Confirm Delete -->
-    <Dialog
-      v-model:visible="showDeleteModal"
-      modal
-      header="تأكيد حذف المصروف"
-      :style="{ width: '420px' }"
-      class="!rounded-2xl !bg-brand-white dark:!bg-[#1a202c] !text-brand-dark dark:!text-white"
+      <template #footer="{ close }">
+        <button
+          type="button"
+          @click="close"
+          class="px-4 py-2.5 rounded-xl text-xs font-bold text-slate-500 hover:text-slate-800 dark:hover:text-white cursor-pointer"
+        >
+          إلغاء
+        </button>
+        <button
+          type="button"
+          @click="confirmGenerateRecurring"
+          :disabled="expenseStore.loading"
+          class="px-5 py-2.5 rounded-xl text-xs font-bold bg-purple-600 hover:bg-purple-700 text-white cursor-pointer shadow-sm disabled:opacity-50"
+        >
+          <span>{{ expenseStore.loading ? 'جاري التوليد...' : 'تأكيد التوليد الآن' }}</span>
+        </button>
+      </template>
+    </OhdaModal>
+
+    <!-- 4. Modal: Delete Confirmation using OhdaModal -->
+    <OhdaModal
+      :visible="showDeleteModal"
+      @close="showDeleteModal = false"
+      title="تأكيد حذف المصروف"
+      description="يرجى الانتباه قبل حذف القيد المالي للمصروف"
+      :icon="Trash2"
+      max-width="max-w-md"
     >
-      <div class="space-y-4 pt-2">
-        <p class="text-xs text-slate-600 dark:text-slate-300">
+      <div class="space-y-3 text-xs">
+        <p class="text-slate-600 dark:text-slate-300">
           هل أنت متأكد من رغبتك في حذف المصروف بقيمة
           <span class="font-bold text-red-600 dark:text-red-400 font-mono">{{ formatCurrency(expenseToDelete?.amount) }}</span>؟
         </p>
-
-        <div class="flex justify-end gap-2 pt-2">
-          <Button
-            type="button"
-            @click="showDeleteModal = false"
-            class="!text-xs !px-4 !py-2 !rounded-xl !text-slate-600 dark:!text-slate-300 !bg-transparent hover:!bg-black/5 dark:hover:!bg-white/5 cursor-pointer"
-          >
-            إلغاء
-          </Button>
-          <Button
-            type="button"
-            @click="executeDelete"
-            class="!text-xs !px-5 !py-2 !rounded-xl !bg-red-600 hover:!bg-red-700 !text-white !font-bold cursor-pointer"
-          >
-            حذف نهائي
-          </Button>
-        </div>
       </div>
-    </Dialog>
+
+      <template #footer="{ close }">
+        <button
+          type="button"
+          @click="close"
+          class="px-4 py-2.5 rounded-xl text-xs font-bold text-slate-500 hover:text-slate-800 dark:hover:text-white cursor-pointer"
+        >
+          إلغاء
+        </button>
+        <button
+          type="button"
+          @click="executeDelete"
+          class="px-5 py-2.5 rounded-xl text-xs font-bold bg-red-600 hover:bg-red-700 text-white cursor-pointer shadow-sm"
+        >
+          حذف نهائي
+        </button>
+      </template>
+    </OhdaModal>
   </div>
 </template>
 
@@ -608,11 +604,9 @@
 import { ref, computed, onMounted } from "vue";
 import { useOhdaExpenseStore } from "../stores/useOhdaExpenseStore";
 import { useOhdaInventoryStore } from "../stores/useOhdaInventoryStore";
+import OhdaDataTable from "../components/OhdaDataTable.vue";
+import OhdaModal from "../components/OhdaModal.vue";
 import LoadingSkeleton from "@/components/LoadingSkeleton.vue";
-import EmptyState from "@/components/EmptyState.vue";
-import Dialog from "primevue/dialog";
-import Button from "primevue/button";
-import InputText from "primevue/inputtext";
 import {
   Receipt,
   Plus,
@@ -645,6 +639,17 @@ const filterTabs = [
   { value: "utilities", label: "إيجار ومرافق وفواتير" },
   { value: "salaries", label: "رواتب وأجور" },
   { value: "other", label: "نثريات وصيانة" }
+];
+
+const expenseColumns = [
+  { field: "expenseDate", header: "التاريخ", sortable: true, width: "12%" },
+  { field: "expenseType", header: "نوع المصروف", sortable: true, width: "16%" },
+  { field: "notes", header: "البيان / التفاصيل", width: "24%" },
+  { field: "supplierName", header: "المورد / المستفيد", width: "15%" },
+  { field: "invoiceNumber", header: "رقم الإيصال", width: "11%" },
+  { field: "paymentMethodName", header: "طريقة الدفع", width: "11%" },
+  { field: "amount", header: "المبلغ (ج.م)", sortable: true, width: "12%" },
+  { field: "actions", header: "إجراءات", align: "center", width: "7%" }
 ];
 
 const showAddModal = ref(false);
@@ -840,7 +845,7 @@ async function submitSupplierPurchase() {
 
   if (res.success) {
     showPurchaseModal.value = false;
-    await inventoryStore.fetchProducts(); // refresh products quantity
+    await inventoryStore.fetchProducts();
   } else {
     alert(res.message);
   }

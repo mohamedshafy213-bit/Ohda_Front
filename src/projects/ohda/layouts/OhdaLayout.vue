@@ -247,12 +247,12 @@ const showChangePasswordModal = ref(false);
 
 const openGroups = ref({
   general: true,
+  sales: true,
   inventory: true,
-  requests: true,
-  entities: true,
-  security: true,
+  finance: true,
+  hr: true,
   branches: true,
-
+  users_group: true
 });
 
 function toggleGroup(key) {
@@ -268,44 +268,25 @@ const currentLocale = computed(() => getCurrentLocale());
 const pageMeta = {
   "/ohda/dashboard": { labelKey: "ohda.nav.dashboard", icon: "LayoutDashboard" },
   "/ohda/jobs": { labelKey: "ohda.nav.jobs", icon: "FileText" },
-  "/ohda/expenses": { labelKey: "ohda.nav.expenses", icon: "Receipt" },
-  "/ohda/employees": { labelKey: "ohda.nav.employees", icon: "Users" },
-  "/ohda/finance": { labelKey: "ohda.nav.finance", icon: "Landmark" },
-  "/ohda/month-closing": { labelKey: "ohda.nav.monthClosing", icon: "CalendarCheck2" },
+  "/ohda/clients": { labelKey: "ohda.nav.clients", icon: "Users" },
   "/ohda/products": { labelKey: "ohda.nav.products", icon: "Package" },
   "/ohda/services": { labelKey: "ohda.nav.services", icon: "Wrench" },
+  "/ohda/purchases": { labelKey: "ohda.nav.purchases", icon: "ShoppingCart" },
+  "/ohda/returns": { labelKey: "ohda.nav.returns", icon: "RotateCcw" },
+  "/ohda/suppliers": { labelKey: "ohda.nav.suppliers", icon: "Truck" },
+  "/ohda/categories": { labelKey: "ohda.nav.categories", icon: "Tags" },
+  "/ohda/barcode-print": { labelKey: "ohda.nav.barcodePrint", icon: "Printer" },
+  "/ohda/scan": { labelKey: "ohda.nav.scan", icon: "QrCode" },
+  "/ohda/finance": { labelKey: "ohda.nav.finance", icon: "Wallet" },
+  "/ohda/expenses": { labelKey: "ohda.nav.expenses", icon: "Receipt" },
+  "/ohda/month-closing": { labelKey: "ohda.nav.monthClosing", icon: "Calculator" },
+  "/ohda/employees": { labelKey: "ohda.nav.employees", icon: "UserCheck" },
+  "/ohda/users": { labelKey: "ohda.nav.users", icon: "Shield" },
   "/ohda/warehouse-bins": { labelKey: "ohda.nav.warehouseBins", icon: "Layers" },
   "/ohda/inventory": { labelKey: "ohda.nav.inventory", icon: "Boxes" },
-  "/ohda/exit-requests": { 
-    labelKey: "ohda.nav.exitRequests", 
-    icon: "ArrowUpRight", 
-    getBadge: () => requestsStore.pendingExitRequestsCount || null,
-    isAlert: () => (requestsStore.myReturnedExitRequestsCount > 0)
-  },
-  "/ohda/entry-requests": { 
-    labelKey: "ohda.nav.entryRequests", 
-    icon: "ArrowDownLeft", 
-    getBadge: () => requestsStore.pendingEntryRequestsCount || null,
-    isAlert: () => (requestsStore.myReturnedEntryRequestsCount > 0)
-  },
-  "/ohda/acceptance": { 
-    labelKey: "ohda.nav.acceptance", 
-    icon: "CheckCheck", 
-    getBadge: () => ((requestsStore.pendingExitRequestsCount || 0) + (requestsStore.pendingEntryRequestsCount || 0)) || null 
-  },
-  "/ohda/scan": { labelKey: "ohda.nav.scan", icon: "QrCode" },
-  "/ohda/barcode-print": { labelKey: "ohda.nav.barcodePrint", icon: "Printer" },
-  "/ohda/categories": { labelKey: "ohda.nav.categories", icon: "Tags" },
-  "/ohda/suppliers": { labelKey: "ohda.nav.suppliers", icon: "Truck" },
-  "/ohda/users": { labelKey: "ohda.nav.users", icon: "Users" },
-  "/ohda/departments": { labelKey: "ohda.nav.departments", icon: "Building" },
-  "/ohda/product-states": { labelKey: "ohda.nav.productStates", icon: "Activity" },
-  "/ohda/approval-config": { labelKey: "ohda.nav.approvalConfig", icon: "Settings" },
   "/ohda/notifications": { labelKey: "ohda.nav.notifications", icon: "Bell" },
   "/ohda/branches": { labelKey: "ohda.nav.branches", icon: "Building2" },
-  "/ohda/branches-dashboard": { labelKey: "ohda.nav.branchesDashboard", icon: "Activity" },
-  "/ohda/untracked-items": { labelKey: "ohda.nav.untrackedItems", icon: "MousePointerClick" },
-  "/ohda/packages": { labelKey: "ohda.nav.packages", icon: "PackageOpen" }
+  "/ohda/branches-dashboard": { labelKey: "ohda.nav.branchesDashboard", icon: "Activity" }
 };
 
 const navItems = computed(() => {
@@ -392,53 +373,45 @@ const groupDefinitions = computed(() => {
       paths: ["/ohda/dashboard"]
     },
     {
+      key: "sales",
+      labelKey: "ohda.groups.sales",
+      icon: "FileText",
+      paths: [
+        "/ohda/jobs",
+        "/ohda/clients"
+      ]
+    },
+    {
       key: "inventory",
       labelKey: "ohda.groups.inventory",
       icon: "Boxes",
       paths: [
-        "/ohda/jobs",
-        "/ohda/expenses",
-        "/ohda/employees",
-        "/ohda/finance",
-        "/ohda/month-closing",
         "/ohda/products",
         "/ohda/services",
-        "/ohda/untracked-items",
-        "/ohda/packages",
-        "/ohda/inventory",
-        "/ohda/warehouse-bins",
-        "/ohda/barcode-print",
+        "/ohda/purchases",
+        "/ohda/returns",
+        "/ohda/suppliers",
         "/ohda/categories",
-        "/ohda/scan"
+        "/ohda/barcode-print"
       ]
     },
     {
-      key: "requests",
-      labelKey: "ohda.groups.requests",
-      icon: "ScrollText",
+      key: "finance",
+      labelKey: "ohda.groups.finance",
+      icon: "Wallet",
       paths: [
-        "/ohda/acceptance",
-        "/ohda/exit-requests",
-        "/ohda/entry-requests"
+        "/ohda/finance",
+        "/ohda/expenses",
+        "/ohda/month-closing"
       ]
     },
     {
-      key: "entities",
-      labelKey: "ohda.groups.entities",
-      icon: "Building2",
+      key: "hr",
+      labelKey: "ohda.groups.hr",
+      icon: "UserCheck",
       paths: [
-        "/ohda/departments",
-        "/ohda/suppliers"
-      ]
-    },
-    {
-      key: "security",
-      labelKey: "ohda.groups.security",
-      icon: "Shield",
-      paths: [
-        "/ohda/users",
-        "/ohda/approval-config",
-        "/ohda/product-states"
+        "/ohda/employees",
+        "/ohda/users"
       ]
     }
   ];

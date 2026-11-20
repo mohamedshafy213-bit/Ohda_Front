@@ -396,22 +396,23 @@
       </div>
     </div>
 
-    <!-- 1. Modal: Transfer Funds -->
-    <Dialog
-      v-model:visible="showTransferModal"
-      modal
-      header="تحويل مالي بين الخزائن والحسابات"
-      :style="{ width: '500px' }"
-      class="!rounded-2xl !bg-brand-white dark:!bg-[#1a202c] !text-brand-dark dark:!text-white"
+    <!-- 1. Modal: Transfer Funds using OhdaModal -->
+    <OhdaModal
+      :visible="showTransferModal"
+      @close="showTransferModal = false"
+      title="تحويل مالي بين الخزائن والحسابات"
+      description="تحويل نقدية من حساب أو خزينة إلى حساب آخر مع تسجيل القيد آلياً"
+      :icon="ArrowLeftRight"
+      max-width="max-w-lg"
     >
-      <form @submit.prevent="submitTransfer" class="space-y-4 pt-2">
+      <form @submit.prevent="submitTransfer" id="transferForm" class="space-y-4 text-xs">
         <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
           <div>
-            <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">من الحساب (خصم) *</label>
+            <label class="block font-semibold mb-1">من الحساب (خصم) *</label>
             <select
               v-model="transferForm.fromAccountId"
               required
-              class="w-full text-xs p-2.5 rounded-xl border border-brand-gray/20 dark:border-white/10 bg-transparent text-brand-dark dark:text-white"
+              class="w-full text-xs p-2.5 rounded-xl border border-brand-gray/20 dark:border-white/10 bg-transparent text-brand-dark dark:text-white focus:border-brand-accent transition-all"
             >
               <option value="" disabled selected class="bg-white dark:bg-slate-800">-- اختر الحساب المحول منه --</option>
               <option
@@ -426,11 +427,11 @@
           </div>
 
           <div>
-            <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">إلى الحساب (إيداع) *</label>
+            <label class="block font-semibold mb-1">إلى الحساب (إيداع) *</label>
             <select
               v-model="transferForm.toAccountId"
               required
-              class="w-full text-xs p-2.5 rounded-xl border border-brand-gray/20 dark:border-white/10 bg-transparent text-brand-dark dark:text-white"
+              class="w-full text-xs p-2.5 rounded-xl border border-brand-gray/20 dark:border-white/10 bg-transparent text-brand-dark dark:text-white focus:border-brand-accent transition-all"
             >
               <option value="" disabled selected class="bg-white dark:bg-slate-800">-- اختر الحساب المحول إليه --</option>
               <option
@@ -447,7 +448,7 @@
         </div>
 
         <div>
-          <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">مبلغ التحويل (ج.م) *</label>
+          <label class="block font-semibold mb-1">مبلغ التحويل (ج.م) *</label>
           <input
             type="number"
             v-model.number="transferForm.amount"
@@ -455,66 +456,68 @@
             step="0.01"
             required
             placeholder="0.00"
-            class="w-full text-xs p-2.5 rounded-xl border border-brand-gray/20 dark:border-white/10 bg-transparent text-brand-dark dark:text-white font-mono font-bold"
+            class="w-full text-xs p-2.5 rounded-xl border border-brand-gray/20 dark:border-white/10 bg-transparent text-brand-dark dark:text-white font-mono font-bold focus:border-brand-accent transition-all"
           />
         </div>
 
         <div>
-          <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">ملاحظات / سبب التحويل</label>
+          <label class="block font-semibold mb-1">ملاحظات / سبب التحويل</label>
           <input
             type="text"
             v-model="transferForm.notes"
             placeholder="مثال: توريد كاش اليوم للبنك الأهلي..."
-            class="w-full text-xs p-2.5 rounded-xl border border-brand-gray/20 dark:border-white/10 bg-transparent text-brand-dark dark:text-white"
+            class="w-full text-xs p-2.5 rounded-xl border border-brand-gray/20 dark:border-white/10 bg-transparent text-brand-dark dark:text-white focus:border-brand-accent transition-all"
           />
         </div>
-
-        <div class="flex justify-end gap-2 pt-4 border-t border-brand-gray/10 dark:border-white/10">
-          <Button
-            type="button"
-            @click="showTransferModal = false"
-            class="!text-xs !px-4 !py-2 !rounded-xl !text-slate-600 dark:!text-slate-300 !bg-transparent hover:!bg-black/5 dark:hover:!bg-white/5 cursor-pointer"
-          >
-            إلغاء
-          </Button>
-          <Button
-            type="submit"
-            :disabled="financeStore.loading"
-            class="!text-xs !px-5 !py-2 !rounded-xl !bg-blue-600 hover:!bg-blue-700 !text-white !font-bold cursor-pointer"
-          >
-            تأكيد التحويل الآن
-          </Button>
-        </div>
       </form>
-    </Dialog>
 
-    <!-- 2. Modal: Add Financial Account -->
-    <Dialog
-      v-model:visible="showAddAccountModal"
-      modal
-      header="إضافة حساب مالي / محفظة جديدة"
-      :style="{ width: '480px' }"
-      class="!rounded-2xl !bg-brand-white dark:!bg-[#1a202c] !text-brand-dark dark:!text-white"
+      <template #footer="{ close }">
+        <button
+          type="button"
+          @click="close"
+          class="px-4 py-2.5 rounded-xl text-xs font-bold text-slate-500 hover:text-slate-800 dark:hover:text-white cursor-pointer"
+        >
+          إلغاء
+        </button>
+        <button
+          type="submit"
+          form="transferForm"
+          :disabled="financeStore.loading"
+          class="px-5 py-2.5 rounded-xl text-xs font-bold bg-blue-600 hover:bg-blue-700 text-white cursor-pointer shadow-sm disabled:opacity-50"
+        >
+          تأكيد التحويل الآن
+        </button>
+      </template>
+    </OhdaModal>
+
+    <!-- 2. Modal: Add Financial Account using OhdaModal -->
+    <OhdaModal
+      :visible="showAddAccountModal"
+      @close="showAddAccountModal = false"
+      title="إضافة حساب مالي / محفظة جديدة"
+      description="إنشاء خزينة نقدية، حساب بنكي، أو محفظة إلكترونية للورشة"
+      :icon="Landmark"
+      max-width="max-w-lg"
     >
-      <form @submit.prevent="submitAddAccount" class="space-y-4 pt-2">
+      <form @submit.prevent="submitAddAccount" id="addAccountForm" class="space-y-4 text-xs">
         <div>
-          <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">اسم الحساب / الخزينة *</label>
+          <label class="block font-semibold mb-1">اسم الحساب / الخزينة *</label>
           <input
             type="text"
             v-model="accountForm.name"
             required
             placeholder="مثال: حساب بنك مصر، محفظة أورنج كاش..."
-            class="w-full text-xs p-2.5 rounded-xl border border-brand-gray/20 dark:border-white/10 bg-transparent text-brand-dark dark:text-white"
+            class="w-full text-xs p-2.5 rounded-xl border border-brand-gray/20 dark:border-white/10 bg-transparent text-brand-dark dark:text-white focus:border-brand-accent transition-all"
           />
         </div>
 
         <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
           <div>
-            <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">نوع الحساب *</label>
+            <label class="block font-semibold mb-1">نوع الحساب *</label>
             <select
               v-model="accountForm.accountType"
               required
-              class="w-full text-xs p-2.5 rounded-xl border border-brand-gray/20 dark:border-white/10 bg-transparent text-brand-dark dark:text-white"
+              class="w-full text-xs p-2.5 rounded-xl border border-brand-gray/20 dark:border-white/10 bg-transparent text-brand-dark dark:text-white focus:border-brand-accent transition-all"
             >
               <option :value="1" class="bg-white dark:bg-slate-800">خزينة نقدية (درج كاش)</option>
               <option :value="2" class="bg-white dark:bg-slate-800">حساب بنكي</option>
@@ -524,65 +527,66 @@
           </div>
 
           <div>
-            <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">الرصيد الافتتاحي (ج.م)</label>
+            <label class="block font-semibold mb-1">الرصيد الافتتاحي (ج.م)</label>
             <input
               type="number"
               v-model.number="accountForm.initialBalance"
               min="0"
               step="any"
               placeholder="0.00"
-              class="w-full text-xs p-2.5 rounded-xl border border-brand-gray/20 dark:border-white/10 bg-transparent text-brand-dark dark:text-white font-mono font-bold"
+              class="w-full text-xs p-2.5 rounded-xl border border-brand-gray/20 dark:border-white/10 bg-transparent text-brand-dark dark:text-white font-mono font-bold focus:border-brand-accent transition-all"
             />
           </div>
         </div>
 
         <div>
-          <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">رقم الحساب / الآيبان / معرف المحفظة</label>
+          <label class="block font-semibold mb-1">رقم الحساب / الآيبان / معرف المحفظة</label>
           <input
             type="text"
             v-model="accountForm.accountNumber"
             placeholder="رقم الحساب أو معرف إنستاباي..."
-            class="w-full text-xs p-2.5 rounded-xl border border-brand-gray/20 dark:border-white/10 bg-transparent text-brand-dark dark:text-white font-mono"
+            class="w-full text-xs p-2.5 rounded-xl border border-brand-gray/20 dark:border-white/10 bg-transparent text-brand-dark dark:text-white font-mono focus:border-brand-accent transition-all"
           />
         </div>
 
         <div>
-          <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">ملاحظات</label>
+          <label class="block font-semibold mb-1">ملاحظات</label>
           <input
             type="text"
             v-model="accountForm.notes"
             placeholder="وصف إضافي للحساب..."
-            class="w-full text-xs p-2.5 rounded-xl border border-brand-gray/20 dark:border-white/10 bg-transparent text-brand-dark dark:text-white"
+            class="w-full text-xs p-2.5 rounded-xl border border-brand-gray/20 dark:border-white/10 bg-transparent text-brand-dark dark:text-white focus:border-brand-accent transition-all"
           />
         </div>
-
-        <div class="flex justify-end gap-2 pt-4 border-t border-brand-gray/10 dark:border-white/10">
-          <Button
-            type="button"
-            @click="showAddAccountModal = false"
-            class="!text-xs !px-4 !py-2 !rounded-xl !text-slate-600 dark:!text-slate-300 !bg-transparent hover:!bg-black/5 dark:hover:!bg-white/5 cursor-pointer"
-          >
-            إلغاء
-          </Button>
-          <Button
-            type="submit"
-            :disabled="financeStore.loading"
-            class="!text-xs !px-5 !py-2 !rounded-xl !bg-brand-accent !text-brand-dark !font-bold cursor-pointer"
-          >
-            إنشاء الحساب
-          </Button>
-        </div>
       </form>
-    </Dialog>
+
+      <template #footer="{ close }">
+        <button
+          type="button"
+          @click="close"
+          class="px-4 py-2.5 rounded-xl text-xs font-bold text-slate-500 hover:text-slate-800 dark:hover:text-white cursor-pointer"
+        >
+          إلغاء
+        </button>
+        <button
+          type="submit"
+          form="addAccountForm"
+          :disabled="financeStore.loading"
+          class="px-5 py-2.5 rounded-xl text-xs font-bold bg-brand-accent hover:bg-brand-accent/90 text-brand-dark cursor-pointer shadow-sm disabled:opacity-50"
+        >
+          إنشاء الحساب
+        </button>
+      </template>
+    </OhdaModal>
   </div>
 </template>
 
 <script setup>
 import { ref, computed, onMounted } from "vue";
 import { useOhdaFinanceStore } from "../stores/useOhdaFinanceStore";
+import OhdaModal from "../components/OhdaModal.vue";
 import LoadingSkeleton from "@/components/LoadingSkeleton.vue";
 import EmptyState from "@/components/EmptyState.vue";
-import Dialog from "primevue/dialog";
 import Button from "primevue/button";
 import InputText from "primevue/inputtext";
 import {

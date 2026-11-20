@@ -31,6 +31,26 @@ html[dir="rtl"] *:not(.pi):not(.pi *) {
     font-family: "primeicons" !important;
 }
 
+/* Remove heavy browser black focus outline */
+*:focus,
+*:focus-visible,
+input:focus,
+input:focus-visible,
+textarea:focus,
+textarea:focus-visible,
+select:focus,
+select:focus-visible,
+button:focus,
+button:focus-visible,
+.p-inputtext:focus,
+.p-inputtext:focus-visible,
+.p-select:focus,
+.p-select:focus-visible {
+    outline: none !important;
+    box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.25) !important;
+    border-color: #10b981 !important;
+}
+
 /* Primary and Surface Palettes */
 /* :root {
     --p-primary-50: #eff6ff;

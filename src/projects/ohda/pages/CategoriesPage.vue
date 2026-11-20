@@ -86,23 +86,24 @@
       </div>
     </div>
 
-    <!-- Volt Dialog for Category Modal -->
-    <Dialog
-      v-model:visible="showModal"
-      modal
-      :header="isEditing ? $t('ohda.categories.editCategory') : $t('ohda.categories.addCategory')"
-      class="max-w-md w-full !bg-brand-white dark:!bg-brand-dark !border-brand-gray/15 !text-brand-dark dark:!text-white rounded-3xl overflow-hidden shadow-2xl"
+    <!-- OhdaModal for Category Modal -->
+    <OhdaModal
+      :visible="showModal"
+      @close="showModal = false"
+      :title="isEditing ? $t('ohda.categories.editCategory') : $t('ohda.categories.addCategory')"
+      description="إدخال تفاصيل التصنيف أو فئة قطع الغيار والزيوت"
+      max-width="max-w-md"
     >
-      <form @submit.prevent="saveCategory" class="space-y-4 text-xs">
+      <form @submit.prevent="saveCategory" id="categoryForm" class="space-y-4 text-xs">
         <div>
           <label class="block font-semibold text-brand-dark dark:text-white mb-1.5 required">
             {{ $t('ohda.categories.name') }}
           </label>
-          <InputText
+          <input
             v-model="form.name"
             required
-            class="w-full !bg-brand-light dark:!bg-brand-dark/50 !border-brand-gray/25 focus:!border-brand-accent !text-brand-dark dark:!text-white rounded-xl"
-            autofocus
+            type="text"
+            class="w-full px-3.5 py-2.5 rounded-xl border border-brand-gray/25 bg-brand-light/50 dark:bg-white/5 text-brand-dark dark:text-white focus:border-brand-accent transition-all text-xs"
           />
         </div>
 
@@ -110,10 +111,11 @@
           <label class="block font-semibold text-brand-dark dark:text-white mb-1.5 required">
             {{ $t('ohda.categories.code') }}
           </label>
-          <InputText
+          <input
             v-model="form.code"
             required
-            class="w-full !bg-brand-light dark:!bg-brand-dark/50 !border-brand-gray/25 focus:!border-brand-accent !text-brand-dark dark:!text-white rounded-xl font-mono uppercase"
+            type="text"
+            class="w-full px-3.5 py-2.5 rounded-xl border border-brand-gray/25 bg-brand-light/50 dark:bg-white/5 text-brand-dark dark:text-white font-mono uppercase focus:border-brand-accent transition-all text-xs"
           />
         </div>
 
@@ -121,28 +123,34 @@
           <label class="block font-semibold text-brand-dark dark:text-white mb-1.5">
             {{ $t('ohda.categories.description') }}
           </label>
-          <Textarea
+          <textarea
             v-model="form.description"
             rows="3"
-            class="w-full !bg-brand-light dark:!bg-brand-dark/50 !border-brand-gray/25 focus:!border-brand-accent !text-brand-dark dark:!text-white rounded-xl"
-          />
-        </div>
-
-        <div class="flex items-center justify-end gap-2.5 pt-4 border-t border-brand-gray/10 dark:border-white/10">
-          <SecondaryButton type="button" :disabled="isSaving" @click="showModal = false">
-            {{ $t('ohda.common.cancel') }}
-          </SecondaryButton>
-          <Button
-            type="submit"
-            :disabled="isSaving"
-            class="!bg-brand-accent hover:!bg-brand-accent/90 !text-brand-dark !font-bold flex items-center gap-2 shadow-md shadow-brand-accent/15"
-          >
-            <div v-if="isSaving" class="animate-spin rounded-full h-3.5 w-3.5 border-2 border-brand-dark/30 border-t-brand-dark"></div>
-            <span>{{ isSaving ? $t('ohda.common.saving') : $t('ohda.common.save') }}</span>
-          </Button>
+            class="w-full px-3.5 py-2 rounded-xl border border-brand-gray/25 bg-brand-light/50 dark:bg-white/5 text-brand-dark dark:text-white focus:border-brand-accent transition-all text-xs resize-none"
+          ></textarea>
         </div>
       </form>
-    </Dialog>
+
+      <template #footer="{ close }">
+        <button
+          type="button"
+          :disabled="isSaving"
+          @click="close"
+          class="px-4 py-2.5 rounded-xl text-xs font-bold text-slate-500 hover:text-slate-800 dark:hover:text-white cursor-pointer"
+        >
+          {{ $t('ohda.common.cancel') }}
+        </button>
+        <button
+          type="submit"
+          form="categoryForm"
+          :disabled="isSaving"
+          class="px-5 py-2.5 rounded-xl text-xs font-bold bg-brand-accent hover:bg-brand-accent/90 text-brand-dark flex items-center gap-2 cursor-pointer shadow-sm disabled:opacity-50"
+        >
+          <div v-if="isSaving" class="animate-spin rounded-full h-3.5 w-3.5 border-2 border-brand-dark/30 border-t-brand-dark"></div>
+          <span>{{ isSaving ? $t('ohda.common.saving') : $t('ohda.common.save') }}</span>
+        </button>
+      </template>
+    </OhdaModal>
 
     <!-- Delete Confirmation Dialog -->
     <DeleteDialog
@@ -161,6 +169,7 @@ import { ref, computed, onMounted } from "vue";
 import { useOhdaInventoryStore } from "../stores/useOhdaInventoryStore";
 import { useToastStore } from "@/stores/toastStore";
 import { useI18n } from "vue-i18n";
+import OhdaModal from "../components/OhdaModal.vue";
 import DeleteDialog from "@/components/DeleteDialog.vue";
 import EmptyState from "@/components/EmptyState.vue";
 import LoadingSkeleton from "@/components/LoadingSkeleton.vue";
