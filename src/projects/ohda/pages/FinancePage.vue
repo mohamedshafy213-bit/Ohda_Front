@@ -87,6 +87,9 @@
       </div>
     </div>
 
+    <!-- Cash Drawer Shift & Working Day Component -->
+    <CashDrawerWidget />
+
     <!-- Navigation Tabs Toolbar -->
     <div class="bg-brand-white dark:bg-white/5 p-3 rounded-2xl border border-brand-gray/10 shadow-sm flex flex-wrap items-center justify-between gap-4 print:hidden">
       <div class="flex items-center gap-2">
@@ -585,6 +588,7 @@
 import { ref, computed, onMounted } from "vue";
 import { useOhdaFinanceStore } from "../stores/useOhdaFinanceStore";
 import OhdaModal from "../components/OhdaModal.vue";
+import CashDrawerWidget from "../components/CashDrawerWidget.vue";
 import LoadingSkeleton from "@/components/LoadingSkeleton.vue";
 import EmptyState from "@/components/EmptyState.vue";
 import Button from "primevue/button";

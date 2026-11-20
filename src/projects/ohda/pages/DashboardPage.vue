@@ -30,14 +30,21 @@
           </Button>
         </router-link>
 
-        <router-link to="/ohda/finance">
-          <Button class="!bg-purple-600/10 hover:!bg-purple-600/20 !text-purple-600 dark:!text-purple-400 !border !border-purple-500/25 !font-bold !rounded-xl !px-3.5 !py-2 !text-xs flex items-center gap-1.5 cursor-pointer">
-            <Scale class="w-4 h-4" />
-            <span>تقفيل الكاش</span>
-          </Button>
-        </router-link>
+        <button
+          type="button"
+          @click="handleCashDrawerClick"
+          class="!font-bold !rounded-xl !px-3.5 !py-2 !text-xs flex items-center gap-1.5 cursor-pointer border transition-all active:scale-95"
+          :class="financeStore.hasActiveDrawer ? '!bg-purple-600/10 hover:!bg-purple-600/20 !text-purple-600 dark:!text-purple-400 !border-purple-500/25' : '!bg-brand-accent hover:!bg-brand-accent/90 !text-brand-dark !border-brand-accent'"
+        >
+          <Scale v-if="financeStore.hasActiveDrawer" class="w-4 h-4" />
+          <KeyRound v-else class="w-4 h-4" />
+          <span>{{ financeStore.hasActiveDrawer ? 'تقفيل الكاش' : 'بدء يوم العمل (فتح الدرج)' }}</span>
+        </button>
       </div>
     </div>
+
+    <!-- Cash Drawer & Working Day Shift Component -->
+    <CashDrawerWidget ref="cashDrawerWidgetRef" />
 
     <!-- 7 Core Workshop KPIs (User Explicit Requirements) -->
     <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-3">
@@ -290,12 +297,14 @@ import { useOhdaJobCardStore } from "../stores/useOhdaJobCardStore";
 import { useOhdaExpenseStore } from "../stores/useOhdaExpenseStore";
 import { useOhdaInventoryStore } from "../stores/useOhdaInventoryStore";
 import { useOhdaFinanceStore } from "../stores/useOhdaFinanceStore";
+import CashDrawerWidget from "../components/CashDrawerWidget.vue";
 import Button from "primevue/button";
 import {
   Wrench,
   Plus,
   Receipt,
   Scale,
+  KeyRound,
   Banknote,
   TrendingUp,
   Wallet,
@@ -310,13 +319,23 @@ const jobStore = useOhdaJobCardStore();
 const expenseStore = useOhdaExpenseStore();
 const inventoryStore = useOhdaInventoryStore();
 const financeStore = useOhdaFinanceStore();
+const cashDrawerWidgetRef = ref(null);
+
+function handleCashDrawerClick() {
+  if (financeStore.hasActiveDrawer) {
+    cashDrawerWidgetRef.value?.openCloseDayModal();
+  } else {
+    cashDrawerWidgetRef.value?.openStartDayModal();
+  }
+}
 
 onMounted(async () => {
   await Promise.all([
     jobStore.fetchJobs(),
     expenseStore.fetchExpenses(),
     inventoryStore.fetchProducts(),
-    financeStore.fetchAccounts()
+    financeStore.fetchAccounts(),
+    financeStore.fetchCurrentDrawerSession()
   ]);
 });
 

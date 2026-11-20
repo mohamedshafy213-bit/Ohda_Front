@@ -7,6 +7,10 @@ export const useOhdaFinanceStore = defineStore("ohdaFinance", {
     transactions: [],
     closingHistory: [],
     dailyCalculation: null,
+    activeDrawerSession: null,
+    hasActiveDrawer: false,
+    defaultDrawerAccount: null,
+    drawerHistory: [],
     loading: false
   }),
 
@@ -183,6 +187,95 @@ export const useOhdaFinanceStore = defineStore("ohdaFinance", {
         }
       } catch (err) {
         console.warn("Fetch closing history failed", err);
+      }
+    },
+
+    async fetchCurrentDrawerSession() {
+      try {
+        const res = await apiGet("/api/Finance/cash-drawer/current");
+        if (res?.data?.isDone && res?.data?.singleObject) {
+          const obj = res.data.singleObject;
+          this.hasActiveDrawer = !!obj.hasActiveSession;
+          this.activeDrawerSession = obj.hasActiveSession ? obj.session : null;
+          this.defaultDrawerAccount = {
+            id: obj.defaultAccountId,
+            name: obj.defaultAccountName,
+            balance: obj.currentAccountBalance
+          };
+          return obj;
+        }
+      } catch (err) {
+        console.warn("Fetch current drawer session failed", err);
+      }
+      return null;
+    },
+
+    async openCashDrawer(payload) {
+      this.loading = true;
+      try {
+        const res = await apiPost("/api/Finance/cash-drawer/open", payload);
+        if (res?.data?.isDone) {
+          await this.fetchCurrentDrawerSession();
+          await this.fetchAccounts();
+          return {
+            success: true,
+            message: res?.data?.returnMessage || "تم فتح درج النقدية وبدء يوم العمل بنجاح",
+            data: res.data.singleObject
+          };
+        }
+        return {
+          success: false,
+          message: res?.data?.returnMessage || "فشل فتح درج النقدية"
+        };
+      } catch (err) {
+        return {
+          success: false,
+          message: err?.response?.data?.returnMessage || err.message || "حدث خطأ أثناء فتح درج النقدية"
+        };
+      } finally {
+        this.loading = false;
+      }
+    },
+
+    async closeCashDrawer(payload) {
+      this.loading = true;
+      try {
+        const res = await apiPost("/api/Finance/cash-drawer/close", payload);
+        if (res?.data?.isDone) {
+          await this.fetchCurrentDrawerSession();
+          await this.fetchAccounts();
+          await this.fetchDrawerHistory();
+          return {
+            success: true,
+            message: res?.data?.returnMessage || "تم تقفيل درج النقدية بنجاح",
+            data: res.data.singleObject
+          };
+        }
+        return {
+          success: false,
+          message: res?.data?.returnMessage || "فشل تقفيل درج النقدية"
+        };
+      } catch (err) {
+        return {
+          success: false,
+          message: err?.response?.data?.returnMessage || err.message || "حدث خطأ أثناء تقفيل درج النقدية"
+        };
+      } finally {
+        this.loading = false;
+      }
+    },
+
+    async fetchDrawerHistory() {
+      try {
+        const res = await apiGet("/api/Finance/cash-drawer/history");
+        const data = res?.data?.objects || res?.data?.singleObject;
+        if (res?.data?.isDone && data) {
+          this.drawerHistory = Array.isArray(data) ? data : [data];
+        } else {
+          this.drawerHistory = [];
+        }
+      } catch (err) {
+        console.warn("Fetch drawer history failed", err);
       }
     }
   }

@@ -359,13 +359,14 @@
       </div>
 
       <!-- Quick Edit Branch Dialog -->
-      <Dialog
-        v-model:visible="showEditModal"
-        modal
-        header="تعديل بيانات وسعة الفرع"
-        class="!bg-brand-white !border-brand-gray/15 max-w-lg w-full !text-brand-dark"
+      <OhdaModal
+        :visible="showEditModal"
+        @close="showEditModal = false"
+        title="تعديل بيانات وسعة الفرع"
+        description="تعديل اسم الفرع وسعة المستخدمين والأصناف القصوى"
+        max-width="max-w-lg"
       >
-        <form @submit.prevent="submitEditBranch" class="space-y-4 text-xs">
+        <form @submit.prevent="submitEditBranch" id="editBranchForm" class="space-y-4 text-xs">
           <div>
             <label class="block font-semibold text-brand-dark mb-1">اسم الفرع</label>
             <InputText v-model="editForm.name" required class="w-full !bg-brand-light !border-brand-gray/25 focus:!border-brand-accent !text-brand-dark" />
@@ -381,26 +382,27 @@
               <InputNumber v-model="editForm.maxProducts" :min="1" :max="50000" class="w-full" inputClass="!bg-brand-light !border-brand-gray/25 focus:!border-brand-accent !text-brand-dark text-xs" />
             </div>
           </div>
-
-          <div class="flex items-center justify-end gap-3 pt-3 border-t border-brand-gray/10">
-            <Button
-              type="button"
-              @click="showEditModal = false"
-              class="!bg-brand-light hover:!bg-brand-soft !border !border-brand-gray/20 !text-brand-dark !rounded-xl !px-4 !py-2 text-xs font-semibold cursor-pointer"
-            >
-              {{ $t('ohda.common.cancel') }}
-            </Button>
-            <Button
-              type="submit"
-              :disabled="savingEdit"
-              class="!bg-brand-accent hover:!bg-brand-accent/90 !text-brand-dark !font-bold !rounded-xl !px-4 !py-2"
-            >
-              <span v-if="savingEdit">{{ $t('ohda.common.saving') }}</span>
-              <span v-else>{{ $t('ohda.common.save') }}</span>
-            </Button>
-          </div>
         </form>
-      </Dialog>
+
+        <template #footer>
+          <button
+            type="button"
+            @click="showEditModal = false"
+            class="px-4 py-2 rounded-xl border border-brand-gray/20 text-brand-dark hover:bg-brand-light font-semibold text-xs cursor-pointer"
+          >
+            {{ $t('ohda.common.cancel') }}
+          </button>
+          <button
+            type="submit"
+            form="editBranchForm"
+            :disabled="savingEdit"
+            class="px-5 py-2 rounded-xl bg-brand-accent hover:bg-brand-accent/90 text-brand-dark font-bold text-xs cursor-pointer shadow-sm disabled:opacity-50"
+          >
+            <span v-if="savingEdit">{{ $t('ohda.common.saving') }}</span>
+            <span v-else>{{ $t('ohda.common.save') }}</span>
+          </button>
+        </template>
+      </OhdaModal>
     </template>
   </div>
 </template>
@@ -410,6 +412,7 @@ import { ref, computed, onMounted } from "vue";
 import { useToast } from "primevue/usetoast";
 import { useOhdaAuthStore } from "../stores/useOhdaAuthStore";
 import { useOhdaBranchStore } from "../stores/useOhdaBranchStore";
+import OhdaModal from "../components/OhdaModal.vue";
 import {
   Chart as ChartJS,
   Title,
