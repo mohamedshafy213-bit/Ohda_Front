@@ -55,6 +55,11 @@ export default [
         component: () => import("./pages/FinancePage.vue")
       },
       {
+        path: "month-closing",
+        name: "OhdaMonthClosing",
+        component: () => import("./pages/MonthClosingPage.vue")
+      },
+      {
         path: "warehouse-bins",
         name: "OhdaWarehouseBins",
         component: () => import("./pages/WarehouseBinsPage.vue")
