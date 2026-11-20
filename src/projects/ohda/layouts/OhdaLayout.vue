@@ -220,7 +220,6 @@ import { useRouter, useRoute } from "vue-router";
 import { setLocale, getCurrentLocale } from "@/i18n";
 import { useOhdaAuthStore } from "../stores/useOhdaAuthStore";
 import { useOhdaNotificationStore } from "../stores/useOhdaNotificationStore";
-import { useOhdaRequestsStore } from "../stores/useOhdaRequestsStore";
 import { useI18n } from "vue-i18n";
 import PageHelpDrawer from "../components/PageHelpDrawer.vue";
 import ForceChangePasswordDialog from "../components/ForceChangePasswordDialog.vue";
@@ -237,7 +236,6 @@ const router = useRouter();
 const route = useRoute();
 const authStore = useOhdaAuthStore();
 const notifStore = useOhdaNotificationStore();
-const requestsStore = useOhdaRequestsStore();
 const { t } = useI18n();
 
 const sidebarOpen = ref(false);
@@ -474,9 +472,7 @@ watch(
 onMounted(async () => {
   Promise.allSettled([
     authStore.fetchMyPages(),
-    notifStore.fetchMyNotifications(),
-    requestsStore.fetchExitRequests(),
-    requestsStore.fetchEntryRequests()
+    notifStore.fetchMyNotifications()
   ]).catch(() => {});
 });
 </script>
