@@ -38,6 +38,11 @@ export const useOhdaAuthStore = defineStore("ohdaAuth", {
             "/ohda/dashboard",
             "/ohda/jobs",
             "/ohda/clients",
+            "/ohda/estimates",
+            "/ohda/reminders",
+            "/ohda/bookings-calendar",
+            "/ohda/todays-board",
+            "/ohda/bays-settings",
             "/ohda/products",
             "/ohda/services",
             "/ohda/purchases",
@@ -60,6 +65,11 @@ export const useOhdaAuthStore = defineStore("ohdaAuth", {
           "/ohda/dashboard",
           "/ohda/jobs",
           "/ohda/clients",
+          "/ohda/estimates",
+          "/ohda/reminders",
+          "/ohda/bookings-calendar",
+          "/ohda/todays-board",
+          "/ohda/bays-settings",
           "/ohda/products",
           "/ohda/services",
           "/ohda/purchases",
@@ -105,6 +115,11 @@ export const useOhdaAuthStore = defineStore("ohdaAuth", {
       if (paths.includes("/ohda/products") || paths.includes("/ohda/inventory") || paths.includes("/ohda/dashboard")) {
         if (!paths.includes("/ohda/jobs")) paths.push("/ohda/jobs");
         if (!paths.includes("/ohda/clients")) paths.push("/ohda/clients");
+        if (!paths.includes("/ohda/estimates")) paths.push("/ohda/estimates");
+        if (!paths.includes("/ohda/reminders")) paths.push("/ohda/reminders");
+        if (!paths.includes("/ohda/bookings-calendar")) paths.push("/ohda/bookings-calendar");
+        if (!paths.includes("/ohda/todays-board")) paths.push("/ohda/todays-board");
+        if (!paths.includes("/ohda/bays-settings")) paths.push("/ohda/bays-settings");
         if (!paths.includes("/ohda/services")) paths.push("/ohda/services");
         if (!paths.includes("/ohda/purchases")) paths.push("/ohda/purchases");
         if (!paths.includes("/ohda/returns")) paths.push("/ohda/returns");

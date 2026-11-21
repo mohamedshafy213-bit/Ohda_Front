@@ -45,6 +45,22 @@ export default [
         name: "OhdaReminders",
         component: () => import("./pages/RemindersPage.vue")
       },
+      // Reservations & Calendar
+      {
+        path: "bookings-calendar",
+        name: "OhdaBookingsCalendar",
+        component: () => import("./pages/BookingsCalendarPage.vue")
+      },
+      {
+        path: "todays-board",
+        name: "OhdaTodaysBoard",
+        component: () => import("./pages/TodaysBoardPage.vue")
+      },
+      {
+        path: "bays-settings",
+        name: "OhdaBaysSettings",
+        component: () => import("./pages/BaysSettingsPage.vue")
+      },
       // Inventory & Services
       {
         path: "products",

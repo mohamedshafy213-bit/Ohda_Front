@@ -245,6 +245,7 @@ const showChangePasswordModal = ref(false);
 
 const openGroups = ref({
   general: true,
+  reservations: true,
   sales: true,
   inventory: true,
   finance: true,
@@ -269,6 +270,9 @@ const pageMeta = {
   "/ohda/clients": { labelKey: "ohda.nav.clients", icon: "Users" },
   "/ohda/estimates": { labelKey: "ohda.nav.estimates", icon: "FileText" },
   "/ohda/reminders": { labelKey: "ohda.nav.reminders", icon: "BellRing" },
+  "/ohda/bookings-calendar": { labelKey: "ohda.nav.bookingsCalendar", icon: "CalendarDays" },
+  "/ohda/todays-board": { labelKey: "ohda.nav.todaysBoard", icon: "LayoutDashboard" },
+  "/ohda/bays-settings": { labelKey: "ohda.nav.baysSettings", icon: "Warehouse" },
   "/ohda/products": { labelKey: "ohda.nav.products", icon: "Package" },
   "/ohda/services": { labelKey: "ohda.nav.services", icon: "Wrench" },
   "/ohda/purchases": { labelKey: "ohda.nav.purchases", icon: "ShoppingCart" },
@@ -372,6 +376,16 @@ const groupDefinitions = computed(() => {
       labelKey: "ohda.groups.general",
       icon: "LayoutDashboard",
       paths: ["/ohda/dashboard"]
+    },
+    {
+      key: "reservations",
+      labelKey: "ohda.groups.reservations",
+      icon: "CalendarDays",
+      paths: [
+        "/ohda/bookings-calendar",
+        "/ohda/todays-board",
+        "/ohda/bays-settings"
+      ]
     },
     {
       key: "sales",
