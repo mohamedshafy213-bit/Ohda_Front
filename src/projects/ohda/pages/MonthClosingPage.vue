@@ -325,6 +325,110 @@
       </div>
     </div>
 
+    <!-- Section E: Returns & Invoices Reconciliation -->
+    <div class="bg-brand-white dark:bg-white/5 p-5 rounded-2xl border border-brand-gray/10 shadow-sm space-y-4">
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-brand-gray/10 pb-3">
+        <h2 class="text-sm font-bold text-brand-dark dark:text-white flex items-center gap-2">
+          <RotateCcw class="w-4 h-4 text-purple-600 dark:text-purple-400" />
+          <span>تسوية المرتجعات وربطها بالفواتير وأوامر الشغل الصادرة</span>
+        </h2>
+        <div class="flex items-center gap-3 text-xs flex-wrap">
+          <span class="px-2.5 py-1 rounded-lg bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 font-bold">
+            صافي مبيعات الشهر: {{ formatCurrency(closingStore.preview?.netSales || ((closingStore.preview?.totalInvoiced || 0) - (closingStore.preview?.totalClientReturns || 0))) }}
+          </span>
+          <span class="px-2.5 py-1 rounded-lg bg-blue-500/10 text-blue-700 dark:text-blue-300 font-bold">
+            صافي مشتريات الشهر: {{ formatCurrency(closingStore.preview?.netPurchases || ((closingStore.preview?.totalPurchases || 0) - (closingStore.preview?.totalSupplierReturns || 0))) }}
+          </span>
+        </div>
+      </div>
+
+      <!-- Quick Net Breakdown Cards -->
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+        <div class="p-3.5 rounded-xl bg-black/5 dark:bg-white/5 border border-brand-gray/10">
+          <div class="text-[10px] text-brand-gray">فواتير مبيعات صادرة (+)</div>
+          <div class="font-bold font-mono text-sm text-brand-dark dark:text-white mt-1">
+            {{ formatCurrency(closingStore.preview?.totalInvoiced) }}
+          </div>
+        </div>
+
+        <div class="p-3.5 rounded-xl bg-purple-500/10 border border-purple-500/20">
+          <div class="text-[10px] text-purple-700 dark:text-purple-300">مرتجعات مبيعات العملاء (-)</div>
+          <div class="font-bold font-mono text-sm text-purple-700 dark:text-purple-300 mt-1">
+            -{{ formatCurrency(closingStore.preview?.totalClientReturns) }}
+          </div>
+        </div>
+
+        <div class="p-3.5 rounded-xl bg-black/5 dark:bg-white/5 border border-brand-gray/10">
+          <div class="text-[10px] text-brand-gray">فواتير مشتريات موردين (+)</div>
+          <div class="font-bold font-mono text-sm text-brand-dark dark:text-white mt-1">
+            {{ formatCurrency(closingStore.preview?.totalPurchases) }}
+          </div>
+        </div>
+
+        <div class="p-3.5 rounded-xl bg-blue-500/10 border border-blue-500/20">
+          <div class="text-[10px] text-blue-700 dark:text-blue-300">مرتجعات مشتريات للموردين (-)</div>
+          <div class="font-bold font-mono text-sm text-blue-700 dark:text-blue-300 mt-1">
+            -{{ formatCurrency(closingStore.preview?.totalSupplierReturns) }}
+          </div>
+        </div>
+      </div>
+
+      <!-- Detailed Returns List -->
+      <div v-if="!closingStore.preview?.returnsBreakdown?.length" class="p-6 text-center text-xs text-slate-400">
+        لا توجد أي مرتجعات مسجلة في هذا الشهر (جميع الفواتير والمشتريات تمت تسويتها بالكامل).
+      </div>
+
+      <div v-else class="overflow-x-auto">
+        <table class="w-full text-right text-xs">
+          <thead>
+            <tr class="border-b border-brand-gray/10 text-brand-gray dark:text-slate-400">
+              <th class="py-2.5 px-3 font-semibold">رقم المرتجع</th>
+              <th class="py-2.5 px-3 font-semibold">نوع المرتجع</th>
+              <th class="py-2.5 px-3 font-semibold">الفاتورة / أمر الشغل المرتبط</th>
+              <th class="py-2.5 px-3 font-semibold">العميل / المورد</th>
+              <th class="py-2.5 px-3 font-semibold">طريقة التسوية</th>
+              <th class="py-2.5 px-3 font-semibold text-left">قيمة المرتجع</th>
+              <th class="py-2.5 px-3 font-semibold">التاريخ</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-brand-gray/10">
+            <tr
+              v-for="ret in closingStore.preview.returnsBreakdown"
+              :key="ret.returnId"
+              class="hover:bg-black/5 dark:hover:bg-white/5 transition-colors"
+            >
+              <td class="py-2.5 px-3 font-mono font-bold text-brand-dark dark:text-white">
+                {{ ret.returnNumber }}
+              </td>
+              <td class="py-2.5 px-3">
+                <span
+                  class="px-2 py-0.5 rounded-full text-[10px] font-bold"
+                  :class="ret.returnType === 2 ? 'bg-purple-500/15 text-purple-700 dark:text-purple-300' : 'bg-blue-500/15 text-blue-700 dark:text-blue-300'"
+                >
+                  {{ ret.returnTypeName }}
+                </span>
+              </td>
+              <td class="py-2.5 px-3 font-medium text-brand-accent font-mono">
+                {{ ret.relatedInvoiceNumber || '—' }}
+              </td>
+              <td class="py-2.5 px-3 font-medium text-brand-dark dark:text-white">
+                {{ ret.partyName }}
+              </td>
+              <td class="py-2.5 px-3 text-slate-500 dark:text-slate-400">
+                {{ ret.refundMethodName }}
+              </td>
+              <td class="py-2.5 px-3 font-mono font-bold text-left" :class="ret.returnType === 2 ? 'text-purple-600' : 'text-blue-600'">
+                {{ formatCurrency(ret.totalAmount) }}
+              </td>
+              <td class="py-2.5 px-3 font-mono text-[11px] text-slate-400">
+                {{ formatDate(ret.returnDate) }}
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
     <!-- Signatures Block (Print Only) -->
     <div class="hidden print:grid grid-cols-3 gap-8 pt-12 text-center text-xs">
       <div>
@@ -449,7 +553,8 @@ import {
   Users,
   PieChart,
   Landmark,
-  Boxes
+  Boxes,
+  RotateCcw
 } from "lucide-vue-next";
 
 const closingStore = useOhdaClosingStore();
