@@ -103,6 +103,11 @@ export default [
         name: "OhdaUserManagement",
         component: () => import("./pages/UserManagementPage.vue")
       },
+      {
+        path: "lookups",
+        name: "OhdaLookups",
+        component: () => import("./pages/LookupsPage.vue")
+      },
       // Platform / SuperAdmin Branches
       {
         path: "branches",

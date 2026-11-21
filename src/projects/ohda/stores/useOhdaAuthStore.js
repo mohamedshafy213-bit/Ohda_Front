@@ -52,7 +52,8 @@ export const useOhdaAuthStore = defineStore("ohdaAuth", {
             "/ohda/barcode-print",
             "/ohda/scan",
             "/ohda/branches-dashboard",
-            "/ohda/branches"
+            "/ohda/branches",
+            "/ohda/lookups"
           ];
         }
         return [
@@ -68,7 +69,8 @@ export const useOhdaAuthStore = defineStore("ohdaAuth", {
           "/ohda/finance",
           "/ohda/expenses",
           "/ohda/month-closing",
-          "/ohda/employees"
+          "/ohda/employees",
+          "/ohda/lookups"
         ];
       }
 
@@ -113,6 +115,9 @@ export const useOhdaAuthStore = defineStore("ohdaAuth", {
         if (!paths.includes("/ohda/employees")) paths.push("/ohda/employees");
         if (!paths.includes("/ohda/categories")) paths.push("/ohda/categories");
         if (!paths.includes("/ohda/barcode-print")) paths.push("/ohda/barcode-print");
+        if (isAdmin || isSuper) {
+          if (!paths.includes("/ohda/lookups")) paths.push("/ohda/lookups");
+        }
       }
 
       // Ensure dashboard is always present as base landing
@@ -157,6 +162,10 @@ export const useOhdaAuthStore = defineStore("ohdaAuth", {
         if (isSuper || state.user?.role === 1 || state.user?.role === 3 || state.user?.role === 4 || state.user?.role === "Manager" || state.user?.role === "Supervisor" || state.user?.role === "Admin") {
           return true;
         }
+      }
+
+      if (path === "/ohda/lookups") {
+        return isSuper || state.user?.role === 1 || state.user?.role === "Admin" || state.user?.role === "SuperAdmin";
       }
 
       return false;

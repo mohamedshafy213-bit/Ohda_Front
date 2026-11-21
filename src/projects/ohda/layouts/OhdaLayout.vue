@@ -278,6 +278,7 @@ const pageMeta = {
   "/ohda/finance": { labelKey: "ohda.nav.finance", icon: "Wallet" },
   "/ohda/expenses": { labelKey: "ohda.nav.expenses", icon: "Receipt" },
   "/ohda/month-closing": { labelKey: "ohda.nav.monthClosing", icon: "Calculator" },
+  "/ohda/lookups": { labelKey: "ohda.nav.lookups", icon: "Database" },
   "/ohda/employees": { labelKey: "ohda.nav.employees", icon: "UserCheck" },
   "/ohda/users": { labelKey: "ohda.nav.users", icon: "Shield" },
   "/ohda/warehouse-bins": { labelKey: "ohda.nav.warehouseBins", icon: "Layers" },
@@ -409,7 +410,8 @@ const groupDefinitions = computed(() => {
       icon: "UserCheck",
       paths: [
         "/ohda/employees",
-        "/ohda/users"
+        "/ohda/users",
+        "/ohda/lookups"
       ]
     }
   ];
