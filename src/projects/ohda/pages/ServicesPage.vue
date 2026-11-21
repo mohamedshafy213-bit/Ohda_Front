@@ -285,6 +285,35 @@
             />
           </div>
 
+          <!-- Repeat Interval Months -->
+          <div>
+            <label class="block font-semibold text-brand-dark dark:text-white mb-1.5">
+              تكرار الصيانة كل (شهور)
+            </label>
+            <input
+              v-model.number="form.repeatIntervalMonths"
+              type="number"
+              min="1"
+              placeholder="مثال: 6 شهور (اختياري)"
+              class="w-full px-3.5 py-2.5 rounded-xl border border-brand-gray/25 bg-brand-light/50 dark:bg-white/5 text-brand-dark dark:text-white font-mono text-xs focus:border-brand-accent transition-all"
+            />
+          </div>
+
+          <!-- Repeat Interval Km -->
+          <div>
+            <label class="block font-semibold text-brand-dark dark:text-white mb-1.5">
+              تكرار الصيانة كل (كيلومتر)
+            </label>
+            <input
+              v-model.number="form.repeatIntervalKm"
+              type="number"
+              min="1000"
+              step="500"
+              placeholder="مثال: 5000 كم (اختياري)"
+              class="w-full px-3.5 py-2.5 rounded-xl border border-brand-gray/25 bg-brand-light/50 dark:bg-white/5 text-brand-dark dark:text-white font-mono text-xs focus:border-brand-accent transition-all"
+            />
+          </div>
+
           <!-- Is Active Status -->
           <div class="flex items-center pt-6">
             <label class="flex items-center gap-2 cursor-pointer select-none">
@@ -484,6 +513,8 @@ const form = ref({
   category: "ميكانيكا",
   price: 0,
   estimatedDurationMinutes: 30,
+  repeatIntervalMonths: null,
+  repeatIntervalKm: null,
   description: "",
   isActive: true,
   consumedProducts: []
@@ -562,6 +593,8 @@ function openAddModal() {
     category: "ميكانيكا",
     price: 0,
     estimatedDurationMinutes: 30,
+    repeatIntervalMonths: null,
+    repeatIntervalKm: null,
     description: "",
     isActive: true,
     consumedProducts: []
@@ -577,6 +610,8 @@ function openEditModal(service) {
     category: service.category || "ميكانيكا",
     price: Number(service.price) || 0,
     estimatedDurationMinutes: service.estimatedDurationMinutes || 30,
+    repeatIntervalMonths: service.repeatIntervalMonths || null,
+    repeatIntervalKm: service.repeatIntervalKm || null,
     description: service.description || "",
     isActive: service.isActive !== false,
     consumedProducts: (service.consumedProducts || []).map(cp => ({
@@ -613,6 +648,8 @@ async function saveService() {
       category: form.value.category?.trim() || "ميكانيكا",
       price: form.value.price || 0,
       estimatedDurationMinutes: form.value.estimatedDurationMinutes || 30,
+      repeatIntervalMonths: form.value.repeatIntervalMonths || null,
+      repeatIntervalKm: form.value.repeatIntervalKm || null,
       description: form.value.description?.trim() || null,
       isActive: form.value.isActive !== false,
       consumedProducts: form.value.consumedProducts.filter(x => x.productId && x.quantity > 0)

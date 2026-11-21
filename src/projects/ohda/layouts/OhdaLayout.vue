@@ -268,6 +268,7 @@ const pageMeta = {
   "/ohda/jobs": { labelKey: "ohda.nav.jobs", icon: "FileText" },
   "/ohda/clients": { labelKey: "ohda.nav.clients", icon: "Users" },
   "/ohda/estimates": { labelKey: "ohda.nav.estimates", icon: "FileText" },
+  "/ohda/reminders": { labelKey: "ohda.nav.reminders", icon: "BellRing" },
   "/ohda/products": { labelKey: "ohda.nav.products", icon: "Package" },
   "/ohda/services": { labelKey: "ohda.nav.services", icon: "Wrench" },
   "/ohda/purchases": { labelKey: "ohda.nav.purchases", icon: "ShoppingCart" },
@@ -379,7 +380,8 @@ const groupDefinitions = computed(() => {
       paths: [
         "/ohda/jobs",
         "/ohda/clients",
-        "/ohda/estimates"
+        "/ohda/estimates",
+        "/ohda/reminders"
       ]
     },
     {

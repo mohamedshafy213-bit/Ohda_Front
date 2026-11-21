@@ -40,6 +40,11 @@ export default [
         name: "OhdaEstimates",
         component: () => import("./pages/EstimatesPage.vue")
       },
+      {
+        path: "reminders",
+        name: "OhdaReminders",
+        component: () => import("./pages/RemindersPage.vue")
+      },
       // Inventory & Services
       {
         path: "products",

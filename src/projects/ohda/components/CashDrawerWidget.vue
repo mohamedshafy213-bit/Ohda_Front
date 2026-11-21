@@ -140,16 +140,21 @@
             </span>
           </div>
           <!-- Multiple Cash Boxes Selection -->
-          <select
-            v-else
-            v-model="openForm.accountId"
-            required
-            class="w-full px-3.5 py-2.5 rounded-xl border border-brand-gray/25 bg-brand-light/50 dark:bg-brand-dark text-brand-dark dark:text-white font-medium focus:border-brand-accent transition-all text-xs"
-          >
-            <option v-for="acc in availableAccounts" :key="acc.id" :value="acc.id">
-              {{ acc.name }} (الرصيد الدفتري الحالي: {{ formatCurrency(acc.currentBalance) }})
-            </option>
-          </select>
+          <div v-else class="space-y-1">
+            <select
+              v-model="openForm.accountId"
+              required
+              class="w-full px-3.5 py-2.5 rounded-xl border border-brand-gray/25 bg-brand-light/50 dark:bg-brand-dark text-brand-dark dark:text-white font-medium focus:border-brand-accent transition-all text-xs"
+            >
+              <option :value="null" disabled>-- اختر الخزينة النقدية للوردية --</option>
+              <option v-for="acc in availableAccounts" :key="acc.id" :value="acc.id">
+                {{ acc.name }} (الرصيد الدفتري الحالي: {{ formatCurrency(acc.currentBalance) }})
+              </option>
+            </select>
+            <p class="text-[10px] text-brand-gray">
+              الخزينة النقدية أو الدرج الفعلي الذي سيتم تسجيل مقبوضات ومصروفات الوردية عليه ومطابقته عند التقفيل.
+            </p>
+          </div>
         </div>
 
         <div>
@@ -324,7 +329,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from "vue";
+import { ref, computed, watch, onMounted } from "vue";
 import { useToast } from "primevue/usetoast";
 import { useOhdaFinanceStore } from "../stores/useOhdaFinanceStore";
 import OhdaModal from "./OhdaModal.vue";
@@ -367,6 +372,12 @@ const availableAccounts = computed(() => {
   if ((financeStore.accounts || []).length > 0) return financeStore.accounts;
   return [];
 });
+
+watch(availableAccounts, (list) => {
+  if (list && list.length > 0 && !openForm.value.accountId) {
+    openForm.value.accountId = list[0].id;
+  }
+}, { immediate: true });
 
 const cashDifference = computed(() => {
   const expected = Number(activeSession.value?.expectedCash) || 0;
