@@ -110,7 +110,24 @@
           <label class="block font-semibold text-brand-dark dark:text-white mb-1.5">
             الخزينة النقدية (الدرج) <span class="text-red-500">*</span>
           </label>
+          <!-- Single Cash Box (Standard Workshop) -->
+          <div
+            v-if="cashAccounts.length <= 1 && (cashAccounts[0] || financeStore.defaultDrawerAccount)"
+            class="px-3.5 py-2.5 rounded-xl border border-brand-gray/20 bg-brand-light/50 dark:bg-white/5 flex items-center justify-between"
+          >
+            <div class="flex items-center gap-2">
+              <Wallet class="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+              <span class="font-bold text-brand-dark dark:text-white">
+                {{ cashAccounts[0]?.name || financeStore.defaultDrawerAccount?.name || 'درج الكاش والخزينة الرئيسية' }}
+              </span>
+            </div>
+            <span class="text-[11px] text-brand-gray font-mono">
+              الرصيد: {{ formatCurrency(cashAccounts[0]?.currentBalance || financeStore.defaultDrawerAccount?.balance || 0) }}
+            </span>
+          </div>
+          <!-- Multiple Cash Boxes Selection -->
           <select
+            v-else
             v-model="openForm.accountId"
             required
             class="w-full px-3.5 py-2.5 rounded-xl border border-brand-gray/25 bg-brand-light/50 dark:bg-brand-dark text-brand-dark dark:text-white font-medium focus:border-brand-accent transition-all text-xs"
@@ -328,7 +345,7 @@ const closeForm = ref({
 const activeSession = computed(() => financeStore.activeDrawerSession);
 
 const cashAccounts = computed(() => {
-  return financeStore.accounts.filter(a => a.accountType === 1);
+  return financeStore.accounts.filter(a => a.accountType === 1 || a.accountType === 'CashBox' || String(a.accountType) === '1');
 });
 
 const cashDifference = computed(() => {
@@ -369,11 +386,13 @@ const diffDescription = computed(() => {
   return "المبلغ المعدود أكبر من المتوقع، سيتم تسجيل قيد تسوية زيادة نقدية تلقائياً.";
 });
 
-function openStartDayModal() {
-  if (cashAccounts.value.length > 0) {
-    openForm.value.accountId = cashAccounts.value[0].id;
-  } else if (financeStore.defaultDrawerAccount?.id) {
-    openForm.value.accountId = financeStore.defaultDrawerAccount.id;
+async function openStartDayModal() {
+  if (!financeStore.accounts || financeStore.accounts.length === 0) {
+    await financeStore.fetchAccounts();
+  }
+  const defaultAcc = cashAccounts.value[0] || financeStore.defaultDrawerAccount || financeStore.accounts[0];
+  if (defaultAcc?.id) {
+    openForm.value.accountId = defaultAcc.id;
   }
   openForm.value.openingBalance = 0;
   openForm.value.notes = "";
