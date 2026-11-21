@@ -105,7 +105,7 @@ const props = defineProps({
   },
   closeOnBackdrop: {
     type: Boolean,
-    default: true
+    default: false
   }
 });
 

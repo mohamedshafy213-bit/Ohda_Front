@@ -110,19 +110,33 @@
           <label class="block font-semibold text-brand-dark dark:text-white mb-1.5">
             الخزينة النقدية (الدرج) <span class="text-red-500">*</span>
           </label>
+          <!-- If no cash accounts found yet -->
+          <div
+            v-if="availableAccounts.length === 0"
+            class="px-3.5 py-2.5 rounded-xl border border-amber-500/30 bg-amber-500/10 text-amber-700 dark:text-amber-300 flex items-center justify-between text-xs"
+          >
+            <span>جاري فحص الخزينة النقدية للفرع...</span>
+            <button
+              type="button"
+              @click="financeStore.fetchAccounts()"
+              class="underline font-bold hover:text-amber-800 cursor-pointer"
+            >
+              إعادة المحاولة
+            </button>
+          </div>
           <!-- Single Cash Box (Standard Workshop) -->
           <div
-            v-if="cashAccounts.length <= 1 && (cashAccounts[0] || financeStore.defaultDrawerAccount)"
+            v-else-if="availableAccounts.length === 1"
             class="px-3.5 py-2.5 rounded-xl border border-brand-gray/20 bg-brand-light/50 dark:bg-white/5 flex items-center justify-between"
           >
             <div class="flex items-center gap-2">
               <Wallet class="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
               <span class="font-bold text-brand-dark dark:text-white">
-                {{ cashAccounts[0]?.name || financeStore.defaultDrawerAccount?.name || 'درج الكاش والخزينة الرئيسية' }}
+                {{ availableAccounts[0]?.name || 'درج الكاش والخزينة الرئيسية' }}
               </span>
             </div>
             <span class="text-[11px] text-brand-gray font-mono">
-              الرصيد: {{ formatCurrency(cashAccounts[0]?.currentBalance || financeStore.defaultDrawerAccount?.balance || 0) }}
+              الرصيد: {{ formatCurrency(availableAccounts[0]?.currentBalance || 0) }}
             </span>
           </div>
           <!-- Multiple Cash Boxes Selection -->
@@ -132,7 +146,7 @@
             required
             class="w-full px-3.5 py-2.5 rounded-xl border border-brand-gray/25 bg-brand-light/50 dark:bg-brand-dark text-brand-dark dark:text-white font-medium focus:border-brand-accent transition-all text-xs"
           >
-            <option v-for="acc in cashAccounts" :key="acc.id" :value="acc.id">
+            <option v-for="acc in availableAccounts" :key="acc.id" :value="acc.id">
               {{ acc.name }} (الرصيد الدفتري الحالي: {{ formatCurrency(acc.currentBalance) }})
             </option>
           </select>
@@ -345,7 +359,13 @@ const closeForm = ref({
 const activeSession = computed(() => financeStore.activeDrawerSession);
 
 const cashAccounts = computed(() => {
-  return financeStore.accounts.filter(a => a.accountType === 1 || a.accountType === 'CashBox' || String(a.accountType) === '1');
+  return (financeStore.accounts || []).filter(a => a.accountType === 1 || a.accountType === 'CashBox' || String(a.accountType) === '1');
+});
+
+const availableAccounts = computed(() => {
+  if (cashAccounts.value.length > 0) return cashAccounts.value;
+  if ((financeStore.accounts || []).length > 0) return financeStore.accounts;
+  return [];
 });
 
 const cashDifference = computed(() => {
@@ -388,9 +408,13 @@ const diffDescription = computed(() => {
 
 async function openStartDayModal() {
   if (!financeStore.accounts || financeStore.accounts.length === 0) {
-    await financeStore.fetchAccounts();
+    try {
+      await financeStore.fetchAccounts();
+    } catch (e) {
+      console.warn("fetchAccounts error:", e);
+    }
   }
-  const defaultAcc = cashAccounts.value[0] || financeStore.defaultDrawerAccount || financeStore.accounts[0];
+  const defaultAcc = availableAccounts.value[0] || financeStore.defaultDrawerAccount;
   if (defaultAcc?.id) {
     openForm.value.accountId = defaultAcc.id;
   }
@@ -467,6 +491,7 @@ async function submitCloseDrawer() {
 }
 
 function formatCurrency(val) {
+  if (val === undefined || val === null || isNaN(Number(val))) return "0.00 ج.م";
   return (Number(val) || 0).toLocaleString("ar-EG", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + " ج.م";
 }
 

@@ -1,115 +1,290 @@
 <template>
   <div class="space-y-6">
     <!-- Header Card -->
-    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-brand-white dark:bg-brand-dark p-6 rounded-3xl border border-brand-gray/15 shadow-xs">
-      <div class="flex items-center gap-3">
+    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-brand-white dark:bg-brand-dark p-6 rounded-3xl border border-brand-gray/15 shadow-xs">
+      <div class="flex items-center gap-3.5">
         <div class="w-12 h-12 rounded-2xl bg-brand-soft dark:bg-brand-accent/15 text-brand-accent flex items-center justify-center border border-brand-accent/20 shrink-0">
           <Users class="w-6 h-6" />
         </div>
         <div>
-          <h1 class="text-xl font-bold text-brand-dark dark:text-white">العملاء وحسابات المديونية</h1>
+          <h1 class="text-xl font-bold text-brand-dark dark:text-white flex items-center gap-2">
+            <span>العملاء والمركبات (CRM)</span>
+            <span class="px-2.5 py-0.5 rounded-full text-xs font-mono bg-brand-accent/20 text-brand-dark dark:text-white font-bold">
+              {{ clientStore.totalClients }} عميل
+            </span>
+          </h1>
           <p class="text-xs text-brand-gray dark:text-brand-gray/80 mt-0.5">
-            إدارة بيانات العملاء، متابعة المديونيات والمستحقات، وسجل كشوفات الحساب والتحصيلات
+            إدارة ملفات العملاء، أسطول المركبات، متابعة الأرصدة والمديونيات، وتاريخ الزيارات والصيانة
           </p>
         </div>
       </div>
 
-      <div class="flex items-center gap-3">
+      <div class="flex items-center gap-2.5 flex-wrap">
         <button
           type="button"
           @click="openCreateModal"
-          class="px-4 py-2.5 bg-brand-accent hover:bg-brand-accent/90 text-brand-dark font-bold rounded-2xl text-xs flex items-center gap-2 shadow-sm transition-all cursor-pointer"
+          class="px-5 py-2.5 bg-brand-accent hover:bg-brand-accent/90 text-brand-dark font-bold rounded-2xl text-xs flex items-center gap-2 shadow-sm transition-transform active:scale-95 cursor-pointer"
         >
           <UserPlus class="w-4 h-4" />
-          <span>إضافة عميل جديد</span>
+          <span>إضافة عميل ومركبة جديدة</span>
         </button>
       </div>
     </div>
 
-    <!-- Clients Table -->
+    <!-- Quick KPI Summary Strip -->
+    <div class="grid grid-cols-2 lg:grid-cols-4 gap-3.5">
+      <div class="bg-brand-white dark:bg-brand-dark p-4 rounded-2xl border border-brand-gray/15 shadow-xs">
+        <div class="flex items-center justify-between">
+          <span class="text-xs text-brand-gray font-medium">إجمالي العملاء</span>
+          <span class="p-2 rounded-xl bg-blue-500/10 text-blue-600 dark:text-blue-400">
+            <Users class="w-4 h-4" />
+          </span>
+        </div>
+        <div class="text-xl font-extrabold font-mono text-brand-dark dark:text-white mt-1">
+          {{ clientStore.totalClients }}
+        </div>
+        <div class="text-[10px] text-brand-gray mt-1">
+          {{ clientStore.individualClientsCount }} أفراد &bull; {{ clientStore.companyClientsCount }} شركات وأساطيل
+        </div>
+      </div>
+
+      <div class="bg-brand-white dark:bg-brand-dark p-4 rounded-2xl border border-brand-gray/15 shadow-xs">
+        <div class="flex items-center justify-between">
+          <span class="text-xs text-brand-gray font-medium">المركبات المسجلة</span>
+          <span class="p-2 rounded-xl bg-purple-500/10 text-purple-600 dark:text-purple-400">
+            <Car class="w-4 h-4" />
+          </span>
+        </div>
+        <div class="text-xl font-extrabold font-mono text-purple-600 dark:text-purple-400 mt-1">
+          {{ clientStore.totalVehicles }}
+        </div>
+        <div class="text-[10px] text-brand-gray mt-1">
+          مركبة مسجلة بالورشة ومربوطة بأصحابها
+        </div>
+      </div>
+
+      <div class="bg-brand-white dark:bg-brand-dark p-4 rounded-2xl border border-brand-gray/15 shadow-xs">
+        <div class="flex items-center justify-between">
+          <span class="text-xs text-rose-600 dark:text-rose-400 font-medium">مديونيات مستحقة (لنا)</span>
+          <span class="p-2 rounded-xl bg-rose-500/10 text-rose-600">
+            <Banknote class="w-4 h-4" />
+          </span>
+        </div>
+        <div class="text-xl font-extrabold font-mono text-rose-600 dark:text-rose-400 mt-1">
+          {{ formatCurrency(clientStore.totalReceivables) }}
+        </div>
+        <div class="text-[10px] text-rose-600/80 mt-1">
+          على عدد {{ clientStore.owingClientsCount }} عميل لم يتم السداد
+        </div>
+      </div>
+
+      <div class="bg-brand-white dark:bg-brand-dark p-4 rounded-2xl border border-brand-gray/15 shadow-xs">
+        <div class="flex items-center justify-between">
+          <span class="text-xs text-brand-gray font-medium">إجمالي مبيعات العملاء</span>
+          <span class="p-2 rounded-xl bg-emerald-500/10 text-emerald-600">
+            <Wrench class="w-4 h-4" />
+          </span>
+        </div>
+        <div class="text-xl font-extrabold font-mono text-emerald-600 dark:text-emerald-400 mt-1">
+          {{ formatCurrency(clientStore.totalSpentAll) }}
+        </div>
+        <div class="text-[10px] text-brand-gray mt-1">
+          إجمالي المبالغ المسددة من أوامر الشغل
+        </div>
+      </div>
+    </div>
+
+    <!-- Clients Table with Search and Filters Toolbar -->
     <OhdaDataTable
       :columns="tableColumns"
-      :items="clientStore.clients"
+      :items="filteredClients"
       :loading="clientStore.loading"
       :rowsPerPage="10"
-      emptyTitle="لا يوجد عملاء مسجلين"
-      emptyMessage="قم بإضافة عملاء لتسجيل أوامر الشغل ومتابعة أرصدتهم وحركاتهم المالية."
+      emptyTitle="لا يوجد عملاء مطابقين للبحث"
+      emptyMessage="جرّب تعديل معايير البحث أو الفلتر، أو أضف عميلاً جديداً."
       :emptyIcon="Users"
     >
       <template #toolbar>
-        <div class="flex items-center gap-3 w-full sm:w-80">
-          <div class="relative w-full">
-            <Search class="w-4 h-4 text-brand-gray absolute start-3 top-1/2 -translate-y-1/2" />
+        <div class="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-3 w-full">
+          <!-- Search input across Name, Phone, Plate -->
+          <div class="relative w-full lg:w-96">
+            <Search class="w-4 h-4 text-brand-gray absolute right-3 top-1/2 -translate-y-1/2" />
             <input
               v-model="searchQuery"
-              @input="onSearch"
+              @input="handleSearchInput"
               type="text"
-              placeholder="بحث بالاسم، رقم الهاتف، أو لوحة السيارة..."
-              class="w-full bg-brand-white dark:bg-brand-dark border border-brand-gray/25 rounded-xl ps-9 pe-3 py-2 text-xs text-brand-dark dark:text-white"
+              placeholder="بحث بالاسم، رقم الهاتف، أو رقم لوحة السيارة..."
+              class="w-full bg-brand-white dark:bg-brand-dark border border-brand-gray/25 rounded-xl pr-9 pl-3 py-2 text-xs text-brand-dark dark:text-white placeholder:text-brand-gray/60 focus:border-brand-accent transition-all"
             />
+          </div>
+
+          <!-- Filters Strip -->
+          <div class="flex items-center gap-2 flex-wrap text-xs">
+            <!-- Type Filter -->
+            <select
+              v-model="typeFilter"
+              class="px-3 py-1.5 rounded-xl border border-brand-gray/25 bg-brand-white dark:bg-brand-dark text-xs font-medium text-brand-dark dark:text-white focus:border-brand-accent cursor-pointer"
+            >
+              <option :value="null">كل الأنواع</option>
+              <option :value="1">أفراد (ملاكي)</option>
+              <option :value="2">شركات وأساطيل</option>
+            </select>
+
+            <!-- Tag Filter -->
+            <select
+              v-model="tagFilter"
+              class="px-3 py-1.5 rounded-xl border border-brand-gray/25 bg-brand-white dark:bg-brand-dark text-xs font-medium text-brand-dark dark:text-white focus:border-brand-accent cursor-pointer"
+            >
+              <option :value="null">كل التصنيفات (الوسوم)</option>
+              <option v-for="tag in customerTags" :key="tag.id" :value="tag.id">
+                {{ tag.labelAr }}
+              </option>
+            </select>
+
+            <!-- Balance Filter Toggle -->
+            <button
+              type="button"
+              @click="hasBalanceFilter = !hasBalanceFilter"
+              class="px-3 py-1.5 rounded-xl border text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer"
+              :class="hasBalanceFilter ? 'bg-rose-500/15 border-rose-500/30 text-rose-700 dark:text-rose-300 font-bold' : 'border-brand-gray/25 text-brand-gray hover:text-brand-dark'"
+            >
+              <Banknote class="w-3.5 h-3.5" />
+              <span>عليهم مديونية فقط</span>
+            </button>
           </div>
         </div>
       </template>
 
-      <template #name="{ data }">
-        <div>
-          <span class="font-bold text-brand-dark dark:text-white block">{{ data.name }}</span>
-          <span v-if="data.carPlate" class="text-[10px] text-brand-gray font-mono">
-            {{ data.carPlate }} {{ data.carModel ? `(${data.carModel})` : '' }}
-          </span>
+      <!-- Name & Type & Tags Column -->
+      <template #name="{ row }">
+        <div class="space-y-1">
+          <div class="flex items-center gap-2 flex-wrap">
+            <button
+              type="button"
+              @click="openCustomer360Modal(row)"
+              class="font-bold text-brand-dark dark:text-white hover:text-brand-accent transition-colors text-right cursor-pointer"
+            >
+              {{ row.name }}
+            </button>
+            <span
+              class="px-2 py-0.5 rounded-md text-[10px] font-bold"
+              :class="row.type === 2 ? 'bg-blue-500/15 text-blue-700 dark:text-blue-300' : 'bg-black/5 dark:bg-white/10 text-brand-gray'"
+            >
+              {{ row.typeName }}
+            </span>
+          </div>
+
+          <!-- Tags Chips -->
+          <div v-if="row.tags && row.tags.length" class="flex items-center gap-1 flex-wrap">
+            <span
+              v-for="t in row.tags"
+              :key="t.id"
+              class="px-1.5 py-0.2 rounded text-[9px] font-semibold flex items-center gap-1 border border-black/10"
+              :style="{ backgroundColor: (t.colorCode || '#8b5cf6') + '22', color: t.colorCode || '#8b5cf6' }"
+            >
+              <span class="w-1.5 h-1.5 rounded-full" :style="{ backgroundColor: t.colorCode || '#8b5cf6' }"></span>
+              {{ t.labelAr }}
+            </span>
+          </div>
         </div>
       </template>
 
-      <template #phone="{ data }">
-        <span class="font-mono text-xs font-semibold">{{ data.phone }}</span>
+      <!-- Phones Column -->
+      <template #phone="{ row }">
+        <div>
+          <div class="font-mono text-xs font-bold text-brand-dark dark:text-white flex items-center gap-1">
+            <Phone class="w-3 h-3 text-brand-accent shrink-0" />
+            <span dir="ltr">{{ row.phone }}</span>
+          </div>
+          <div v-if="row.secondPhone" class="font-mono text-[10px] text-brand-gray mt-0.5" dir="ltr">
+            {{ row.secondPhone }}
+          </div>
+        </div>
       </template>
 
-      <template #currentBalance="{ data }">
-        <span
-          class="font-mono font-bold px-2.5 py-1 rounded-xl text-xs"
-          :class="getBalanceBadgeClass(data.currentBalance)"
-        >
-          {{ formatCurrency(Math.abs(data.currentBalance)) }} ج.م
-        </span>
+      <!-- Vehicles Column -->
+      <template #vehicles="{ row }">
+        <div>
+          <div v-if="row.vehicles && row.vehicles.length" class="flex items-center gap-1.5 flex-wrap">
+            <span
+              v-for="v in row.vehicles"
+              :key="v.id"
+              class="px-2 py-0.5 rounded-lg bg-brand-light/60 dark:bg-white/5 border border-brand-gray/20 font-mono text-[11px] font-bold text-brand-dark dark:text-white flex items-center gap-1"
+            >
+              <Car class="w-3 h-3 text-brand-gray shrink-0" />
+              <span>{{ v.plateNumber }}</span>
+              <span v-if="v.model" class="text-[9px] text-brand-gray font-sans">({{ v.brandName || v.brand || '' }} {{ v.model }})</span>
+            </span>
+          </div>
+          <div v-else-if="row.carPlate" class="font-mono text-xs text-brand-gray">
+            {{ row.carPlate }} {{ row.carModel ? `(${row.carModel})` : '' }}
+          </div>
+          <div v-else class="text-[11px] text-brand-gray/60">
+            لا توجد مركبات
+          </div>
+        </div>
       </template>
 
-      <template #balanceStatus="{ data }">
-        <span
-          class="text-[11px] font-semibold"
-          :class="data.currentBalance > 0 ? 'text-red-600 dark:text-red-400 font-bold' : data.currentBalance < 0 ? 'text-emerald-600' : 'text-brand-gray'"
-        >
-          {{ data.balanceStatus }}
-        </span>
+      <!-- Balance Column -->
+      <template #currentBalance="{ row }">
+        <div>
+          <span
+            class="font-mono font-bold px-2.5 py-1 rounded-xl text-xs inline-block"
+            :class="getBalanceBadgeClass(row.currentBalance)"
+          >
+            {{ formatCurrency(Math.abs(row.currentBalance)) }}
+          </span>
+          <div
+            class="text-[10px] font-semibold mt-0.5"
+            :class="row.currentBalance > 0 ? 'text-red-600 dark:text-red-400 font-bold' : row.currentBalance < 0 ? 'text-emerald-600' : 'text-brand-gray'"
+          >
+            {{ row.balanceStatus }}
+          </div>
+        </div>
       </template>
 
-      <template #actions="{ data }">
+      <!-- Stats: Total Spent & Visits -->
+      <template #stats="{ row }">
+        <div class="text-xs">
+          <div class="font-mono font-bold text-brand-dark dark:text-white">
+            {{ formatCurrency(row.totalSpent || 0) }}
+          </div>
+          <div class="text-[10px] text-brand-gray mt-0.5">
+            {{ row.visitsCount || 0 }} زيارات &bull; {{ row.lastVisitDate ? formatDate(row.lastVisitDate) : 'لم يسجل' }}
+          </div>
+        </div>
+      </template>
+
+      <!-- Actions Column -->
+      <template #actions="{ row }">
         <div class="flex items-center justify-center gap-1.5">
+          <!-- 360 CRM Hub Action -->
+          <button
+            type="button"
+            @click="openCustomer360Modal(row)"
+            class="px-2.5 py-1.5 bg-brand-soft hover:bg-brand-accent/20 text-brand-dark dark:text-white rounded-xl text-[11px] font-bold transition-colors cursor-pointer flex items-center gap-1 border border-brand-accent/20"
+            title="ملف العميل الكامل ومركباته"
+          >
+            <Users class="w-3.5 h-3.5 text-brand-accent" />
+            <span>الملف</span>
+          </button>
+
           <!-- Record Payment Action -->
           <button
             type="button"
-            @click="openPaymentModal(data)"
-            class="px-2.5 py-1.5 bg-emerald-500/10 hover:bg-emerald-500 text-emerald-700 hover:text-white rounded-xl text-[11px] font-bold transition-colors cursor-pointer flex items-center gap-1"
+            @click="openPaymentModal(row)"
+            class="px-2 py-1.5 bg-emerald-500/10 hover:bg-emerald-500 text-emerald-700 hover:text-white rounded-xl text-[11px] font-bold transition-colors cursor-pointer flex items-center gap-1"
             title="تحصيل دفعة مالية"
           >
             <Banknote class="w-3.5 h-3.5" />
             <span>تحصيل</span>
           </button>
 
-          <!-- Statement Action -->
-          <button
-            type="button"
-            @click="openStatementModal(data)"
-            class="p-1.5 rounded-lg text-brand-dark hover:bg-brand-light dark:hover:bg-white/10 transition-colors"
-            title="كشف حساب العميل"
-          >
-            <FileText class="w-4 h-4" />
-          </button>
-
           <!-- Edit Action -->
           <button
             type="button"
-            @click="openEditModal(data)"
-            class="p-1.5 rounded-lg text-brand-dark hover:bg-brand-light dark:hover:bg-white/10 transition-colors"
+            @click="openEditModal(row)"
+            class="p-1.5 rounded-lg text-brand-gray hover:text-brand-dark dark:hover:text-white hover:bg-black/5 dark:hover:bg-white/10 transition-colors cursor-pointer"
             title="تعديل بيانات العميل"
           >
             <Edit2 class="w-4 h-4" />
@@ -118,121 +293,595 @@
           <!-- Delete Action -->
           <button
             type="button"
-            @click="confirmDelete(data)"
-            class="p-1.5 rounded-lg text-red-500 hover:bg-red-500/10 transition-colors"
+            @click="confirmDelete(row)"
+            class="p-1.5 rounded-lg text-rose-500 hover:bg-rose-500/10 transition-colors cursor-pointer"
             title="حذف العميل"
           >
             <Trash2 class="w-4 h-4" />
           </button>
         </div>
       </template>
-
-      <template #empty-action>
-        <button
-          type="button"
-          @click="openCreateModal"
-          class="px-4 py-2 bg-brand-accent text-brand-dark font-bold text-xs rounded-xl cursor-pointer"
-        >
-          إضافة أول عميل
-        </button>
-      </template>
     </OhdaDataTable>
 
-    <!-- Create / Edit Client Modal -->
+    <!-- ========================================== -->
+    <!-- 1. Customer 360 CRM Hub Modal              -->
+    <!-- ========================================== -->
     <OhdaModal
-      v-model:visible="showClientModal"
-      :title="isEditing ? 'تعديل بيانات العميل' : 'إضافة عميل جديد'"
-      :description="isEditing ? 'تعديل بيانات الاتصال ومعلومات السيارة' : 'تسجيل عميل جديد وتعيين رصيد افتتاحي إن وجد'"
+      :visible="showCustomer360"
+      :close-on-backdrop="false"
+      @close="showCustomer360 = false"
+      :title="`ملف العميل: ${activeClient?.name || ''}`"
+      :description="`${activeClient?.typeName || 'عميل'} &bull; ${activeClient?.phone || ''}`"
       :icon="Users"
-      maxWidth="max-w-2xl"
+      max-width="max-w-4xl"
     >
-      <form id="clientForm" @submit.prevent="submitClientForm" class="space-y-4">
+      <div v-if="activeClient" class="space-y-5">
+        <!-- Top Summary Strip & Quick Actions -->
+        <div class="p-4 rounded-2xl bg-brand-light/50 dark:bg-white/5 border border-brand-gray/15 flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div class="flex items-center gap-3">
+            <div class="w-11 h-11 rounded-2xl bg-brand-accent/20 text-brand-dark dark:text-white font-bold flex items-center justify-center text-base">
+              {{ activeClient.name.charAt(0) }}
+            </div>
+            <div>
+              <div class="flex items-center gap-2">
+                <span class="font-bold text-sm text-brand-dark dark:text-white">{{ activeClient.name }}</span>
+                <span
+                  class="px-2 py-0.5 rounded text-[10px] font-bold"
+                  :class="activeClient.type === 2 ? 'bg-blue-500/15 text-blue-700 dark:text-blue-300' : 'bg-black/5 dark:bg-white/10 text-brand-gray'"
+                >
+                  {{ activeClient.typeName }}
+                </span>
+              </div>
+              <div class="text-xs text-brand-gray mt-0.5 flex items-center gap-3 font-mono">
+                <span>{{ activeClient.phone }}</span>
+                <span v-if="activeClient.secondPhone">بديل: {{ activeClient.secondPhone }}</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Balance & Action Badges -->
+          <div class="flex items-center gap-2 flex-wrap">
+            <div class="px-3 py-1.5 rounded-xl border border-brand-gray/20 text-right bg-brand-white dark:bg-brand-dark">
+              <div class="text-[9px] text-brand-gray">الرصيد القائم</div>
+              <div
+                class="font-mono font-bold text-xs"
+                :class="activeClient.currentBalance > 0 ? 'text-rose-600' : activeClient.currentBalance < 0 ? 'text-emerald-600' : 'text-brand-gray'"
+              >
+                {{ formatCurrency(activeClient.currentBalance) }}
+              </div>
+            </div>
+
+            <div class="px-3 py-1.5 rounded-xl border border-brand-gray/20 text-right bg-brand-white dark:bg-brand-dark">
+              <div class="text-[9px] text-brand-gray">إجمالي المنصرف</div>
+              <div class="font-mono font-bold text-xs text-emerald-600">
+                {{ formatCurrency(activeClient.totalSpent || 0) }}
+              </div>
+            </div>
+
+            <button
+              type="button"
+              @click="openNewJobCardForClient(activeClient)"
+              class="px-3 py-2 bg-brand-accent hover:bg-brand-accent/90 text-brand-dark font-bold rounded-xl text-xs flex items-center gap-1.5 cursor-pointer shadow-xs"
+            >
+              <Plus class="w-3.5 h-3.5" />
+              <span>أمر شغل جديد</span>
+            </button>
+
+            <button
+              type="button"
+              @click="openPaymentModal(activeClient)"
+              class="px-3 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl text-xs flex items-center gap-1.5 cursor-pointer shadow-xs"
+            >
+              <Banknote class="w-3.5 h-3.5" />
+              <span>تحصيل دفعة</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- CRM Hub Tabs Header -->
+        <div class="flex items-center gap-1 border-b border-brand-gray/15 text-xs font-bold overflow-x-auto">
+          <button
+            type="button"
+            @click="crmTab = 'vehicles'"
+            class="px-4 py-2.5 border-b-2 flex items-center gap-2 transition-colors cursor-pointer"
+            :class="crmTab === 'vehicles' ? 'border-brand-accent text-brand-dark dark:text-white font-extrabold' : 'border-transparent text-brand-gray hover:text-brand-dark'"
+          >
+            <Car class="w-4 h-4 text-purple-600" />
+            <span>المركبات والسيارات ({{ activeClient.vehicles?.length || 0 }})</span>
+          </button>
+
+          <button
+            type="button"
+            @click="crmTab = 'statement'"
+            class="px-4 py-2.5 border-b-2 flex items-center gap-2 transition-colors cursor-pointer"
+            :class="crmTab === 'statement' ? 'border-brand-accent text-brand-dark dark:text-white font-extrabold' : 'border-transparent text-brand-gray hover:text-brand-dark'"
+          >
+            <FileText class="w-4 h-4 text-blue-600" />
+            <span>كشف الحساب والمديونية</span>
+          </button>
+
+          <button
+            type="button"
+            @click="crmTab = 'history'"
+            class="px-4 py-2.5 border-b-2 flex items-center gap-2 transition-colors cursor-pointer"
+            :class="crmTab === 'history' ? 'border-brand-accent text-brand-dark dark:text-white font-extrabold' : 'border-transparent text-brand-gray hover:text-brand-dark'"
+          >
+            <Wrench class="w-4 h-4 text-emerald-600" />
+            <span>سجل الفواتير وأوامر الشغل</span>
+          </button>
+
+          <button
+            type="button"
+            @click="crmTab = 'details'"
+            class="px-4 py-2.5 border-b-2 flex items-center gap-2 transition-colors cursor-pointer"
+            :class="crmTab === 'details' ? 'border-brand-accent text-brand-dark dark:text-white font-extrabold' : 'border-transparent text-brand-gray hover:text-brand-dark'"
+          >
+            <Info class="w-4 h-4 text-amber-600" />
+            <span>البيانات والتواصل والوسوم</span>
+          </button>
+        </div>
+
+        <!-- ========================================== -->
+        <!-- Tab 1: Vehicles List                       -->
+        <!-- ========================================== -->
+        <div v-if="crmTab === 'vehicles'" class="space-y-4">
+          <div class="flex items-center justify-between">
+            <h3 class="text-xs font-bold text-brand-dark dark:text-white flex items-center gap-2">
+              <Car class="w-4 h-4 text-purple-600" />
+              <span>مركبات العميل المسجلة</span>
+            </h3>
+
+            <button
+              type="button"
+              @click="openAddVehicleModal(activeClient)"
+              class="px-3 py-1.5 bg-brand-accent hover:bg-brand-accent/90 text-brand-dark font-bold text-xs rounded-xl flex items-center gap-1.5 cursor-pointer shadow-xs"
+            >
+              <Plus class="w-3.5 h-3.5" />
+              <span>إضافة سيارة جديدة</span>
+            </button>
+          </div>
+
+          <div v-if="!activeClient.vehicles || !activeClient.vehicles.length" class="p-8 text-center bg-black/5 dark:bg-white/5 rounded-2xl text-xs text-brand-gray">
+            لا توجد مركبات مسجلة لهذا العميل بعد. انقر على "إضافة سيارة جديدة" لإدراج مركبته.
+          </div>
+
+          <div v-else class="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <div
+              v-for="v in activeClient.vehicles"
+              :key="v.id"
+              class="p-4 rounded-2xl border border-brand-gray/15 bg-brand-white dark:bg-brand-dark space-y-2 shadow-xs hover:border-brand-accent transition-all"
+            >
+              <div class="flex items-start justify-between">
+                <div>
+                  <div class="font-mono text-base font-extrabold text-brand-dark dark:text-white flex items-center gap-2">
+                    <span class="px-2.5 py-1 rounded-lg bg-black/5 dark:bg-white/10 border border-brand-gray/20">
+                      {{ v.plateNumber }}
+                    </span>
+                    <span v-if="v.colorCode" class="w-3.5 h-3.5 rounded-full border border-black/20" :style="{ backgroundColor: v.colorCode }" :title="v.colorName || v.color"></span>
+                  </div>
+                  <div class="text-xs font-bold text-brand-dark dark:text-white mt-1">
+                    {{ v.brandName || v.brand || '' }} {{ v.model || '' }} {{ v.year ? `(${v.year})` : '' }}
+                  </div>
+                </div>
+
+                <div class="flex items-center gap-1">
+                  <button
+                    type="button"
+                    @click="openEditVehicleModal(v)"
+                    class="p-1.5 rounded-lg text-brand-gray hover:text-brand-dark hover:bg-black/5 cursor-pointer"
+                    title="تعديل بيانات المركبة"
+                  >
+                    <Edit2 class="w-3.5 h-3.5" />
+                  </button>
+                  <button
+                    type="button"
+                    @click="confirmDeleteVehicle(v)"
+                    class="p-1.5 rounded-lg text-rose-500 hover:bg-rose-500/10 cursor-pointer"
+                    title="حذف المركبة"
+                  >
+                    <Trash2 class="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              </div>
+
+              <!-- Vehicle Details Pill -->
+              <div class="grid grid-cols-2 gap-2 text-[11px] pt-2 border-t border-brand-gray/10 text-brand-gray">
+                <div>
+                  الوقود: <span class="font-bold text-brand-dark dark:text-white">{{ v.fuelTypeName || v.fuelType || 'بنزين' }}</span>
+                </div>
+                <div>
+                  العداد: <span class="font-bold font-mono text-brand-dark dark:text-white">{{ v.currentMileage ? `${v.currentMileage.toLocaleString()} كم` : 'غير مسجل' }}</span>
+                </div>
+                <div v-if="v.vin" class="col-span-2 font-mono text-[10px]">
+                  الشاسيه (VIN): {{ v.vin }}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ========================================== -->
+        <!-- Tab 2: Statement & Balance                 -->
+        <!-- ========================================== -->
+        <div v-if="crmTab === 'statement'" class="space-y-3">
+          <div class="flex items-center justify-between">
+            <h3 class="text-xs font-bold text-brand-dark dark:text-white flex items-center gap-2">
+              <FileText class="w-4 h-4 text-blue-600" />
+              <span>كشف حساب الحركات والمديونيات</span>
+            </h3>
+
+            <div class="text-xs">
+              الرصيد الإجمالي:
+              <span
+                class="font-mono font-bold px-2 py-0.5 rounded-lg"
+                :class="getBalanceBadgeClass(activeClient.currentBalance)"
+              >
+                {{ formatCurrency(activeClient.currentBalance) }}
+              </span>
+            </div>
+          </div>
+
+          <div v-if="loadingStatement" class="p-8 text-center text-xs text-brand-gray">
+            <RefreshCw class="w-5 h-5 animate-spin mx-auto mb-2 text-brand-accent" />
+            جاري تحميل كشف الحساب...
+          </div>
+
+          <div v-else-if="!statementItems || !statementItems.length" class="p-8 text-center bg-black/5 dark:bg-white/5 rounded-2xl text-xs text-brand-gray">
+            لا توجد حركات مالية مسجلة لهذا العميل بعد.
+          </div>
+
+          <div v-else class="overflow-x-auto rounded-2xl border border-brand-gray/15">
+            <table class="w-full text-xs text-right border-collapse">
+              <thead>
+                <tr class="bg-brand-light/70 dark:bg-white/5 border-b border-brand-gray/15 text-brand-gray font-bold">
+                  <th class="py-2.5 px-3">التاريخ</th>
+                  <th class="py-2.5 px-3">نوع الحركة</th>
+                  <th class="py-2.5 px-3">البيان / المرجع</th>
+                  <th class="py-2.5 px-3 text-left">مدين (لنا)</th>
+                  <th class="py-2.5 px-3 text-left">دائن (سداد)</th>
+                  <th class="py-2.5 px-3 text-left">الرصيد بعد الحركة</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-brand-gray/10 text-brand-dark dark:text-white">
+                <tr v-for="(s, idx) in statementItems" :key="idx" class="hover:bg-black/5 dark:hover:bg-white/5">
+                  <td class="py-2.5 px-3 font-mono text-[11px] text-slate-500">{{ formatDate(s.date) }}</td>
+                  <td class="py-2.5 px-3 font-bold">{{ s.type }}</td>
+                  <td class="py-2.5 px-3">
+                    <span class="font-mono text-xs">{{ s.reference }}</span>
+                    <span v-if="s.notes" class="text-[10px] text-brand-gray block">{{ s.notes }}</span>
+                  </td>
+                  <td class="py-2.5 px-3 font-mono font-bold text-left text-rose-600">
+                    {{ s.debit > 0 ? formatCurrency(s.debit) : '—' }}
+                  </td>
+                  <td class="py-2.5 px-3 font-mono font-bold text-left text-emerald-600">
+                    {{ s.credit > 0 ? formatCurrency(s.credit) : '—' }}
+                  </td>
+                  <td class="py-2.5 px-3 font-mono font-bold text-left" :class="s.balanceAfter > 0 ? 'text-rose-600' : 'text-emerald-600'">
+                    {{ formatCurrency(s.balanceAfter) }}
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- ========================================== -->
+        <!-- Tab 3: Service History & Job Cards         -->
+        <!-- ========================================== -->
+        <div v-if="crmTab === 'history'" class="space-y-3">
+          <div class="flex items-center justify-between">
+            <h3 class="text-xs font-bold text-brand-dark dark:text-white flex items-center gap-2">
+              <Wrench class="w-4 h-4 text-emerald-600" />
+              <span>فواتير وأوامر الشغل السابقة</span>
+            </h3>
+            <span class="text-xs text-brand-gray font-mono">{{ clientJobCards.length }} أمر شغل</span>
+          </div>
+
+          <div v-if="!clientJobCards.length" class="p-8 text-center bg-black/5 dark:bg-white/5 rounded-2xl text-xs text-brand-gray">
+            لا توجد أوامر شغل منشأة لهذا العميل حتى الآن.
+          </div>
+
+          <div v-else class="space-y-2.5">
+            <div
+              v-for="job in clientJobCards"
+              :key="job.id"
+              class="p-3.5 rounded-2xl border border-brand-gray/15 bg-brand-white dark:bg-brand-dark flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs"
+            >
+              <div>
+                <div class="flex items-center gap-2">
+                  <span class="font-mono font-bold text-brand-dark dark:text-white text-sm">#{{ job.jobNumber }}</span>
+                  <span
+                    class="px-2 py-0.5 rounded-full text-[10px] font-bold"
+                    :class="job.status === 3 ? 'bg-emerald-500/15 text-emerald-700' : job.status === 2 ? 'bg-blue-500/15 text-blue-700' : 'bg-amber-500/15 text-amber-700'"
+                  >
+                    {{ job.statusText }}
+                  </span>
+                  <span v-if="job.carPlate" class="px-2 py-0.5 rounded bg-black/5 font-mono text-[11px]">
+                    {{ job.carPlate }}
+                  </span>
+                </div>
+                <div class="text-[11px] text-brand-gray mt-1">
+                  تاريخ الصيانة: {{ formatDate(job.insertDate) }} &bull; العداد: {{ job.odometer ? `${job.odometer.toLocaleString()} كم` : '—' }}
+                </div>
+              </div>
+
+              <div class="text-left font-mono">
+                <div class="font-extrabold text-sm text-brand-dark dark:text-white">
+                  {{ formatCurrency(job.totalAmount) }}
+                </div>
+                <div class="text-[10px] text-brand-gray">
+                  مسدد: {{ formatCurrency(job.paidAmount) }} &bull; متبقي: {{ formatCurrency(job.remainingBalance) }}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ========================================== -->
+        <!-- Tab 4: Details & Preferences & Tags        -->
+        <!-- ========================================== -->
+        <div v-if="crmTab === 'details'" class="space-y-4 text-xs">
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 rounded-2xl border border-brand-gray/15 bg-brand-white dark:bg-brand-dark">
+            <div>
+              <span class="text-brand-gray block text-[11px]">نوع العميل</span>
+              <span class="font-bold text-brand-dark dark:text-white">{{ activeClient.typeName }}</span>
+            </div>
+
+            <div>
+              <span class="text-brand-gray block text-[11px]">مصدر التعرف على المركز</span>
+              <span class="font-bold text-brand-dark dark:text-white">{{ activeClient.sourceName || 'غير محدد' }}</span>
+            </div>
+
+            <div>
+              <span class="text-brand-gray block text-[11px]">طريقة التواصل المفضلة</span>
+              <span class="font-bold text-brand-dark dark:text-white">
+                {{ activeClient.preferredContactMethod === 'whatsapp' ? 'واتساب' : activeClient.preferredContactMethod === 'sms' ? 'رسائل قصيرة' : 'مكالمة هاتفية' }}
+              </span>
+            </div>
+
+            <div>
+              <span class="text-brand-gray block text-[11px]">استقبال رسائل وتذكيرات الصيانة</span>
+              <span class="font-bold" :class="activeClient.acceptsMessages ? 'text-emerald-600' : 'text-rose-600'">
+                {{ activeClient.acceptsMessages ? 'موافق على استقبال التذكيرات' : 'غير موافق' }}
+              </span>
+            </div>
+
+            <div>
+              <span class="text-brand-gray block text-[11px]">الرقم القومي / السجل التجاري</span>
+              <span class="font-mono font-bold text-brand-dark dark:text-white">{{ activeClient.nationalId || '—' }}</span>
+            </div>
+
+            <div>
+              <span class="text-brand-gray block text-[11px]">الحد الائتماني الأقصى</span>
+              <span class="font-mono font-bold text-brand-dark dark:text-white">{{ activeClient.creditLimit ? formatCurrency(activeClient.creditLimit) : 'غير مقيد' }}</span>
+            </div>
+
+            <div class="col-span-2">
+              <span class="text-brand-gray block text-[11px]">العنوان / الملاحظات الخاصة</span>
+              <span class="font-medium text-brand-dark dark:text-white">{{ activeClient.address || activeClient.notes || 'لا توجد ملاحظات مسجلة' }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <template #footer>
+        <button
+          type="button"
+          @click="showCustomer360 = false"
+          class="px-5 py-2 rounded-xl border border-brand-gray/25 font-bold text-xs cursor-pointer hover:bg-black/5"
+        >
+          إغلاق
+        </button>
+      </template>
+    </OhdaModal>
+
+    <!-- ========================================== -->
+    <!-- 2. Create / Edit Client Modal              -->
+    <!-- ========================================== -->
+    <OhdaModal
+      :visible="showClientModal"
+      :close-on-backdrop="false"
+      @close="showClientModal = false"
+      :title="isEditing ? 'تعديل بيانات العميل' : 'إضافة عميل ومركبة جديدة'"
+      :description="isEditing ? 'تعديل بيانات العميل ومعلومات التواصل والوسوم' : 'تسجيل عميل جديد وربط مركبته الأولى تلقائياً'"
+      :icon="Users"
+      max-width="max-w-2xl"
+    >
+      <form id="clientForm" @submit.prevent="submitClientForm" class="space-y-4 text-xs">
         <!-- 2-Column Form Grid -->
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-3.5">
           <div>
-            <label class="block text-xs font-semibold text-brand-dark dark:text-white mb-1.5">
-              اسم العميل <span class="text-red-500">*</span>
+            <label class="block font-semibold text-brand-dark dark:text-white mb-1">
+              اسم العميل / الشركة <span class="text-red-500">*</span>
             </label>
             <input
               v-model="clientForm.name"
               type="text"
               required
-              placeholder="مثال: محمد أحمد علي..."
-              class="w-full bg-brand-light dark:bg-white/5 border border-brand-gray/25 rounded-xl px-3 py-2 text-xs text-brand-dark dark:text-white"
+              placeholder="مثال: م. محمد الشافعي / شركة النور..."
+              class="w-full px-3 py-2 rounded-xl border border-brand-gray/25 bg-brand-light/50 dark:bg-white/5 text-brand-dark dark:text-white text-xs focus:border-brand-accent transition-all"
             />
           </div>
 
           <div>
-            <label class="block text-xs font-semibold text-brand-dark dark:text-white mb-1.5">
-              رقم الهاتف <span class="text-red-500">*</span>
+            <label class="block font-semibold text-brand-dark dark:text-white mb-1">
+              رقم الهاتف المحمول <span class="text-red-500">*</span>
             </label>
             <input
               v-model="clientForm.phone"
               type="tel"
               required
               placeholder="01xxxxxxxxx"
-              class="w-full bg-brand-light dark:bg-white/5 border border-brand-gray/25 rounded-xl px-3 py-2 text-xs text-brand-dark dark:text-white font-mono"
+              dir="ltr"
+              class="w-full px-3 py-2 rounded-xl border border-brand-gray/25 bg-brand-light/50 dark:bg-white/5 text-brand-dark dark:text-white font-mono text-xs focus:border-brand-accent transition-all text-left"
             />
           </div>
 
           <div>
-            <label class="block text-xs font-semibold text-brand-dark dark:text-white mb-1.5">رقم لوحة السيارة</label>
+            <label class="block font-semibold text-brand-dark dark:text-white mb-1">
+              هاتف بديل (اختياري)
+            </label>
             <input
-              v-model="clientForm.carPlate"
-              type="text"
-              placeholder="مثال: س ق ر 1234"
-              class="w-full bg-brand-light dark:bg-white/5 border border-brand-gray/25 rounded-xl px-3 py-2 text-xs text-brand-dark dark:text-white font-mono"
+              v-model="clientForm.secondPhone"
+              type="tel"
+              placeholder="هاتف أرضي أو رقم آخر..."
+              dir="ltr"
+              class="w-full px-3 py-2 rounded-xl border border-brand-gray/25 bg-brand-light/50 dark:bg-white/5 text-brand-dark dark:text-white font-mono text-xs focus:border-brand-accent transition-all text-left"
             />
           </div>
 
           <div>
-            <label class="block text-xs font-semibold text-brand-dark dark:text-white mb-1.5">طراز / موديل السيارة</label>
-            <input
-              v-model="clientForm.carModel"
-              type="text"
-              placeholder="مثال: تويوتا كورولا 2021"
-              class="w-full bg-brand-light dark:bg-white/5 border border-brand-gray/25 rounded-xl px-3 py-2 text-xs text-brand-dark dark:text-white"
-            />
+            <label class="block font-semibold text-brand-dark dark:text-white mb-1">
+              نوع العميل <span class="text-red-500">*</span>
+            </label>
+            <select
+              v-model="clientForm.type"
+              class="w-full px-3 py-2 rounded-xl border border-brand-gray/25 bg-brand-light/50 dark:bg-white/5 text-brand-dark dark:text-white text-xs focus:border-brand-accent transition-all"
+            >
+              <option :value="1">فرد (سيارة خاصة ملاكي)</option>
+              <option :value="2">شركة / أسطول سيارات</option>
+            </select>
           </div>
 
           <div>
-            <label class="block text-xs font-semibold text-brand-dark dark:text-white mb-1.5">البريد الإلكتروني (اختياري)</label>
-            <input
-              v-model="clientForm.email"
-              type="email"
-              placeholder="name@example.com"
-              class="w-full bg-brand-light dark:bg-white/5 border border-brand-gray/25 rounded-xl px-3 py-2 text-xs text-brand-dark dark:text-white"
-            />
+            <label class="block font-semibold text-brand-dark dark:text-white mb-1">
+              مصدر العميل (كيف تعرف علينا؟)
+            </label>
+            <select
+              v-model="clientForm.sourceLookupId"
+              class="w-full px-3 py-2 rounded-xl border border-brand-gray/25 bg-brand-light/50 dark:bg-white/5 text-brand-dark dark:text-white text-xs focus:border-brand-accent transition-all"
+            >
+              <option :value="null">غير محدد</option>
+              <option v-for="src in customerSources" :key="src.id" :value="src.id">
+                {{ src.labelAr }}
+              </option>
+            </select>
+          </div>
+
+          <div>
+            <label class="block font-semibold text-brand-dark dark:text-white mb-1">
+              طريقة التواصل المفضلة
+            </label>
+            <select
+              v-model="clientForm.preferredContactMethod"
+              class="w-full px-3 py-2 rounded-xl border border-brand-gray/25 bg-brand-light/50 dark:bg-white/5 text-brand-dark dark:text-white text-xs focus:border-brand-accent transition-all"
+            >
+              <option value="phone">مكالمة هاتفية</option>
+              <option value="whatsapp">واتساب (WhatsApp)</option>
+              <option value="sms">رسائل قصيرة (SMS)</option>
+            </select>
           </div>
 
           <div v-if="!isEditing">
-            <label class="block text-xs font-semibold text-brand-dark dark:text-white mb-1.5">رصيد افتتاحي مديونية (ج.م)</label>
+            <label class="block font-semibold text-brand-dark dark:text-white mb-1">
+              رصيد افتتاحي مديونية (ج.م)
+            </label>
             <input
               v-model.number="clientForm.initialBalance"
               type="number"
               step="0.01"
               placeholder="0.00"
-              class="w-full bg-brand-light dark:bg-white/5 border border-brand-gray/25 rounded-xl px-3 py-2 text-xs text-brand-dark dark:text-white font-mono"
+              class="w-full px-3 py-2 rounded-xl border border-brand-gray/25 bg-brand-light/50 dark:bg-white/5 text-brand-dark dark:text-white font-mono text-xs focus:border-brand-accent transition-all"
+            />
+          </div>
+
+          <div>
+            <label class="block font-semibold text-brand-dark dark:text-white mb-1">
+              الحد الائتماني الأقصى (ج.م)
+            </label>
+            <input
+              v-model.number="clientForm.creditLimit"
+              type="number"
+              step="0.01"
+              placeholder="اتركه فارغاً إن لم يكن مقيداً"
+              class="w-full px-3 py-2 rounded-xl border border-brand-gray/25 bg-brand-light/50 dark:bg-white/5 text-brand-dark dark:text-white font-mono text-xs focus:border-brand-accent transition-all"
             />
           </div>
         </div>
 
+        <!-- Tags Selection -->
+        <div v-if="customerTags.length" class="space-y-1.5 pt-2 border-t border-brand-gray/10">
+          <label class="block font-semibold text-brand-dark dark:text-white">
+            تصنيفات ووسوم العميل:
+          </label>
+          <div class="flex items-center gap-2 flex-wrap">
+            <button
+              v-for="tag in customerTags"
+              :key="tag.id"
+              type="button"
+              @click="toggleTagSelection(tag.id)"
+              class="px-2.5 py-1 rounded-lg text-[11px] font-semibold border transition-all cursor-pointer flex items-center gap-1.5"
+              :class="clientForm.tagIds.includes(tag.id)
+                ? 'bg-brand-accent/20 border-brand-accent text-brand-dark dark:text-white font-bold shadow-xs'
+                : 'border-brand-gray/20 text-brand-gray hover:text-brand-dark'"
+            >
+              <span class="w-2 h-2 rounded-full" :style="{ backgroundColor: tag.colorCode || '#8b5cf6' }"></span>
+              <span>{{ tag.labelAr }}</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Initial Vehicle Box (Only when creating a new client) -->
+        <div v-if="!isEditing" class="p-4 rounded-2xl bg-black/5 dark:bg-white/5 border border-brand-gray/15 space-y-3">
+          <div class="flex items-center justify-between">
+            <h4 class="font-bold text-xs text-brand-dark dark:text-white flex items-center gap-2">
+              <Car class="w-4 h-4 text-purple-600" />
+              <span>بيانات المركبة الأولى للعميل (اختياري)</span>
+            </h4>
+            <span class="text-[10px] text-brand-gray">يمكنك إضافة سيارات إضافية لاحقاً</span>
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+            <div>
+              <label class="block font-medium text-[11px] text-brand-gray mb-1">رقم اللوحة</label>
+              <input
+                v-model="initialVehicle.plateNumber"
+                type="text"
+                placeholder="س ق ر 1234"
+                class="w-full px-2.5 py-1.5 rounded-xl border border-brand-gray/25 bg-brand-white dark:bg-brand-dark font-mono text-xs"
+              />
+            </div>
+
+            <div>
+              <label class="block font-medium text-[11px] text-brand-gray mb-1">الماركة</label>
+              <select
+                v-model="initialVehicle.brandLookupId"
+                class="w-full px-2.5 py-1.5 rounded-xl border border-brand-gray/25 bg-brand-white dark:bg-brand-dark text-xs"
+              >
+                <option :value="null">اختر الماركة...</option>
+                <option v-for="b in vehicleBrands" :key="b.id" :value="b.id">{{ b.labelAr }}</option>
+              </select>
+            </div>
+
+            <div>
+              <label class="block font-medium text-[11px] text-brand-gray mb-1">الموديل والطراز</label>
+              <input
+                v-model="initialVehicle.model"
+                type="text"
+                placeholder="كورولا 2021"
+                class="w-full px-2.5 py-1.5 rounded-xl border border-brand-gray/25 bg-brand-white dark:bg-brand-dark text-xs"
+              />
+            </div>
+          </div>
+        </div>
+
+        <!-- Address & Notes -->
         <div>
-          <label class="block text-xs font-semibold text-brand-dark dark:text-white mb-1.5">العنوان / الملاحظات</label>
+          <label class="block font-semibold text-brand-dark dark:text-white mb-1">العنوان / ملاحظات خاصة</label>
           <input
             v-model="clientForm.address"
             type="text"
-            placeholder="عنوان أو ملاحظات خاصة بالعميل..."
-            class="w-full bg-brand-light dark:bg-white/5 border border-brand-gray/25 rounded-xl px-3 py-2 text-xs text-brand-dark dark:text-white"
+            placeholder="عنوان العميل أو أي ملاحظات هامة..."
+            class="w-full px-3 py-2 rounded-xl border border-brand-gray/25 bg-brand-light/50 dark:bg-white/5 text-brand-dark dark:text-white text-xs focus:border-brand-accent transition-all"
           />
         </div>
       </form>
 
-      <template #footer="{ close }">
+      <template #footer>
         <button
           type="button"
-          @click="close"
-          class="px-4 py-2 border border-brand-gray/20 rounded-xl text-xs font-semibold hover:bg-brand-light transition-colors cursor-pointer"
+          @click="showClientModal = false"
+          class="px-4 py-2 border border-brand-gray/20 rounded-xl text-xs font-semibold hover:bg-black/5 cursor-pointer"
         >
           إلغاء
         </button>
@@ -248,51 +897,202 @@
       </template>
     </OhdaModal>
 
-    <!-- Record Payment Modal -->
+    <!-- ========================================== -->
+    <!-- 3. Add / Edit Vehicle Modal                -->
+    <!-- ========================================== -->
     <OhdaModal
-      v-model:visible="showPaymentModal"
-      title="سداد / تحصيل دفعة من العميل"
-      :description="`العميل: ${targetClient?.name || ''} - المديونية الحالية: ${formatCurrency(targetClient?.currentBalance || 0)} ج.م`"
-      :icon="Banknote"
-      maxWidth="max-w-md"
+      :visible="showVehicleModal"
+      :close-on-backdrop="false"
+      @close="showVehicleModal = false"
+      :title="editingVehicleId ? 'تعديل بيانات المركبة' : 'إضافة مركبة جديدة للعميل'"
+      :description="`العميل: ${activeClient?.name || ''}`"
+      :icon="Car"
+      max-width="max-w-md"
     >
-      <form id="paymentForm" @submit.prevent="submitPaymentForm" class="space-y-4">
+      <form id="vehicleForm" @submit.prevent="submitVehicleForm" class="space-y-3.5 text-xs">
         <div>
-          <label class="block text-xs font-semibold text-brand-dark dark:text-white mb-1.5">
-            المبلغ المحصل (ج.م) <span class="text-red-500">*</span>
+          <label class="block font-semibold text-brand-dark dark:text-white mb-1">
+            رقم اللوحة <span class="text-red-500">*</span>
           </label>
           <input
-            v-model.number="paymentForm.amount"
-            type="number"
-            min="1"
-            step="0.01"
+            v-model="vehicleForm.plateNumber"
+            type="text"
             required
-            class="w-full bg-brand-light dark:bg-white/5 border border-brand-gray/25 rounded-xl px-3 py-2.5 text-sm font-bold text-emerald-600 font-mono"
+            placeholder="مثال: س ق ر 1234 أو أ ب ج 567"
+            class="w-full px-3 py-2 rounded-xl border border-brand-gray/25 bg-brand-light/50 dark:bg-white/5 font-mono font-bold text-sm focus:border-brand-accent transition-all"
           />
         </div>
 
         <div class="grid grid-cols-2 gap-3">
           <div>
-            <label class="block text-xs font-semibold text-brand-dark dark:text-white mb-1.5">طريقة التحصيل</label>
+            <label class="block font-semibold text-brand-dark dark:text-white mb-1">ماركة السيارة</label>
+            <select
+              v-model="vehicleForm.brandLookupId"
+              class="w-full px-3 py-2 rounded-xl border border-brand-gray/25 bg-brand-light/50 dark:bg-white/5 text-xs focus:border-brand-accent transition-all"
+            >
+              <option :value="null">اختر الماركة...</option>
+              <option v-for="b in vehicleBrands" :key="b.id" :value="b.id">{{ b.labelAr }}</option>
+            </select>
+          </div>
+
+          <div>
+            <label class="block font-semibold text-brand-dark dark:text-white mb-1">الموديل والطراز</label>
+            <input
+              v-model="vehicleForm.model"
+              type="text"
+              placeholder="كورولا، إلنترا، سيراتو..."
+              class="w-full px-3 py-2 rounded-xl border border-brand-gray/25 bg-brand-light/50 dark:bg-white/5 text-xs focus:border-brand-accent transition-all"
+            />
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block font-semibold text-brand-dark dark:text-white mb-1">سنة الصنع</label>
+            <input
+              v-model.number="vehicleForm.year"
+              type="number"
+              min="1970"
+              max="2035"
+              placeholder="2022"
+              class="w-full px-3 py-2 rounded-xl border border-brand-gray/25 bg-brand-light/50 dark:bg-white/5 font-mono text-xs focus:border-brand-accent transition-all"
+            />
+          </div>
+
+          <div>
+            <label class="block font-semibold text-brand-dark dark:text-white mb-1">اللون</label>
+            <select
+              v-model="vehicleForm.colorLookupId"
+              class="w-full px-3 py-2 rounded-xl border border-brand-gray/25 bg-brand-light/50 dark:bg-white/5 text-xs focus:border-brand-accent transition-all"
+            >
+              <option :value="null">اختر اللون...</option>
+              <option v-for="c in vehicleColors" :key="c.id" :value="c.id">{{ c.labelAr }}</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block font-semibold text-brand-dark dark:text-white mb-1">قراءة العداد الحالية (كم)</label>
+            <input
+              v-model.number="vehicleForm.currentMileage"
+              type="number"
+              min="0"
+              placeholder="54000"
+              class="w-full px-3 py-2 rounded-xl border border-brand-gray/25 bg-brand-light/50 dark:bg-white/5 font-mono text-xs focus:border-brand-accent transition-all"
+            />
+          </div>
+
+          <div>
+            <label class="block font-semibold text-brand-dark dark:text-white mb-1">نوع الوقود</label>
+            <select
+              v-model="vehicleForm.fuelTypeLookupId"
+              class="w-full px-3 py-2 rounded-xl border border-brand-gray/25 bg-brand-light/50 dark:bg-white/5 text-xs focus:border-brand-accent transition-all"
+            >
+              <option :value="null">بنزين 92</option>
+              <option v-for="f in fuelTypes" :key="f.id" :value="f.id">{{ f.labelAr }}</option>
+            </select>
+          </div>
+        </div>
+
+        <div>
+          <label class="block font-semibold text-brand-dark dark:text-white mb-1">رقم الشاسيه (VIN) - اختياري</label>
+          <input
+            v-model="vehicleForm.vin"
+            type="text"
+            placeholder="17 حرف ورقم..."
+            dir="ltr"
+            class="w-full px-3 py-2 rounded-xl border border-brand-gray/25 bg-brand-light/50 dark:bg-white/5 font-mono text-xs text-left"
+          />
+        </div>
+      </form>
+
+      <template #footer>
+        <button
+          type="button"
+          @click="showVehicleModal = false"
+          class="px-4 py-2 border border-brand-gray/20 rounded-xl text-xs font-semibold hover:bg-black/5 cursor-pointer"
+        >
+          إلغاء
+        </button>
+        <button
+          type="submit"
+          form="vehicleForm"
+          :disabled="submitting"
+          class="px-5 py-2 bg-brand-accent hover:bg-brand-accent/90 text-brand-dark font-bold rounded-xl text-xs flex items-center gap-2 cursor-pointer shadow-sm disabled:opacity-50"
+        >
+          <span>{{ editingVehicleId ? 'تحديث المركبة' : 'حفظ المركبة' }}</span>
+        </button>
+      </template>
+    </OhdaModal>
+
+    <!-- ========================================== -->
+    <!-- 4. Record Payment Modal                    -->
+    <!-- ========================================== -->
+    <OhdaModal
+      :visible="showPaymentModal"
+      :close-on-backdrop="false"
+      @close="showPaymentModal = false"
+      title="سداد دفعة / تحصيل من العميل"
+      :description="`تسجيل سداد نقدي أو بنكي لصالح العميل: ${payingClient?.name || ''}`"
+      :icon="Banknote"
+      max-width="max-w-md"
+    >
+      <form id="paymentForm" @submit.prevent="submitPaymentForm" class="space-y-4 text-xs">
+        <div class="p-3.5 bg-brand-light/70 dark:bg-white/5 rounded-2xl border border-brand-gray/15 flex items-center justify-between">
+          <div>
+            <div class="text-[10px] text-brand-gray">رصيد المديونية الحالي</div>
+            <div
+              class="font-mono font-bold text-sm"
+              :class="payingClient?.currentBalance > 0 ? 'text-rose-600' : 'text-emerald-600'"
+            >
+              {{ formatCurrency(payingClient?.currentBalance || 0) }}
+            </div>
+          </div>
+          <span
+            class="text-[10px] font-bold px-2 py-0.5 rounded-md"
+            :class="payingClient?.currentBalance > 0 ? 'bg-rose-500/10 text-rose-600' : 'bg-emerald-500/10 text-emerald-600'"
+          >
+            {{ payingClient?.balanceStatus }}
+          </span>
+        </div>
+
+        <div>
+          <label class="block font-semibold text-brand-dark dark:text-white mb-1.5">
+            المبلغ المحصل (ج.م) <span class="text-red-500">*</span>
+          </label>
+          <input
+            v-model.number="paymentForm.amount"
+            type="number"
+            step="0.01"
+            min="0.01"
+            required
+            placeholder="0.00"
+            class="w-full px-3.5 py-2.5 rounded-xl border border-brand-gray/25 bg-brand-light/50 dark:bg-white/5 text-brand-dark dark:text-white font-mono text-base font-bold focus:border-brand-accent transition-all"
+          />
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block font-semibold text-brand-dark dark:text-white mb-1.5">طريقة الدفع</label>
             <select
               v-model="paymentForm.paymentMethod"
-              class="w-full bg-brand-light dark:bg-white/5 border border-brand-gray/25 rounded-xl px-3 py-2 text-xs text-brand-dark dark:text-white"
+              class="w-full px-3 py-2 rounded-xl border border-brand-gray/25 bg-brand-light/50 dark:bg-white/5 text-xs text-brand-dark dark:text-white"
             >
               <option :value="1">نقدي (كاش)</option>
-              <option :value="2">بطاقة بنكية (POS)</option>
-              <option :value="3">محفظة إنستاباي</option>
+              <option :value="2">بطاقة بنكية (فيزا)</option>
+              <option :value="3">إنستاباي (InstaPay)</option>
               <option :value="4">تحويل بنكي</option>
             </select>
           </div>
 
           <div>
-            <label class="block text-xs font-semibold text-brand-dark dark:text-white mb-1.5">الخزينة المودع بها</label>
+            <label class="block font-semibold text-brand-dark dark:text-white mb-1.5">الخزينة المودع بها</label>
             <select
               v-model="paymentForm.financialAccountId"
-              class="w-full bg-brand-light dark:bg-white/5 border border-brand-gray/25 rounded-xl px-3 py-2 text-xs text-brand-dark dark:text-white"
+              class="w-full px-3 py-2 rounded-xl border border-brand-gray/25 bg-brand-light/50 dark:bg-white/5 text-xs text-brand-dark dark:text-white"
             >
-              <option value="">الخزينة الرئيسية</option>
-              <option v-for="acc in financeStore.accounts" :key="acc.id" :value="acc.id">
+              <option v-for="acc in financeAccounts" :key="acc.id" :value="acc.id">
                 {{ acc.name }}
               </option>
             </select>
@@ -300,31 +1100,21 @@
         </div>
 
         <div>
-          <label class="block text-xs font-semibold text-brand-dark dark:text-white mb-1.5">رقم المرجع / سند القبض (اختياري)</label>
+          <label class="block font-semibold text-brand-dark dark:text-white mb-1.5">رقم الإيصال / المرجع (اختياري)</label>
           <input
             v-model="paymentForm.reference"
             type="text"
-            placeholder="سند قبض أو إيصال تحصيل..."
-            class="w-full bg-brand-light dark:bg-white/5 border border-brand-gray/25 rounded-xl px-3 py-2 text-xs text-brand-dark dark:text-white"
-          />
-        </div>
-
-        <div>
-          <label class="block text-xs font-semibold text-brand-dark dark:text-white mb-1.5">ملاحظات</label>
-          <input
-            v-model="paymentForm.notes"
-            type="text"
-            placeholder="ملاحظات السداد..."
-            class="w-full bg-brand-light dark:bg-white/5 border border-brand-gray/25 rounded-xl px-3 py-2 text-xs text-brand-dark dark:text-white"
+            placeholder="رقم سند القبض أو مرجع التحويل..."
+            class="w-full px-3 py-2 rounded-xl border border-brand-gray/25 bg-brand-light/50 dark:bg-white/5 text-xs text-brand-dark dark:text-white"
           />
         </div>
       </form>
 
-      <template #footer="{ close }">
+      <template #footer>
         <button
           type="button"
-          @click="close"
-          class="px-4 py-2 border border-brand-gray/20 rounded-xl text-xs font-semibold hover:bg-brand-light transition-colors cursor-pointer"
+          @click="showPaymentModal = false"
+          class="px-4 py-2 border border-brand-gray/20 rounded-xl text-xs font-semibold hover:bg-black/5 cursor-pointer"
         >
           إلغاء
         </button>
@@ -334,93 +1124,8 @@
           :disabled="submitting"
           class="px-5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl text-xs flex items-center gap-2 cursor-pointer shadow-sm disabled:opacity-50"
         >
-          <RefreshCw v-if="submitting" class="w-4 h-4 animate-spin" />
-          <span>تأكيد التحصيل وإيداع المبلغ</span>
-        </button>
-      </template>
-    </OhdaModal>
-
-    <!-- Client Account Statement Modal -->
-    <OhdaModal
-      v-model:visible="showStatementModal"
-      :title="`كشف حساب العميل: ${targetClient?.name || ''}`"
-      :description="`رقم الهاتف: ${targetClient?.phone} - الرصيد القائم: ${formatCurrency(targetClient?.currentBalance || 0)} ج.م`"
-      :icon="FileText"
-      maxWidth="max-w-4xl"
-    >
-      <div class="space-y-4">
-        <!-- Balance Summary Bar -->
-        <div class="flex items-center justify-between p-4 bg-brand-light/40 dark:bg-white/5 rounded-2xl border border-brand-gray/10 text-xs">
-          <div>
-            <span class="text-brand-gray block text-[10px]">الرصيد النهائي الحالي</span>
-            <span
-              class="font-mono font-bold text-base"
-              :class="targetClient?.currentBalance > 0 ? 'text-red-600 dark:text-red-400' : 'text-emerald-600'"
-            >
-              {{ targetClient?.balanceStatus }}
-            </span>
-          </div>
-
-          <button
-            type="button"
-            @click="openPaymentModal(targetClient)"
-            class="px-3.5 py-2 bg-emerald-600 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 cursor-pointer shadow-xs"
-          >
-            <Banknote class="w-4 h-4" />
-            <span>تسجيل سداد الآن</span>
-          </button>
-        </div>
-
-        <!-- Statement Table -->
-        <div class="border border-brand-gray/15 rounded-xl overflow-hidden">
-          <table class="w-full text-right text-xs">
-            <thead class="bg-brand-light/70 dark:bg-white/5 text-brand-gray font-bold">
-              <tr>
-                <th class="py-2.5 px-3">التاريخ</th>
-                <th class="py-2.5 px-3">نوع الحركة</th>
-                <th class="py-2.5 px-3">المرجع / البيان</th>
-                <th class="py-2.5 px-3 text-center text-red-600">مدين (+)</th>
-                <th class="py-2.5 px-3 text-center text-emerald-600">دائن / مسدد (-)</th>
-                <th class="py-2.5 px-3 text-center">الرصيد بعد الحركة</th>
-              </tr>
-            </thead>
-            <tbody v-if="statementLoading" class="divide-y divide-brand-gray/10">
-              <tr v-for="n in 3" :key="n" class="animate-pulse">
-                <td colspan="6" class="py-3 px-3 text-center text-brand-gray">جاري تحميل كشف الحساب...</td>
-              </tr>
-            </tbody>
-            <tbody v-else-if="clientStore.statement.length > 0" class="divide-y divide-brand-gray/10">
-              <tr v-for="(item, idx) in clientStore.statement" :key="idx" class="hover:bg-brand-light/30">
-                <td class="py-2 px-3 font-mono text-[11px]">{{ formatDate(item.date) }}</td>
-                <td class="py-2 px-3 font-semibold">{{ item.type }}</td>
-                <td class="py-2 px-3 text-brand-gray">{{ item.reference }} {{ item.notes ? `(${item.notes})` : '' }}</td>
-                <td class="py-2 px-3 text-center font-mono font-bold text-red-600">
-                  {{ item.debit > 0 ? `${formatCurrency(item.debit)} ج.م` : '—' }}
-                </td>
-                <td class="py-2 px-3 text-center font-mono font-bold text-emerald-600">
-                  {{ item.credit > 0 ? `${formatCurrency(item.credit)} ج.م` : '—' }}
-                </td>
-                <td class="py-2 px-3 text-center font-mono font-bold text-brand-dark dark:text-white">
-                  {{ formatCurrency(item.balanceAfter) }} ج.م
-                </td>
-              </tr>
-            </tbody>
-            <tbody v-else>
-              <tr>
-                <td colspan="6" class="py-8 text-center text-brand-gray">لا توجد حركات مالية سابقة لهذا العميل</td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
-
-      <template #footer="{ close }">
-        <button
-          type="button"
-          @click="close"
-          class="px-5 py-2 bg-brand-light dark:bg-white/10 rounded-xl text-xs font-semibold cursor-pointer"
-        >
-          إغلاق
+          <Banknote class="w-4 h-4" />
+          <span>تأكيد التحصيل</span>
         </button>
       </template>
     </OhdaModal>
@@ -428,125 +1133,367 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from "vue";
+import { ref, computed, onMounted } from "vue";
+import { useRouter } from "vue-router";
 import { useToast } from "primevue/usetoast";
 import { useOhdaClientStore } from "../stores/useOhdaClientStore";
+import { useOhdaLookupStore } from "../stores/useOhdaLookupStore";
 import { useOhdaFinanceStore } from "../stores/useOhdaFinanceStore";
-import OhdaDataTable from "../components/OhdaDataTable.vue";
+import { useOhdaJobCardStore } from "../stores/useOhdaJobCardStore";
 import OhdaModal from "../components/OhdaModal.vue";
+import OhdaDataTable from "../components/OhdaDataTable.vue";
 import {
   Users,
   UserPlus,
   Search,
-  Banknote,
+  Phone,
+  Car,
   FileText,
+  Banknote,
   Edit2,
   Trash2,
+  Plus,
+  Wrench,
+  Info,
   RefreshCw
 } from "lucide-vue-next";
 
-const toast = useToast();
 const clientStore = useOhdaClientStore();
+const lookupStore = useOhdaLookupStore();
 const financeStore = useOhdaFinanceStore();
+const jobCardStore = useOhdaJobCardStore();
+const router = useRouter();
+const toast = useToast();
 
 const searchQuery = ref("");
-const showClientModal = ref(false);
-const showPaymentModal = ref(false);
-const showStatementModal = ref(false);
-const isEditing = ref(false);
-const targetClient = ref(null);
-const submitting = ref(false);
-const statementLoading = ref(false);
+const typeFilter = ref(null);
+const tagFilter = ref(null);
+const hasBalanceFilter = ref(false);
 
-const tableColumns = [
-  { field: "name", header: "اسم العميل والسيارة", sortable: true },
-  { field: "phone", header: "رقم الهاتف", width: "140px", sortable: true },
-  { field: "currentBalance", header: "الرصيد القائم", width: "140px", align: "center", sortable: true },
-  { field: "balanceStatus", header: "الحالة المالية", width: "180px" },
-  { field: "actions", header: "الإجراءات", width: "190px", align: "center" }
-];
+const showClientModal = ref(false);
+const isEditing = ref(false);
+const editingClientId = ref(null);
+
+const showCustomer360 = ref(false);
+const activeClient = ref(null);
+const crmTab = ref("vehicles");
+const loadingStatement = ref(false);
+const statementItems = ref([]);
+
+const showVehicleModal = ref(false);
+const editingVehicleId = ref(null);
+
+const showPaymentModal = ref(false);
+const payingClient = ref(null);
+
+const submitting = ref(false);
 
 const clientForm = ref({
   name: "",
   phone: "",
-  carPlate: "",
-  carModel: "",
+  secondPhone: "",
   email: "",
+  nationalId: "",
+  type: 1,
+  creditLimit: null,
+  sourceLookupId: null,
+  preferredContactMethod: "phone",
+  acceptsMessages: true,
+  initialBalance: 0,
   address: "",
-  initialBalance: 0
+  notes: "",
+  tagIds: []
+});
+
+const initialVehicle = ref({
+  plateNumber: "",
+  brandLookupId: null,
+  model: ""
+});
+
+const vehicleForm = ref({
+  plateNumber: "",
+  brandLookupId: null,
+  model: "",
+  year: null,
+  colorLookupId: null,
+  vin: "",
+  currentMileage: null,
+  fuelTypeLookupId: null,
+  notes: ""
 });
 
 const paymentForm = ref({
+  clientId: null,
   amount: 0,
   paymentMethod: 1,
-  financialAccountId: "",
+  financialAccountId: null,
   reference: "",
   notes: ""
 });
 
-onMounted(async () => {
-  await Promise.all([
-    clientStore.fetchClients(),
-    financeStore.fetchAccounts()
-  ]);
+const customerTags = computed(() => lookupStore.getValuesByCode("customer_tag"));
+const customerSources = computed(() => lookupStore.getValuesByCode("customer_source"));
+const vehicleBrands = computed(() => lookupStore.getValuesByCode("vehicle_brand"));
+const vehicleColors = computed(() => lookupStore.getValuesByCode("vehicle_color"));
+const fuelTypes = computed(() => lookupStore.getValuesByCode("fuel_type"));
+const financeAccounts = computed(() => financeStore.accounts);
+
+const tableColumns = [
+  { field: "name", header: "العميل والتصنيف", sortable: true, width: "24%" },
+  { field: "phone", header: "الهاتف والتواصل", sortable: true, width: "18%" },
+  { field: "vehicles", header: "المركبات والسيارات", width: "22%" },
+  { field: "currentBalance", header: "الرصيد القائم", sortable: true, width: "16%" },
+  { field: "stats", header: "المبيعات والزيارات", sortable: true, width: "10%" },
+  { field: "actions", header: "الإجراءات", width: "10%", align: "center" }
+];
+
+const filteredClients = computed(() => {
+  let list = clientStore.clients;
+  if (typeFilter.value) {
+    list = list.filter((c) => c.type === typeFilter.value);
+  }
+  if (tagFilter.value) {
+    list = list.filter((c) => c.tags?.some((t) => t.tagLookupValueId === tagFilter.value));
+  }
+  if (hasBalanceFilter.value) {
+    list = list.filter((c) => c.currentBalance > 0);
+  }
+  return list;
 });
 
-function onSearch() {
-  clientStore.fetchClients(searchQuery.value);
+const clientJobCards = computed(() => {
+  if (!activeClient.value?.id) return [];
+  return jobCardStore.jobs.filter((j) => j.clientId === activeClient.value.id);
+});
+
+function handleSearchInput() {
+  clientStore.fetchClients({
+    search: searchQuery.value,
+    type: typeFilter.value,
+    tagId: tagFilter.value,
+    hasBalance: hasBalanceFilter.value
+  });
 }
 
 function openCreateModal() {
   isEditing.value = false;
+  editingClientId.value = null;
   clientForm.value = {
     name: "",
     phone: "",
-    carPlate: "",
-    carModel: "",
+    secondPhone: "",
     email: "",
+    nationalId: "",
+    type: 1,
+    creditLimit: null,
+    sourceLookupId: null,
+    preferredContactMethod: "phone",
+    acceptsMessages: true,
+    initialBalance: 0,
     address: "",
-    initialBalance: 0
+    notes: "",
+    tagIds: []
+  };
+  initialVehicle.value = {
+    plateNumber: "",
+    brandLookupId: null,
+    model: ""
   };
   showClientModal.value = true;
 }
 
-function openEditModal(client) {
+function openEditModal(row) {
   isEditing.value = true;
-  targetClient.value = client;
+  editingClientId.value = row.id;
   clientForm.value = {
-    name: client.name,
-    phone: client.phone,
-    carPlate: client.carPlate || "",
-    carModel: client.carModel || "",
-    email: client.email || "",
-    address: client.address || ""
+    name: row.name,
+    phone: row.phone,
+    secondPhone: row.secondPhone || "",
+    email: row.email || "",
+    nationalId: row.nationalId || "",
+    type: row.type || 1,
+    creditLimit: row.creditLimit || null,
+    sourceLookupId: row.sourceLookupId || null,
+    preferredContactMethod: row.preferredContactMethod || "phone",
+    acceptsMessages: row.acceptsMessages ?? true,
+    initialBalance: 0,
+    address: row.address || "",
+    notes: row.notes || "",
+    tagIds: (row.tags || []).map((t) => t.tagLookupValueId)
   };
   showClientModal.value = true;
+}
+
+function toggleTagSelection(tagId) {
+  const idx = clientForm.value.tagIds.indexOf(tagId);
+  if (idx > -1) {
+    clientForm.value.tagIds.splice(idx, 1);
+  } else {
+    clientForm.value.tagIds.push(tagId);
+  }
 }
 
 async function submitClientForm() {
   submitting.value = true;
-  let res;
-  if (isEditing.value) {
-    res = await clientStore.updateClient(targetClient.value.id, clientForm.value);
-  } else {
-    res = await clientStore.createClient(clientForm.value);
-  }
-  submitting.value = false;
+  try {
+    const payload = {
+      name: clientForm.value.name,
+      phone: clientForm.value.phone,
+      secondPhone: clientForm.value.secondPhone,
+      email: clientForm.value.email,
+      nationalId: clientForm.value.nationalId,
+      type: clientForm.value.type,
+      creditLimit: clientForm.value.creditLimit,
+      sourceLookupId: clientForm.value.sourceLookupId,
+      preferredContactMethod: clientForm.value.preferredContactMethod,
+      acceptsMessages: clientForm.value.acceptsMessages,
+      address: clientForm.value.address,
+      notes: clientForm.value.notes,
+      tagIds: clientForm.value.tagIds
+    };
 
-  if (res.success) {
-    toast.add({ severity: "success", summary: "تم بنجاح", detail: res.message, life: 3000 });
-    showClientModal.value = false;
-  } else {
-    toast.add({ severity: "error", summary: "خطأ", detail: res.message, life: 4000 });
+    if (!isEditing.value) {
+      payload.initialBalance = Number(clientForm.value.initialBalance) || 0;
+      if (initialVehicle.value.plateNumber) {
+        payload.initialVehicle = {
+          plateNumber: initialVehicle.value.plateNumber,
+          brandLookupId: initialVehicle.value.brandLookupId,
+          model: initialVehicle.value.model
+        };
+      }
+    }
+
+    let res;
+    if (isEditing.value) {
+      res = await clientStore.updateClient(editingClientId.value, payload);
+    } else {
+      res = await clientStore.createClient(payload);
+    }
+
+    if (res.success) {
+      toast.add({
+        severity: "success",
+        summary: "تم بنجاح",
+        detail: res.message,
+        life: 3000
+      });
+      showClientModal.value = false;
+    } else {
+      toast.add({
+        severity: "error",
+        summary: "خطأ",
+        detail: res.message,
+        life: 4000
+      });
+    }
+  } finally {
+    submitting.value = false;
+  }
+}
+
+async function openCustomer360Modal(client) {
+  activeClient.value = client;
+  crmTab.value = "vehicles";
+  showCustomer360.value = true;
+
+  // Load fresh details, vehicles, and statement
+  loadingStatement.value = true;
+  try {
+    const [fullClient, stItems] = await Promise.all([
+      clientStore.fetchClientById(client.id),
+      clientStore.fetchStatement(client.id)
+    ]);
+    if (fullClient) activeClient.value = fullClient;
+    statementItems.value = stItems || [];
+  } finally {
+    loadingStatement.value = false;
+  }
+}
+
+function openAddVehicleModal(client) {
+  editingVehicleId.value = null;
+  vehicleForm.value = {
+    plateNumber: "",
+    brandLookupId: null,
+    model: "",
+    year: null,
+    colorLookupId: null,
+    vin: "",
+    currentMileage: null,
+    fuelTypeLookupId: null,
+    notes: ""
+  };
+  showVehicleModal.value = true;
+}
+
+function openEditVehicleModal(v) {
+  editingVehicleId.value = v.id;
+  vehicleForm.value = {
+    plateNumber: v.plateNumber,
+    brandLookupId: v.brandLookupId || null,
+    model: v.model || "",
+    year: v.year || null,
+    colorLookupId: v.colorLookupId || null,
+    vin: v.vin || "",
+    currentMileage: v.currentMileage || null,
+    fuelTypeLookupId: v.fuelTypeLookupId || null,
+    notes: v.notes || ""
+  };
+  showVehicleModal.value = true;
+}
+
+async function submitVehicleForm() {
+  submitting.value = true;
+  try {
+    let res;
+    if (editingVehicleId.value) {
+      res = await clientStore.updateVehicle(editingVehicleId.value, vehicleForm.value);
+    } else {
+      res = await clientStore.addVehicle(activeClient.value.id, vehicleForm.value);
+    }
+
+    if (res.success) {
+      toast.add({
+        severity: "success",
+        summary: "تم بنجاح",
+        detail: res.message,
+        life: 3000
+      });
+      showVehicleModal.value = false;
+      const refreshed = await clientStore.fetchClientById(activeClient.value.id);
+      if (refreshed) activeClient.value = refreshed;
+    } else {
+      toast.add({
+        severity: "error",
+        summary: "خطأ",
+        detail: res.message,
+        life: 4000
+      });
+    }
+  } finally {
+    submitting.value = false;
+  }
+}
+
+async function confirmDeleteVehicle(v) {
+  if (confirm(`هل أنت متأكد من حذف المركبة ${v.plateNumber}؟`)) {
+    const res = await clientStore.deleteVehicle(v.id);
+    if (res.success) {
+      toast.add({ severity: "success", summary: "تم الحذف", detail: res.message, life: 3000 });
+      const refreshed = await clientStore.fetchClientById(activeClient.value.id);
+      if (refreshed) activeClient.value = refreshed;
+    }
   }
 }
 
 function openPaymentModal(client) {
-  targetClient.value = client;
+  payingClient.value = client;
   paymentForm.value = {
+    clientId: client.id,
     amount: client.currentBalance > 0 ? client.currentBalance : 0,
     paymentMethod: 1,
-    financialAccountId: "",
+    financialAccountId: financeAccounts.value[0]?.id || null,
     reference: "",
     notes: ""
   };
@@ -554,63 +1501,84 @@ function openPaymentModal(client) {
 }
 
 async function submitPaymentForm() {
-  if (paymentForm.value.amount <= 0) {
-    toast.add({ severity: "warn", summary: "تنبيه", detail: "يرجى إدخال مبلغ سداد أكبر من صفر", life: 3000 });
-    return;
-  }
-
   submitting.value = true;
-  const res = await clientStore.recordPayment({
-    clientId: targetClient.value.id,
-    amount: paymentForm.value.amount,
-    paymentMethod: paymentForm.value.paymentMethod,
-    financialAccountId: paymentForm.value.financialAccountId ? parseInt(paymentForm.value.financialAccountId) : null,
-    reference: paymentForm.value.reference,
-    notes: paymentForm.value.notes
-  });
-  submitting.value = false;
-
-  if (res.success) {
-    toast.add({ severity: "success", summary: "تم التحصيل", detail: res.message, life: 4000 });
-    showPaymentModal.value = false;
-    await financeStore.fetchAccounts();
-  } else {
-    toast.add({ severity: "error", summary: "خطأ", detail: res.message, life: 4000 });
+  try {
+    const res = await clientStore.recordPayment(paymentForm.value);
+    if (res.success) {
+      toast.add({
+        severity: "success",
+        summary: "تم التحصيل",
+        detail: res.message,
+        life: 3000
+      });
+      showPaymentModal.value = false;
+      if (activeClient.value?.id === payingClient.value?.id) {
+        const refreshed = await clientStore.fetchClientById(activeClient.value.id);
+        if (refreshed) activeClient.value = refreshed;
+        statementItems.value = await clientStore.fetchStatement(activeClient.value.id);
+      }
+    } else {
+      toast.add({
+        severity: "error",
+        summary: "خطأ",
+        detail: res.message,
+        life: 4000
+      });
+    }
+  } finally {
+    submitting.value = false;
   }
 }
 
-async function openStatementModal(client) {
-  targetClient.value = client;
-  showStatementModal.value = true;
-  statementLoading.value = true;
-  await clientStore.fetchStatement(client.id);
-  statementLoading.value = false;
+function openNewJobCardForClient(client) {
+  showCustomer360.value = false;
+  router.push({
+    path: "/ohda/jobs",
+    query: {
+      newJob: "1",
+      clientId: client.id,
+      clientName: client.name,
+      clientPhone: client.phone
+    }
+  });
 }
 
-async function confirmDelete(client) {
-  if (confirm(`هل أنت متأكد من حذف العميل "${client.name}"؟`)) {
-    const res = await clientStore.deleteClient(client.id);
+async function confirmDelete(row) {
+  if (confirm(`هل أنت متأكد من حذف العميل "${row.name}"؟`)) {
+    const res = await clientStore.deleteClient(row.id);
     if (res.success) {
       toast.add({ severity: "success", summary: "تم الحذف", detail: res.message, life: 3000 });
     } else {
-      toast.add({ severity: "error", summary: "تعذر الحذف", detail: res.message, life: 4000 });
+      toast.add({ severity: "error", summary: "خطأ", detail: res.message, life: 4000 });
     }
   }
 }
 
 function formatCurrency(val) {
-  if (!val && val !== 0) return "0.00";
-  return Number(val).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  return (Number(val) || 0).toLocaleString("ar-EG", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + " ج.م";
 }
 
-function formatDate(val) {
-  if (!val) return "—";
-  return new Date(val).toLocaleDateString("ar-EG", { year: "numeric", month: "short", day: "numeric" });
+function formatDate(dateStr) {
+  if (!dateStr) return "—";
+  try {
+    return new Date(dateStr).toLocaleDateString("ar-EG", { year: "numeric", month: "short", day: "numeric" });
+  } catch {
+    return "—";
+  }
 }
 
-function getBalanceBadgeClass(val) {
-  if (val > 0) return "bg-red-500/15 text-red-700 dark:text-red-400 border border-red-500/30";
-  if (val < 0) return "bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 border border-emerald-500/30";
-  return "bg-gray-500/15 text-gray-700 border border-gray-500/30";
+function getBalanceBadgeClass(bal) {
+  if (bal > 0) return "bg-rose-500/15 text-rose-700 dark:text-rose-300";
+  if (bal < 0) return "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300";
+  return "bg-black/5 dark:bg-white/10 text-brand-gray";
 }
+
+onMounted(async () => {
+  await Promise.allSettled([
+    clientStore.fetchClients(),
+    lookupStore.fetchAllActive(),
+    financeStore.fetchAccounts(),
+    jobCardStore.fetchJobs()
+  ]);
+});
 </script>

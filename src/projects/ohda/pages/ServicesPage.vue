@@ -54,7 +54,7 @@
         <div>
           <span class="text-[11px] text-brand-gray dark:text-slate-400 block font-medium">متوسط سعر الخدمة</span>
           <span class="text-lg font-bold text-emerald-600 dark:text-emerald-400 font-mono">
-            {{ (Number(serviceStore.averagePrice || 0)).toLocaleString('en-US', { maximumFractionDigits: 0 }) }} ج.م
+            {{ formatCurrency(serviceStore.averagePrice) }}
           </span>
         </div>
       </div>
@@ -151,7 +151,7 @@
       <!-- Price -->
       <template #price="{ data }">
         <span class="font-mono font-bold text-emerald-600 dark:text-emerald-400 text-sm">
-          {{ (Number(data.price) || 0).toLocaleString() }} ج.م
+          {{ formatCurrency(data?.price) }}
         </span>
       </template>
 
@@ -530,6 +530,11 @@ const filteredServices = computed(() => {
 
   return list;
 });
+
+function formatCurrency(val) {
+  if (val === undefined || val === null || isNaN(Number(val))) return "0 ج.م";
+  return (Number(val) || 0).toLocaleString("en-US", { maximumFractionDigits: 0 }) + " ج.م";
+}
 
 function getCategoryBadgeClass(category) {
   switch (category) {
