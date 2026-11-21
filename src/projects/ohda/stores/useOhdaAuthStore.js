@@ -43,6 +43,7 @@ export const useOhdaAuthStore = defineStore("ohdaAuth", {
             "/ohda/bookings-calendar",
             "/ohda/todays-board",
             "/ohda/bays-settings",
+            "/ohda/reports",
             "/ohda/products",
             "/ohda/services",
             "/ohda/purchases",
@@ -70,6 +71,7 @@ export const useOhdaAuthStore = defineStore("ohdaAuth", {
           "/ohda/bookings-calendar",
           "/ohda/todays-board",
           "/ohda/bays-settings",
+          "/ohda/reports",
           "/ohda/products",
           "/ohda/services",
           "/ohda/purchases",
@@ -120,6 +122,7 @@ export const useOhdaAuthStore = defineStore("ohdaAuth", {
         if (!paths.includes("/ohda/bookings-calendar")) paths.push("/ohda/bookings-calendar");
         if (!paths.includes("/ohda/todays-board")) paths.push("/ohda/todays-board");
         if (!paths.includes("/ohda/bays-settings")) paths.push("/ohda/bays-settings");
+        if (!paths.includes("/ohda/reports")) paths.push("/ohda/reports");
         if (!paths.includes("/ohda/services")) paths.push("/ohda/services");
         if (!paths.includes("/ohda/purchases")) paths.push("/ohda/purchases");
         if (!paths.includes("/ohda/returns")) paths.push("/ohda/returns");

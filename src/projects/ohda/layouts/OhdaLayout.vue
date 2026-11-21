@@ -273,6 +273,7 @@ const pageMeta = {
   "/ohda/bookings-calendar": { labelKey: "ohda.nav.bookingsCalendar", icon: "CalendarDays" },
   "/ohda/todays-board": { labelKey: "ohda.nav.todaysBoard", icon: "LayoutDashboard" },
   "/ohda/bays-settings": { labelKey: "ohda.nav.baysSettings", icon: "Warehouse" },
+  "/ohda/reports": { labelKey: "ohda.nav.reports", icon: "BarChart3" },
   "/ohda/products": { labelKey: "ohda.nav.products", icon: "Package" },
   "/ohda/services": { labelKey: "ohda.nav.services", icon: "Wrench" },
   "/ohda/purchases": { labelKey: "ohda.nav.purchases", icon: "ShoppingCart" },
@@ -384,7 +385,8 @@ const groupDefinitions = computed(() => {
       paths: [
         "/ohda/bookings-calendar",
         "/ohda/todays-board",
-        "/ohda/bays-settings"
+        "/ohda/bays-settings",
+        "/ohda/reports"
       ]
     },
     {

@@ -61,6 +61,12 @@ export default [
         name: "OhdaBaysSettings",
         component: () => import("./pages/BaysSettingsPage.vue")
       },
+      // Reports & Analytics Hub
+      {
+        path: "reports",
+        name: "OhdaReports",
+        component: () => import("./pages/ReportsPage.vue")
+      },
       // Inventory & Services
       {
         path: "products",
