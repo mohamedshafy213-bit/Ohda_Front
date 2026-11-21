@@ -267,6 +267,7 @@ const pageMeta = {
   "/ohda/dashboard": { labelKey: "ohda.nav.dashboard", icon: "LayoutDashboard" },
   "/ohda/jobs": { labelKey: "ohda.nav.jobs", icon: "FileText" },
   "/ohda/clients": { labelKey: "ohda.nav.clients", icon: "Users" },
+  "/ohda/estimates": { labelKey: "ohda.nav.estimates", icon: "FileText" },
   "/ohda/products": { labelKey: "ohda.nav.products", icon: "Package" },
   "/ohda/services": { labelKey: "ohda.nav.services", icon: "Wrench" },
   "/ohda/purchases": { labelKey: "ohda.nav.purchases", icon: "ShoppingCart" },
@@ -377,7 +378,8 @@ const groupDefinitions = computed(() => {
       icon: "FileText",
       paths: [
         "/ohda/jobs",
-        "/ohda/clients"
+        "/ohda/clients",
+        "/ohda/estimates"
       ]
     },
     {

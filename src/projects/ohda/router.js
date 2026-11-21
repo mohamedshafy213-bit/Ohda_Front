@@ -35,6 +35,11 @@ export default [
         name: "OhdaClients",
         component: () => import("./pages/ClientsPage.vue")
       },
+      {
+        path: "estimates",
+        name: "OhdaEstimates",
+        component: () => import("./pages/EstimatesPage.vue")
+      },
       // Inventory & Services
       {
         path: "products",

@@ -5,7 +5,8 @@ export default {
       nav: {
         dashboard: "لوحة التحكم",
         jobs: "أوامر الشغل والفواتير",
-        clients: "العملاء والمديونيات",
+        clients: "العملاء والمركبات",
+        estimates: "عروض الأسعار والمقايسات",
         products: "المنتجات وقطع الغيار",
         services: "الخدمات والصيانة",
         purchases: "فواتير المشتريات",
@@ -607,7 +608,8 @@ export default {
       nav: {
         dashboard: "Dashboard",
         jobs: "Job Cards & Invoices",
-        clients: "Clients & Balances",
+        clients: "Customers & Vehicles",
+        estimates: "Estimates & Quotes",
         products: "Products & Parts",
         services: "Services & Maintenance",
         purchases: "Purchases & Inflow",
