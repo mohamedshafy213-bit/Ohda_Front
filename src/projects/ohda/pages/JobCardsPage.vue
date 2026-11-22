@@ -16,6 +16,16 @@
       <div class="flex flex-wrap items-center gap-2.5">
         <button
           type="button"
+          @click="exportJobsToExcel"
+          class="bg-brand-light dark:bg-white/5 hover:bg-brand-soft text-brand-dark dark:text-white border border-brand-gray/20 rounded-xl px-3.5 py-2.5 text-xs font-semibold flex items-center gap-2 shadow-xs cursor-pointer transition-all"
+          title="تصدير أوامر الشغل إلى ملف Excel"
+        >
+          <Download class="w-4 h-4 text-brand-accent" />
+          <span>تصدير Excel</span>
+        </button>
+
+        <button
+          type="button"
           @click="openCreateModal"
           class="bg-brand-accent hover:bg-brand-accent/90 text-brand-dark font-bold rounded-xl px-4 py-2.5 text-xs flex items-center gap-2 shadow-md shadow-brand-accent/10 transition-all cursor-pointer"
         >
@@ -323,7 +333,7 @@
             </div>
           </div>
 
-          <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <div class="grid grid-cols-1 sm:grid-cols-4 gap-3">
             <div>
               <label class="block font-semibold mb-1">رقم اللوحة <span class="text-red-500">*</span></label>
               <input
@@ -331,17 +341,37 @@
                 required
                 type="text"
                 placeholder="مثال: أ ب ج 1234"
-                class="w-full px-3.5 py-2.5 rounded-xl border border-brand-gray/25 bg-white dark:bg-brand-dark text-brand-dark dark:text-white text-xs font-mono font-bold focus:border-brand-accent transition-all"
+                class="w-full px-3.5 py-2 rounded-xl border border-brand-gray/25 bg-white dark:bg-brand-dark text-brand-dark dark:text-white text-xs font-mono font-bold focus:border-brand-accent transition-all"
               />
             </div>
             <div>
-              <label class="block font-semibold mb-1">نوع وموديل السيارة</label>
+              <label class="block font-semibold mb-1">نوع الهيكل</label>
+              <select
+                v-model="form.carType"
+                class="w-full px-3.5 py-2 rounded-xl border border-brand-gray/25 bg-white dark:bg-brand-dark text-brand-dark dark:text-white text-xs focus:border-brand-accent transition-all cursor-pointer"
+              >
+                <option value="سيدان">سيدان</option>
+                <option value="دفع رباعي / SUV">دفع رباعي / SUV</option>
+                <option value="هاتشباك">هاتشباك</option>
+                <option value="بيك آب / نقل">بيك آب / نقل</option>
+                <option value="ميني فان">ميني فان</option>
+                <option value="كوبيه">كوبيه</option>
+                <option value="شاحنة">شاحنة</option>
+                <option value="باص">باص</option>
+              </select>
+            </div>
+            <div>
+              <label class="block font-semibold mb-1">ماركة وطراز السيارة</label>
               <input
                 v-model="form.carModel"
                 type="text"
+                list="brandsList"
                 placeholder="مثال: تويوتا كورولا 2021"
-                class="w-full px-3.5 py-2.5 rounded-xl border border-brand-gray/25 bg-white dark:bg-brand-dark text-brand-dark dark:text-white text-xs focus:border-brand-accent transition-all"
+                class="w-full px-3.5 py-2 rounded-xl border border-brand-gray/25 bg-white dark:bg-brand-dark text-brand-dark dark:text-white text-xs focus:border-brand-accent transition-all"
               />
+              <datalist id="brandsList">
+                <option v-for="b in popularCarBrands" :key="b" :value="b" />
+              </datalist>
             </div>
             <div>
               <label class="block font-semibold mb-1">عداد الكيلومترات (كم)</label>
@@ -350,7 +380,7 @@
                 type="number"
                 min="0"
                 placeholder="مثال: 65000"
-                class="w-full px-3.5 py-2.5 rounded-xl border border-brand-gray/25 bg-white dark:bg-brand-dark text-brand-dark dark:text-white text-xs font-mono focus:border-brand-accent transition-all"
+                class="w-full px-3.5 py-2 rounded-xl border border-brand-gray/25 bg-white dark:bg-brand-dark text-brand-dark dark:text-white text-xs font-mono focus:border-brand-accent transition-all"
               />
             </div>
           </div>
@@ -850,6 +880,7 @@ import OhdaDataTable from "../components/OhdaDataTable.vue";
 import OhdaModal from "../components/OhdaModal.vue";
 import searchField from "@/components/searchField.vue";
 import LoadingSkeleton from "@/components/LoadingSkeleton.vue";
+import { exportToExcelCsv } from "../utils/excelHelper";
 
 import {
   FileText,
@@ -867,8 +898,36 @@ import {
   Printer,
   Coins,
   RefreshCw,
+  Download,
   X
 } from "lucide-vue-next";
+
+const popularCarBrands = [
+  "تويوتا",
+  "هيونداي",
+  "نيسان",
+  "كيا",
+  "ميتسوبيشي",
+  "شيفروليه",
+  "مرسيدس",
+  "بي إم دبليو",
+  "شيري",
+  "إم جي",
+  "رينو",
+  "فيات",
+  "بيجو",
+  "فورد",
+  "جيب",
+  "فولكس فاجن",
+  "سوزوكي",
+  "هوندا",
+  "مازدا",
+  "سكودا",
+  "أوبل",
+  "سوبارو",
+  "جيلي",
+  "هافال"
+];
 
 const jobStore = useOhdaJobCardStore();
 const serviceStore = useOhdaServiceStore();
@@ -908,6 +967,7 @@ const form = ref({
   customerName: "",
   customerPhone: "",
   carPlate: "",
+  carType: "سيدان",
   carModel: "",
   odometer: null,
   discount: 0,
@@ -1018,6 +1078,7 @@ function openCreateModal() {
     customerName: "",
     customerPhone: "",
     carPlate: "",
+    carType: "سيدان",
     carModel: "",
     odometer: null,
     discount: 0,
@@ -1040,6 +1101,7 @@ function openEditModal(job) {
     customerName: job.customerName,
     customerPhone: job.customerPhone,
     carPlate: job.carPlate,
+    carType: job.carType || "سيدان",
     carModel: job.carModel,
     odometer: job.odometer,
     discount: job.discount || 0,
@@ -1063,6 +1125,40 @@ function openEditModal(job) {
     }))
   };
   showJobModal.value = true;
+}
+
+// Excel Export
+function exportJobsToExcel() {
+  const exportCols = [
+    { key: "jobNumber", label: "رقم أمر الشغل" },
+    { key: "insertDate", label: "تاريخ الإنشاء" },
+    { key: "customerName", label: "اسم العميل" },
+    { key: "customerPhone", label: "رقم الهاتف" },
+    { key: "carPlate", label: "رقم اللوحة" },
+    { key: "carModel", label: "الموديل والسيارة" },
+    { key: "odometer", label: "العداد (كم)" },
+    { key: "totalAmount", label: "الإجمالي (ج.م)" },
+    { key: "paidAmount", label: "المدفوع (ج.م)" },
+    { key: "remainingBalance", label: "المتبقي (ج.م)" },
+    { key: "statusText", label: "الحالة" }
+  ];
+
+  const exportData = (jobStore.jobs || []).map(j => ({
+    jobNumber: j.jobNumber || "",
+    insertDate: formatDateTime(j.insertDate),
+    customerName: j.customerName || "",
+    customerPhone: j.customerPhone || "",
+    carPlate: j.carPlate || "",
+    carModel: j.carModel || "",
+    odometer: j.odometer || 0,
+    totalAmount: j.totalAmount || 0,
+    paidAmount: j.paidAmount || 0,
+    remainingBalance: j.remainingBalance || 0,
+    statusText: j.statusText || ""
+  }));
+
+  exportToExcelCsv("أوامر_شغل_الورشة.csv", exportCols, exportData);
+  toastStore.addSuccessToast(`تم تصدير ${exportData.length} أمر شغل إلى Excel بنجاح`);
 }
 
 // Row Handlers

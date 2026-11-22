@@ -16,6 +16,16 @@
       <div class="flex flex-wrap items-center gap-2.5">
         <button
           type="button"
+          @click="exportExpensesToExcel"
+          class="bg-brand-light dark:bg-white/5 hover:bg-brand-soft text-brand-dark dark:text-white border border-brand-gray/20 rounded-xl px-3.5 py-2.5 text-xs font-semibold flex items-center gap-2 shadow-xs cursor-pointer transition-all"
+          title="تصدير المصروفات إلى Excel"
+        >
+          <Download class="w-4 h-4 text-brand-accent" />
+          <span>تصدير Excel</span>
+        </button>
+
+        <button
+          type="button"
           @click="openRecurringConfirm"
           class="bg-purple-600/10 hover:bg-purple-600/20 text-purple-600 dark:text-purple-400 border border-purple-500/30 font-bold rounded-xl px-3.5 py-2.5 text-xs flex items-center gap-1.5 transition-all cursor-pointer"
         >
@@ -607,6 +617,7 @@ import { useOhdaInventoryStore } from "../stores/useOhdaInventoryStore";
 import OhdaDataTable from "../components/OhdaDataTable.vue";
 import OhdaModal from "../components/OhdaModal.vue";
 import LoadingSkeleton from "@/components/LoadingSkeleton.vue";
+import { exportToExcelCsv } from "../utils/excelHelper";
 import {
   Receipt,
   Plus,
@@ -624,7 +635,8 @@ import {
   Home,
   Wifi,
   Wrench,
-  HelpCircle
+  HelpCircle,
+  Download
 } from "lucide-vue-next";
 
 const expenseStore = useOhdaExpenseStore();
@@ -872,5 +884,29 @@ async function executeDelete() {
   if (!res.success) {
     alert(res.message);
   }
+}
+
+function exportExpensesToExcel() {
+  const exportCols = [
+    { key: "expenseDate", label: "تاريخ الصرف" },
+    { key: "title", label: "بيان المصروف" },
+    { key: "category", label: "التصنيف" },
+    { key: "amount", label: "المبلغ (ج.م)" },
+    { key: "paymentMethod", label: "طريقة الصرف" },
+    { key: "payee", label: "المستلم / الجهة" },
+    { key: "notes", label: "ملاحظات" }
+  ];
+
+  const exportData = (expenseStore.expenses || []).map(e => ({
+    expenseDate: e.expenseDate ? new Date(e.expenseDate).toLocaleDateString("ar-EG") : "—",
+    title: e.title || e.description || "",
+    category: e.categoryName || e.category || "عام",
+    amount: e.amount || 0,
+    paymentMethod: e.paymentMethodText || (e.paymentMethod === 1 ? "نقدي" : "تحويل"),
+    payee: e.payee || e.supplierName || "—",
+    notes: e.notes || ""
+  }));
+
+  exportToExcelCsv("مصروفات_الورشة.csv", exportCols, exportData);
 }
 </script>

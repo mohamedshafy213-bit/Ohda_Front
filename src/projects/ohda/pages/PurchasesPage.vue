@@ -14,7 +14,17 @@
         </div>
       </div>
 
-      <div class="flex items-center gap-3">
+      <div class="flex items-center gap-2.5">
+        <button
+          type="button"
+          @click="exportPurchasesToExcel"
+          class="px-3.5 py-2.5 bg-brand-light dark:bg-white/5 hover:bg-brand-soft text-brand-dark dark:text-white border border-brand-gray/20 rounded-2xl text-xs font-semibold flex items-center gap-2 shadow-xs cursor-pointer transition-all"
+          title="تصدير فواتير الشراء إلى Excel"
+        >
+          <Download class="w-4 h-4 text-brand-accent" />
+          <span>تصدير Excel</span>
+        </button>
+
         <button
           type="button"
           @click="openCreateModal"
@@ -447,6 +457,7 @@ import { useOhdaInventoryStore } from "../stores/useOhdaInventoryStore";
 import { useOhdaFinanceStore } from "../stores/useOhdaFinanceStore";
 import OhdaDataTable from "../components/OhdaDataTable.vue";
 import OhdaModal from "../components/OhdaModal.vue";
+import { exportToExcelCsv } from "../utils/excelHelper";
 import {
   ShoppingBag,
   Plus,
@@ -457,7 +468,8 @@ import {
   Eye,
   FileText,
   X,
-  RefreshCw
+  RefreshCw,
+  Download
 } from "lucide-vue-next";
 
 const toast = useToast();
@@ -638,5 +650,30 @@ function getPaymentTypeBadge(type) {
     case 3: return "bg-blue-500/15 text-blue-700 dark:text-blue-400 border border-blue-500/30";
     default: return "bg-gray-500/15 text-gray-700 border border-gray-500/30";
   }
+}
+
+function exportPurchasesToExcel() {
+  const exportCols = [
+    { key: "invoiceNumber", label: "رقم الفاتورة" },
+    { key: "purchaseDate", label: "تاريخ الشراء" },
+    { key: "supplierName", label: "المورد" },
+    { key: "totalAmount", label: "إجمالي الفاتورة (ج.م)" },
+    { key: "paidAmount", label: "المدفوع (ج.م)" },
+    { key: "remainingBalance", label: "المتبقي (ج.م)" },
+    { key: "paymentType", label: "طريقة السداد" }
+  ];
+
+  const exportData = (purchaseStore.purchases || []).map(p => ({
+    invoiceNumber: p.invoiceNumber || "",
+    purchaseDate: formatDate(p.purchaseDate),
+    supplierName: p.supplierName || "",
+    totalAmount: p.totalAmount || 0,
+    paidAmount: p.paidAmount || 0,
+    remainingBalance: p.remainingBalance || 0,
+    paymentType: getPaymentTypeText(p.paymentType)
+  }));
+
+  exportToExcelCsv("فواتير_المشتريات.csv", exportCols, exportData);
+  toast.add({ severity: "success", summary: "تصدير Excel", detail: `تم تصدير ${exportData.length} فاتورة شراء بنجاح`, life: 3000 });
 }
 </script>

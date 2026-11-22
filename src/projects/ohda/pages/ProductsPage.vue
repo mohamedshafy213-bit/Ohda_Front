@@ -351,15 +351,12 @@
             <label class="block font-semibold text-brand-dark dark:text-white mb-1.5">
               وحدة القياس <span class="text-red-500">*</span>
             </label>
-            <input
+            <select
               v-model="form.unit"
-              list="unitsList"
-              placeholder="اختر أو اكتب الوحدة..."
-              class="w-full px-3.5 py-2.5 rounded-xl border border-brand-gray/25 bg-brand-light/50 dark:bg-white/5 text-brand-dark dark:text-white text-xs font-medium focus:border-brand-accent transition-all"
-            />
-            <datalist id="unitsList">
-              <option v-for="u in commonUnits" :key="u" :value="u" />
-            </datalist>
+              class="w-full px-3.5 py-2.5 rounded-xl border border-brand-gray/25 bg-brand-light/50 dark:bg-white/5 text-brand-dark dark:text-white text-xs font-medium focus:border-brand-accent transition-all cursor-pointer"
+            >
+              <option v-for="u in commonUnits" :key="u" :value="u">{{ u }}</option>
+            </select>
           </div>
 
           <!-- Cost Price -->
@@ -861,7 +858,7 @@ const searchQuery = ref("");
 const selectedCategory = ref(null);
 const filterOnlyLowStock = ref(false);
 
-const commonUnits = ["قطعة", "لتر", "جالون", "طقم", "عبوة", "متر", "كرتونة"];
+const commonUnits = ["قطعة", "لتر", "طقم", "كرتونة", "عبوة", "علبة", "جالون", "متر", "كجم", "برميل"];
 
 // Columns Definition for Reusable OhdaDataTable
 const productColumns = [

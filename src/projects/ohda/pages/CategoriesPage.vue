@@ -12,13 +12,25 @@
         </p>
       </div>
 
-      <Button
-        @click="openAddModal"
-        class="!bg-brand-accent hover:!bg-brand-accent/90 !text-brand-dark !font-bold !rounded-xl !px-4 !py-2.5 !text-xs flex items-center gap-2 shadow-md shadow-brand-accent/10 cursor-pointer"
-      >
-        <Plus class="w-4 h-4" />
-        {{ $t('ohda.categories.addCategory') }}
-      </Button>
+      <div class="flex items-center gap-2.5">
+        <button
+          type="button"
+          @click="exportCategoriesToExcel"
+          class="bg-brand-light dark:bg-white/5 hover:bg-brand-soft text-brand-dark dark:text-white border border-brand-gray/20 rounded-xl px-3.5 py-2.5 text-xs font-semibold flex items-center gap-2 shadow-xs cursor-pointer transition-all"
+          title="تصدير تصنيفات المخزن إلى Excel"
+        >
+          <Download class="w-4 h-4 text-brand-accent" />
+          <span>تصدير Excel</span>
+        </button>
+
+        <Button
+          @click="openAddModal"
+          class="!bg-brand-accent hover:!bg-brand-accent/90 !text-brand-dark !font-bold !rounded-xl !px-4 !py-2.5 !text-xs flex items-center gap-2 shadow-md shadow-brand-accent/10 cursor-pointer"
+        >
+          <Plus class="w-4 h-4" />
+          {{ $t('ohda.categories.addCategory') }}
+        </Button>
+      </div>
     </div>
 
     <!-- Search & Filter Bar -->
@@ -173,6 +185,8 @@ import OhdaModal from "../components/OhdaModal.vue";
 import DeleteDialog from "@/components/DeleteDialog.vue";
 import EmptyState from "@/components/EmptyState.vue";
 import LoadingSkeleton from "@/components/LoadingSkeleton.vue";
+import { Download } from "lucide-vue-next";
+import { exportToExcelCsv } from "../utils/excelHelper";
 
 const { t } = useI18n();
 const inventoryStore = useOhdaInventoryStore();
@@ -271,5 +285,22 @@ async function handleDelete() {
   } finally {
     selectedCategoryForDelete.value = null;
   }
+}
+
+function exportCategoriesToExcel() {
+  const exportCols = [
+    { key: "code", label: "كود التصنيف" },
+    { key: "name", label: "اسم التصنيف" },
+    { key: "productsCount", label: "عدد الأصناف التابعة" }
+  ];
+
+  const exportData = (inventoryStore.categories || []).map(c => ({
+    code: c.code || "",
+    name: c.name || "",
+    productsCount: getCategoryProductsCount(c.id)
+  }));
+
+  exportToExcelCsv("تصنيفات_المخزن.csv", exportCols, exportData);
+  toastStore.addSuccessToast(`تم تصدير ${exportData.length} تصنيف إلى Excel بنجاح`);
 }
 </script>

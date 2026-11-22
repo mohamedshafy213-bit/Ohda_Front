@@ -14,7 +14,27 @@
         </div>
       </div>
 
-      <div class="flex items-center gap-3">
+      <div class="flex items-center gap-2.5">
+        <button
+          type="button"
+          @click="exportSuppliersToExcel"
+          class="px-3.5 py-2.5 bg-brand-light dark:bg-white/5 hover:bg-brand-soft text-brand-dark dark:text-white border border-brand-gray/20 rounded-2xl text-xs font-semibold flex items-center gap-2 shadow-xs cursor-pointer transition-all"
+          title="تصدير بيانات الموردين إلى ملف Excel"
+        >
+          <Download class="w-4 h-4 text-brand-accent" />
+          <span>تصدير Excel</span>
+        </button>
+
+        <button
+          type="button"
+          @click="showImportModal = true"
+          class="px-3.5 py-2.5 bg-brand-light dark:bg-white/5 hover:bg-brand-soft text-brand-dark dark:text-white border border-brand-gray/20 rounded-2xl text-xs font-semibold flex items-center gap-2 shadow-xs cursor-pointer transition-all"
+          title="استيراد قائمة موردين من ملف Excel"
+        >
+          <Upload class="w-4 h-4 text-blue-500" />
+          <span>استيراد Excel</span>
+        </button>
+
         <button
           type="button"
           @click="openAddModal"
@@ -406,6 +426,19 @@
         </button>
       </template>
     </OhdaModal>
+    <!-- Excel Import Modal -->
+    <ExcelImportModal
+      :visible="showImportModal"
+      @close="showImportModal = false"
+      title="استيراد موردين من ملف إكسل"
+      description="رفع ملف يحتوي على بيانات الموردين، أرقام التواصل والأرصدة الافتتاحية"
+      endpoint="/api/Excel/import/suppliers"
+      template-name="نموذج_استيراد_الموردين.csv"
+      :template-columns="supplierTemplateColumns"
+      :sample-rows="supplierSampleRows"
+      :custom-import-handler="handleSuppliersImport"
+      @imported="onSuppliersImported"
+    />
   </div>
 </template>
 
@@ -416,6 +449,8 @@ import { useOhdaInventoryStore } from "../stores/useOhdaInventoryStore";
 import { useOhdaFinanceStore } from "../stores/useOhdaFinanceStore";
 import OhdaDataTable from "../components/OhdaDataTable.vue";
 import OhdaModal from "../components/OhdaModal.vue";
+import ExcelImportModal from "../components/ExcelImportModal.vue";
+import { exportToExcelCsv } from "../utils/excelHelper";
 import {
   Truck,
   Plus,
@@ -423,7 +458,9 @@ import {
   FileText,
   Edit2,
   Trash2,
-  RefreshCw
+  RefreshCw,
+  Download,
+  Upload
 } from "lucide-vue-next";
 
 const toast = useToast();
@@ -433,11 +470,112 @@ const financeStore = useOhdaFinanceStore();
 const showModal = ref(false);
 const showPaymentModal = ref(false);
 const showStatementModal = ref(false);
+const showImportModal = ref(false);
 const isEditing = ref(false);
 const targetSupplier = ref(null);
 const submitting = ref(false);
 const statementLoading = ref(false);
 const statementItems = ref([]);
+
+const supplierTemplateColumns = [
+  { key: "companyName", label: "اسم الشركة / المورد *" },
+  { key: "contactName", label: "اسم مسؤول التواصل" },
+  { key: "phone", label: "رقم الهاتف" },
+  { key: "email", label: "البريد الإلكتروني" },
+  { key: "taxNumber", label: "الرقم الضريبي" },
+  { key: "address", label: "العنوان وملاحظات التوريد" },
+  { key: "initialBalance", label: "الرصيد الافتتاحي (ج.م)" }
+];
+
+const supplierSampleRows = [
+  {
+    companyName: "شركة الأهرام لقطع الغيار",
+    contactName: "م. محمد حسن",
+    phone: "01012345678",
+    email: "ahram@parts.com",
+    taxNumber: "123-456-789",
+    address: "ش التوفيقية، وسط البلد، القاهرة",
+    initialBalance: "0"
+  },
+  {
+    companyName: "مؤسسة الفلاتر والزيوت العالمية",
+    contactName: "أحمد سيد",
+    phone: "01123456789",
+    email: "oils@filters.com",
+    taxNumber: "987-654-321",
+    address: "المنطقة الصناعية، جسر السويس",
+    initialBalance: "5000"
+  }
+];
+
+function exportSuppliersToExcel() {
+  const exportCols = [
+    { key: "companyName", label: "اسم المورد / الشركة" },
+    { key: "contactName", label: "المسؤول" },
+    { key: "phone", label: "رقم الهاتف" },
+    { key: "email", label: "البريد الإلكتروني" },
+    { key: "taxNumber", label: "الرقم الضريبي" },
+    { key: "currentBalance", label: "الرصيد الحالي (ج.م)" },
+    { key: "balanceStatus", label: "الحالة المالية" },
+    { key: "address", label: "العنوان وملاحظات التوريد" }
+  ];
+
+  const exportData = (inventoryStore.suppliers || []).map(s => ({
+    companyName: s.companyName || "",
+    contactName: s.contactName || "",
+    phone: s.phone || "",
+    email: s.email || "",
+    taxNumber: s.taxNumber || "",
+    currentBalance: s.currentBalance || 0,
+    balanceStatus: s.balanceStatus || (s.currentBalance > 0 ? "مستحق له" : s.currentBalance < 0 ? "مدين للورشة" : "خالص"),
+    address: s.address || ""
+  }));
+
+  exportToExcelCsv("قائمة_الموردين.csv", exportCols, exportData);
+  toast.add({ severity: "success", summary: "تصدير Excel", detail: `تم تصدير ${exportData.length} مورد بنجاح`, life: 3000 });
+}
+
+async function handleSuppliersImport(rows) {
+  let successCount = 0;
+  let failCount = 0;
+
+  for (const r of rows) {
+    const companyName = r.companyName || r["اسم الشركة / المورد *"] || r["اسم المورد"] || r["اسم الشركة"];
+    if (!companyName || !companyName.toString().trim()) {
+      continue;
+    }
+
+    try {
+      const payload = {
+        companyName: companyName.toString().trim(),
+        contactName: (r.contactName || r["اسم مسؤول التواصل"] || "").toString().trim(),
+        phone: (r.phone || r["رقم الهاتف"] || "").toString().trim(),
+        email: (r.email || r["البريد الإلكتروني"] || "").toString().trim(),
+        taxNumber: (r.taxNumber || r["الرقم الضريبي"] || "").toString().trim(),
+        address: (r.address || r["العنوان وملاحظات التوريد"] || "").toString().trim(),
+        initialBalance: Number(r.initialBalance || r["الرصيد الافتتاحي (ج.م)"] || 0) || 0
+      };
+
+      const res = await inventoryStore.addSupplier(payload);
+      if (res && res.success !== false) {
+        successCount++;
+      } else {
+        failCount++;
+      }
+    } catch {
+      failCount++;
+    }
+  }
+
+  return {
+    success: successCount > 0,
+    message: `تم استيراد ${successCount} مورد بنجاح${failCount > 0 ? ` (فشل ${failCount})` : ''}`
+  };
+}
+
+async function onSuppliersImported() {
+  await inventoryStore.fetchSuppliers();
+}
 
 const tableColumns = [
   { field: "companyName", header: "اسم المورد / الشركة", sortable: true },

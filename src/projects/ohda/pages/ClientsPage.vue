@@ -20,6 +20,28 @@
       </div>
 
       <div class="flex items-center gap-2.5 flex-wrap">
+        <!-- Excel Export Button -->
+        <button
+          type="button"
+          @click="exportClientsToExcel"
+          class="px-3.5 py-2.5 rounded-2xl border border-brand-gray/25 hover:border-emerald-500 hover:text-emerald-600 text-brand-dark dark:text-white font-bold text-xs flex items-center gap-1.5 transition-all cursor-pointer shadow-2xs"
+          title="تصدير كافة العملاء والمركبات إلى ملف Excel"
+        >
+          <FileSpreadsheet class="w-4 h-4 text-emerald-600" />
+          <span>تصدير Excel</span>
+        </button>
+
+        <!-- Excel Import Button -->
+        <button
+          type="button"
+          @click="showImportModal = true"
+          class="px-3.5 py-2.5 rounded-2xl border border-brand-gray/25 hover:border-brand-accent text-brand-dark dark:text-white font-bold text-xs flex items-center gap-1.5 transition-all cursor-pointer shadow-2xs"
+          title="استيراد بيانات العملاء والمركبات من ملف Excel أو CSV"
+        >
+          <Upload class="w-4 h-4 text-brand-accent" />
+          <span>استيراد Excel</span>
+        </button>
+
         <button
           type="button"
           @click="openCreateModal"
@@ -831,7 +853,7 @@
             <span class="text-[10px] text-brand-gray">يمكنك إضافة سيارات إضافية لاحقاً</span>
           </div>
 
-          <div class="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+          <div class="grid grid-cols-1 sm:grid-cols-4 gap-2.5">
             <div>
               <label class="block font-medium text-[11px] text-brand-gray mb-1">رقم اللوحة</label>
               <input
@@ -850,6 +872,17 @@
               >
                 <option :value="null">اختر الماركة...</option>
                 <option v-for="b in vehicleBrands" :key="b.id" :value="b.id">{{ b.labelAr }}</option>
+              </select>
+            </div>
+
+            <div>
+              <label class="block font-medium text-[11px] text-brand-gray mb-1">نوع السيارة</label>
+              <select
+                v-model="initialVehicle.carType"
+                class="w-full px-2.5 py-1.5 rounded-xl border border-brand-gray/25 bg-brand-white dark:bg-brand-dark text-xs"
+              >
+                <option value="">اختر النوع...</option>
+                <option v-for="t in vehicleTypes" :key="t" :value="t">{{ t }}</option>
               </select>
             </div>
 
@@ -923,15 +956,26 @@
           />
         </div>
 
-        <div class="grid grid-cols-2 gap-3">
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
           <div>
             <label class="block font-semibold text-brand-dark dark:text-white mb-1">ماركة السيارة</label>
             <select
               v-model="vehicleForm.brandLookupId"
-              class="w-full px-3 py-2 rounded-xl border border-brand-gray/25 bg-brand-light/50 dark:bg-white/5 text-xs focus:border-brand-accent transition-all"
+              class="w-full px-3 py-2 rounded-xl border border-brand-gray/25 bg-brand-light/50 dark:bg-white/5 text-xs focus:border-brand-accent transition-all cursor-pointer"
             >
               <option :value="null">اختر الماركة...</option>
               <option v-for="b in vehicleBrands" :key="b.id" :value="b.id">{{ b.labelAr }}</option>
+            </select>
+          </div>
+
+          <div>
+            <label class="block font-semibold text-brand-dark dark:text-white mb-1">نوع السيارة / الهيكل</label>
+            <select
+              v-model="vehicleForm.carType"
+              class="w-full px-3 py-2 rounded-xl border border-brand-gray/25 bg-brand-light/50 dark:bg-white/5 text-xs focus:border-brand-accent transition-all cursor-pointer"
+            >
+              <option value="">اختر النوع / الهيكل...</option>
+              <option v-for="t in vehicleTypes" :key="t" :value="t">{{ t }}</option>
             </select>
           </div>
 
@@ -1129,6 +1173,19 @@
         </button>
       </template>
     </OhdaModal>
+
+    <!-- Excel Import Modal for Clients -->
+    <ExcelImportModal
+      v-model:visible="showImportModal"
+      entity-name="العملاء والمركبات"
+      title="استيراد بيانات العملاء والمركبات من ملف Excel"
+      template-filename="قالب_استيراد_العملاء"
+      :template-columns="clientTemplateColumns"
+      :sample-rows="clientSampleRows"
+      endpoint="/api/Excel/import/clients"
+      :custom-import-handler="handleClientsImport"
+      @success="onClientsImportSuccess"
+    />
   </div>
 </template>
 
@@ -1142,6 +1199,8 @@ import { useOhdaFinanceStore } from "../stores/useOhdaFinanceStore";
 import { useOhdaJobCardStore } from "../stores/useOhdaJobCardStore";
 import OhdaModal from "../components/OhdaModal.vue";
 import OhdaDataTable from "../components/OhdaDataTable.vue";
+import ExcelImportModal from "../components/ExcelImportModal.vue";
+import { exportToExcelCsv } from "../utils/excelHelper";
 import {
   Users,
   UserPlus,
@@ -1155,7 +1214,9 @@ import {
   Plus,
   Wrench,
   Info,
-  RefreshCw
+  RefreshCw,
+  FileSpreadsheet,
+  Upload
 } from "lucide-vue-next";
 
 const clientStore = useOhdaClientStore();
@@ -1164,6 +1225,36 @@ const financeStore = useOhdaFinanceStore();
 const jobCardStore = useOhdaJobCardStore();
 const router = useRouter();
 const toast = useToast();
+
+const showImportModal = ref(false);
+
+const vehicleTypes = [
+  "سيدان (Sedan)",
+  "دفع رباعي (SUV / 4x4)",
+  "هاتشباك (Hatchback)",
+  "بيك آب / نصف نقل (Pickup)",
+  "ميني فان / عائلية (Minivan)",
+  "شاحنة / نقل خفيف (Truck)",
+  "ميكروباص / باص (Van / Bus)",
+  "كوبيه / رياضية (Coupe)"
+];
+
+const clientTemplateColumns = [
+  { key: "name", label: "اسم العميل *" },
+  { key: "phone", label: "رقم الهاتف *" },
+  { key: "secondPhone", label: "رقم هاتف ثانٍ" },
+  { key: "type", label: "نوع العميل (1=فردي / 2=شركة)" },
+  { key: "carPlate", label: "رقم اللوحة" },
+  { key: "carBrand", label: "ماركة السيارة" },
+  { key: "carType", label: "نوع الهيكل" },
+  { key: "carModel", label: "موديل وطراز السيارة" },
+  { key: "notes", label: "ملاحظات" }
+];
+
+const clientSampleRows = [
+  { name: "أحمد محمد محمود", phone: "01012345678", secondPhone: "", type: "1", carPlate: "س ص ع 1234", carBrand: "تويوتا", carType: "سيدان", carModel: "كورولا 2021", notes: "عميل دائم" },
+  { name: "شركة النور للخدمات", phone: "01198765432", secondPhone: "01233445566", type: "2", carPlate: "د ر ق 5678", carBrand: "هيونداي", carType: "SUV", carModel: "توسان 2023", notes: "أسطول سيارات" }
+];
 
 const searchQuery = ref("");
 const typeFilter = ref(null);
@@ -1208,12 +1299,14 @@ const clientForm = ref({
 const initialVehicle = ref({
   plateNumber: "",
   brandLookupId: null,
+  carType: "",
   model: ""
 });
 
 const vehicleForm = ref({
   plateNumber: "",
   brandLookupId: null,
+  carType: "",
   model: "",
   year: null,
   colorLookupId: null,
@@ -1556,6 +1649,92 @@ async function confirmDelete(row) {
 
 function formatCurrency(val) {
   return (Number(val) || 0).toLocaleString("ar-EG", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + " ج.م";
+}
+
+// Excel Import & Export Handlers
+function exportClientsToExcel() {
+  const exportCols = [
+    { key: "name", label: "اسم العميل" },
+    { key: "phone", label: "رقم الهاتف" },
+    { key: "secondPhone", label: "هاتف إضافي" },
+    { key: "type", label: "نوع العميل", formatter: (val) => (val === 2 ? "شركة / أسطول" : "أفراد") },
+    { key: "currentBalance", label: "الرصيد الحالي (ج.م)", formatter: (val) => Number(val || 0).toFixed(2) },
+    { key: "carPlate", label: "رقم اللوحة" },
+    { key: "carModel", label: "موديل وطراز المركبة" },
+    { key: "vehiclesCount", label: "عدد المركبات", formatter: (val, item) => item?.vehicles?.length || (val || 0) },
+    { key: "address", label: "العنوان" },
+    { key: "notes", label: "ملاحظات" },
+    { key: "insertDate", label: "تاريخ التسجيل", formatter: (val) => formatDate(val) }
+  ];
+
+  exportToExcelCsv(
+    `Ohda_قائمة_العملاء_${new Date().toISOString().slice(0, 10)}`,
+    exportCols,
+    clientStore.clients || []
+  );
+  toast.add({ severity: "success", summary: "تم التصدير", detail: "تم تصدير ملف Excel بنجاح", life: 3000 });
+}
+
+async function handleClientsImport(rows) {
+  let createdCount = 0;
+  let skippedCount = 0;
+
+  for (const row of rows) {
+    const name = row["اسم العميل *"] || row["اسم العميل"] || row["name"] || row["Name"] || row["الاسم"];
+    const phone = row["رقم الهاتف *"] || row["رقم الهاتف"] || row["phone"] || row["Phone"] || row["الهاتف"];
+    if (!name || !phone) {
+      skippedCount++;
+      continue;
+    }
+
+    const secondPhone = row["رقم هاتف ثانٍ"] || row["هاتف ثانٍ"] || row["secondPhone"] || "";
+    const typeStr = String(row["نوع العميل (1=فردي / 2=شركة)"] || row["نوع العميل"] || row["type"] || "1");
+    const type = typeStr.includes("2") || typeStr.includes("شركة") ? 2 : 1;
+    const plate = row["رقم اللوحة"] || row["plateNumber"] || row["اللوحة"] || "";
+    const brand = row["ماركة السيارة"] || row["الماركة"] || row["carBrand"] || "";
+    const carType = row["نوع الهيكل"] || row["نوع السيارة"] || row["carType"] || "";
+    const model = row["موديل وطراز السيارة"] || row["الموديل"] || row["carModel"] || "";
+    const notes = row["ملاحظات"] || row["ملاحظات العميل"] || row["notes"] || "";
+
+    const combinedModel = [carType, brand, model].filter(Boolean).join(" ");
+
+    const payload = {
+      name: name.trim(),
+      phone: phone.trim(),
+      secondPhone: secondPhone ? secondPhone.trim() : null,
+      type,
+      notes: notes || null
+    };
+
+    if (plate) {
+      payload.initialVehicle = {
+        plateNumber: plate.trim().toUpperCase(),
+        model: combinedModel || null
+      };
+    }
+
+    try {
+      await clientStore.createClient(payload);
+      createdCount++;
+    } catch {
+      skippedCount++;
+    }
+  }
+
+  await clientStore.fetchClients();
+  return {
+    success: createdCount > 0,
+    message: `تم استيراد ${createdCount} عميل بنجاح${skippedCount > 0 ? ` (تم تخطي ${skippedCount} سطر غير مكتمل)` : ""}`
+  };
+}
+
+function onClientsImportSuccess() {
+  toast.add({
+    severity: "success",
+    summary: "اكتمل الاستيراد",
+    detail: "تم تحديث قاعدة بيانات العملاء بنجاح",
+    life: 3000
+  });
 }
 
 function formatDate(dateStr) {

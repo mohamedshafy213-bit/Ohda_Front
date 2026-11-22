@@ -39,6 +39,17 @@
           <span>تسجيل حضور</span>
         </button>
 
+        <!-- Export to Excel -->
+        <button
+          type="button"
+          @click="exportBookingsToExcel"
+          class="px-3.5 py-2 rounded-xl bg-brand-light dark:bg-white/5 hover:bg-brand-soft text-brand-dark dark:text-white border border-brand-gray/20 font-bold text-xs flex items-center gap-1.5 shadow-xs transition-all cursor-pointer"
+          title="تصدير جدول الحجوزات والمواعيد إلى Excel"
+        >
+          <Download class="w-4 h-4 text-brand-accent" />
+          <span>تصدير Excel</span>
+        </button>
+
         <!-- New Booking Button -->
         <button
           type="button"
@@ -1279,6 +1290,7 @@ import { useOhdaServiceStore } from "../stores/useOhdaServiceStore";
 import { useOhdaClientStore } from "../stores/useOhdaClientStore";
 import apiClient from "@/utilities/apiClient";
 import OhdaModal from "../components/OhdaModal.vue";
+import { exportToExcelCsv } from "../utils/excelHelper";
 import {
   CalendarDays,
   Warehouse,
@@ -1303,6 +1315,7 @@ import {
   UserPlus,
   ChevronDown,
   Check,
+  Download,
   X
 } from "lucide-vue-next";
 
@@ -2110,5 +2123,40 @@ function getStatusDotColor(status) {
     case 6: return "bg-rose-500";
     default: return "bg-slate-400";
   }
+}
+
+function exportBookingsToExcel() {
+  const exportCols = [
+    { key: "bookingNumber", label: "رقم الحجز" },
+    { key: "bookingDate", label: "تاريخ الموعد" },
+    { key: "time", label: "الوقت" },
+    { key: "clientName", label: "اسم العميل" },
+    { key: "clientPhone", label: "رقم الهاتف" },
+    { key: "carPlate", label: "رقم اللوحة" },
+    { key: "carModel", label: "موديل وطراز السيارة" },
+    { key: "bayName", label: "الرافعة / الحارة" },
+    { key: "technicianName", label: "الفني المسؤول" },
+    { key: "durationMinutes", label: "المدة (دقيقة)" },
+    { key: "estimatedTotal", label: "التكلفة التقديرية (ج.م)" },
+    { key: "statusText", label: "حالة الحجز" }
+  ];
+
+  const exportData = (bookingStore.bookings || []).map(b => ({
+    bookingNumber: b.bookingNumber || `BK-${b.id}`,
+    bookingDate: b.bookingDate ? new Date(b.bookingDate).toLocaleDateString("ar-EG") : "",
+    time: `${b.startTime || ""} - ${b.endTime || ""}`,
+    clientName: b.clientName || "",
+    clientPhone: b.clientPhone || "",
+    carPlate: b.carPlate || "",
+    carModel: b.carModel || "",
+    bayName: b.bayName || "",
+    technicianName: b.technicianName || "—",
+    durationMinutes: b.durationMinutes || 0,
+    estimatedTotal: b.estimatedTotal || 0,
+    statusText: b.statusText || ""
+  }));
+
+  exportToExcelCsv("جدول_مواعيد_وحجوزات_الورشة.csv", exportCols, exportData);
+  toast.add({ severity: "success", summary: "تصدير Excel", detail: `تم تصدير ${exportData.length} موعد وحجز بنجاح`, life: 3000 });
 }
 </script>

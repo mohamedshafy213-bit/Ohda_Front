@@ -14,6 +14,28 @@
 
       <!-- Action Buttons -->
       <div class="flex flex-wrap items-center gap-2.5">
+        <!-- Excel Export Button -->
+        <button
+          type="button"
+          @click="exportServicesToExcel"
+          class="px-3.5 py-2.5 rounded-xl border border-brand-gray/20 hover:border-emerald-500 hover:text-emerald-600 text-brand-dark dark:text-white font-bold text-xs flex items-center gap-1.5 transition-all cursor-pointer shadow-2xs"
+          title="تصدير قائمة الخدمات وأسعار المصنعيات إلى ملف Excel"
+        >
+          <FileSpreadsheet class="w-4 h-4 text-emerald-600" />
+          <span>تصدير Excel</span>
+        </button>
+
+        <!-- Excel Import Button -->
+        <button
+          type="button"
+          @click="showImportModal = true"
+          class="px-3.5 py-2.5 rounded-xl border border-brand-gray/20 hover:border-brand-accent text-brand-dark dark:text-white font-bold text-xs flex items-center gap-1.5 transition-all cursor-pointer shadow-2xs"
+          title="استيراد خدمات الورشة وأسعارها من ملف Excel أو CSV"
+        >
+          <Upload class="w-4 h-4 text-brand-accent" />
+          <span>استيراد Excel</span>
+        </button>
+
         <button
           type="button"
           @click="openAddModal"
@@ -448,6 +470,19 @@
         </button>
       </template>
     </OhdaModal>
+
+    <!-- Excel Import Modal for Services -->
+    <ExcelImportModal
+      v-model:visible="showImportModal"
+      entity-name="الخدمات والمصنعيات"
+      title="استيراد خدمات وأسعار الورشة من ملف Excel"
+      template-filename="قالب_استيراد_الخدمات"
+      :template-columns="serviceTemplateColumns"
+      :sample-rows="serviceSampleRows"
+      endpoint="/api/Excel/import/services"
+      :custom-import-handler="handleServicesImport"
+      @success="onServicesImportSuccess"
+    />
   </div>
 </template>
 
@@ -458,6 +493,8 @@ import { useOhdaInventoryStore } from "../stores/useOhdaInventoryStore";
 import { useToastStore } from "@/stores/toastStore";
 import OhdaDataTable from "../components/OhdaDataTable.vue";
 import OhdaModal from "../components/OhdaModal.vue";
+import ExcelImportModal from "../components/ExcelImportModal.vue";
+import { exportToExcelCsv } from "../utils/excelHelper";
 import searchField from "@/components/searchField.vue";
 import LoadingSkeleton from "@/components/LoadingSkeleton.vue";
 
@@ -472,12 +509,30 @@ import {
   Clock,
   Package,
   RefreshCw,
-  X
+  X,
+  FileSpreadsheet,
+  Upload
 } from "lucide-vue-next";
 
 const serviceStore = useOhdaServiceStore();
 const inventoryStore = useOhdaInventoryStore();
 const toastStore = useToastStore();
+
+const showImportModal = ref(false);
+
+const serviceTemplateColumns = [
+  { key: "name", label: "اسم الخدمة *" },
+  { key: "price", label: "سعر البيع / المصنعية (ج.م) *" },
+  { key: "category", label: "فئة الخدمة" },
+  { key: "estimatedDurationMinutes", label: "المدة المقدرة (بالدقائق)" },
+  { key: "description", label: "الوصف والتفاصيل" }
+];
+
+const serviceSampleRows = [
+  { name: "تغيير زيت المحرك وفلتر الزيت", price: "150", category: "تغيير زيوت وسوائل", estimatedDurationMinutes: "30", description: "شامل تغيير الزيت وفلتر وتفقد السوائل" },
+  { name: "ترصيص وضبط زوايا العجلات", price: "200", category: "كاوتش وضبط زوايا", estimatedDurationMinutes: "45", description: "ضبط زوايا إلكتروني وترصيص أمامي وخلفي" },
+  { name: "فحص وبرمجة كمبيوتر شاملة", price: "300", category: "فحص وتكويد كمبيوتر", estimatedDurationMinutes: "40", description: "فحص أعطال وتشخيص الحساسات" }
+];
 
 const searchQuery = ref("");
 const selectedCategory = ref(null);
@@ -698,5 +753,70 @@ async function executeDeleteService() {
   } finally {
     isDeleting.value = false;
   }
+}
+
+// Excel Export & Import Handlers
+function exportServicesToExcel() {
+  const exportCols = [
+    { key: "name", label: "اسم الخدمة" },
+    { key: "category", label: "الفئة" },
+    { key: "price", label: "سعر المصنعية (ج.م)", formatter: (val) => Number(val || 0).toFixed(2) },
+    { key: "estimatedDurationMinutes", label: "المدة المقدرة (دقيقة)" },
+    { key: "description", label: "الوصف" },
+    { key: "isActive", label: "الحالة", formatter: (val) => (val !== false ? "مفعلة" : "معطلة") }
+  ];
+
+  exportToExcelCsv(
+    `Ohda_قائمة_الخدمات_${new Date().toISOString().slice(0, 10)}`,
+    exportCols,
+    serviceStore.services || []
+  );
+  toastStore.addSuccessToast("تم تصدير ملف Excel بنجاح");
+}
+
+async function handleServicesImport(rows) {
+  let createdCount = 0;
+  let skippedCount = 0;
+
+  for (const row of rows) {
+    const name = row["اسم الخدمة *"] || row["اسم الخدمة"] || row["name"] || row["Name"] || row["الخدمة"];
+    const priceStr = row["سعر البيع / المصنعية (ج.م) *"] || row["سعر البيع"] || row["السعر"] || row["price"] || "0";
+    if (!name) {
+      skippedCount++;
+      continue;
+    }
+
+    const price = parseFloat(priceStr) || 0;
+    const category = row["فئة الخدمة"] || row["الفئة"] || row["category"] || "ميكانيكا";
+    const duration = parseInt(row["المدة المقدرة (بالدقائق)"] || row["المدة"] || row["duration"] || "30", 10) || 30;
+    const description = row["الوصف والتفاصيل"] || row["الوصف"] || row["description"] || "";
+
+    const payload = {
+      name: name.trim(),
+      category: category.trim(),
+      price,
+      estimatedDurationMinutes: duration,
+      description: description.trim() || null,
+      isActive: true,
+      consumedProducts: []
+    };
+
+    try {
+      await serviceStore.addService(payload);
+      createdCount++;
+    } catch {
+      skippedCount++;
+    }
+  }
+
+  await serviceStore.fetchServices();
+  return {
+    success: createdCount > 0,
+    message: `تم استيراد ${createdCount} خدمة بنجاح${skippedCount > 0 ? ` (تم تخطي ${skippedCount} سطر غير مكتمل)` : ""}`
+  };
+}
+
+function onServicesImportSuccess() {
+  toastStore.addSuccessToast("تم تحديث قائمة الخدمات بنجاح");
 }
 </script>
