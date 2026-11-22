@@ -141,6 +141,19 @@ export const useOhdaClientStore = defineStore("ohdaClient", {
     // Vehicles Management
     // ==========================================
 
+    async fetchClientVehicles(clientId) {
+      if (!clientId) return [];
+      try {
+        const res = await apiGet(`/api/Clients/${clientId}/vehicles`);
+        if (res?.data?.isDone && Array.isArray(res.data.objects)) {
+          return res.data.objects;
+        }
+      } catch (err) {
+        console.error(`Failed to fetch vehicles for client ${clientId}`, err);
+      }
+      return [];
+    },
+
     async addVehicle(clientId, vehicleDto) {
       this.loading = true;
       try {

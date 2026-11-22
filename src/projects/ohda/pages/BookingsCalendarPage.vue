@@ -561,55 +561,238 @@
         </div>
 
         <!-- Section 1: Customer & Car -->
-        <div class="p-3 bg-brand-light/40 dark:bg-white/5 rounded-xl border border-brand-gray/15 space-y-3">
-          <h4 class="font-bold text-brand-dark dark:text-white flex items-center gap-1.5">
-            <User class="w-3.5 h-3.5 text-brand-accent" />
-            <span>بيانات العميل والمركبة</span>
-          </h4>
+        <div class="p-3.5 bg-brand-light/40 dark:bg-white/5 rounded-2xl border border-brand-gray/15 space-y-3.5">
+          <div class="flex items-center justify-between gap-2">
+            <h4 class="font-bold text-brand-dark dark:text-white flex items-center gap-1.5 text-xs">
+              <User class="w-4 h-4 text-brand-accent" />
+              <span>بيانات العميل والمركبة</span>
+            </h4>
 
-          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <div>
-              <label class="block font-semibold mb-1">اسم العميل <span class="text-red-500">*</span></label>
-              <input
-                v-model="bookingForm.newClientName"
-                type="text"
-                required
-                placeholder="اسم العميل..."
-                class="w-full px-3 py-2 rounded-xl border border-brand-gray/25 bg-white dark:bg-brand-dark text-brand-dark dark:text-white font-medium"
-              />
-            </div>
+            <div class="flex items-center gap-2">
+              <button
+                type="button"
+                @click="openAddClientModal"
+                class="px-2.5 py-1 rounded-xl bg-brand-accent/20 hover:bg-brand-accent/30 text-brand-dark dark:text-brand-accent font-bold text-[11px] flex items-center gap-1 transition-all cursor-pointer border border-brand-accent/30 shadow-2xs active:scale-95"
+                title="إضافة عميل جديد ومركبته لقاعدة البيانات مباشرة"
+              >
+                <UserPlus class="w-3.5 h-3.5" />
+                <span>+ عميل جديد</span>
+              </button>
 
-            <div>
-              <label class="block font-semibold mb-1">رقم الهاتف <span class="text-red-500">*</span></label>
-              <input
-                v-model="bookingForm.newClientPhone"
-                type="tel"
-                required
-                placeholder="010XXXXXXXX"
-                class="w-full px-3 py-2 rounded-xl border border-brand-gray/25 bg-white dark:bg-brand-dark text-brand-dark dark:text-white font-mono font-bold"
-              />
+              <button
+                type="button"
+                @click="toggleWalkInMode"
+                class="text-[10px] px-2.5 py-1 rounded-lg border transition-colors cursor-pointer"
+                :class="isWalkInClient ? 'border-amber-500/50 bg-amber-500/15 text-amber-700 dark:text-amber-300 font-bold' : 'border-brand-gray/20 text-brand-gray hover:text-brand-dark'"
+                title="التبديل بين عميل مسجل بالورشة أو حجز سريع لزائر"
+              >
+                {{ isWalkInClient ? 'عميل مسجل بالورشة' : 'حجز سريع (زائر)' }}
+              </button>
             </div>
           </div>
 
-          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <div>
-              <label class="block font-semibold mb-1">رقم اللوحة</label>
-              <input
-                v-model="bookingForm.newVehiclePlate"
-                type="text"
-                placeholder="س ص ع 1 2 3"
-                class="w-full px-3 py-2 rounded-xl border border-brand-gray/25 bg-white dark:bg-brand-dark text-brand-dark dark:text-white font-mono font-bold"
-              />
+          <!-- A. REGISTERED CLIENT MODE (Default) -->
+          <div v-if="!isWalkInClient" class="space-y-3">
+            <!-- Client Dropdown Selection -->
+            <div class="relative">
+              <label class="block font-semibold mb-1 text-xs">
+                اختيار العميل من قاعدة البيانات <span class="text-red-500">*</span>
+              </label>
+
+              <!-- Invisible backdrop to close dropdown when clicked outside -->
+              <div
+                v-if="isClientDropdownOpen"
+                @click="isClientDropdownOpen = false"
+                class="fixed inset-0 z-20"
+              ></div>
+
+              <!-- Searchable Trigger Display -->
+              <div
+                @click="isClientDropdownOpen = !isClientDropdownOpen"
+                class="w-full px-3 py-2 rounded-xl border border-brand-gray/25 bg-white dark:bg-brand-dark text-brand-dark dark:text-white font-medium cursor-pointer flex items-center justify-between shadow-2xs hover:border-brand-accent/60 transition-all text-xs relative z-20"
+              >
+                <div v-if="bookingForm.clientId" class="flex items-center gap-2 truncate">
+                  <span class="w-2 h-2 rounded-full bg-emerald-500 shrink-0"></span>
+                  <span class="font-bold truncate">{{ bookingForm.newClientName }}</span>
+                  <span class="text-brand-gray text-[11px] font-mono">({{ bookingForm.newClientPhone }})</span>
+                </div>
+                <div v-else class="text-brand-gray/70">
+                  ابحث واختر العميل بالاسم أو رقم الهاتف أو اللوحة...
+                </div>
+                <ChevronDown class="w-4 h-4 text-brand-gray shrink-0 transition-transform duration-200" :class="{ 'rotate-180': isClientDropdownOpen }" />
+              </div>
+
+              <!-- Searchable Dropdown Popup -->
+              <div
+                v-if="isClientDropdownOpen"
+                class="absolute z-30 left-0 right-0 mt-1 bg-white dark:bg-brand-dark rounded-2xl border border-brand-gray/20 shadow-xl overflow-hidden max-h-60 flex flex-col"
+              >
+                <!-- Search Box -->
+                <div class="p-2 border-b border-brand-gray/10 bg-brand-light/30 dark:bg-white/5">
+                  <div class="relative">
+                    <Search class="w-3.5 h-3.5 text-brand-gray absolute right-3 top-2.5" />
+                    <input
+                      v-model="clientSearchQuery"
+                      type="text"
+                      placeholder="اكتب اسم العميل، الهاتف، أو اللوحة..."
+                      class="w-full pr-8 pl-3 py-1.5 rounded-xl border border-brand-gray/20 bg-white dark:bg-brand-dark text-xs text-brand-dark dark:text-white"
+                      @click.stop
+                    />
+                  </div>
+                </div>
+
+                <!-- Clients Scroll List -->
+                <div class="overflow-y-auto divide-y divide-brand-gray/10 flex-1">
+                  <div
+                    v-if="filteredClientsList.length === 0"
+                    class="p-4 text-center text-xs text-brand-gray"
+                  >
+                    <div>لا يوجد عميل مطابق للبحث</div>
+                    <button
+                      type="button"
+                      @click="openAddClientModalWithQuery"
+                      class="mt-2 text-brand-accent font-bold hover:underline cursor-pointer inline-flex items-center gap-1"
+                    >
+                      <UserPlus class="w-3.5 h-3.5" />
+                      <span>+ إضافة "{{ clientSearchQuery }}" كعميل جديد</span>
+                    </button>
+                  </div>
+
+                  <div
+                    v-for="c in filteredClientsList"
+                    :key="c.id"
+                    @click="onSelectExistingClient(c)"
+                    class="p-2.5 px-3 hover:bg-brand-accent/10 cursor-pointer transition-colors flex items-center justify-between text-xs"
+                    :class="bookingForm.clientId === c.id ? 'bg-brand-accent/15 font-bold' : ''"
+                  >
+                    <div class="space-y-0.5 truncate">
+                      <div class="flex items-center gap-1.5 font-bold text-brand-dark dark:text-white">
+                        <span>{{ c.name }}</span>
+                        <span v-if="c.type === 2" class="text-[9px] px-1.5 py-0.2 rounded bg-purple-500/10 text-purple-600 font-normal">شركة</span>
+                      </div>
+                      <div class="text-[11px] font-mono text-brand-gray flex items-center gap-2">
+                        <span>{{ c.phone }}</span>
+                        <span v-if="c.carPlate" class="text-brand-dark/70 dark:text-slate-300 font-bold">| {{ c.carPlate }}</span>
+                      </div>
+                    </div>
+
+                    <div class="text-left shrink-0">
+                      <span v-if="c.vehiclesCount > 1" class="text-[10px] bg-blue-500/10 text-blue-600 px-1.5 py-0.5 rounded font-mono font-bold">
+                        {{ c.vehiclesCount }} سيارات
+                      </span>
+                      <span v-else-if="c.carModel" class="text-[10px] text-brand-gray">
+                        {{ c.carModel }}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
 
-            <div>
-              <label class="block font-semibold mb-1">طراز وموديل السيارة</label>
-              <input
-                v-model="bookingForm.newVehicleModel"
-                type="text"
-                placeholder="مثال: تويوتا كورولا 2021"
-                class="w-full px-3 py-2 rounded-xl border border-brand-gray/25 bg-white dark:bg-brand-dark text-brand-dark dark:text-white"
-              />
+            <!-- Vehicle Selection for Chosen Client -->
+            <div v-if="bookingForm.clientId" class="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2 border-t border-brand-gray/10">
+              <!-- Vehicle Dropdown (in case client has multiple cars) -->
+              <div>
+                <label class="block font-semibold mb-1 text-xs flex items-center justify-between">
+                  <span>مركبة العميل المحددة للورشة <span class="text-red-500">*</span></span>
+                  <span v-if="clientVehicles.length > 1" class="text-[10px] text-brand-accent font-bold font-mono">
+                    ({{ clientVehicles.length }} سيارات مسجلة)
+                  </span>
+                </label>
+
+                <select
+                  v-model="selectedVehicleOption"
+                  @change="onVehicleOptionChanged"
+                  class="w-full px-3 py-2 rounded-xl border border-brand-gray/25 bg-white dark:bg-brand-dark text-brand-dark dark:text-white font-medium text-xs font-mono"
+                >
+                  <option
+                    v-for="v in clientVehicles"
+                    :key="v.id || v.plateNumber"
+                    :value="v.id || v.plateNumber"
+                  >
+                    {{ v.plateNumber }} - {{ v.brandName || v.brand || '' }} {{ v.model || '' }} {{ v.year ? '(' + v.year + ')' : '' }}
+                  </option>
+                  <option value="__NEW_VEHICLE__">+ سيارة أخرى / غير مسجلة بالملف...</option>
+                </select>
+              </div>
+
+              <!-- Vehicle Plate & Model info -->
+              <div class="grid grid-cols-2 gap-2">
+                <div>
+                  <label class="block font-semibold mb-1 text-[11px]">رقم اللوحة</label>
+                  <input
+                    v-model="bookingForm.newVehiclePlate"
+                    type="text"
+                    placeholder="س ص ع 123"
+                    class="w-full px-2.5 py-2 rounded-xl border border-brand-gray/25 bg-white dark:bg-brand-dark text-brand-dark dark:text-white font-mono font-bold text-xs"
+                    :disabled="selectedVehicleOption !== '__NEW_VEHICLE__' && !!bookingForm.vehicleId"
+                  />
+                </div>
+                <div>
+                  <label class="block font-semibold mb-1 text-[11px]">طراز المركبة</label>
+                  <input
+                    v-model="bookingForm.newVehicleModel"
+                    type="text"
+                    placeholder="مثال: تويوتا كورولا"
+                    class="w-full px-2.5 py-2 rounded-xl border border-brand-gray/25 bg-white dark:bg-brand-dark text-brand-dark dark:text-white text-xs"
+                    :disabled="selectedVehicleOption !== '__NEW_VEHICLE__' && !!bookingForm.vehicleId"
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- B. WALK-IN / VISITOR CLIENT MODE -->
+          <div v-else class="space-y-3">
+            <div class="p-2 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-700 dark:text-amber-300 text-[11px] flex items-center justify-between">
+              <span>وضع الحجز السريع للعملاء الزائرين غير المسجلين</span>
+              <button type="button" @click="isWalkInClient = false" class="font-bold underline cursor-pointer">العودة لقاعدة العملاء</button>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label class="block font-semibold mb-1">اسم العميل <span class="text-red-500">*</span></label>
+                <input
+                  v-model="bookingForm.newClientName"
+                  type="text"
+                  required
+                  placeholder="اسم العميل..."
+                  class="w-full px-3 py-2 rounded-xl border border-brand-gray/25 bg-white dark:bg-brand-dark text-brand-dark dark:text-white font-medium"
+                />
+              </div>
+
+              <div>
+                <label class="block font-semibold mb-1">رقم الهاتف <span class="text-red-500">*</span></label>
+                <input
+                  v-model="bookingForm.newClientPhone"
+                  type="tel"
+                  required
+                  placeholder="010XXXXXXXX"
+                  class="w-full px-3 py-2 rounded-xl border border-brand-gray/25 bg-white dark:bg-brand-dark text-brand-dark dark:text-white font-mono font-bold"
+                />
+              </div>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label class="block font-semibold mb-1">رقم اللوحة</label>
+                <input
+                  v-model="bookingForm.newVehiclePlate"
+                  type="text"
+                  placeholder="س ص ع 1 2 3"
+                  class="w-full px-3 py-2 rounded-xl border border-brand-gray/25 bg-white dark:bg-brand-dark text-brand-dark dark:text-white font-mono font-bold"
+                />
+              </div>
+
+              <div>
+                <label class="block font-semibold mb-1">طراز وموديل السيارة</label>
+                <input
+                  v-model="bookingForm.newVehicleModel"
+                  type="text"
+                  placeholder="مثال: تويوتا كورولا 2021"
+                  class="w-full px-3 py-2 rounded-xl border border-brand-gray/25 bg-white dark:bg-brand-dark text-brand-dark dark:text-white"
+                />
+              </div>
             </div>
           </div>
         </div>
@@ -682,29 +865,125 @@
           </div>
         </div>
 
-        <!-- Section 3: Services Selection -->
+        <!-- Section 3: Services Selection (Multi-Select Dropdown) -->
         <div class="space-y-2">
-          <label class="block font-semibold">الخدمات المطلوب حجزها</label>
-          <div class="max-h-36 overflow-y-auto p-2.5 rounded-xl border border-brand-gray/20 bg-brand-light/30 dark:bg-white/5 space-y-1.5">
-            <div
-              v-for="svc in availableServices"
-              :key="svc.id"
-              class="flex items-center justify-between p-1.5 rounded-lg hover:bg-white dark:hover:bg-white/10 transition-colors"
-            >
-              <label class="flex items-center gap-2 cursor-pointer text-xs">
-                <input
-                  type="checkbox"
-                  :value="svc.id"
-                  v-model="selectedServiceIds"
-                  @change="onServicesSelectionChanged"
-                  class="w-3.5 h-3.5 rounded text-brand-accent focus:ring-0 cursor-pointer"
-                />
-                <span class="font-medium text-brand-dark dark:text-white">{{ svc.name }}</span>
-              </label>
+          <div class="flex items-center justify-between">
+            <label class="block font-semibold text-xs">
+              الخدمات المطلوب حجزها بالورشة (اختر خدمة أو أكثر)
+            </label>
+            <span v-if="selectedServiceIds.length > 0" class="text-[11px] font-bold text-brand-accent">
+              تم اختيار {{ selectedServiceIds.length }} خدمات
+            </span>
+          </div>
 
-              <div class="text-[11px] font-mono text-brand-gray">
-                {{ svc.sellingPrice }} ج.م ({{ svc.estimatedDurationMinutes || 30 }} دقيقة)
+          <!-- Multi-Select Trigger & Dropdown Menu -->
+          <div class="relative">
+            <!-- Invisible backdrop to close dropdown when clicked outside -->
+            <div
+              v-if="isServicesDropdownOpen"
+              @click="isServicesDropdownOpen = false"
+              class="fixed inset-0 z-20"
+            ></div>
+
+            <div
+              @click="isServicesDropdownOpen = !isServicesDropdownOpen"
+              class="min-h-[42px] w-full p-2 rounded-xl border border-brand-gray/25 bg-white dark:bg-brand-dark text-brand-dark dark:text-white text-xs cursor-pointer flex items-center justify-between gap-2 shadow-2xs hover:border-brand-accent/60 transition-all relative z-20"
+            >
+              <!-- Selected Chips or Placeholder -->
+              <div class="flex flex-wrap items-center gap-1.5 flex-1 overflow-hidden">
+                <span v-if="selectedServicesList.length === 0" class="text-brand-gray/70 py-1 px-1">
+                  اضغط لاختيار الخدمات المطلوبة من القائمة...
+                </span>
+
+                <span
+                  v-for="svc in selectedServicesList"
+                  :key="svc.id"
+                  @click.stop="toggleService(svc)"
+                  class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-brand-accent/15 border border-brand-accent/30 text-brand-dark dark:text-brand-accent font-bold text-[11px] group transition-all"
+                >
+                  <span>{{ svc.name }}</span>
+                  <span class="text-brand-gray text-[10px] font-mono">({{ svc.sellingPrice }} ج.م)</span>
+                  <X class="w-3 h-3 hover:text-red-500 shrink-0" />
+                </span>
               </div>
+
+              <!-- Dropdown Arrow -->
+              <ChevronDown class="w-4 h-4 text-brand-gray shrink-0 transition-transform duration-200" :class="{ 'rotate-180': isServicesDropdownOpen }" />
+            </div>
+
+            <!-- Multi-Select Dropdown Popup -->
+            <div
+              v-if="isServicesDropdownOpen"
+              class="absolute z-30 left-0 right-0 mt-1 bg-white dark:bg-brand-dark rounded-2xl border border-brand-gray/20 shadow-xl overflow-hidden max-h-64 flex flex-col"
+            >
+              <!-- Search inside services -->
+              <div class="p-2 border-b border-brand-gray/10 bg-brand-light/30 dark:bg-white/5 flex items-center justify-between gap-2">
+                <div class="relative flex-1">
+                  <Search class="w-3.5 h-3.5 text-brand-gray absolute right-3 top-2.5" />
+                  <input
+                    v-model="serviceSearchQuery"
+                    type="text"
+                    placeholder="بحث في قائمة الخدمات..."
+                    class="w-full pr-8 pl-3 py-1.5 rounded-xl border border-brand-gray/20 bg-white dark:bg-brand-dark text-xs text-brand-dark dark:text-white"
+                    @click.stop
+                  />
+                </div>
+
+                <button
+                  type="button"
+                  @click.stop="clearAllSelectedServices"
+                  class="text-[10px] text-brand-gray hover:text-rose-500 font-bold px-2 py-1 rounded cursor-pointer shrink-0"
+                >
+                  مسح الكل
+                </button>
+              </div>
+
+              <!-- Services List with Checkboxes -->
+              <div class="overflow-y-auto divide-y divide-brand-gray/10 flex-1 p-1">
+                <div
+                  v-for="svc in filteredAvailableServices"
+                  :key="svc.id"
+                  @click.stop="toggleService(svc)"
+                  class="flex items-center justify-between p-2 px-3 rounded-xl hover:bg-brand-accent/10 cursor-pointer transition-colors text-xs"
+                  :class="selectedServiceIds.includes(svc.id) ? 'bg-brand-accent/15 font-bold' : ''"
+                >
+                  <div class="flex items-center gap-2.5">
+                    <div
+                      class="w-4 h-4 rounded border flex items-center justify-center transition-colors"
+                      :class="selectedServiceIds.includes(svc.id) ? 'border-brand-accent bg-brand-accent text-brand-dark' : 'border-brand-gray/40'"
+                    >
+                      <Check v-if="selectedServiceIds.includes(svc.id)" class="w-3 h-3 stroke-3" />
+                    </div>
+                    <span class="text-brand-dark dark:text-white">{{ svc.name }}</span>
+                  </div>
+
+                  <div class="flex items-center gap-3 text-[11px] font-mono">
+                    <span class="text-brand-dark dark:text-slate-200 font-bold">{{ svc.sellingPrice }} ج.م</span>
+                    <span class="text-brand-gray text-[10px]">{{ svc.estimatedDurationMinutes || 30 }} دقيقة</span>
+                  </div>
+                </div>
+
+                <div v-if="filteredAvailableServices.length === 0" class="p-4 text-center text-xs text-brand-gray">
+                  لا توجد خدمات مطابقة للبحث
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Services Summary Bar (Duration & Cost) -->
+          <div
+            v-if="selectedServiceIds.length > 0"
+            class="p-2.5 rounded-xl bg-brand-accent/10 border border-brand-accent/20 flex items-center justify-between text-xs font-bold"
+          >
+            <div class="flex items-center gap-2 text-brand-dark dark:text-white">
+              <Sparkles class="w-3.5 h-3.5 text-brand-accent" />
+              <span>إجمالي الخدمات: {{ selectedServiceIds.length }}</span>
+              <span class="text-brand-gray/40">|</span>
+              <span class="text-brand-accent font-mono">{{ totalServicesCost }} ج.م</span>
+            </div>
+
+            <div class="text-[11px] text-brand-gray font-mono">
+              المدة التقديرية المحسوبة: <span class="font-bold text-brand-dark dark:text-white">{{ totalServicesDuration }} دقيقة</span>
             </div>
           </div>
         </div>
@@ -868,6 +1147,126 @@
         </button>
       </template>
     </OhdaModal>
+
+    <!-- 6. Modal: Add New Client (Opens over the Booking Modal) -->
+    <OhdaModal
+      :visible="showAddClientModal"
+      @close="showAddClientModal = false"
+      title="إضافة ملف عميل جديد ومركبته"
+      subtitle="سيتم حفظ العميل ومركبته واختيارهما تلقائياً لهذا الحجز"
+      :icon="UserPlus"
+      z-index="z-[60]"
+      max-width="max-w-lg"
+      :close-on-backdrop="false"
+    >
+      <form @submit.prevent="submitNewClientForm" id="newClientForm" class="space-y-3.5 text-xs">
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div>
+            <label class="block font-semibold mb-1">اسم العميل <span class="text-red-500">*</span></label>
+            <input
+              v-model="newClientFormData.name"
+              type="text"
+              required
+              placeholder="الاسم الكامل للعميل..."
+              class="w-full px-3 py-2 rounded-xl border border-brand-gray/25 bg-white dark:bg-brand-dark text-brand-dark dark:text-white font-medium"
+            />
+          </div>
+
+          <div>
+            <label class="block font-semibold mb-1">رقم الهاتف <span class="text-red-500">*</span></label>
+            <input
+              v-model="newClientFormData.phone"
+              type="tel"
+              required
+              placeholder="010XXXXXXXX"
+              class="w-full px-3 py-2 rounded-xl border border-brand-gray/25 bg-white dark:bg-brand-dark text-brand-dark dark:text-white font-mono font-bold"
+            />
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div>
+            <label class="block font-semibold mb-1">رقم هاتف ثانٍ (اختياري)</label>
+            <input
+              v-model="newClientFormData.secondPhone"
+              type="tel"
+              placeholder="01XXXXXXXXX"
+              class="w-full px-3 py-2 rounded-xl border border-brand-gray/25 bg-white dark:bg-brand-dark text-brand-dark dark:text-white font-mono"
+            />
+          </div>
+
+          <div>
+            <label class="block font-semibold mb-1">نوع العميل</label>
+            <select
+              v-model="newClientFormData.type"
+              class="w-full px-3 py-2 rounded-xl border border-brand-gray/25 bg-white dark:bg-brand-dark text-brand-dark dark:text-white font-medium"
+            >
+              <option :value="1">عميل فردي</option>
+              <option :value="2">شركة / أسطول</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Initial Vehicle for the New Client -->
+        <div class="p-3 bg-brand-light/40 dark:bg-white/5 rounded-xl border border-brand-gray/15 space-y-2.5">
+          <div class="font-bold text-brand-dark dark:text-white flex items-center gap-1.5 text-xs">
+            <Car class="w-3.5 h-3.5 text-brand-accent" />
+            <span>بيانات المركبة الأولى للعميل (اختياري)</span>
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <label class="block font-semibold mb-1 text-[11px]">رقم اللوحة</label>
+              <input
+                v-model="newClientFormData.carPlate"
+                type="text"
+                placeholder="س ص ع 123"
+                class="w-full px-2.5 py-1.5 rounded-xl border border-brand-gray/25 bg-white dark:bg-brand-dark text-brand-dark dark:text-white font-mono font-bold text-xs"
+              />
+            </div>
+
+            <div>
+              <label class="block font-semibold mb-1 text-[11px]">طراز وموديل السيارة</label>
+              <input
+                v-model="newClientFormData.carModel"
+                type="text"
+                placeholder="مثال: تويوتا كورولا 2022"
+                class="w-full px-2.5 py-1.5 rounded-xl border border-brand-gray/25 bg-white dark:bg-brand-dark text-brand-dark dark:text-white text-xs"
+              />
+            </div>
+          </div>
+        </div>
+
+        <div>
+          <label class="block font-semibold mb-1">ملاحظات العميل</label>
+          <textarea
+            v-model="newClientFormData.notes"
+            rows="2"
+            placeholder="أي ملاحظات عامة حول العميل..."
+            class="w-full px-3 py-1.5 rounded-xl border border-brand-gray/25 bg-white dark:bg-brand-dark text-brand-dark dark:text-white"
+          ></textarea>
+        </div>
+      </form>
+
+      <template #footer>
+        <button
+          type="button"
+          @click="showAddClientModal = false"
+          class="px-4 py-2 rounded-xl border border-brand-gray/20 text-brand-dark dark:text-white hover:bg-brand-light text-xs font-semibold cursor-pointer"
+        >
+          إلغاء
+        </button>
+        <button
+          type="submit"
+          form="newClientForm"
+          :disabled="savingNewClient"
+          class="px-5 py-2 rounded-xl bg-brand-accent hover:bg-brand-accent/90 text-brand-dark font-bold text-xs cursor-pointer shadow-sm disabled:opacity-50 flex items-center gap-1.5"
+        >
+          <UserPlus class="w-4 h-4" />
+          <span>{{ savingNewClient ? 'جاري الحفظ...' : 'حفظ واختيار العميل' }}</span>
+        </button>
+      </template>
+    </OhdaModal>
   </div>
 </template>
 
@@ -877,6 +1276,7 @@ import { useRouter } from "vue-router";
 import { useToast } from "primevue/usetoast";
 import { useOhdaBookingStore } from "../stores/useOhdaBookingStore";
 import { useOhdaServiceStore } from "../stores/useOhdaServiceStore";
+import { useOhdaClientStore } from "../stores/useOhdaClientStore";
 import apiClient from "@/utilities/apiClient";
 import OhdaModal from "../components/OhdaModal.vue";
 import {
@@ -899,13 +1299,18 @@ import {
   Sparkles,
   UserCheck,
   CalendarCheck,
-  Search
+  Search,
+  UserPlus,
+  ChevronDown,
+  Check,
+  X
 } from "lucide-vue-next";
 
 const router = useRouter();
 const toast = useToast();
 const bookingStore = useOhdaBookingStore();
 const serviceStore = useOhdaServiceStore();
+const clientStore = useOhdaClientStore();
 
 // Calendar View State: 'week' (Default) | 'month' | 'day'
 const calendarView = ref("week");
@@ -930,6 +1335,30 @@ const employeesList = ref([]);
 const availableServices = ref([]);
 const selectedServiceIds = ref([]);
 const availabilityCheck = ref(null);
+
+// Client & Vehicle Selection State
+const isWalkInClient = ref(false);
+const clientSearchQuery = ref("");
+const isClientDropdownOpen = ref(false);
+const clientVehicles = ref([]);
+const selectedVehicleOption = ref("");
+
+// Services Multi-Select Dropdown State
+const serviceSearchQuery = ref("");
+const isServicesDropdownOpen = ref(false);
+
+// Add New Client Sub-Modal State
+const showAddClientModal = ref(false);
+const savingNewClient = ref(false);
+const newClientFormData = ref({
+  name: "",
+  phone: "",
+  secondPhone: "",
+  type: 1,
+  carPlate: "",
+  carModel: "",
+  notes: ""
+});
 
 // Live Clock State
 const liveDate = ref("");
@@ -958,6 +1387,50 @@ const bookingForm = ref({
   allowOverride: false,
   notes: "",
   services: []
+});
+
+// Computed: Filtered Clients List
+const filteredClientsList = computed(() => {
+  const list = clientStore.clients || [];
+  if (!clientSearchQuery.value || !clientSearchQuery.value.trim()) {
+    return list.slice(0, 50);
+  }
+  const q = clientSearchQuery.value.trim().toLowerCase();
+  return list.filter(c =>
+    (c.name && c.name.toLowerCase().includes(q)) ||
+    (c.phone && c.phone.includes(q)) ||
+    (c.carPlate && c.carPlate.toLowerCase().includes(q)) ||
+    (c.carModel && c.carModel.toLowerCase().includes(q))
+  ).slice(0, 50);
+});
+
+// Computed: Filtered Available Services
+const filteredAvailableServices = computed(() => {
+  const list = availableServices.value || [];
+  if (!serviceSearchQuery.value || !serviceSearchQuery.value.trim()) {
+    return list;
+  }
+  const q = serviceSearchQuery.value.trim().toLowerCase();
+  return list.filter(s =>
+    (s.name && s.name.toLowerCase().includes(q)) ||
+    (s.sellingPrice && String(s.sellingPrice).includes(q))
+  );
+});
+
+// Computed: Selected Services Objects
+const selectedServicesList = computed(() => {
+  return (selectedServiceIds.value || []).map(id => {
+    return availableServices.value.find(s => s.id === id) || { id, name: "خدمة #" + id, sellingPrice: 0, estimatedDurationMinutes: 30 };
+  });
+});
+
+// Computed: Total Services Cost & Duration
+const totalServicesCost = computed(() => {
+  return selectedServicesList.value.reduce((acc, s) => acc + (Number(s.sellingPrice) || 0), 0);
+});
+
+const totalServicesDuration = computed(() => {
+  return selectedServicesList.value.reduce((acc, s) => acc + (Number(s.estimatedDurationMinutes) || 30), 0);
 });
 
 // Computed: Filtered Bays
@@ -1123,10 +1596,13 @@ onMounted(async () => {
   clockTimer = setInterval(updateLiveClock, 1000);
 
   try {
-    await bookingStore.fetchBays(true);
-    await serviceStore.fetchServices();
+    await Promise.all([
+      bookingStore.fetchBays(true),
+      serviceStore.fetchServices(),
+      clientStore.fetchClients(),
+      loadEmployees()
+    ]);
     availableServices.value = serviceStore.services || [];
-    await loadEmployees();
     await loadCalendar();
     await bookingStore.fetchCapacityIndicator();
   } catch (e) {
@@ -1137,6 +1613,200 @@ onMounted(async () => {
 onUnmounted(() => {
   if (clockTimer) clearInterval(clockTimer);
 });
+
+// Client & Vehicle Selection Methods
+function toggleWalkInMode() {
+  isWalkInClient.value = !isWalkInClient.value;
+  if (isWalkInClient.value) {
+    bookingForm.value.clientId = null;
+    bookingForm.value.vehicleId = null;
+  }
+}
+
+async function onSelectExistingClient(client) {
+  bookingForm.value.clientId = client.id;
+  bookingForm.value.newClientName = client.name;
+  bookingForm.value.newClientPhone = client.phone;
+  isClientDropdownOpen.value = false;
+  clientSearchQuery.value = "";
+
+  // Fetch fresh vehicles for this client
+  let vehicles = [];
+  try {
+    vehicles = await clientStore.fetchClientVehicles(client.id);
+  } catch (e) {
+    console.warn("fetchClientVehicles failed, fallback to client.vehicles", e);
+  }
+  if (!vehicles || vehicles.length === 0) {
+    vehicles = client.vehicles || [];
+  }
+  if ((!vehicles || vehicles.length === 0) && client.carPlate) {
+    vehicles = [{
+      id: null,
+      plateNumber: client.carPlate,
+      model: client.carModel || "",
+      brandName: ""
+    }];
+  }
+  clientVehicles.value = vehicles;
+
+  if (vehicles.length > 0) {
+    const firstV = vehicles[0];
+    selectedVehicleOption.value = firstV.id || firstV.plateNumber;
+    bookingForm.value.vehicleId = firstV.id || null;
+    bookingForm.value.newVehiclePlate = firstV.plateNumber;
+    bookingForm.value.newVehicleModel = [firstV.brandName || firstV.brand, firstV.model].filter(Boolean).join(" ") || firstV.model || "";
+  } else {
+    selectedVehicleOption.value = "__NEW_VEHICLE__";
+    bookingForm.value.vehicleId = null;
+    bookingForm.value.newVehiclePlate = client.carPlate || "";
+    bookingForm.value.newVehicleModel = client.carModel || "";
+  }
+}
+
+function onVehicleOptionChanged() {
+  if (selectedVehicleOption.value === "__NEW_VEHICLE__") {
+    bookingForm.value.vehicleId = null;
+    bookingForm.value.newVehiclePlate = "";
+    bookingForm.value.newVehicleModel = "";
+    return;
+  }
+  const found = clientVehicles.value.find(v => (v.id === selectedVehicleOption.value || v.plateNumber === selectedVehicleOption.value));
+  if (found) {
+    bookingForm.value.vehicleId = found.id || null;
+    bookingForm.value.newVehiclePlate = found.plateNumber;
+    bookingForm.value.newVehicleModel = [found.brandName || found.brand, found.model].filter(Boolean).join(" ") || found.model || "";
+  }
+}
+
+// Add New Client Sub-Modal Methods
+function openAddClientModal() {
+  newClientFormData.value = {
+    name: clientSearchQuery.value.trim() || "",
+    phone: "",
+    secondPhone: "",
+    type: 1,
+    carPlate: "",
+    carModel: "",
+    notes: ""
+  };
+  showAddClientModal.value = true;
+}
+
+function openAddClientModalWithQuery() {
+  newClientFormData.value = {
+    name: clientSearchQuery.value.trim(),
+    phone: "",
+    secondPhone: "",
+    type: 1,
+    carPlate: "",
+    carModel: "",
+    notes: ""
+  };
+  isClientDropdownOpen.value = false;
+  showAddClientModal.value = true;
+}
+
+async function submitNewClientForm() {
+  if (!newClientFormData.value.name?.trim() || !newClientFormData.value.phone?.trim()) {
+    toast.add({
+      severity: "warn",
+      summary: "بيانات ناقصة",
+      detail: "اسم العميل ورقم هاتفه مطلوبان",
+      life: 3000
+    });
+    return;
+  }
+  savingNewClient.value = true;
+  try {
+    const payload = {
+      name: newClientFormData.value.name.trim(),
+      phone: newClientFormData.value.phone.trim(),
+      secondPhone: newClientFormData.value.secondPhone?.trim() || null,
+      type: newClientFormData.value.type || 1,
+      notes: newClientFormData.value.notes?.trim() || null
+    };
+    if (newClientFormData.value.carPlate?.trim()) {
+      payload.initialVehicle = {
+        plateNumber: newClientFormData.value.carPlate.trim().toUpperCase(),
+        model: newClientFormData.value.carModel?.trim() || null
+      };
+    }
+
+    const res = await clientStore.createClient(payload);
+    if (res.success) {
+      toast.add({
+        severity: "success",
+        summary: "تمت إضافة العميل",
+        detail: "تم حفظ ملف العميل ومركبته بنجاح واختياره للحجز",
+        life: 3000
+      });
+      showAddClientModal.value = false;
+      await clientStore.fetchClients();
+
+      const created = clientStore.clients.find(c => c.phone === payload.phone || (res.data?.id && c.id === res.data.id));
+      if (created) {
+        await onSelectExistingClient(created);
+      } else if (res.data?.id) {
+        await onSelectExistingClient({
+          id: res.data.id,
+          name: payload.name,
+          phone: payload.phone,
+          carPlate: payload.initialVehicle?.plateNumber || "",
+          carModel: payload.initialVehicle?.model || ""
+        });
+      }
+    } else {
+      toast.add({
+        severity: "error",
+        summary: "تعذر الحفظ",
+        detail: res.message || "حدث خطأ أثناء حفظ العميل",
+        life: 4000
+      });
+    }
+  } catch (err) {
+    toast.add({
+      severity: "error",
+      summary: "خطأ",
+      detail: err.message,
+      life: 4000
+    });
+  } finally {
+    savingNewClient.value = false;
+  }
+}
+
+// Services Multi-Select Methods
+function toggleService(svc) {
+  const idx = selectedServiceIds.value.indexOf(svc.id);
+  if (idx > -1) {
+    selectedServiceIds.value.splice(idx, 1);
+  } else {
+    selectedServiceIds.value.push(svc.id);
+  }
+  onServicesSelectionChanged();
+}
+
+function clearAllSelectedServices() {
+  selectedServiceIds.value = [];
+  onServicesSelectionChanged();
+}
+
+function onServicesSelectionChanged() {
+  bookingForm.value.services = selectedServiceIds.value.map(id => {
+    const svc = availableServices.value.find(s => s.id === id);
+    return {
+      workshopServiceId: id,
+      price: svc ? svc.sellingPrice : 0
+    };
+  });
+  if (selectedServiceIds.value.length > 0) {
+    bookingForm.value.durationMinutes = totalServicesDuration.value || 60;
+  } else {
+    bookingForm.value.durationMinutes = 60;
+  }
+  checkAvailabilityRealtime();
+}
 
 function updateLiveClock() {
   const now = new Date();
@@ -1226,6 +1896,14 @@ function getBookingsForSlot(bayId, hour) {
 }
 
 function onSlotClick(bay, hour) {
+  isWalkInClient.value = false;
+  clientSearchQuery.value = "";
+  serviceSearchQuery.value = "";
+  isClientDropdownOpen.value = false;
+  isServicesDropdownOpen.value = false;
+  clientVehicles.value = [];
+  selectedVehicleOption.value = "";
+
   bookingForm.value = {
     clientId: null,
     newClientName: "",
@@ -1254,6 +1932,14 @@ function openNewBookingModal() {
 
 function openNewBookingForDay(dateStr) {
   selectedDate.value = dateStr;
+  isWalkInClient.value = false;
+  clientSearchQuery.value = "";
+  serviceSearchQuery.value = "";
+  isClientDropdownOpen.value = false;
+  isServicesDropdownOpen.value = false;
+  clientVehicles.value = [];
+  selectedVehicleOption.value = "";
+
   bookingForm.value = {
     clientId: null,
     newClientName: "",
@@ -1309,28 +1995,32 @@ async function checkAvailabilityRealtime() {
   }
 }
 
-function onServicesSelectionChanged() {
-  bookingForm.value.services = selectedServiceIds.value.map(id => {
-    const svc = availableServices.value.find(s => s.id === id);
-    return {
-      workshopServiceId: id,
-      price: svc ? svc.sellingPrice : 0
-    };
-  });
-  if (selectedServiceIds.value.length > 0) {
-    const totalMinutes = selectedServiceIds.value.reduce((acc, id) => {
-      const svc = availableServices.value.find(s => s.id === id);
-      return acc + (svc?.estimatedDurationMinutes || 30);
-    }, 0);
-    bookingForm.value.durationMinutes = totalMinutes;
-    checkAvailabilityRealtime();
-  }
-}
-
 async function submitCreateBooking() {
+  // Validate client selection
+  if (!isWalkInClient.value && !bookingForm.value.clientId) {
+    toast.add({
+      severity: "warn",
+      summary: "بيانات ناقصة",
+      detail: "يرجى اختيار العميل من القائمة أو إضافة عميل جديد أو التبديل لحجز زائر",
+      life: 4000
+    });
+    return;
+  }
+
+  if (isWalkInClient.value && (!bookingForm.value.newClientName?.trim() || !bookingForm.value.newClientPhone?.trim())) {
+    toast.add({
+      severity: "warn",
+      summary: "بيانات ناقصة",
+      detail: "اسم العميل الزائر ورقم هاتفه مطلوبان",
+      life: 4000
+    });
+    return;
+  }
+
   submitting.value = true;
   try {
-    const res = await bookingStore.createBooking(bookingForm.value);
+    const payload = { ...bookingForm.value };
+    const res = await bookingStore.createBooking(payload);
     toast.add({
       severity: "success",
       summary: "تم الحجز بنجاح",

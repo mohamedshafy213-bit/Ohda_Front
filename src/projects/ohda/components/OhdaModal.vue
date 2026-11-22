@@ -10,7 +10,7 @@
     >
       <div
         v-if="visible"
-        class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-brand-dark/50 backdrop-blur-xs"
+        :class="[zIndex, 'fixed inset-0 flex items-center justify-center p-4 bg-brand-dark/50 backdrop-blur-xs']"
         @click.self="closeOnBackdrop && close()"
       >
         <Transition
@@ -106,6 +106,10 @@ const props = defineProps({
   closeOnBackdrop: {
     type: Boolean,
     default: false
+  },
+  zIndex: {
+    type: String,
+    default: "z-50"
   }
 });
 
