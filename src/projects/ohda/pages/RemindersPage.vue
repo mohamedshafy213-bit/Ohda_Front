@@ -30,7 +30,7 @@
     <div class="flex items-center gap-2 border-b border-brand-gray/15 pb-2">
       <button
         type="button"
-        @click="activeTab = 'services'"
+        @click="switchTab('services')"
         class="px-4 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-2 border"
         :class="activeTab === 'services' ? 'bg-brand-accent text-brand-dark border-brand-accent shadow-sm' : 'bg-brand-white dark:bg-white/5 border-brand-gray/15 text-brand-gray hover:text-brand-dark dark:hover:text-white'"
       >
@@ -43,7 +43,7 @@
 
       <button
         type="button"
-        @click="activeTab = 'tasks'"
+        @click="switchTab('tasks')"
         class="px-4 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-2 border"
         :class="activeTab === 'tasks' ? 'bg-brand-accent text-brand-dark border-brand-accent shadow-sm' : 'bg-brand-white dark:bg-white/5 border-brand-gray/15 text-brand-gray hover:text-brand-dark dark:hover:text-white'"
       >
@@ -56,7 +56,7 @@
 
       <button
         type="button"
-        @click="activeTab = 'aging'"
+        @click="switchTab('aging')"
         class="px-4 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-2 border"
         :class="activeTab === 'aging' ? 'bg-brand-accent text-brand-dark border-brand-accent shadow-sm' : 'bg-brand-white dark:bg-white/5 border-brand-gray/15 text-brand-gray hover:text-brand-dark dark:hover:text-white'"
       >
@@ -339,17 +339,20 @@
 
     <!-- TAB 3: Aging Receivables (أعمار الديون والتحصيل) -->
     <div v-else-if="activeTab === 'aging'" class="space-y-6">
-      <div v-if="reminderStore.agingReport" class="space-y-6">
+      <div v-if="reminderStore.loading && !reminderStore.agingReport" class="text-center py-16 text-brand-gray text-xs">
+        جاري تحميل تقرير أعمار الديون والتحصيل...
+      </div>
+      <div v-else class="space-y-6">
         <!-- Summary Header -->
         <div class="bg-brand-white dark:bg-white/5 p-6 rounded-2xl border border-brand-gray/10 shadow-sm flex flex-col sm:flex-row items-center justify-between gap-4">
           <div>
             <span class="text-xs text-brand-gray block">إجمالي المديونيات المستحقة للورشة طرف العملاء</span>
             <span class="text-3xl font-black text-red-600 dark:text-red-400 font-mono">
-              {{ formatCurrency(reminderStore.agingReport.totalUnpaidReceivables) }}
+              {{ formatCurrency(totalUnpaidReceivables) }}
             </span>
           </div>
           <div class="text-xs text-brand-gray font-mono bg-brand-light dark:bg-white/5 px-4 py-2.5 rounded-xl border border-brand-gray/15">
-            عدد العملاء المدينين: <span class="font-bold text-brand-dark dark:text-white text-sm">{{ reminderStore.agingReport.totalDebtorClients }} عميل</span>
+            عدد العملاء المدينين: <span class="font-bold text-brand-dark dark:text-white text-sm">{{ totalDebtorClients }} عميل</span>
           </div>
         </div>
 
@@ -359,20 +362,20 @@
           <div class="bg-brand-white dark:bg-white/5 rounded-2xl border border-emerald-500/25 p-5 shadow-sm space-y-3">
             <div class="flex items-center justify-between border-b border-brand-gray/10 pb-3">
               <div>
-                <h4 class="font-bold text-xs text-emerald-700 dark:text-emerald-400">{{ reminderStore.agingReport.Bucket0To30.rangeLabel }}</h4>
+                <h4 class="font-bold text-xs text-emerald-700 dark:text-emerald-400">{{ bucket0To30.rangeLabel }}</h4>
                 <span class="text-[10px] text-brand-gray">فترة سداد طبيعية</span>
               </div>
               <span class="text-sm font-bold font-mono text-emerald-600">
-                {{ formatCurrency(reminderStore.agingReport.Bucket0To30.totalAmount) }}
+                {{ formatCurrency(bucket0To30.totalAmount) }}
               </span>
             </div>
 
-            <div v-if="reminderStore.agingReport.Bucket0To30.clients.length === 0" class="text-center py-6 text-brand-gray text-xs">
+            <div v-if="!bucket0To30.clients || bucket0To30.clients.length === 0" class="text-center py-6 text-brand-gray text-xs">
               لا توجد مديونيات في هذه الفترة
             </div>
             <div v-else class="space-y-2 max-h-72 overflow-y-auto">
               <div
-                v-for="c in reminderStore.agingReport.Bucket0To30.clients"
+                v-for="c in bucket0To30.clients"
                 :key="c.clientId"
                 class="p-2.5 rounded-xl bg-brand-light/50 dark:bg-white/5 text-xs flex justify-between items-center"
               >
@@ -394,20 +397,20 @@
           <div class="bg-brand-white dark:bg-white/5 rounded-2xl border border-amber-500/25 p-5 shadow-sm space-y-3">
             <div class="flex items-center justify-between border-b border-brand-gray/10 pb-3">
               <div>
-                <h4 class="font-bold text-xs text-amber-700 dark:text-amber-400">{{ reminderStore.agingReport.Bucket31To60.rangeLabel }}</h4>
+                <h4 class="font-bold text-xs text-amber-700 dark:text-amber-400">{{ bucket31To60.rangeLabel }}</h4>
                 <span class="text-[10px] text-brand-gray">تأخير أولي</span>
               </div>
               <span class="text-sm font-bold font-mono text-amber-600">
-                {{ formatCurrency(reminderStore.agingReport.Bucket31To60.totalAmount) }}
+                {{ formatCurrency(bucket31To60.totalAmount) }}
               </span>
             </div>
 
-            <div v-if="reminderStore.agingReport.Bucket31To60.clients.length === 0" class="text-center py-6 text-brand-gray text-xs">
+            <div v-if="!bucket31To60.clients || bucket31To60.clients.length === 0" class="text-center py-6 text-brand-gray text-xs">
               لا توجد مديونيات في هذه الفترة
             </div>
             <div v-else class="space-y-2 max-h-72 overflow-y-auto">
               <div
-                v-for="c in reminderStore.agingReport.Bucket31To60.clients"
+                v-for="c in bucket31To60.clients"
                 :key="c.clientId"
                 class="p-2.5 rounded-xl bg-brand-light/50 dark:bg-white/5 text-xs flex justify-between items-center"
               >
@@ -429,20 +432,20 @@
           <div class="bg-brand-white dark:bg-white/5 rounded-2xl border border-orange-500/25 p-5 shadow-sm space-y-3">
             <div class="flex items-center justify-between border-b border-brand-gray/10 pb-3">
               <div>
-                <h4 class="font-bold text-xs text-orange-700 dark:text-orange-400">{{ reminderStore.agingReport.Bucket61To90.rangeLabel }}</h4>
+                <h4 class="font-bold text-xs text-orange-700 dark:text-orange-400">{{ bucket61To90.rangeLabel }}</h4>
                 <span class="text-[10px] text-brand-gray">تأخير حرج يحتاج اتصال</span>
               </div>
               <span class="text-sm font-bold font-mono text-orange-600">
-                {{ formatCurrency(reminderStore.agingReport.Bucket61To90.totalAmount) }}
+                {{ formatCurrency(bucket61To90.totalAmount) }}
               </span>
             </div>
 
-            <div v-if="reminderStore.agingReport.Bucket61To90.clients.length === 0" class="text-center py-6 text-brand-gray text-xs">
+            <div v-if="!bucket61To90.clients || bucket61To90.clients.length === 0" class="text-center py-6 text-brand-gray text-xs">
               لا توجد مديونيات في هذه الفترة
             </div>
             <div v-else class="space-y-2 max-h-72 overflow-y-auto">
               <div
-                v-for="c in reminderStore.agingReport.Bucket61To90.clients"
+                v-for="c in bucket61To90.clients"
                 :key="c.clientId"
                 class="p-2.5 rounded-xl bg-brand-light/50 dark:bg-white/5 text-xs flex justify-between items-center"
               >
@@ -464,20 +467,20 @@
           <div class="bg-brand-white dark:bg-white/5 rounded-2xl border border-rose-500/30 p-5 shadow-sm space-y-3">
             <div class="flex items-center justify-between border-b border-brand-gray/10 pb-3">
               <div>
-                <h4 class="font-bold text-xs text-rose-700 dark:text-rose-400">{{ reminderStore.agingReport.BucketOver90.rangeLabel }}</h4>
+                <h4 class="font-bold text-xs text-rose-700 dark:text-rose-400">{{ bucketOver90.rangeLabel }}</h4>
                 <span class="text-[10px] text-brand-gray">ديون قديمة متعثرة</span>
               </div>
               <span class="text-sm font-bold font-mono text-rose-600">
-                {{ formatCurrency(reminderStore.agingReport.BucketOver90.totalAmount) }}
+                {{ formatCurrency(bucketOver90.totalAmount) }}
               </span>
             </div>
 
-            <div v-if="reminderStore.agingReport.BucketOver90.clients.length === 0" class="text-center py-6 text-brand-gray text-xs">
+            <div v-if="!bucketOver90.clients || bucketOver90.clients.length === 0" class="text-center py-6 text-brand-gray text-xs">
               لا توجد مديونيات في هذه الفترة
             </div>
             <div v-else class="space-y-2 max-h-72 overflow-y-auto">
               <div
-                v-for="c in reminderStore.agingReport.BucketOver90.clients"
+                v-for="c in bucketOver90.clients"
                 :key="c.clientId"
                 class="p-2.5 rounded-xl bg-brand-light/50 dark:bg-white/5 text-xs flex justify-between items-center"
               >
@@ -693,6 +696,63 @@ const toastStore = useToastStore();
 const activeTab = ref("services");
 const dueFilter = ref("due_or_overdue");
 const searchQuery = ref("");
+
+async function switchTab(tab) {
+  activeTab.value = tab;
+  if (tab === "aging") {
+    await reminderStore.fetchUnpaidAging();
+  }
+}
+
+const totalUnpaidReceivables = computed(() => {
+  const r = reminderStore.agingReport;
+  return r?.totalUnpaidReceivables ?? r?.TotalUnpaidReceivables ?? 0;
+});
+
+const totalDebtorClients = computed(() => {
+  const r = reminderStore.agingReport;
+  return r?.totalDebtorClients ?? r?.TotalDebtorClients ?? 0;
+});
+
+const bucket0To30 = computed(() => {
+  const r = reminderStore.agingReport;
+  const b = r?.bucket0To30 || r?.Bucket0To30;
+  return {
+    rangeLabel: b?.rangeLabel || b?.RangeLabel || "من 0 إلى 30 يوماً",
+    totalAmount: b?.totalAmount || b?.TotalAmount || 0,
+    clients: b?.clients || b?.Clients || []
+  };
+});
+
+const bucket31To60 = computed(() => {
+  const r = reminderStore.agingReport;
+  const b = r?.bucket31To60 || r?.Bucket31To60;
+  return {
+    rangeLabel: b?.rangeLabel || b?.RangeLabel || "من 31 إلى 60 يوماً",
+    totalAmount: b?.totalAmount || b?.TotalAmount || 0,
+    clients: b?.clients || b?.Clients || []
+  };
+});
+
+const bucket61To90 = computed(() => {
+  const r = reminderStore.agingReport;
+  const b = r?.bucket61To90 || r?.Bucket61To90;
+  return {
+    rangeLabel: b?.rangeLabel || b?.RangeLabel || "من 61 إلى 90 يوماً",
+    totalAmount: b?.totalAmount || b?.TotalAmount || 0,
+    clients: b?.clients || b?.Clients || []
+  };
+});
+
+const bucketOver90 = computed(() => {
+  const r = reminderStore.agingReport;
+  const b = r?.bucketOver90 || r?.BucketOver90;
+  return {
+    rangeLabel: b?.rangeLabel || b?.RangeLabel || "أكثر من 90 يوماً (ديون قديمة)",
+    totalAmount: b?.totalAmount || b?.TotalAmount || 0,
+    clients: b?.clients || b?.Clients || []
+  };
+});
 
 const serviceReminderColumns = [
   { field: "client", header: "العميل", sortable: true, width: "22%" },

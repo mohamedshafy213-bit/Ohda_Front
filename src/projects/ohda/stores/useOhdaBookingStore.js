@@ -21,7 +21,7 @@ export const useOhdaBookingStore = defineStore("ohdaBookings", () => {
     error.value = null;
     try {
       const res = await apiClient.get("/api/Bays", { params: { onlyActive } });
-      bays.value = res.data?.objects || [];
+      bays.value = res.data?.objects || res.data?.Objects || (Array.isArray(res.data) ? res.data : []);
       return bays.value;
     } catch (err) {
       error.value = err.response?.data?.returnMessage || err.message;
@@ -71,7 +71,7 @@ export const useOhdaBookingStore = defineStore("ohdaBookings", () => {
     error.value = null;
     try {
       const res = await apiClient.get("/api/CalendarSettings/working-hours");
-      workingHours.value = res.data?.objects || [];
+      workingHours.value = res.data?.objects || res.data?.Objects || (Array.isArray(res.data) ? res.data : []);
       return workingHours.value;
     } catch (err) {
       error.value = err.response?.data?.returnMessage || err.message;
@@ -100,7 +100,7 @@ export const useOhdaBookingStore = defineStore("ohdaBookings", () => {
     error.value = null;
     try {
       const res = await apiClient.get("/api/CalendarSettings/holidays", { params: { year } });
-      holidays.value = res.data?.objects || [];
+      holidays.value = res.data?.objects || res.data?.Objects || (Array.isArray(res.data) ? res.data : []);
       return holidays.value;
     } catch (err) {
       error.value = err.response?.data?.returnMessage || err.message;

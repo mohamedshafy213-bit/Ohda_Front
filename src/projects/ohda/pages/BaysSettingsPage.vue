@@ -46,7 +46,8 @@
     <!-- Tabs Bar -->
     <div class="flex items-center gap-2 border-b border-brand-gray/15 pb-2 text-xs font-semibold overflow-x-auto">
       <button
-        @click="activeTab = 'bays'"
+        type="button"
+        @click="switchTab('bays')"
         :class="[
           'px-4 py-2.5 rounded-xl transition-all flex items-center gap-2 cursor-pointer shrink-0',
           activeTab === 'bays'
@@ -55,11 +56,12 @@
         ]"
       >
         <Warehouse class="w-4 h-4" />
-        <span>الرافعات ومناطق العمل ({{ bookingStore.bays.length }})</span>
+        <span>الرافعات ومناطق العمل ({{ (bookingStore.bays || []).length }})</span>
       </button>
 
       <button
-        @click="activeTab === 'hours'"
+        type="button"
+        @click="switchTab('hours')"
         :class="[
           'px-4 py-2.5 rounded-xl transition-all flex items-center gap-2 cursor-pointer shrink-0',
           activeTab === 'hours'
@@ -72,7 +74,8 @@
       </button>
 
       <button
-        @click="activeTab === 'holidays'"
+        type="button"
+        @click="switchTab('holidays')"
         :class="[
           'px-4 py-2.5 rounded-xl transition-all flex items-center gap-2 cursor-pointer shrink-0',
           activeTab === 'holidays'
@@ -81,7 +84,7 @@
         ]"
       >
         <CalendarOff class="w-4 h-4" />
-        <span>العطلات والإجازات الرسمية ({{ bookingStore.holidays.length }})</span>
+        <span>العطلات والإجازات الرسمية ({{ (bookingStore.holidays || []).length }})</span>
       </button>
     </div>
 
@@ -169,25 +172,47 @@
     <!-- TAB 2: Working Hours -->
     <div v-if="activeTab === 'hours'" class="space-y-4">
       <div class="bg-brand-white dark:bg-white/5 p-4 sm:p-5 rounded-2xl border border-brand-gray/15">
-        <h3 class="font-bold text-sm text-brand-dark dark:text-white mb-1">جدول ساعات العمل الأسبوعية</h3>
-        <p class="text-xs text-brand-gray mb-4">
-          يتم الاعتماد على هذه المواعيد لمنع حجز أي مواعيد في أوقات الراحة أو بعد انتهاء الدوام.
-        </p>
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-4">
+          <div>
+            <h3 class="font-bold text-sm text-brand-dark dark:text-white mb-1">جدول ساعات العمل الأسبوعية</h3>
+            <p class="text-xs text-brand-gray">
+              يتم الاعتماد على هذه المواعيد لمنع حجز أي مواعيد في أوقات الراحة أو بعد انتهاء الدوام.
+            </p>
+          </div>
+          <button
+            type="button"
+            @click="resetWorkingHoursToDefault"
+            class="text-xs text-brand-accent hover:underline font-semibold cursor-pointer shrink-0"
+          >
+            استعادة المواعيد الافتراضية
+          </button>
+        </div>
 
-        <div class="space-y-3">
+        <div v-if="bookingStore.loading && (!workingHoursList || workingHoursList.length === 0)" class="text-center py-12 text-brand-gray text-xs">
+          جاري تحميل جدول ساعات العمل...
+        </div>
+
+        <div v-else-if="!workingHoursList || workingHoursList.length === 0" class="text-center py-12 text-brand-gray text-xs">
+          لم يتم العثور على بيانات مواعيد العمل.
+          <button type="button" @click="resetWorkingHoursToDefault" class="text-brand-accent underline block mx-auto mt-2 font-bold cursor-pointer">
+            تعبئة أسبوع العمل الافتراضي
+          </button>
+        </div>
+
+        <div v-else class="space-y-3">
           <div
-            v-for="day in workingHoursList"
-            :key="day.id"
+            v-for="(day, idx) in workingHoursList"
+            :key="day.id ?? idx"
             class="p-3.5 rounded-xl border border-brand-gray/15 bg-brand-light/40 dark:bg-white/5 flex flex-col md:flex-row md:items-center justify-between gap-3 text-xs"
           >
             <div class="flex items-center gap-3 w-36 shrink-0">
               <input
                 type="checkbox"
                 v-model="day.isWorkingDay"
-                :id="'day_' + day.id"
+                :id="'day_' + (day.id ?? idx)"
                 class="w-4 h-4 rounded text-brand-accent focus:ring-0 cursor-pointer"
               />
-              <label :for="'day_' + day.id" class="font-bold text-brand-dark dark:text-white cursor-pointer select-none">
+              <label :for="'day_' + (day.id ?? idx)" class="font-bold text-brand-dark dark:text-white cursor-pointer select-none">
                 {{ day.dayName }}
               </label>
               <span
@@ -247,13 +272,18 @@
 
     <!-- TAB 3: Holidays -->
     <div v-if="activeTab === 'holidays'" class="space-y-4">
-      <div v-if="bookingStore.holidays.length === 0" class="text-center py-16 bg-brand-white dark:bg-white/5 rounded-2xl border border-brand-gray/15">
+      <div v-if="bookingStore.loading && (!bookingStore.holidays || bookingStore.holidays.length === 0)" class="text-center py-12 text-brand-gray text-xs">
+        جاري تحميل العطلات الرسمية...
+      </div>
+
+      <div v-else-if="!bookingStore.holidays || bookingStore.holidays.length === 0" class="text-center py-16 bg-brand-white dark:bg-white/5 rounded-2xl border border-brand-gray/15">
         <CalendarOff class="w-12 h-12 text-brand-gray mx-auto mb-3 opacity-40" />
         <h3 class="font-bold text-sm text-brand-dark dark:text-white">لا توجد عطلات رسمية مسجلة</h3>
         <p class="text-xs text-brand-gray mt-1 max-w-sm mx-auto">
           أضف أيام الإجازات السنوية كالأعياد والمناسبات الرسمية ليتم إغلاق التقويم تلقائياً فيها.
         </p>
         <button
+          type="button"
           @click="openAddHolidayModal"
           class="mt-4 px-4 py-2 rounded-xl bg-purple-600 text-white font-bold text-xs inline-flex items-center gap-2 cursor-pointer"
         >
@@ -264,7 +294,7 @@
 
       <div v-else class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         <div
-          v-for="h in bookingStore.holidays"
+          v-for="h in (bookingStore.holidays || [])"
           :key="h.id"
           class="p-4 rounded-2xl border border-brand-gray/15 bg-brand-white dark:bg-white/5 flex items-start justify-between gap-3 shadow-xs"
         >
@@ -275,7 +305,7 @@
             <div>
               <h4 class="font-bold text-sm text-brand-dark dark:text-white">{{ h.name }}</h4>
               <div class="font-mono text-xs text-purple-700 dark:text-purple-300 font-bold mt-0.5">
-                {{ formatDate(h.holidayDateValue) }}
+                {{ formatDate(h.holidayDateValue || h.holidayDate) }}
               </div>
               <span v-if="h.isRecurring" class="inline-block mt-1 text-[10px] bg-purple-500/20 text-purple-700 dark:text-purple-300 px-2 py-0.5 rounded-full font-bold">
                 تتكرر سنوياً
@@ -285,6 +315,7 @@
           </div>
 
           <button
+            type="button"
             @click="confirmDeleteHoliday(h)"
             class="text-rose-500 hover:text-rose-700 p-1.5 rounded-lg hover:bg-rose-500/10 cursor-pointer transition-colors"
           >
@@ -486,6 +517,50 @@ const submitting = ref(false);
 
 const workingHoursList = ref([]);
 
+const defaultWorkingHours = [
+  { dayOfWeek: 0, dayName: "الأحد", isWorkingDay: true, openTime: "09:00", closeTime: "21:00", lunchBreakStart: "13:00", lunchBreakEnd: "14:00", slotDurationMinutes: 30 },
+  { dayOfWeek: 1, dayName: "الإثنين", isWorkingDay: true, openTime: "09:00", closeTime: "21:00", lunchBreakStart: "13:00", lunchBreakEnd: "14:00", slotDurationMinutes: 30 },
+  { dayOfWeek: 2, dayName: "الثلاثاء", isWorkingDay: true, openTime: "09:00", closeTime: "21:00", lunchBreakStart: "13:00", lunchBreakEnd: "14:00", slotDurationMinutes: 30 },
+  { dayOfWeek: 3, dayName: "الأربعاء", isWorkingDay: true, openTime: "09:00", closeTime: "21:00", lunchBreakStart: "13:00", lunchBreakEnd: "14:00", slotDurationMinutes: 30 },
+  { dayOfWeek: 4, dayName: "الخميس", isWorkingDay: true, openTime: "09:00", closeTime: "21:00", lunchBreakStart: "13:00", lunchBreakEnd: "14:00", slotDurationMinutes: 30 },
+  { dayOfWeek: 5, dayName: "الجمعة", isWorkingDay: false, openTime: "09:00", closeTime: "21:00", lunchBreakStart: null, lunchBreakEnd: null, slotDurationMinutes: 30 },
+  { dayOfWeek: 6, dayName: "السبت", isWorkingDay: true, openTime: "09:00", closeTime: "21:00", lunchBreakStart: "13:00", lunchBreakEnd: "14:00", slotDurationMinutes: 30 }
+];
+
+function resetWorkingHoursToDefault() {
+  workingHoursList.value = JSON.parse(JSON.stringify(defaultWorkingHours));
+}
+
+async function switchTab(tab) {
+  activeTab.value = tab;
+  if (tab === "hours") {
+    if (!workingHoursList.value || workingHoursList.value.length === 0) {
+      try {
+        const hours = await bookingStore.fetchWorkingHours();
+        if (hours && hours.length > 0) {
+          workingHoursList.value = JSON.parse(JSON.stringify(hours));
+        } else {
+          resetWorkingHoursToDefault();
+        }
+      } catch {
+        resetWorkingHoursToDefault();
+      }
+    }
+  } else if (tab === "holidays") {
+    try {
+      await bookingStore.fetchHolidays();
+    } catch (e) {
+      console.warn("fetchHolidays error:", e);
+    }
+  } else if (tab === "bays") {
+    try {
+      await bookingStore.fetchBays();
+    } catch (e) {
+      console.warn("fetchBays error:", e);
+    }
+  }
+}
+
 const bayForm = ref({
   id: null,
   name: "",
@@ -502,14 +577,19 @@ const holidayForm = ref({
 });
 
 onMounted(async () => {
-  try {
-    await bookingStore.fetchBays();
-    const hours = await bookingStore.fetchWorkingHours();
-    workingHoursList.value = JSON.parse(JSON.stringify(hours));
-    await bookingStore.fetchHolidays();
-  } catch (e) {
-    console.error("Init bays settings error:", e);
-  }
+  await Promise.allSettled([
+    bookingStore.fetchBays().catch(() => {}),
+    bookingStore.fetchWorkingHours().then(hours => {
+      if (hours && hours.length > 0) {
+        workingHoursList.value = JSON.parse(JSON.stringify(hours));
+      } else {
+        resetWorkingHoursToDefault();
+      }
+    }).catch(() => {
+      resetWorkingHoursToDefault();
+    }),
+    bookingStore.fetchHolidays().catch(() => {})
+  ]);
 });
 
 function openAddBayModal() {
