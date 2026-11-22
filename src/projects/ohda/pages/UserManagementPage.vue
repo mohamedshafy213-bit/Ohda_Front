@@ -14,35 +14,37 @@
 
       <!-- Action Button based on active tab -->
       <div class="flex items-center gap-3">
-        <Button
+        <button
           v-if="activeTab === 'users'"
+          type="button"
           @click="openRegisterModal"
           :disabled="branchStore.myQuota?.isUserQuotaExceeded && !authStore.isSuperAdmin"
-          class="!bg-brand-accent hover:!bg-brand-accent/90 !text-brand-dark !font-bold !rounded-xl !px-4 !py-2 !text-xs flex items-center gap-2 shadow-md shadow-brand-accent/10 transition-opacity"
-          :class="{ '!opacity-50 !cursor-not-allowed': branchStore.myQuota?.isUserQuotaExceeded && !authStore.isSuperAdmin }"
+          class="bg-brand-accent hover:bg-brand-accent/90 text-brand-dark font-bold rounded-xl px-4 py-2 text-xs flex items-center gap-2 shadow-md shadow-brand-accent/10 transition-opacity cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
           :title="branchStore.myQuota?.isUserQuotaExceeded && !authStore.isSuperAdmin ? $t('ohda.quotas.usersLimitReached') : $t('ohda.users.registerUser')"
         >
           <UserPlus class="w-4 h-4" />
           {{ $t('ohda.users.registerUser') }}
-        </Button>
+        </button>
 
-        <Button
+        <button
           v-if="activeTab === 'groups'"
+          type="button"
           @click="openCreateGroupModal"
-          class="!bg-brand-accent hover:!bg-brand-accent/90 !text-brand-dark !font-bold !rounded-xl !px-4 !py-2 !text-xs flex items-center gap-2 shadow-md shadow-brand-accent/10"
+          class="bg-brand-accent hover:bg-brand-accent/90 text-brand-dark font-bold rounded-xl px-4 py-2 text-xs flex items-center gap-2 shadow-md shadow-brand-accent/10 cursor-pointer"
         >
           <Plus class="w-4 h-4" />
           إنشاء مجموعة جديدة
-        </Button>
+        </button>
 
-        <Button
+        <button
           v-if="activeTab === 'pages'"
+          type="button"
           @click="openCreatePageModal"
-          class="!bg-brand-accent hover:!bg-brand-accent/90 !text-brand-dark !font-bold !rounded-xl !px-4 !py-2 !text-xs flex items-center gap-2 shadow-md shadow-brand-accent/10"
+          class="bg-brand-accent hover:bg-brand-accent/90 text-brand-dark font-bold rounded-xl px-4 py-2 text-xs flex items-center gap-2 shadow-md shadow-brand-accent/10 cursor-pointer"
         >
           <Plus class="w-4 h-4" />
           إضافة صفحة نظام جديدة
-        </Button>
+        </button>
 
       </div>
     </div>
@@ -152,12 +154,13 @@
               <Search class="w-4 h-4 text-brand-gray absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
             </div>
 
-            <Button
+            <button
+              type="button"
               @click="drillDownToBranch(0)"
-              class="!bg-brand-light hover:!bg-brand-soft !border !border-brand-gray/20 !text-brand-dark !rounded-xl !px-3 !py-2 !text-xs font-bold cursor-pointer"
+              class="bg-brand-light hover:bg-brand-soft border border-brand-gray/20 text-brand-dark rounded-xl px-3 py-2 text-xs font-bold cursor-pointer"
             >
               عرض كافة المستخدمين
-            </Button>
+            </button>
           </div>
         </div>
 
@@ -259,13 +262,14 @@
             </span>
           </div>
 
-          <Button
+          <button
+            type="button"
             @click="backToBranchGrid"
-            class="!bg-brand-light hover:!bg-brand-soft !border !border-brand-gray/20 !text-brand-dark !rounded-xl !px-3 !py-1.5 !text-xs flex items-center gap-1.5 font-bold cursor-pointer"
+            class="bg-brand-light hover:bg-brand-soft border border-brand-gray/20 text-brand-dark rounded-xl px-3 py-1.5 text-xs flex items-center gap-1.5 font-bold cursor-pointer"
           >
             <ArrowRight class="w-3.5 h-3.5 rtl:rotate-0" />
             <span>العودة لشبكة الفروع</span>
-          </Button>
+          </button>
         </div>
 
         <!-- Users Filter & Search Toolbar -->
@@ -275,14 +279,15 @@
             <div v-if="authStore.isSuperAdmin" class="flex items-center gap-2">
               <Building2 class="w-4 h-4 text-brand-accent shrink-0" />
               <span class="text-xs font-bold text-brand-dark shrink-0">{{ $t('ohda.users.filterByBranch') }}:</span>
-              <Select
+              <select
                 v-model="selectedBranchFilter"
-                :options="branchFilterOptions"
-                optionLabel="label"
-                optionValue="value"
                 @change="handleBranchFilterChange"
-                class="w-56 md:w-64 !bg-brand-light !border-brand-gray/25 focus:!border-brand-accent !text-brand-dark text-xs !rounded-xl"
-              />
+                class="w-56 md:w-64 px-3 py-2 bg-brand-light border border-brand-gray/25 focus:border-brand-accent text-brand-dark text-xs rounded-xl outline-none cursor-pointer"
+              >
+                <option v-for="opt in branchFilterOptions" :key="opt.value" :value="opt.value">
+                  {{ opt.label }}
+                </option>
+              </select>
             </div>
 
             <!-- Non-SuperAdmin Branch Badge Scope -->
@@ -421,13 +426,14 @@
 
         <Column header="صلاحيات الصفحات">
           <template #body="{ data }">
-            <Button
+            <button
+              type="button"
               @click="openGroupPermissionsModal(data)"
-              class="!px-3 !py-1 !bg-brand-soft hover:!bg-brand-accent/20 !text-brand-accent !border !border-brand-accent/20 !rounded-lg !text-xs !font-bold flex items-center gap-1"
+              class="px-3 py-1 bg-brand-soft hover:bg-brand-accent/20 text-brand-accent border border-brand-accent/20 rounded-lg text-xs font-bold flex items-center gap-1 cursor-pointer"
             >
               <Lock class="w-3.5 h-3.5" />
               إدارة صلاحيات الصفحات للمجموعة
-            </Button>
+            </button>
           </template>
         </Column>
 
@@ -512,15 +518,16 @@
         <!-- Branch Selection (for SuperAdmin) or Branch Lock (for Branch Admin) -->
         <div v-if="authStore.isSuperAdmin">
           <label class="block font-semibold text-brand-dark mb-1">{{ $t('ohda.users.assignedBranch') }} *</label>
-          <Select
+          <select
             v-model="registerForm.branchId"
-            :options="branchOptions"
-            optionLabel="label"
-            optionValue="value"
             required
-            class="w-full !bg-brand-light !border-brand-gray/25 focus:!border-brand-accent !text-brand-dark"
-            placeholder="اختر الفرع..."
-          />
+            class="w-full px-3 py-2 bg-brand-light border border-brand-gray/25 focus:border-brand-accent text-brand-dark text-xs rounded-xl outline-none cursor-pointer"
+          >
+            <option :value="null" disabled>اختر الفرع...</option>
+            <option v-for="opt in branchOptions" :key="opt.value" :value="opt.value">
+              {{ opt.label }}
+            </option>
+          </select>
         </div>
         <div v-else>
           <label class="block font-semibold text-brand-dark mb-1">{{ $t('ohda.users.branch') }}</label>
@@ -540,16 +547,24 @@
 
         <div>
           <label class="block font-semibold text-brand-dark mb-1">مجموعة الصلاحيات (User Group) *</label>
-          <Select v-model="registerForm.userGroupId" :options="groupOptions" optionLabel="label" optionValue="value" class="w-full !bg-brand-light !border-brand-gray/25 focus:!border-brand-accent !text-brand-dark" placeholder="اختر مجموعة الصلاحيات..." />
+          <select
+            v-model="registerForm.userGroupId"
+            class="w-full px-3 py-2 bg-brand-light border border-brand-gray/25 focus:border-brand-accent text-brand-dark text-xs rounded-xl outline-none cursor-pointer"
+          >
+            <option :value="null">اختر مجموعة الصلاحيات...</option>
+            <option v-for="opt in groupOptions" :key="opt.value" :value="opt.value">
+              {{ opt.label }}
+            </option>
+          </select>
         </div>
 
         <div class="flex items-center justify-end gap-3 pt-3 border-t border-brand-gray/10">
-          <SecondaryButton type="button" @click="showRegisterModal = false">
+          <button type="button" @click="showRegisterModal = false" class="px-4 py-2 rounded-xl bg-brand-light border border-brand-gray/25 text-brand-gray hover:text-brand-dark text-xs font-semibold cursor-pointer">
             {{ $t('ohda.common.cancel') }}
-          </SecondaryButton>
-          <Button type="submit" class="!bg-brand-accent hover:!bg-brand-accent/90 !text-brand-dark !font-bold">
+          </button>
+          <button type="submit" class="px-4 py-2 rounded-xl bg-brand-accent hover:bg-brand-accent/90 text-brand-dark font-bold text-xs cursor-pointer shadow-sm">
             {{ $t('ohda.users.registerUser') }}
-          </Button>
+          </button>
         </div>
       </form>
     </Dialog>
@@ -585,14 +600,15 @@
         <!-- Branch Selection (for SuperAdmin) or Branch Display (for Branch Admin) -->
         <div v-if="authStore.isSuperAdmin">
           <label class="block font-semibold text-brand-dark mb-1">{{ $t('ohda.users.assignedBranch') }}</label>
-          <Select
+          <select
             v-model="editForm.branchId"
-            :options="branchOptions"
-            optionLabel="label"
-            optionValue="value"
-            class="w-full !bg-brand-light !border-brand-gray/25 focus:!border-brand-accent !text-brand-dark"
-            placeholder="اختر الفرع..."
-          />
+            class="w-full px-3 py-2 bg-brand-light border border-brand-gray/25 focus:border-brand-accent text-brand-dark text-xs rounded-xl outline-none cursor-pointer"
+          >
+            <option :value="null">اختر الفرع...</option>
+            <option v-for="opt in branchOptions" :key="opt.value" :value="opt.value">
+              {{ opt.label }}
+            </option>
+          </select>
         </div>
         <div v-else>
           <label class="block font-semibold text-brand-dark mb-1">{{ $t('ohda.users.branch') }}</label>
@@ -611,16 +627,24 @@
 
         <div>
           <label class="block font-semibold text-brand-dark mb-1">مجموعة الصلاحيات (User Group)</label>
-          <Select v-model="editForm.userGroupId" :options="groupOptions" optionLabel="label" optionValue="value" class="w-full !bg-brand-light !border-brand-gray/25 focus:!border-brand-accent !text-brand-dark" placeholder="اختر مجموعة الصلاحيات..." />
+          <select
+            v-model="editForm.userGroupId"
+            class="w-full px-3 py-2 bg-brand-light border border-brand-gray/25 focus:border-brand-accent text-brand-dark text-xs rounded-xl outline-none cursor-pointer"
+          >
+            <option :value="null">اختر مجموعة الصلاحيات...</option>
+            <option v-for="opt in groupOptions" :key="opt.value" :value="opt.value">
+              {{ opt.label }}
+            </option>
+          </select>
         </div>
 
         <div class="flex items-center justify-end gap-3 pt-3 border-t border-brand-gray/10">
-          <SecondaryButton type="button" @click="showEditModal = false">
+          <button type="button" @click="showEditModal = false" class="px-4 py-2 rounded-xl bg-brand-light border border-brand-gray/25 text-brand-gray hover:text-brand-dark text-xs font-semibold cursor-pointer">
             {{ $t('ohda.common.cancel') }}
-          </SecondaryButton>
-          <Button type="submit" class="!bg-brand-accent hover:!bg-brand-accent/90 !text-brand-dark !font-bold">
+          </button>
+          <button type="submit" class="px-4 py-2 rounded-xl bg-brand-accent hover:bg-brand-accent/90 text-brand-dark font-bold text-xs cursor-pointer shadow-sm">
             {{ $t('ohda.common.save') }}
-          </Button>
+          </button>
         </div>
       </form>
     </Dialog>
@@ -643,29 +667,31 @@
               <div class="font-mono text-[10px] text-brand-gray">{{ page.path }}</div>
             </div>
 
-            <Button
+            <button
               v-if="isPageAllowedForUser(selectedUser, page.id)"
+              type="button"
               @click="toggleUserPageAccess(selectedUser.id || selectedUser.militaryNumber, page.id, false)"
-              class="!px-3 !py-1 !bg-red-500/10 hover:!bg-red-500/20 !text-red-600 !border !border-red-500/30 !rounded-lg !text-xs !font-bold flex items-center gap-1"
+              class="px-3 py-1 bg-red-500/10 hover:bg-red-500/20 text-red-600 border border-red-500/30 rounded-lg text-xs font-bold flex items-center gap-1 cursor-pointer"
             >
               <X class="w-3.5 h-3.5" />
               {{ $t('ohda.users.revokePage') }}
-            </Button>
-            <Button
+            </button>
+            <button
               v-else
+              type="button"
               @click="toggleUserPageAccess(selectedUser.id || selectedUser.militaryNumber, page.id, true)"
-              class="!px-3 !py-1 !bg-brand-soft hover:!bg-brand-accent/20 !text-brand-accent !border !border-brand-accent/30 !rounded-lg !text-xs !font-bold flex items-center gap-1"
+              class="px-3 py-1 bg-brand-soft hover:bg-brand-accent/20 text-brand-accent border border-brand-accent/30 rounded-lg text-xs font-bold flex items-center gap-1 cursor-pointer"
             >
               <Check class="w-3.5 h-3.5" />
               {{ $t('ohda.users.grantPage') }}
-            </Button>
+            </button>
           </div>
         </div>
 
         <div class="flex justify-end pt-3 border-t border-brand-gray/10">
-          <SecondaryButton @click="showUserPermissionsModal = false">
+          <button type="button" @click="showUserPermissionsModal = false" class="px-4 py-2 rounded-xl bg-brand-light border border-brand-gray/25 text-brand-gray hover:text-brand-dark text-xs font-semibold cursor-pointer">
             {{ $t('ohda.common.close') }}
-          </SecondaryButton>
+          </button>
         </div>
       </div>
     </Dialog>
@@ -680,16 +706,21 @@
 
         <div>
           <label class="block font-semibold text-brand-dark mb-1">الوصف</label>
-          <Textarea v-model="groupForm.description" rows="3" class="w-full !bg-brand-light !border-brand-gray/25 focus:!border-brand-accent !text-brand-dark" placeholder="وصف الصلاحيات والمجموعة..." />
+          <textarea
+            v-model="groupForm.description"
+            rows="3"
+            class="w-full px-3 py-2 rounded-xl bg-brand-light border border-brand-gray/25 focus:border-brand-accent text-brand-dark text-xs outline-none"
+            placeholder="وصف الصلاحيات والمجموعة..."
+          ></textarea>
         </div>
 
         <div class="flex items-center justify-end gap-3 pt-3 border-t border-brand-gray/10">
-          <SecondaryButton type="button" @click="showCreateGroupModal = false">
+          <button type="button" @click="showCreateGroupModal = false" class="px-4 py-2 rounded-xl bg-brand-light border border-brand-gray/25 text-brand-gray hover:text-brand-dark text-xs font-semibold cursor-pointer">
             {{ $t('ohda.common.cancel') }}
-          </SecondaryButton>
-          <Button type="submit" class="!bg-brand-accent hover:!bg-brand-accent/90 !text-brand-dark !font-bold">
+          </button>
+          <button type="submit" class="px-4 py-2 rounded-xl bg-brand-accent hover:bg-brand-accent/90 text-brand-dark font-bold text-xs cursor-pointer shadow-sm">
             حفظ المجموعة
-          </Button>
+          </button>
         </div>
       </form>
     </Dialog>
@@ -704,16 +735,20 @@
 
         <div>
           <label class="block font-semibold text-brand-dark mb-1">الوصف</label>
-          <Textarea v-model="groupForm.description" rows="3" class="w-full !bg-brand-light !border-brand-gray/25 focus:!border-brand-accent !text-brand-dark" />
+          <textarea
+            v-model="groupForm.description"
+            rows="3"
+            class="w-full px-3 py-2 rounded-xl bg-brand-light border border-brand-gray/25 focus:border-brand-accent text-brand-dark text-xs outline-none"
+          ></textarea>
         </div>
 
         <div class="flex items-center justify-end gap-3 pt-3 border-t border-brand-gray/10">
-          <SecondaryButton type="button" @click="showEditGroupModal = false">
+          <button type="button" @click="showEditGroupModal = false" class="px-4 py-2 rounded-xl bg-brand-light border border-brand-gray/25 text-brand-gray hover:text-brand-dark text-xs font-semibold cursor-pointer">
             {{ $t('ohda.common.cancel') }}
-          </SecondaryButton>
-          <Button type="submit" class="!bg-brand-accent hover:!bg-brand-accent/90 !text-brand-dark !font-bold">
+          </button>
+          <button type="submit" class="px-4 py-2 rounded-xl bg-brand-accent hover:bg-brand-accent/90 text-brand-dark font-bold text-xs cursor-pointer shadow-sm">
             {{ $t('ohda.common.save') }}
-          </Button>
+          </button>
         </div>
       </form>
     </Dialog>
@@ -725,13 +760,14 @@
           <p class="text-brand-gray">
             للمجموعة: <span class="font-bold text-brand-dark">{{ selectedGroup.name }}</span>
           </p>
-          <Button
+          <button
+            type="button"
             @click="grantAllToGroup(selectedGroup.id)"
-            class="!px-3 !py-1 !bg-brand-soft hover:!bg-brand-accent/20 !text-brand-accent !border !border-brand-accent/30 !rounded-lg !text-xs !font-bold flex items-center gap-1"
+            class="px-3 py-1 bg-brand-soft hover:bg-brand-accent/20 text-brand-accent border border-brand-accent/30 rounded-lg text-xs font-bold flex items-center gap-1 cursor-pointer"
           >
             <CheckCheck class="w-3.5 h-3.5" />
             منح جميع الصفحات
-          </Button>
+          </button>
         </div>
 
         <div class="space-y-2 max-h-96 overflow-y-auto pr-1">
@@ -745,29 +781,31 @@
               <div class="font-mono text-[10px] text-brand-gray">{{ page.path }}</div>
             </div>
 
-            <Button
+            <button
               v-if="isPageAllowedForGroup(selectedGroup.id, page.id)"
+              type="button"
               @click="toggleGroupPageAccess(selectedGroup.id, page.id, false)"
-              class="!px-3 !py-1 !bg-red-500/10 hover:!bg-red-500/20 !text-red-600 !border !border-red-500/30 !rounded-lg !text-xs !font-bold flex items-center gap-1"
+              class="px-3 py-1 bg-red-500/10 hover:bg-red-500/20 text-red-600 border border-red-500/30 rounded-lg text-xs font-bold flex items-center gap-1 cursor-pointer"
             >
               <X class="w-3.5 h-3.5" />
               إلغاء الصلاحية
-            </Button>
-            <Button
+            </button>
+            <button
               v-else
+              type="button"
               @click="toggleGroupPageAccess(selectedGroup.id, page.id, true)"
-              class="!px-3 !py-1 !bg-brand-soft hover:!bg-brand-accent/20 !text-brand-accent !border !border-brand-accent/30 !rounded-lg !text-xs !font-bold flex items-center gap-1"
+              class="px-3 py-1 bg-brand-soft hover:bg-brand-accent/20 text-brand-accent border border-brand-accent/30 rounded-lg text-xs font-bold flex items-center gap-1 cursor-pointer"
             >
               <Check class="w-3.5 h-3.5" />
               منح الصلاحية
-            </Button>
+            </button>
           </div>
         </div>
 
         <div class="flex justify-end pt-3 border-t border-brand-gray/10">
-          <SecondaryButton @click="showGroupPermissionsModal = false">
+          <button type="button" @click="showGroupPermissionsModal = false" class="px-4 py-2 rounded-xl bg-brand-light border border-brand-gray/25 text-brand-gray hover:text-brand-dark text-xs font-semibold cursor-pointer">
             {{ $t('ohda.common.close') }}
-          </SecondaryButton>
+          </button>
         </div>
       </div>
     </Dialog>
@@ -796,12 +834,12 @@
         </div>
 
         <div class="flex items-center justify-end gap-3 pt-3 border-t border-brand-gray/10">
-          <SecondaryButton type="button" @click="showCreatePageModal = false">
+          <button type="button" @click="showCreatePageModal = false" class="px-4 py-2 rounded-xl bg-brand-light border border-brand-gray/25 text-brand-gray hover:text-brand-dark text-xs font-semibold cursor-pointer">
             {{ $t('ohda.common.cancel') }}
-          </SecondaryButton>
-          <Button type="submit" class="!bg-brand-accent hover:!bg-brand-accent/90 !text-brand-dark !font-bold">
+          </button>
+          <button type="submit" class="px-4 py-2 rounded-xl bg-brand-accent hover:bg-brand-accent/90 text-brand-dark font-bold text-xs cursor-pointer shadow-sm">
             حفظ الصفحة
-          </Button>
+          </button>
         </div>
       </form>
     </Dialog>
@@ -830,12 +868,12 @@
         </div>
 
         <div class="flex items-center justify-end gap-3 pt-3 border-t border-brand-gray/10">
-          <SecondaryButton type="button" @click="showEditPageModal = false">
+          <button type="button" @click="showEditPageModal = false" class="px-4 py-2 rounded-xl bg-brand-light border border-brand-gray/25 text-brand-gray hover:text-brand-dark text-xs font-semibold cursor-pointer">
             {{ $t('ohda.common.cancel') }}
-          </SecondaryButton>
-          <Button type="submit" class="!bg-brand-accent hover:!bg-brand-accent/90 !text-brand-dark !font-bold">
+          </button>
+          <button type="submit" class="px-4 py-2 rounded-xl bg-brand-accent hover:bg-brand-accent/90 text-brand-dark font-bold text-xs cursor-pointer shadow-sm">
             {{ $t('ohda.common.save') }}
-          </Button>
+          </button>
         </div>
       </form>
     </Dialog>
@@ -870,6 +908,26 @@ import { useOhdaUserPermissionStore } from "../stores/useOhdaUserPermissionStore
 import { useOhdaGroupStore } from "../stores/useOhdaGroupStore";
 import { useOhdaBranchStore } from "../stores/useOhdaBranchStore";
 import { useOhdaAuthStore } from "../stores/useOhdaAuthStore";
+import {
+  Shield,
+  UserPlus,
+  Plus,
+  Users,
+  ShieldCheck,
+  FileText,
+  Building2,
+  Search,
+  X,
+  Check,
+  CheckCheck,
+  Trash2,
+  Edit,
+  KeyRound,
+  Filter,
+  ArrowRight,
+  UserCheck,
+  Lock
+} from "lucide-vue-next";
 
 const userStore = useOhdaUserPermissionStore();
 const groupStore = useOhdaGroupStore();

@@ -15,14 +15,15 @@
         </div>
 
         <div class="flex items-center gap-3">
-          <Button
+          <button
+            type="button"
             @click="handlePrint"
             :disabled="!selectedProduct"
-            class="!bg-brand-accent hover:!bg-brand-accent/90 !text-brand-dark !font-bold !px-5 !py-2.5 !rounded-xl !text-xs flex items-center gap-2 shadow-md cursor-pointer disabled:opacity-50"
+            class="bg-brand-accent hover:bg-brand-accent/90 text-brand-dark font-bold px-5 py-2.5 rounded-xl text-xs flex items-center gap-2 shadow-md cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed transition-all"
           >
             <Printer class="w-4 h-4" />
             <span>طباعة الملصقات الآن</span>
-          </Button>
+          </button>
         </div>
       </div>
 
@@ -38,19 +39,24 @@
             </h3>
 
             <!-- Search / Filter Products -->
-            <div>
-              <label class="block text-[11px] font-semibold text-brand-gray mb-1">اختر الصنف من المخزون</label>
-              <Select
-                v-model="selectedProductId"
-                :options="productSelectOptions"
-                optionLabel="displayName"
-                optionValue="id"
-                filter
-                :filterPlaceholder="'ابحث باسم الصنف أو الباركود...'"
-                placeholder="-- اختر الصنف من المخزون --"
-                class="w-full text-xs font-semibold"
-                @change="onProductChange"
+            <div class="space-y-1.5">
+              <label class="block text-[11px] font-semibold text-brand-gray">اختر الصنف من المخزون</label>
+              <input
+                v-model="productFilterQuery"
+                type="text"
+                placeholder="ابحث باسم الصنف أو الباركود..."
+                class="w-full px-3 py-1.5 bg-brand-light dark:bg-white/5 border border-brand-gray/25 rounded-xl text-xs text-brand-dark dark:text-white focus:outline-none focus:border-brand-accent placeholder:text-brand-gray/60"
               />
+              <select
+                v-model="selectedProductId"
+                @change="onProductChange"
+                class="w-full px-3 py-2 bg-brand-light dark:bg-white/5 border border-brand-gray/25 rounded-xl text-xs font-semibold text-brand-dark dark:text-white focus:outline-none focus:border-brand-accent cursor-pointer"
+              >
+                <option :value="null" disabled>-- اختر الصنف من المخزون ({{ filteredProductOptions.length }}) --</option>
+                <option v-for="p in filteredProductOptions" :key="p.id" :value="p.id">
+                  {{ p.displayName }}
+                </option>
+              </select>
             </div>
 
             <!-- Selected Product Quick Summary -->
@@ -331,12 +337,23 @@ const printMode = ref("product"); // "product" | "serials"
 const printQuantity = ref(12);
 const productSerials = ref([]);
 const qrMap = ref({});
+const productFilterQuery = ref("");
 
 const productSelectOptions = computed(() => {
   return (inventoryStore.products || []).map(p => ({
     ...p,
     displayName: `${p.name} (باركود: ${p.barcode || p.sku}) - المتوفر: ${p.quantity || p.amount || 0}`
   }));
+});
+
+const filteredProductOptions = computed(() => {
+  const q = productFilterQuery.value.trim().toLowerCase();
+  if (!q) return productSelectOptions.value;
+  return productSelectOptions.value.filter(p =>
+    (p.name && p.name.toLowerCase().includes(q)) ||
+    (p.sku && p.sku.toLowerCase().includes(q)) ||
+    (p.barcode && p.barcode.toLowerCase().includes(q))
+  );
 });
 
 const selectedTemplate = ref("thermal_50x25");
