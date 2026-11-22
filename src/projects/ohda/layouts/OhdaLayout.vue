@@ -8,12 +8,13 @@
           <Menu class="w-6 h-6" />
         </button>
         <router-link :to="authStore.isSuperAdmin ? '/ohda/branches' : '/ohda/dashboard'" class="flex items-center gap-3 group">
-          <div class="w-10 h-10 bg-brand-accent rounded-xl flex items-center justify-center shadow-lg shadow-brand-accent/20 group-hover:scale-105 transition-transform">
-            <Box class="w-5 h-5 text-brand-dark font-bold" />
+          <div class="w-10 h-10 bg-brand-accent rounded-xl flex items-center justify-center shadow-lg shadow-brand-accent/20 group-hover:scale-105 transition-transform overflow-hidden">
+            <img v-if="branchSettings.logoUrl" :src="branchSettings.logoUrl" alt="شعار المركز" class="w-full h-full object-cover" />
+            <Box v-else class="w-5 h-5 text-brand-dark font-bold" />
           </div>
           <div>
             <h1 class="text-base font-bold text-white tracking-wide group-hover:text-brand-accent transition-colors">
-              {{ $t('ohda.systemTitle') }}
+              {{ displayBranchName }}
             </h1>
             <span class="text-[10px] text-brand-accent font-mono font-semibold block">v2.5 Enterprise</span>
           </div>
@@ -94,6 +95,16 @@
             </div>
           </div>
         </div>
+
+        <!-- Workshop Settings Button -->
+        <router-link
+          v-if="!authStore.isSuperAdmin"
+          to="/ohda/settings"
+          class="p-2 bg-white/10 hover:bg-white/20 text-white border border-white/10 rounded-xl transition-all cursor-pointer"
+          :title="currentLocale === 'ar' ? 'إعدادات وهوية المركز' : 'Workshop Settings'"
+        >
+          <Sliders class="w-4 h-4 text-brand-accent" />
+        </router-link>
 
         <!-- Change Password Button -->
         <button
@@ -233,9 +244,11 @@ import {
   Bell, 
   User, 
   LogOut, 
-  ChevronDown 
+  ChevronDown,
+  Sliders
 } from "lucide-vue-next";
 import * as LucideIcons from "lucide-vue-next";
+import { getBranchSettings, getStoredThemeColor, applyTheme } from "../utilities/themeManager";
 
 function getIconComponent(iconName) {
   if (!iconName) return LucideIcons.FileText;
@@ -253,6 +266,20 @@ const sidebarOpen = ref(false);
 const showNotifications = ref(false);
 const showPageHelp = ref(false);
 const showChangePasswordModal = ref(false);
+
+const branchSettings = ref(getBranchSettings());
+
+const displayBranchName = computed(() => {
+  if (authStore.isSuperAdmin) return currentLocale.value === "ar" ? "نظام إدارة الورش والمنصة" : "Central Workshop Platform";
+  return branchSettings.value.branchName || authStore.branchName || (currentLocale.value === "ar" ? "نظام إدارة الورشة والعناية بالسيارات" : "AutoCare Workshop Management");
+});
+
+window.addEventListener("storage", (e) => {
+  if (e.key === "ohda_branch_settings" || e.key === "ohda_theme_accent") {
+    branchSettings.value = getBranchSettings();
+    applyTheme(getStoredThemeColor(), false);
+  }
+});
 
 const openGroups = ref({
   general: true,
@@ -302,6 +329,7 @@ const pageMeta = {
   "/ohda/warehouse-bins": { labelKey: "ohda.nav.warehouseBins", icon: "Layers" },
   "/ohda/inventory": { labelKey: "ohda.nav.inventory", icon: "Boxes" },
   "/ohda/notifications": { labelKey: "ohda.nav.notifications", icon: "Bell" },
+  "/ohda/settings": { labelKey: "ohda.nav.settings", customLabelAr: "إعدادات وهوية المركز", icon: "Sliders" },
   "/ohda/branches": { labelKey: "ohda.nav.branches", icon: "Building2" },
   "/ohda/branches-dashboard": { labelKey: "ohda.nav.branchesDashboard", icon: "Activity" }
 };
@@ -350,7 +378,7 @@ const navItems = computed(() => {
 
       return {
         path,
-        label: meta ? t(meta.labelKey) : path.replace(/^\/ohda\//, "").replace(/[-\/]/g, " ").trim() || path,
+        label: (currentLocale.value === "ar" && meta?.customLabelAr) ? meta.customLabelAr : (meta ? t(meta.labelKey) : path.replace(/^\/ohda\//, "").replace(/[-\/]/g, " ").trim() || path),
         icon: backendIcon || meta?.icon || "FileText",
         badge: meta?.getBadge ? meta.getBadge() : null,
         isAlert: meta?.isAlert ? meta.isAlert() : false
@@ -387,7 +415,9 @@ const groupDefinitions = computed(() => {
       key: "general",
       labelKey: "ohda.groups.general",
       icon: "LayoutDashboard",
-      paths: ["/ohda/dashboard"]
+      paths: [
+        "/ohda/dashboard",
+      ]
     },
     {
       key: "reservations",
@@ -442,6 +472,7 @@ const groupDefinitions = computed(() => {
       paths: [
         "/ohda/employees",
         "/ohda/users",
+        "/ohda/settings",
         "/ohda/lookups"
       ]
     }
@@ -503,6 +534,8 @@ watch(
 );
 
 onMounted(async () => {
+  applyTheme(getStoredThemeColor(), false);
+  branchSettings.value = getBranchSettings();
   Promise.allSettled([
     authStore.fetchMyPages(),
     notifStore.fetchMyNotifications()

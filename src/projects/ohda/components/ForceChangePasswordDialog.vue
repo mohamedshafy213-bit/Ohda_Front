@@ -238,6 +238,7 @@ async function handleSubmit() {
     loading.value = false;
 
     if (res?.data?.isDone) {
+      const isFirstTime = authStore.user?.mustChangePassword === true;
       if (authStore.user) {
         authStore.user.mustChangePassword = false;
         localStorage.setItem("ohdaUser", JSON.stringify(authStore.user));
@@ -246,11 +247,17 @@ async function handleSubmit() {
       toast.add({
         severity: "success",
         summary: isAr.value ? "تم بنجاح" : "Success",
-        detail: isAr.value ? "تم تعيين كلمة المرور الجديدة بنجاح! يمكنك الآن متابعة العمل." : "Password changed successfully!",
+        detail: isAr.value 
+          ? (isFirstTime ? "تم تعيين كلمة المرور بنجاح! جاري تحويلك لإعداد اسم وهوية ورشتك." : "تم تغيير كلمة المرور بنجاح!")
+          : "Password changed successfully!",
         life: 4000
       });
 
       emit("closed");
+
+      if (isFirstTime && !authStore.isSuperAdmin) {
+        router.push("/ohda/settings?onboarding=1");
+      }
     } else {
       errorMessage.value = res?.data?.returnMessage || (isAr.value ? "فشل تغيير كلمة المرور، يرجى التحقق من كلمة المرور الحالية" : "Failed to change password");
     }

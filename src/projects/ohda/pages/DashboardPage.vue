@@ -2,16 +2,21 @@
   <div class="space-y-6">
     <!-- Header Title & Action Toolbar -->
     <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-brand-white dark:bg-white/5 p-6 rounded-2xl border border-brand-gray/10 shadow-sm print:hidden">
-      <div>
-        <h1 class="text-2xl font-bold text-brand-dark dark:text-white flex items-center gap-3">
-          <Wrench class="w-7 h-7 text-brand-accent" />
-          <span>لوحة التحكم ومؤشرات أداء الورشة</span>
-        </h1>
-        <p class="text-xs text-brand-gray dark:text-slate-400 mt-1">
-          نظام إدارة ورشة الصيانة والعناية بالسيارات — مرحباً بك
-          <span class="font-bold text-brand-accent">{{ authStore.userName }}</span>
-          ({{ authStore.user?.roleName || 'مدير الورشة' }})
-        </p>
+      <div class="flex items-center gap-4">
+        <div class="w-14 h-14 rounded-2xl bg-brand-accent/15 border border-brand-accent/30 flex items-center justify-center overflow-hidden shrink-0 shadow-md shadow-brand-accent/10">
+          <img v-if="workshopSettings.logoUrl" :src="workshopSettings.logoUrl" alt="شعار المركز" class="w-full h-full object-cover" />
+          <Wrench v-else class="w-7 h-7 text-brand-accent" />
+        </div>
+        <div>
+          <h1 class="text-2xl font-bold text-brand-dark dark:text-white flex items-center gap-3">
+            <span>{{ workshopTitle }}</span>
+          </h1>
+          <p class="text-xs text-brand-gray dark:text-slate-400 mt-1">
+            {{ workshopSettings.slogan || 'نظام إدارة ورشة الصيانة والعناية بالسيارات' }} — مرحباً بك
+            <span class="font-bold text-brand-accent">{{ authStore.userName }}</span>
+            ({{ authStore.user?.roleName || 'مدير الورشة' }})
+          </p>
+        </div>
       </div>
 
       <!-- Quick Action Buttons -->
@@ -27,6 +32,13 @@
           <Button class="!bg-red-500/10 hover:!bg-red-500/20 !text-red-600 dark:!text-red-400 !border !border-red-500/25 !font-bold !rounded-xl !px-3.5 !py-2 !text-xs flex items-center gap-1.5 cursor-pointer">
             <Receipt class="w-4 h-4" />
             <span>+ تسجيل مصروف</span>
+          </Button>
+        </router-link>
+
+        <router-link to="/ohda/settings">
+          <Button class="!bg-brand-gray/10 hover:!bg-brand-gray/20 !text-brand-dark dark:!text-white !border !border-brand-gray/20 !font-bold !rounded-xl !px-3.5 !py-2 !text-xs flex items-center gap-1.5 cursor-pointer" title="تخصيص الاسم والشعار والألوان">
+            <Sliders class="w-4 h-4 text-brand-accent" />
+            <span>إعدادات الهوية</span>
           </Button>
         </router-link>
 
@@ -311,8 +323,10 @@ import {
   Clock,
   AlertTriangle,
   Car,
-  BarChart3
+  BarChart3,
+  Sliders
 } from "lucide-vue-next";
+import { getBranchSettings, formatBranchCurrency } from "../utilities/themeManager";
 
 const authStore = useOhdaAuthStore();
 const jobStore = useOhdaJobCardStore();
@@ -320,6 +334,12 @@ const expenseStore = useOhdaExpenseStore();
 const inventoryStore = useOhdaInventoryStore();
 const financeStore = useOhdaFinanceStore();
 const cashDrawerWidgetRef = ref(null);
+
+const workshopSettings = ref(getBranchSettings());
+
+const workshopTitle = computed(() => {
+  return workshopSettings.value.branchName || authStore.branchName || "لوحة التحكم ومؤشرات أداء الورشة";
+});
 
 function handleCashDrawerClick() {
   if (financeStore.hasActiveDrawer) {
@@ -330,6 +350,7 @@ function handleCashDrawerClick() {
 }
 
 onMounted(async () => {
+  workshopSettings.value = getBranchSettings();
   await Promise.all([
     jobStore.fetchJobs(),
     expenseStore.fetchExpenses(),
@@ -340,8 +361,7 @@ onMounted(async () => {
 });
 
 function formatCurrency(amount) {
-  if (amount == null) return "0 ج.م";
-  return `${Number(amount).toLocaleString("en-US", { minimumFractionDigits: 0, maximumFractionDigits: 2 })} ج.م`;
+  return formatBranchCurrency(amount);
 }
 
 // 1. Today's Sales

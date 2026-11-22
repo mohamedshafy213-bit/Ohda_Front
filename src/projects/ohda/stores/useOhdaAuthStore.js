@@ -60,7 +60,8 @@ export const useOhdaAuthStore = defineStore("ohdaAuth", {
             "/ohda/scan",
             "/ohda/branches-dashboard",
             "/ohda/branches",
-            "/ohda/lookups"
+            "/ohda/lookups",
+            "/ohda/settings"
           ];
         }
         return [
@@ -83,7 +84,8 @@ export const useOhdaAuthStore = defineStore("ohdaAuth", {
           "/ohda/expenses",
           "/ohda/month-closing",
           "/ohda/employees",
-          "/ohda/lookups"
+          "/ohda/lookups",
+          "/ohda/settings"
         ];
       }
 
@@ -134,8 +136,9 @@ export const useOhdaAuthStore = defineStore("ohdaAuth", {
         if (!paths.includes("/ohda/employees")) paths.push("/ohda/employees");
         if (!paths.includes("/ohda/categories")) paths.push("/ohda/categories");
         if (!paths.includes("/ohda/barcode-print")) paths.push("/ohda/barcode-print");
-        if (isAdmin || isSuper) {
+        if (isAdmin || isSuper || this.isManager) {
           if (!paths.includes("/ohda/lookups")) paths.push("/ohda/lookups");
+          if (!paths.includes("/ohda/settings")) paths.push("/ohda/settings");
         }
       }
 

@@ -145,6 +145,12 @@ export default [
         name: "OhdaLookups",
         component: () => import("./pages/LookupsPage.vue")
       },
+      // Workshop Settings & Branding
+      {
+        path: "settings",
+        name: "OhdaBranchSettings",
+        component: () => import("./pages/BranchSettingsPage.vue")
+      },
       // Platform / SuperAdmin Branches
       {
         path: "branches",
