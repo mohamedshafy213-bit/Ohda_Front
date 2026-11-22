@@ -320,11 +320,11 @@
         <div class="p-4 rounded-2xl bg-brand-light/50 dark:bg-white/5 border border-brand-gray/15 flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div class="flex items-center gap-3">
             <div class="w-11 h-11 rounded-2xl bg-brand-accent/20 text-brand-dark dark:text-white font-bold flex items-center justify-center text-base">
-              {{ activeClient.name.charAt(0) }}
+              {{ (activeClient?.name || 'ع').charAt(0) }}
             </div>
             <div>
               <div class="flex items-center gap-2">
-                <span class="font-bold text-sm text-brand-dark dark:text-white">{{ activeClient.name }}</span>
+                <span class="font-bold text-sm text-brand-dark dark:text-white">{{ activeClient?.name || '' }}</span>
                 <span
                   class="px-2 py-0.5 rounded text-[10px] font-bold"
                   :class="activeClient.type === 2 ? 'bg-blue-500/15 text-blue-700 dark:text-blue-300' : 'bg-black/5 dark:bg-white/10 text-brand-gray'"
@@ -1249,22 +1249,22 @@ const tableColumns = [
 ];
 
 const filteredClients = computed(() => {
-  let list = clientStore.clients;
+  let list = clientStore.clients || [];
   if (typeFilter.value) {
-    list = list.filter((c) => c.type === typeFilter.value);
+    list = list.filter((c) => c && c.type === typeFilter.value);
   }
   if (tagFilter.value) {
-    list = list.filter((c) => c.tags?.some((t) => t.tagLookupValueId === tagFilter.value));
+    list = list.filter((c) => c && c.tags?.some((t) => t.tagLookupValueId === tagFilter.value));
   }
   if (hasBalanceFilter.value) {
-    list = list.filter((c) => c.currentBalance > 0);
+    list = list.filter((c) => c && c.currentBalance > 0);
   }
   return list;
 });
 
 const clientJobCards = computed(() => {
   if (!activeClient.value?.id) return [];
-  return jobCardStore.jobs.filter((j) => j.clientId === activeClient.value.id);
+  return (jobCardStore.jobs || []).filter((j) => j && j.clientId === activeClient.value.id);
 });
 
 function handleSearchInput() {

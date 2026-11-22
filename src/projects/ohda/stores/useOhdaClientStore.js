@@ -11,21 +11,21 @@ export const useOhdaClientStore = defineStore("ohdaClient", {
   }),
 
   getters: {
-    totalClients: (state) => state.clients.length,
+    totalClients: (state) => (state.clients || []).length,
     totalReceivables: (state) =>
-      state.clients
-        .filter((c) => c.currentBalance > 0)
+      (state.clients || [])
+        .filter((c) => c && c.currentBalance > 0)
         .reduce((acc, c) => acc + (Number(c.currentBalance) || 0), 0),
     owingClientsCount: (state) =>
-      state.clients.filter((c) => c.currentBalance > 0).length,
+      (state.clients || []).filter((c) => c && c.currentBalance > 0).length,
     totalVehicles: (state) =>
-      state.clients.reduce((acc, c) => acc + (Number(c.vehiclesCount) || (c.vehicles?.length) || 0), 0),
+      (state.clients || []).reduce((acc, c) => acc + (Number(c?.vehiclesCount) || (c?.vehicles?.length) || 0), 0),
     totalSpentAll: (state) =>
-      state.clients.reduce((acc, c) => acc + (Number(c.totalSpent) || 0), 0),
+      (state.clients || []).reduce((acc, c) => acc + (Number(c?.totalSpent) || 0), 0),
     individualClientsCount: (state) =>
-      state.clients.filter((c) => c.type === 1 || !c.type).length,
+      (state.clients || []).filter((c) => c && (c.type === 1 || !c.type)).length,
     companyClientsCount: (state) =>
-      state.clients.filter((c) => c.type === 2).length
+      (state.clients || []).filter((c) => c && c.type === 2).length
   },
 
   actions: {
