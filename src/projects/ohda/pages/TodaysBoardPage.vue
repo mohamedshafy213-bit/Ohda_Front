@@ -164,7 +164,7 @@
           <!-- Linked Job Card Badge -->
           <div v-if="bk.convertedJobCardId" class="mt-2.5 p-2 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-800 dark:text-emerald-300 text-xs font-bold flex items-center justify-between">
             <span>مرتبط بأمر الشغل:</span>
-            <router-link to="/ohda/job-cards" class="font-mono underline">
+            <router-link to="/ohda/jobs" class="font-mono underline">
               {{ bk.convertedJobCardNumber || ('JOB #' + bk.convertedJobCardId) }}
             </router-link>
           </div>
@@ -304,7 +304,7 @@ async function convertToJob(id) {
     });
     await loadBoard();
     if (res.singleObject?.jobId) {
-      router.push("/ohda/job-cards");
+      router.push("/ohda/jobs");
     }
   } catch (err) {
     toast.add({

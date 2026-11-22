@@ -27,8 +27,13 @@ export default [
       // Sales & Jobs
       {
         path: "jobs",
+        alias: ["job-cards"],
         name: "OhdaJobCards",
         component: () => import("./pages/JobCardsPage.vue")
+      },
+      {
+        path: "job-cards",
+        redirect: "/ohda/jobs"
       },
       {
         path: "clients",

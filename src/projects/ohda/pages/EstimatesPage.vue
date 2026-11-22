@@ -185,7 +185,7 @@
       <template #jobCard="{ data }">
         <div v-if="data.convertedToJobCardId">
           <router-link
-            :to="`/ohda/job-cards`"
+            :to="`/ohda/jobs`"
             class="inline-flex items-center gap-1 font-mono text-[11px] font-bold text-blue-600 dark:text-blue-400 bg-blue-500/10 px-2 py-0.5 rounded-md border border-blue-500/20 hover:underline"
           >
             <Wrench class="w-3 h-3" />
@@ -1076,7 +1076,7 @@ async function triggerConvertToJob(estimate) {
   const res = await estimateStore.convertToJob(estimate.id);
   if (res.success) {
     toastStore.showToast(res.message, "success");
-    router.push("/ohda/job-cards");
+    router.push("/ohda/jobs");
   } else {
     toastStore.showToast(res.message || "فشل تحويل عرض السعر", "error");
   }
