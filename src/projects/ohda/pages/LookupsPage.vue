@@ -155,55 +155,55 @@
           </template>
 
           <!-- Label Column (With Color Chip if any) -->
-          <template #labelAr="{ row }">
+          <template #labelAr="{ row, data }">
             <div class="flex items-center gap-2">
               <span
-                v-if="row.colorCode"
+                v-if="(row || data)?.colorCode"
                 class="w-3.5 h-3.5 rounded-full shrink-0 border border-black/15 shadow-2xs"
-                :style="{ backgroundColor: row.colorCode }"
+                :style="{ backgroundColor: (row || data)?.colorCode }"
               ></span>
-              <span class="font-bold text-brand-dark dark:text-white">{{ row.labelAr }}</span>
-              <span v-if="row.isDefault" class="px-1.5 py-0.2 rounded text-[9px] bg-brand-accent/30 text-brand-dark dark:text-white font-bold">
+              <span class="font-bold text-brand-dark dark:text-white">{{ (row || data)?.labelAr }}</span>
+              <span v-if="(row || data)?.isDefault" class="px-1.5 py-0.2 rounded text-[9px] bg-brand-accent/30 text-brand-dark dark:text-white font-bold">
                 افتراضي
               </span>
             </div>
           </template>
 
           <!-- Code Column -->
-          <template #value="{ row }">
+          <template #value="{ row, data }">
             <span class="font-mono text-xs px-2 py-0.5 rounded bg-black/5 dark:bg-white/5 text-brand-gray">
-              {{ row.value }}
+              {{ (row || data)?.value }}
             </span>
           </template>
 
           <!-- English Label Column -->
-          <template #labelEn="{ row }">
-            <span class="text-xs text-brand-gray font-sans">{{ row.labelEn || '—' }}</span>
+          <template #labelEn="{ row, data }">
+            <span class="text-xs text-brand-gray font-sans">{{ (row || data)?.labelEn || '—' }}</span>
           </template>
 
           <!-- Sort Order Column -->
-          <template #sortOrder="{ row }">
-            <span class="font-mono text-xs text-slate-500">{{ row.sortOrder }}</span>
+          <template #sortOrder="{ row, data }">
+            <span class="font-mono text-xs text-slate-500">{{ (row || data)?.sortOrder }}</span>
           </template>
 
           <!-- Status Column (Toggle) -->
-          <template #isActive="{ row }">
+          <template #isActive="{ row, data }">
             <button
               type="button"
-              @click="toggleActiveStatus(row)"
+              @click="toggleActiveStatus(row || data)"
               class="px-2.5 py-1 rounded-full text-[10px] font-bold cursor-pointer transition-colors"
-              :class="row.isActive ? 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-500/25' : 'bg-rose-500/15 text-rose-700 dark:text-rose-300 hover:bg-rose-500/25'"
+              :class="(row || data)?.isActive ? 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-500/25' : 'bg-rose-500/15 text-rose-700 dark:text-rose-300 hover:bg-rose-500/25'"
             >
-              {{ row.isActive ? 'نشط' : 'معطل' }}
+              {{ (row || data)?.isActive ? 'نشط' : 'معطل' }}
             </button>
           </template>
 
           <!-- Actions Column -->
-          <template #actions="{ row }">
+          <template #actions="{ row, data }">
             <div class="flex items-center justify-center gap-1.5">
               <button
                 type="button"
-                @click="openEditValueModal(row)"
+                @click="openEditValueModal(row || data)"
                 title="تعديل"
                 class="p-1.5 rounded-lg text-brand-gray hover:text-brand-dark dark:hover:text-white hover:bg-black/5 dark:hover:bg-white/10 transition-colors cursor-pointer"
               >
@@ -212,7 +212,7 @@
 
               <button
                 type="button"
-                @click="confirmDeleteValue(row)"
+                @click="confirmDeleteValue(row || data)"
                 title="حذف"
                 class="p-1.5 rounded-lg text-rose-500 hover:text-rose-700 hover:bg-rose-500/10 transition-colors cursor-pointer"
               >

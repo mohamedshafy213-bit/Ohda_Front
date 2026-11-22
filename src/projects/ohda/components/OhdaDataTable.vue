@@ -64,7 +64,7 @@
                 ]"
               >
                 <!-- Custom Slot for Field -->
-                <slot :name="col.field" :data="row" :index="idx">
+                <slot :name="col.field" :data="row" :row="row" :index="idx">
                   <span v-if="row[col.field] !== undefined && row[col.field] !== null">
                     {{ row[col.field] }}
                   </span>

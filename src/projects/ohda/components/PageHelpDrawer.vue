@@ -194,6 +194,16 @@ import { useRoute } from "vue-router";
 import { useI18n } from "vue-i18n";
 import { pageGuides } from "../constants/pageGuides.js";
 import { getCurrentLocale } from "@/i18n";
+import { 
+  Search, 
+  HelpCircle, 
+  Sliders, 
+  CheckSquare, 
+  AlertCircle, 
+  AlertTriangle 
+} from "lucide-vue-next";
+import Dialog from "primevue/dialog";
+import SecondaryButton from "@/volt/SecondaryButton.vue";
 
 const props = defineProps({
   modelValue: {

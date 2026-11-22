@@ -156,28 +156,28 @@
       </template>
 
       <!-- Name & Type & Tags Column -->
-      <template #name="{ row }">
+      <template #name="{ row, data }">
         <div class="space-y-1">
           <div class="flex items-center gap-2 flex-wrap">
             <button
               type="button"
-              @click="openCustomer360Modal(row)"
+              @click="openCustomer360Modal(row || data)"
               class="font-bold text-brand-dark dark:text-white hover:text-brand-accent transition-colors text-right cursor-pointer"
             >
-              {{ row.name }}
+              {{ (row || data)?.name }}
             </button>
             <span
               class="px-2 py-0.5 rounded-md text-[10px] font-bold"
-              :class="row.type === 2 ? 'bg-blue-500/15 text-blue-700 dark:text-blue-300' : 'bg-black/5 dark:bg-white/10 text-brand-gray'"
+              :class="(row || data)?.type === 2 ? 'bg-blue-500/15 text-blue-700 dark:text-blue-300' : 'bg-black/5 dark:bg-white/10 text-brand-gray'"
             >
-              {{ row.typeName }}
+              {{ (row || data)?.typeName }}
             </span>
           </div>
 
           <!-- Tags Chips -->
-          <div v-if="row.tags && row.tags.length" class="flex items-center gap-1 flex-wrap">
+          <div v-if="(row || data)?.tags && (row || data)?.tags.length" class="flex items-center gap-1 flex-wrap">
             <span
-              v-for="t in row.tags"
+              v-for="t in (row || data)?.tags"
               :key="t.id"
               class="px-1.5 py-0.2 rounded text-[9px] font-semibold flex items-center gap-1 border border-black/10"
               :style="{ backgroundColor: (t.colorCode || '#8b5cf6') + '22', color: t.colorCode || '#8b5cf6' }"
@@ -190,24 +190,24 @@
       </template>
 
       <!-- Phones Column -->
-      <template #phone="{ row }">
+      <template #phone="{ row, data }">
         <div>
           <div class="font-mono text-xs font-bold text-brand-dark dark:text-white flex items-center gap-1">
             <Phone class="w-3 h-3 text-brand-accent shrink-0" />
-            <span dir="ltr">{{ row.phone }}</span>
+            <span dir="ltr">{{ (row || data)?.phone }}</span>
           </div>
-          <div v-if="row.secondPhone" class="font-mono text-[10px] text-brand-gray mt-0.5" dir="ltr">
-            {{ row.secondPhone }}
+          <div v-if="(row || data)?.secondPhone" class="font-mono text-[10px] text-brand-gray mt-0.5" dir="ltr">
+            {{ (row || data)?.secondPhone }}
           </div>
         </div>
       </template>
 
       <!-- Vehicles Column -->
-      <template #vehicles="{ row }">
+      <template #vehicles="{ row, data }">
         <div>
-          <div v-if="row.vehicles && row.vehicles.length" class="flex items-center gap-1.5 flex-wrap">
+          <div v-if="(row || data)?.vehicles && (row || data)?.vehicles.length" class="flex items-center gap-1.5 flex-wrap">
             <span
-              v-for="v in row.vehicles"
+              v-for="v in (row || data)?.vehicles"
               :key="v.id"
               class="px-2 py-0.5 rounded-lg bg-brand-light/60 dark:bg-white/5 border border-brand-gray/20 font-mono text-[11px] font-bold text-brand-dark dark:text-white flex items-center gap-1"
             >
@@ -216,8 +216,8 @@
               <span v-if="v.model" class="text-[9px] text-brand-gray font-sans">({{ v.brandName || v.brand || '' }} {{ v.model }})</span>
             </span>
           </div>
-          <div v-else-if="row.carPlate" class="font-mono text-xs text-brand-gray">
-            {{ row.carPlate }} {{ row.carModel ? `(${row.carModel})` : '' }}
+          <div v-else-if="(row || data)?.carPlate" class="font-mono text-xs text-brand-gray">
+            {{ (row || data)?.carPlate }} {{ (row || data)?.carModel ? `(${(row || data)?.carModel})` : '' }}
           </div>
           <div v-else class="text-[11px] text-brand-gray/60">
             لا توجد مركبات
@@ -226,42 +226,42 @@
       </template>
 
       <!-- Balance Column -->
-      <template #currentBalance="{ row }">
+      <template #currentBalance="{ row, data }">
         <div>
           <span
             class="font-mono font-bold px-2.5 py-1 rounded-xl text-xs inline-block"
-            :class="getBalanceBadgeClass(row.currentBalance)"
+            :class="getBalanceBadgeClass((row || data)?.currentBalance || 0)"
           >
-            {{ formatCurrency(Math.abs(row.currentBalance)) }}
+            {{ formatCurrency(Math.abs((row || data)?.currentBalance || 0)) }}
           </span>
           <div
             class="text-[10px] font-semibold mt-0.5"
-            :class="row.currentBalance > 0 ? 'text-red-600 dark:text-red-400 font-bold' : row.currentBalance < 0 ? 'text-emerald-600' : 'text-brand-gray'"
+            :class="((row || data)?.currentBalance || 0) > 0 ? 'text-red-600 dark:text-red-400 font-bold' : ((row || data)?.currentBalance || 0) < 0 ? 'text-emerald-600' : 'text-brand-gray'"
           >
-            {{ row.balanceStatus }}
+            {{ (row || data)?.balanceStatus }}
           </div>
         </div>
       </template>
 
       <!-- Stats: Total Spent & Visits -->
-      <template #stats="{ row }">
+      <template #stats="{ row, data }">
         <div class="text-xs">
           <div class="font-mono font-bold text-brand-dark dark:text-white">
-            {{ formatCurrency(row.totalSpent || 0) }}
+            {{ formatCurrency((row || data)?.totalSpent || 0) }}
           </div>
           <div class="text-[10px] text-brand-gray mt-0.5">
-            {{ row.visitsCount || 0 }} زيارات &bull; {{ row.lastVisitDate ? formatDate(row.lastVisitDate) : 'لم يسجل' }}
+            {{ (row || data)?.visitsCount || 0 }} زيارات &bull; {{ (row || data)?.lastVisitDate ? formatDate((row || data)?.lastVisitDate) : 'لم يسجل' }}
           </div>
         </div>
       </template>
 
       <!-- Actions Column -->
-      <template #actions="{ row }">
+      <template #actions="{ row, data }">
         <div class="flex items-center justify-center gap-1.5">
           <!-- 360 CRM Hub Action -->
           <button
             type="button"
-            @click="openCustomer360Modal(row)"
+            @click="openCustomer360Modal(row || data)"
             class="px-2.5 py-1.5 bg-brand-soft hover:bg-brand-accent/20 text-brand-dark dark:text-white rounded-xl text-[11px] font-bold transition-colors cursor-pointer flex items-center gap-1 border border-brand-accent/20"
             title="ملف العميل الكامل ومركباته"
           >
@@ -272,7 +272,7 @@
           <!-- Record Payment Action -->
           <button
             type="button"
-            @click="openPaymentModal(row)"
+            @click="openPaymentModal(row || data)"
             class="px-2 py-1.5 bg-emerald-500/10 hover:bg-emerald-500 text-emerald-700 hover:text-white rounded-xl text-[11px] font-bold transition-colors cursor-pointer flex items-center gap-1"
             title="تحصيل دفعة مالية"
           >
@@ -283,7 +283,7 @@
           <!-- Edit Action -->
           <button
             type="button"
-            @click="openEditModal(row)"
+            @click="openEditModal(row || data)"
             class="p-1.5 rounded-lg text-brand-gray hover:text-brand-dark dark:hover:text-white hover:bg-black/5 dark:hover:bg-white/10 transition-colors cursor-pointer"
             title="تعديل بيانات العميل"
           >
@@ -293,7 +293,7 @@
           <!-- Delete Action -->
           <button
             type="button"
-            @click="confirmDelete(row)"
+            @click="confirmDelete(row || data)"
             class="p-1.5 rounded-lg text-rose-500 hover:bg-rose-500/10 transition-colors cursor-pointer"
             title="حذف العميل"
           >

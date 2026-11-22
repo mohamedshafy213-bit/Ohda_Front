@@ -68,6 +68,10 @@ export const useOhdaLookupStore = defineStore("ohdaLookup", {
       return {};
     },
 
+    async fetchLookups() {
+      return await this.fetchAllActive();
+    },
+
     async createValue(dto) {
       this.loading = true;
       try {
