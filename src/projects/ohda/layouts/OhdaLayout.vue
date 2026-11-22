@@ -223,7 +223,18 @@ import { useOhdaNotificationStore } from "../stores/useOhdaNotificationStore";
 import { useI18n } from "vue-i18n";
 import PageHelpDrawer from "../components/PageHelpDrawer.vue";
 import ForceChangePasswordDialog from "../components/ForceChangePasswordDialog.vue";
-import { KeyRound } from "lucide-vue-next";
+import { 
+  KeyRound, 
+  Menu, 
+  Box, 
+  HelpCircle, 
+  CircleHelp,
+  Globe, 
+  Bell, 
+  User, 
+  LogOut, 
+  ChevronDown 
+} from "lucide-vue-next";
 import * as LucideIcons from "lucide-vue-next";
 
 function getIconComponent(iconName) {

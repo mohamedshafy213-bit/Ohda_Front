@@ -28,8 +28,9 @@ export const useOhdaAuthStore = defineStore("ohdaAuth", {
     userName: (state) => state.user?.personName || state.user?.username || "مستخدم",
     branchId: (state) => state.user?.branchId || state.user?.BranchId || null,
     branchName: (state) => state.user?.branchName || state.user?.BranchName || "",
-    allowedPaths: (state) => {
-      const isSuper = state.user?.role === 0 || state.user?.role === "SuperAdmin" || state.user?.role === "0";
+    allowedPaths(state) {
+      const isSuper = this.isSuperAdmin;
+      const isAdmin = this.isAdmin;
       const pages = state.allowedPages || [];
 
       if (!pages.length) {
@@ -146,47 +147,48 @@ export const useOhdaAuthStore = defineStore("ohdaAuth", {
       return [...new Set(paths)];
     },
 
-    isRouteAllowed: (state) => (routePath) => {
-      if (!routePath) return false;
-      let path = routePath.toLowerCase().trim();
-      if (!path.startsWith("/ohda")) {
-        path = `/ohda${path}`;
-      }
-      if (path.length > 5 && path.endsWith("/")) {
-        path = path.slice(0, -1);
-      }
-
-      // SuperAdmin has full access
-      const isSuper = state.user?.role === 0 || state.user?.role === "SuperAdmin" || state.user?.role === "0";
-      if (isSuper) return true;
-
-      // Platform branches management is strictly SuperAdmin only
-      if (path === "/ohda/branches" || path === "/ohda/branches-dashboard") {
-        return false;
-      }
-
-      if (path.startsWith("/ohda/branches/")) {
-        const parts = path.split("/");
-        const bId = parseInt(parts[3]);
-        return (state.user?.branchId === bId);
-      }
-
-      // Filter based on the pages assigned to this user!
-      const allowed = state.allowedPaths || [];
-      if (allowed.includes(path)) return true;
-
-      // Allow acceptance page for managers, supervisors, admins, or if granted
-      if (path === "/ohda/acceptance") {
-        if (isSuper || state.user?.role === 1 || state.user?.role === 3 || state.user?.role === 4 || state.user?.role === "Manager" || state.user?.role === "Supervisor" || state.user?.role === "Admin") {
-          return true;
+    isRouteAllowed(state) {
+      return (routePath) => {
+        if (!routePath) return false;
+        let path = routePath.toLowerCase().trim();
+        if (!path.startsWith("/ohda")) {
+          path = `/ohda${path}`;
         }
-      }
+        if (path.length > 5 && path.endsWith("/")) {
+          path = path.slice(0, -1);
+        }
 
-      if (path === "/ohda/lookups") {
-        return isSuper || state.user?.role === 1 || state.user?.role === "Admin" || state.user?.role === "SuperAdmin";
-      }
+        const isSuper = this.isSuperAdmin;
+        if (isSuper) return true;
 
-      return false;
+        // Platform branches management is strictly SuperAdmin only
+        if (path === "/ohda/branches" || path === "/ohda/branches-dashboard") {
+          return false;
+        }
+
+        if (path.startsWith("/ohda/branches/")) {
+          const parts = path.split("/");
+          const bId = parseInt(parts[3]);
+          return (this.user?.branchId === bId);
+        }
+
+        // Filter based on the pages assigned to this user!
+        const allowed = this.allowedPaths || [];
+        if (allowed.includes(path)) return true;
+
+        // Allow acceptance page for managers, supervisors, admins, or if granted
+        if (path === "/ohda/acceptance") {
+          if (isSuper || this.isAdmin || this.isSupervisor || this.isManager) {
+            return true;
+          }
+        }
+
+        if (path === "/ohda/lookups") {
+          return this.isAdmin || isSuper;
+        }
+
+        return false;
+      };
     }
   },
   actions: {
