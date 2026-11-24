@@ -210,6 +210,20 @@ export const useOhdaBookingStore = defineStore("ohdaBookings", () => {
     }
   }
 
+  async function createInstantWalkIn(data) {
+    loading.value = true;
+    error.value = null;
+    try {
+      const res = await apiClient.post("/api/Bookings/instant-walkin", data);
+      return { success: true, data: res.data?.singleObject || res.data };
+    } catch (err) {
+      error.value = err.response?.data?.returnMessage || err.message || "تعذر تسجيل الحضور الفوري";
+      return { success: false, message: error.value };
+    } finally {
+      loading.value = false;
+    }
+  }
+
   async function fetchTodaysBoard() {
     loading.value = true;
     error.value = null;
@@ -259,6 +273,7 @@ export const useOhdaBookingStore = defineStore("ohdaBookings", () => {
     createBooking,
     updateBookingStatus,
     convertToJob,
+    createInstantWalkIn,
     fetchTodaysBoard,
     fetchCapacityIndicator
   };

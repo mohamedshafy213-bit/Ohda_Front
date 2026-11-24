@@ -64,29 +64,33 @@ export const useOhdaAuthStore = defineStore("ohdaAuth", {
             "/ohda/settings"
           ];
         }
-        return [
-          "/ohda/dashboard",
-          "/ohda/jobs",
-          "/ohda/clients",
-          "/ohda/estimates",
-          "/ohda/reminders",
-          "/ohda/bookings-calendar",
-          "/ohda/todays-board",
-          "/ohda/bays-settings",
-          "/ohda/reports",
-          "/ohda/products",
-          "/ohda/services",
-          "/ohda/purchases",
-          "/ohda/returns",
-          "/ohda/suppliers",
-          "/ohda/categories",
-          "/ohda/finance",
-          "/ohda/expenses",
-          "/ohda/month-closing",
-          "/ohda/employees",
-          "/ohda/lookups",
-          "/ohda/settings"
-        ];
+        if (isAdmin && (!state.user?.userGroupId || state.user?.userGroupId === 0)) {
+          return [
+            "/ohda/dashboard",
+            "/ohda/jobs",
+            "/ohda/clients",
+            "/ohda/estimates",
+            "/ohda/reminders",
+            "/ohda/bookings-calendar",
+            "/ohda/todays-board",
+            "/ohda/bays-settings",
+            "/ohda/reports",
+            "/ohda/products",
+            "/ohda/services",
+            "/ohda/purchases",
+            "/ohda/returns",
+            "/ohda/suppliers",
+            "/ohda/categories",
+            "/ohda/finance",
+            "/ohda/expenses",
+            "/ohda/month-closing",
+            "/ohda/employees",
+            "/ohda/users",
+            "/ohda/lookups",
+            "/ohda/settings"
+          ];
+        }
+        return [];
       }
 
       // Map whatever pages are assigned to this user to standardized routes
@@ -96,7 +100,7 @@ export const useOhdaAuthStore = defineStore("ohdaAuth", {
         if (!raw) return null;
         let norm = raw.toLowerCase().trim();
         if (!norm.startsWith("/ohda")) {
-          norm = `/ohda${norm}`;
+          norm = `/ohda${norm.startsWith("/") ? "" : "/"}${norm}`;
         }
         if (norm.length > 5 && norm.endsWith("/")) {
           norm = norm.slice(0, -1);
@@ -116,37 +120,6 @@ export const useOhdaAuthStore = defineStore("ohdaAuth", {
         if (!paths.includes("/ohda/branches")) paths.push("/ohda/branches");
       }
 
-      // If products or inventory are accessible, ensure full workshop modules are available
-      if (paths.includes("/ohda/products") || paths.includes("/ohda/inventory") || paths.includes("/ohda/dashboard")) {
-        if (!paths.includes("/ohda/jobs")) paths.push("/ohda/jobs");
-        if (!paths.includes("/ohda/clients")) paths.push("/ohda/clients");
-        if (!paths.includes("/ohda/estimates")) paths.push("/ohda/estimates");
-        if (!paths.includes("/ohda/reminders")) paths.push("/ohda/reminders");
-        if (!paths.includes("/ohda/bookings-calendar")) paths.push("/ohda/bookings-calendar");
-        if (!paths.includes("/ohda/todays-board")) paths.push("/ohda/todays-board");
-        if (!paths.includes("/ohda/bays-settings")) paths.push("/ohda/bays-settings");
-        if (!paths.includes("/ohda/reports")) paths.push("/ohda/reports");
-        if (!paths.includes("/ohda/services")) paths.push("/ohda/services");
-        if (!paths.includes("/ohda/purchases")) paths.push("/ohda/purchases");
-        if (!paths.includes("/ohda/returns")) paths.push("/ohda/returns");
-        if (!paths.includes("/ohda/suppliers")) paths.push("/ohda/suppliers");
-        if (!paths.includes("/ohda/finance")) paths.push("/ohda/finance");
-        if (!paths.includes("/ohda/expenses")) paths.push("/ohda/expenses");
-        if (!paths.includes("/ohda/month-closing")) paths.push("/ohda/month-closing");
-        if (!paths.includes("/ohda/employees")) paths.push("/ohda/employees");
-        if (!paths.includes("/ohda/categories")) paths.push("/ohda/categories");
-        if (!paths.includes("/ohda/barcode-print")) paths.push("/ohda/barcode-print");
-        if (isAdmin || isSuper || this.isManager) {
-          if (!paths.includes("/ohda/lookups")) paths.push("/ohda/lookups");
-          if (!paths.includes("/ohda/settings")) paths.push("/ohda/settings");
-        }
-      }
-
-      // Ensure dashboard is always present as base landing
-      if (!paths.includes("/ohda/dashboard")) {
-        paths.unshift("/ohda/dashboard");
-      }
-
       return [...new Set(paths)];
     },
 
@@ -155,7 +128,7 @@ export const useOhdaAuthStore = defineStore("ohdaAuth", {
         if (!routePath) return false;
         let path = routePath.toLowerCase().trim();
         if (!path.startsWith("/ohda")) {
-          path = `/ohda${path}`;
+          path = `/ohda${path.startsWith("/") ? "" : "/"}${path}`;
         }
         if (path.length > 5 && path.endsWith("/")) {
           path = path.slice(0, -1);
@@ -175,22 +148,9 @@ export const useOhdaAuthStore = defineStore("ohdaAuth", {
           return (this.user?.branchId === bId);
         }
 
-        // Filter based on the pages assigned to this user!
+        // Filter strictly based on the pages assigned to this user!
         const allowed = this.allowedPaths || [];
-        if (allowed.includes(path)) return true;
-
-        // Allow acceptance page for managers, supervisors, admins, or if granted
-        if (path === "/ohda/acceptance") {
-          if (isSuper || this.isAdmin || this.isSupervisor || this.isManager) {
-            return true;
-          }
-        }
-
-        if (path === "/ohda/lookups") {
-          return this.isAdmin || isSuper;
-        }
-
-        return false;
+        return allowed.includes(path);
       };
     }
   },

@@ -28,8 +28,8 @@
         <KeyRound class="w-5 h-5 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
         <div class="text-xs text-amber-900 dark:text-amber-200 leading-relaxed font-medium">
           {{ isAr 
-            ? 'تم تسجيل الدخول بكلمة المرور الافتراضية (P@ssw0rd). لأسباب أمنية، يتوجب عليك إنشاء كلمة مرور قوية خاصة بك قبل البدء في استخدام النظام.'
-            : 'You logged in with the default password (P@ssw0rd). For security, you must set a new strong password before proceeding.' }}
+            ? 'تم تسجيل الدخول بكلمة المرور الافتراضية (123456). لأسباب أمنية، يتوجب عليك إنشاء كلمة مرور جديدة خاصة بك قبل البدء في استخدام النظام.'
+            : 'You logged in with the default password (123456). For security, you must set a new strong password before proceeding.' }}
         </div>
       </div>
 
@@ -52,7 +52,7 @@
               v-model="form.currentPassword"
               :type="showCurrent ? 'text' : 'password'"
               required
-              placeholder="P@ssw0rd"
+              placeholder="123456"
               class="w-full ps-9 pe-10 py-2.5 rounded-xl text-xs bg-brand-light dark:bg-white/5 border border-brand-gray/25 text-brand-dark dark:text-white focus:outline-none focus:border-brand-accent font-sans"
             />
             <button
@@ -218,7 +218,7 @@ async function handleSubmit() {
     return;
   }
 
-  if (form.value.newPassword.toLowerCase() === "p@ssw0rd") {
+  if (form.value.newPassword === "123456" || form.value.newPassword.toLowerCase() === "p@ssw0rd") {
     errorMessage.value = isAr.value ? "لا يمكن استخدام كلمة المرور الافتراضية ككلمة مرور جديدة" : "Cannot use default password as new password";
     return;
   }

@@ -24,14 +24,13 @@
           <span>تصدير Excel</span>
         </button>
 
-        <button
-          type="button"
-          @click="openCreateModal"
+        <router-link
+          to="/ohda/todays-board"
           class="bg-brand-accent hover:bg-brand-accent/90 text-brand-dark font-bold rounded-xl px-4 py-2.5 text-xs flex items-center gap-2 shadow-md shadow-brand-accent/10 transition-all cursor-pointer"
         >
           <Plus class="w-4 h-4" />
-          <span>إنشاء أمر شغل جديد</span>
-        </button>
+          <span>بدء عمل من الحجوزات أو حضور فوري</span>
+        </router-link>
       </div>
     </div>
 
@@ -154,14 +153,13 @@
       class="print:hidden"
     >
       <template #empty-action>
-        <button
-          type="button"
-          @click="openCreateModal"
+        <router-link
+          to="/ohda/todays-board"
           class="inline-flex items-center gap-2 px-4 py-2 bg-brand-accent text-brand-dark font-bold text-xs rounded-xl shadow-sm cursor-pointer hover:bg-brand-accent/90"
         >
           <Plus class="w-4 h-4" />
-          <span>إنشاء أمر شغل جديد</span>
-        </button>
+          <span>الانتقال للحجوزات لبدء عمل أو تسجيل حضور</span>
+        </router-link>
       </template>
 
       <!-- Job Number & Date -->
@@ -326,10 +324,16 @@
               <label class="block font-semibold mb-1">رقم الهاتف</label>
               <input
                 v-model="form.customerPhone"
-                type="text"
+                @keypress="allowOnlyNumbers"
+                @input="form.customerPhone = filterPhone(form.customerPhone)"
+                maxlength="15"
+                type="tel"
                 placeholder="010XXXXXXXX"
                 class="w-full px-3.5 py-2.5 rounded-xl border border-brand-gray/25 bg-white dark:bg-brand-dark text-brand-dark dark:text-white text-xs font-mono focus:border-brand-accent transition-all"
               />
+              <p v-if="form.customerPhone && !isValidPhone(form.customerPhone)" class="text-[10px] text-amber-500 mt-1">
+                رقم الهاتف يجب أن يتكون من 7 إلى 15 رقماً.
+              </p>
             </div>
           </div>
 
@@ -881,6 +885,7 @@ import OhdaModal from "../components/OhdaModal.vue";
 import searchField from "@/components/searchField.vue";
 import LoadingSkeleton from "@/components/LoadingSkeleton.vue";
 import { exportToExcelCsv } from "../utils/excelHelper";
+import { filterPhone, isValidPhone, allowOnlyNumbers } from "@/utilities/validations";
 
 import {
   FileText,

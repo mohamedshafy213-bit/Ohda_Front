@@ -35,7 +35,9 @@ export const useOhdaFinanceStore = defineStore("ohdaFinance", {
       return state.accounts
         .filter(a => a.accountType === 3)
         .reduce((sum, a) => sum + (Number(a.currentBalance) || 0), 0);
-    }
+    },
+
+    isDrawerOpen: (state) => !!state.hasActiveDrawer
   },
 
   actions: {
@@ -76,6 +78,57 @@ export const useOhdaFinanceStore = defineStore("ohdaFinance", {
         return {
           success: false,
           message: err?.response?.data?.returnMessage || err.message || "حدث خطأ أثناء إنشاء الحساب"
+        };
+      } finally {
+        this.loading = false;
+      }
+    },
+
+    async updateAccount(id, payload) {
+      this.loading = true;
+      try {
+        const res = await apiPut(`/api/Finance/accounts/${id}`, payload);
+        if (res?.data?.isDone) {
+          await this.fetchAccounts();
+          return {
+            success: true,
+            message: res?.data?.returnMessage || "تم تحديث بيانات الحساب بنجاح",
+            data: res.data.singleObject
+          };
+        }
+        return {
+          success: false,
+          message: res?.data?.returnMessage || "فشل تحديث الحساب"
+        };
+      } catch (err) {
+        return {
+          success: false,
+          message: err?.response?.data?.returnMessage || err.message || "حدث خطأ أثناء تحديث الحساب"
+        };
+      } finally {
+        this.loading = false;
+      }
+    },
+
+    async deleteAccount(id) {
+      this.loading = true;
+      try {
+        const res = await apiDelete(`/api/Finance/accounts/${id}`);
+        if (res?.data?.isDone) {
+          await this.fetchAccounts();
+          return {
+            success: true,
+            message: res?.data?.returnMessage || "تم حذف الحساب بنجاح"
+          };
+        }
+        return {
+          success: false,
+          message: res?.data?.returnMessage || "فشل حذف الحساب"
+        };
+      } catch (err) {
+        return {
+          success: false,
+          message: err?.response?.data?.returnMessage || err.message || "حدث خطأ أثناء حذف الحساب"
         };
       } finally {
         this.loading = false;
@@ -188,6 +241,10 @@ export const useOhdaFinanceStore = defineStore("ohdaFinance", {
       } catch (err) {
         console.warn("Fetch closing history failed", err);
       }
+    },
+
+    async fetchDailyClosing() {
+      return await this.fetchCurrentDrawerSession();
     },
 
     async fetchCurrentDrawerSession() {

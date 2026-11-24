@@ -149,7 +149,25 @@
                 <component :is="getAccountTypeIcon(acc.accountType)" class="w-3 h-3" />
                 {{ acc.accountTypeName }}
               </span>
-              <span class="w-2 h-2 rounded-full" :class="acc.isActive ? 'bg-emerald-400' : 'bg-slate-400'"></span>
+              <div class="flex items-center gap-1.5">
+                <button
+                  type="button"
+                  @click.stop="openEditAccountModal(acc)"
+                  title="تعديل الحساب"
+                  class="p-1 rounded-lg text-slate-400 hover:text-brand-accent hover:bg-brand-accent/10 transition-colors cursor-pointer"
+                >
+                  <Pencil class="w-3.5 h-3.5" />
+                </button>
+                <button
+                  type="button"
+                  @click.stop="promptDeleteAccount(acc)"
+                  title="حذف الحساب"
+                  class="p-1 rounded-lg text-slate-400 hover:text-rose-500 hover:bg-rose-500/10 transition-colors cursor-pointer"
+                >
+                  <Trash2 class="w-3.5 h-3.5" />
+                </button>
+                <span class="w-2 h-2 rounded-full ms-1" :class="acc.isActive ? 'bg-emerald-400' : 'bg-slate-400'" :title="acc.isActive ? 'نشط' : 'معطل'"></span>
+              </div>
             </div>
 
             <h3 class="text-sm font-bold text-brand-dark dark:text-white">{{ acc.name }}</h3>
@@ -581,6 +599,131 @@
         </button>
       </template>
     </OhdaModal>
+
+    <!-- Edit Account Modal -->
+    <OhdaModal
+      :visible="showEditAccountModal"
+      @close="showEditAccountModal = false"
+      title="تعديل بيانات الحساب المالي"
+      description="تحديث اسم الحساب، النوع، رقم الحساب أو الملاحظات"
+      :icon="Landmark"
+      max-width="max-w-md"
+    >
+      <form @submit.prevent="submitEditAccount" id="editAccountForm" class="space-y-4 text-xs">
+        <div>
+          <label class="block font-semibold mb-1">اسم الحساب / الخزينة *</label>
+          <input
+            type="text"
+            v-model="editAccountForm.name"
+            required
+            placeholder="مثال: الخزينة الفرعية، حساب بنك مصر..."
+            class="w-full text-xs p-2.5 rounded-xl border border-brand-gray/20 dark:border-white/10 bg-transparent text-brand-dark dark:text-white focus:border-brand-accent transition-all"
+          />
+        </div>
+
+        <div>
+          <label class="block font-semibold mb-1">نوع الحساب *</label>
+          <select
+            v-model="editAccountForm.accountType"
+            required
+            class="w-full text-xs p-2.5 rounded-xl border border-brand-gray/20 dark:border-white/10 bg-transparent text-brand-dark dark:text-white focus:border-brand-accent transition-all"
+          >
+            <option :value="1" class="bg-white dark:bg-slate-800">خزينة نقدية (درج كاش)</option>
+            <option :value="2" class="bg-white dark:bg-slate-800">حساب بنكي</option>
+            <option :value="3" class="bg-white dark:bg-slate-800">محفظة إنستاباي</option>
+            <option :value="4" class="bg-white dark:bg-slate-800">محفظة إلكترونية</option>
+          </select>
+        </div>
+
+        <div>
+          <label class="block font-semibold mb-1">رقم الحساب / الآيبان / معرف المحفظة</label>
+          <input
+            type="text"
+            v-model="editAccountForm.accountNumber"
+            placeholder="رقم الحساب أو معرف إنستاباي..."
+            class="w-full text-xs p-2.5 rounded-xl border border-brand-gray/20 dark:border-white/10 bg-transparent text-brand-dark dark:text-white font-mono focus:border-brand-accent transition-all"
+          />
+        </div>
+
+        <div class="flex items-center gap-2 pt-1">
+          <input
+            type="checkbox"
+            id="accActive"
+            v-model="editAccountForm.isActive"
+            class="w-4 h-4 rounded text-brand-accent focus:ring-brand-accent cursor-pointer"
+          />
+          <label for="accActive" class="text-xs font-semibold text-brand-dark dark:text-white select-none cursor-pointer">
+            الحساب نشط ومتاح للتعامل
+          </label>
+        </div>
+
+        <div>
+          <label class="block font-semibold mb-1">ملاحظات</label>
+          <input
+            type="text"
+            v-model="editAccountForm.notes"
+            placeholder="وصف إضافي للحساب..."
+            class="w-full text-xs p-2.5 rounded-xl border border-brand-gray/20 dark:border-white/10 bg-transparent text-brand-dark dark:text-white focus:border-brand-accent transition-all"
+          />
+        </div>
+      </form>
+
+      <template #footer="{ close }">
+        <button
+          type="button"
+          @click="close"
+          class="px-4 py-2.5 rounded-xl text-xs font-bold text-slate-500 hover:text-slate-800 dark:hover:text-white cursor-pointer"
+        >
+          إلغاء
+        </button>
+        <button
+          type="submit"
+          form="editAccountForm"
+          :disabled="financeStore.loading"
+          class="px-5 py-2.5 rounded-xl text-xs font-bold bg-brand-accent hover:bg-brand-accent/90 text-brand-dark cursor-pointer shadow-sm disabled:opacity-50"
+        >
+          حفظ التعديلات
+        </button>
+      </template>
+    </OhdaModal>
+
+    <!-- Delete Confirmation Modal -->
+    <OhdaModal
+      :visible="showDeleteAccountModal"
+      @close="showDeleteAccountModal = false"
+      title="تأكيد حذف الحساب المالي"
+      description="يرجى الانتباه إلى أن هذا الإجراء سيقوم بإلغاء تنشيط الحساب"
+      :icon="AlertTriangle"
+      max-width="max-w-md"
+    >
+      <div v-if="accountToDelete" class="text-xs space-y-3">
+        <p class="text-brand-dark dark:text-white">
+          هل أنت متأكد من حذف الحساب:
+          <span class="font-bold text-rose-600">"{{ accountToDelete.name }}"</span>؟
+        </p>
+        <p v-if="accountToDelete.currentBalance !== 0" class="p-2.5 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-700 dark:text-amber-300 text-[11px]">
+          تنبيه: رصيد هذا الحساب الحالي هو <strong>{{ formatCurrency(accountToDelete.currentBalance) }}</strong>. يفضل تصفير الرصيد أو تحويله لحساب آخر قبل الحذف.
+        </p>
+      </div>
+
+      <template #footer="{ close }">
+        <button
+          type="button"
+          @click="close"
+          class="px-4 py-2.5 rounded-xl text-xs font-bold text-slate-500 hover:text-slate-800 dark:hover:text-white cursor-pointer"
+        >
+          إلغاء
+        </button>
+        <button
+          type="button"
+          @click="confirmDeleteAccount"
+          :disabled="financeStore.loading"
+          class="px-5 py-2.5 rounded-xl text-xs font-bold bg-rose-600 hover:bg-rose-700 text-white cursor-pointer shadow-sm disabled:opacity-50"
+        >
+          تأكيد الحذف
+        </button>
+      </template>
+    </OhdaModal>
   </div>
 </template>
 
@@ -609,7 +752,9 @@ import {
   AlertTriangle,
   ArrowUpRight,
   ArrowDownLeft,
-  ArrowLeft
+  ArrowLeft,
+  Pencil,
+  Trash2
 } from "lucide-vue-next";
 
 const financeStore = useOhdaFinanceStore();
@@ -625,6 +770,18 @@ const closingNotes = ref("");
 // Modals
 const showTransferModal = ref(false);
 const showAddAccountModal = ref(false);
+const showEditAccountModal = ref(false);
+const showDeleteAccountModal = ref(false);
+const accountToDelete = ref(null);
+
+const editAccountForm = ref({
+  id: null,
+  name: "",
+  accountType: 1,
+  accountNumber: "",
+  notes: "",
+  isActive: true
+});
 
 const transferForm = ref({
   fromAccountId: "",
@@ -808,6 +965,50 @@ async function submitAddAccount() {
   const res = await financeStore.createAccount(accountForm.value);
   if (res.success) {
     showAddAccountModal.value = false;
+  } else {
+    alert(res.message);
+  }
+}
+
+function openEditAccountModal(acc) {
+  editAccountForm.value = {
+    id: acc.id,
+    name: acc.name || "",
+    accountType: acc.accountType || 1,
+    accountNumber: acc.accountNumber || "",
+    notes: acc.notes || "",
+    isActive: acc.isActive ?? true
+  };
+  showEditAccountModal.value = true;
+}
+
+async function submitEditAccount() {
+  if (!editAccountForm.value.id) return;
+  const res = await financeStore.updateAccount(editAccountForm.value.id, {
+    name: editAccountForm.value.name,
+    accountType: editAccountForm.value.accountType,
+    accountNumber: editAccountForm.value.accountNumber,
+    notes: editAccountForm.value.notes,
+    isActive: editAccountForm.value.isActive
+  });
+  if (res.success) {
+    showEditAccountModal.value = false;
+  } else {
+    alert(res.message);
+  }
+}
+
+function promptDeleteAccount(acc) {
+  accountToDelete.value = acc;
+  showDeleteAccountModal.value = true;
+}
+
+async function confirmDeleteAccount() {
+  if (!accountToDelete.value) return;
+  const res = await financeStore.deleteAccount(accountToDelete.value.id);
+  if (res.success) {
+    showDeleteAccountModal.value = false;
+    accountToDelete.value = null;
   } else {
     alert(res.message);
   }

@@ -113,7 +113,7 @@
         :class="activeTab === 'groups' ? 'bg-brand-soft text-brand-accent border-brand-accent/30 shadow-sm' : 'text-brand-gray border-transparent hover:text-brand-dark hover:bg-brand-light'"
       >
         <ShieldCheck class="w-4 h-4 text-brand-accent" />
-        مجموعات الصلاحيات ({{ groupStore.groups.length }})
+        مجموعات الصلاحيات ({{ filteredGroups.length }})
       </button>
 
       <button
@@ -324,10 +324,10 @@
               </template>
             </Column>
 
-            <Column header="المسمى الوظيفي" field="jobTitle">
+            <Column header="مجموعة الصلاحيات" field="userGroupName">
               <template #body="{ data }">
-                <span v-if="data.jobTitle" class="px-2 py-0.5 rounded text-[11px] font-bold bg-brand-soft text-brand-accent border border-brand-accent/20">
-                  {{ data.jobTitle }}
+                <span v-if="data.userGroupName || getUserGroupName(data.userGroupId)" class="px-2 py-0.5 rounded text-[11px] font-bold bg-brand-soft text-brand-accent border border-brand-accent/20">
+                  {{ data.userGroupName || getUserGroupName(data.userGroupId) }}
                 </span>
                 <span v-else class="text-brand-gray text-[10px]">-</span>
               </template>
@@ -404,48 +404,79 @@
     </div>
 
     <!-- TAB 2: USER GROUPS DATATABLE & MODALS -->
-    <div v-if="activeTab === 'groups'" class="bg-brand-white border border-brand-gray/10 rounded-2xl overflow-hidden shadow-sm">
-      <DataTable :value="groupStore.groups" paginator :rows="10" :rowsPerPageOptions="[5, 10, 20, 50]" class="w-full text-xs">
-        <Column field="id" header="#">
-          <template #body="{ data }">
-            <span class="font-mono text-brand-gray">{{ data.id }}</span>
-          </template>
-        </Column>
+    <div v-if="activeTab === 'groups'" class="space-y-4">
+      <!-- SuperAdmin Branch Filter Toolbar for Groups -->
+      <div v-if="authStore.isSuperAdmin" class="bg-brand-white border border-brand-gray/10 rounded-2xl p-4 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div class="flex items-center gap-2">
+          <Building2 class="w-4 h-4 text-brand-accent shrink-0" />
+          <span class="text-xs font-bold text-brand-dark shrink-0">{{ $t('ohda.users.filterByBranch') }}:</span>
+          <select
+            v-model="selectedBranchFilter"
+            @change="handleBranchFilterChange"
+            class="w-56 md:w-64 px-3 py-2 bg-brand-light border border-brand-gray/25 focus:border-brand-accent text-brand-dark text-xs rounded-xl outline-none cursor-pointer"
+          >
+            <option v-for="opt in branchFilterOptions" :key="opt.value" :value="opt.value">
+              {{ opt.label }}
+            </option>
+          </select>
+        </div>
 
-        <Column field="name" header="اسم المجموعة">
-          <template #body="{ data }">
-            <span class="font-bold text-brand-dark text-sm">{{ data.name }}</span>
-          </template>
-        </Column>
+        <span class="text-[11px] font-bold text-brand-gray bg-brand-light px-2.5 py-1 rounded-lg border border-brand-gray/15">
+          {{ filteredGroups.length }} مجموعات صلاحيات
+        </span>
+      </div>
 
-        <Column field="description" header="الوصف">
-          <template #body="{ data }">
-            <span class="text-brand-gray">{{ data.description || 'لا يوجد وصف' }}</span>
-          </template>
-        </Column>
+      <div class="bg-brand-white border border-brand-gray/10 rounded-2xl overflow-hidden shadow-sm">
+        <DataTable :value="filteredGroups" paginator :rows="10" :rowsPerPageOptions="[5, 10, 20, 50]" class="w-full text-xs">
+          <Column field="id" header="#">
+            <template #body="{ data }">
+              <span class="font-mono text-brand-gray">{{ data.id }}</span>
+            </template>
+          </Column>
 
-        <Column header="صلاحيات الصفحات">
-          <template #body="{ data }">
-            <button
-              type="button"
-              @click="openGroupPermissionsModal(data)"
-              class="px-3 py-1 bg-brand-soft hover:bg-brand-accent/20 text-brand-accent border border-brand-accent/20 rounded-lg text-xs font-bold flex items-center gap-1 cursor-pointer"
-            >
-              <Lock class="w-3.5 h-3.5" />
-              إدارة صلاحيات الصفحات للمجموعة
-            </button>
-          </template>
-        </Column>
+          <Column field="name" header="اسم المجموعة">
+            <template #body="{ data }">
+              <span class="font-bold text-brand-dark text-sm">{{ data.name }}</span>
+            </template>
+          </Column>
 
-        <Column :header="$t('ohda.common.actions')">
-          <template #body="{ data }">
-            <div class="flex items-center justify-center gap-2">
-              <editButton @click="openEditGroupModal(data)" />
-              <deleteButton @click="promptDeleteGroup(data)" />
-            </div>
-          </template>
-        </Column>
-      </DataTable>
+          <Column v-if="authStore.isSuperAdmin" header="الفرع">
+            <template #body="{ data }">
+              <span class="px-2 py-0.5 rounded-md text-[10px] font-bold bg-brand-soft text-brand-dark border border-brand-accent/20">
+                {{ data.branchName || getBranchName(data.branchId) }}
+              </span>
+            </template>
+          </Column>
+
+          <Column field="description" header="الوصف">
+            <template #body="{ data }">
+              <span class="text-brand-gray">{{ data.description || 'لا يوجد وصف' }}</span>
+            </template>
+          </Column>
+
+          <Column header="صلاحيات الصفحات">
+            <template #body="{ data }">
+              <button
+                type="button"
+                @click="openGroupPermissionsModal(data)"
+                class="px-3 py-1 bg-brand-soft hover:bg-brand-accent/20 text-brand-accent border border-brand-accent/20 rounded-lg text-xs font-bold flex items-center gap-1 cursor-pointer"
+              >
+                <Lock class="w-3.5 h-3.5" />
+                إدارة صلاحيات الصفحات للمجموعة
+              </button>
+            </template>
+          </Column>
+
+          <Column :header="$t('ohda.common.actions')">
+            <template #body="{ data }">
+              <div class="flex items-center justify-center gap-2">
+                <editButton @click="openEditGroupModal(data)" />
+                <deleteButton @click="promptDeleteGroup(data)" />
+              </div>
+            </template>
+          </Column>
+        </DataTable>
+      </div>
     </div>
 
     <!-- TAB 3: SYSTEM PAGES DATATABLE & MODALS -->
@@ -459,7 +490,7 @@
 
         <Column field="title" header="عنوان الصفحة">
           <template #body="{ data }">
-            <span class="font-bold text-brand-dark">{{ data.title || data.name }}</span>
+            <span class="font-bold text-brand-dark">{{ getPageTitle(data) }}</span>
           </template>
         </Column>
 
@@ -495,14 +526,34 @@
     <!-- Register User Dialog -->
     <Dialog v-model:visible="showRegisterModal" modal :header="$t('ohda.users.registerUser')" class="!bg-brand-white !border-brand-gray/15 max-w-md w-full !text-brand-dark">
       <form @submit.prevent="handleRegisterUser" class="space-y-4 text-xs">
+        <!-- 1. User Group (FIRST FIELD) -->
         <div>
-          <label class="block font-semibold text-brand-dark mb-1">المسمى الوظيفي</label>
-          <InputText v-model="registerForm.jobTitle" class="w-full !bg-brand-light !border-brand-gray/25 focus:!border-brand-accent !text-brand-dark" placeholder="ميكانيكي / كهربائي / كاشير..." />
+          <label class="block font-semibold text-brand-dark mb-1">مجموعة الصلاحيات (User Group) *</label>
+          <select
+            v-model="registerForm.userGroupId"
+            required
+            class="w-full px-3 py-2 bg-brand-light border border-brand-gray/25 focus:border-brand-accent text-brand-dark text-xs rounded-xl outline-none cursor-pointer"
+          >
+            <option :value="null" disabled>اختر مجموعة الصلاحيات...</option>
+            <option v-for="opt in groupOptions" :key="opt.value" :value="opt.value">
+              {{ opt.label }}
+            </option>
+          </select>
         </div>
 
         <div>
           <label class="block font-semibold text-brand-dark mb-1">رقم الهاتف</label>
-          <InputText v-model="registerForm.phoneNumber" class="w-full !bg-brand-light !border-brand-gray/25 focus:!border-brand-accent !text-brand-dark font-mono" placeholder="01xxxxxxxxx" />
+          <InputText
+            v-model="registerForm.phoneNumber"
+            @keypress="allowOnlyNumbers"
+            @input="registerForm.phoneNumber = filterPhone(registerForm.phoneNumber)"
+            maxlength="15"
+            class="w-full !bg-brand-light !border-brand-gray/25 focus:!border-brand-accent !text-brand-dark font-mono"
+            placeholder="01xxxxxxxxx"
+          />
+          <p v-if="registerForm.phoneNumber && !isValidPhone(registerForm.phoneNumber)" class="text-[10px] text-amber-500 mt-1">
+            رقم الهاتف يجب أن يتكون من 7 إلى 15 رقماً.
+          </p>
         </div>
 
         <div>
@@ -538,24 +589,9 @@
           </div>
         </div>
 
-        <!-- Email hidden per requirement -->
-
         <div>
-          <label class="block font-semibold text-brand-dark mb-1">كلمة المرور</label>
+          <label class="block font-semibold text-brand-dark mb-1">كلمة المرور *</label>
           <InputText v-model="registerForm.password" type="password" required class="w-full !bg-brand-light !border-brand-gray/25 focus:!border-brand-accent !text-brand-dark font-mono" />
-        </div>
-
-        <div>
-          <label class="block font-semibold text-brand-dark mb-1">مجموعة الصلاحيات (User Group) *</label>
-          <select
-            v-model="registerForm.userGroupId"
-            class="w-full px-3 py-2 bg-brand-light border border-brand-gray/25 focus:border-brand-accent text-brand-dark text-xs rounded-xl outline-none cursor-pointer"
-          >
-            <option :value="null">اختر مجموعة الصلاحيات...</option>
-            <option v-for="opt in groupOptions" :key="opt.value" :value="opt.value">
-              {{ opt.label }}
-            </option>
-          </select>
         </div>
 
         <div class="flex items-center justify-end gap-3 pt-3 border-t border-brand-gray/10">
@@ -577,14 +613,33 @@
           <InputText :value="editingUserId" disabled class="w-full !bg-brand-light/50 !border-brand-gray/25 !text-brand-gray font-mono font-bold" />
         </div>
 
+        <!-- 1. User Group (FIRST EDITABLE FIELD) -->
         <div>
-          <label class="block font-semibold text-brand-dark mb-1">المسمى الوظيفي</label>
-          <InputText v-model="editForm.jobTitle" class="w-full !bg-brand-light !border-brand-gray/25 focus:!border-brand-accent !text-brand-dark" placeholder="ميكانيكي / كهربائي / كاشير..." />
+          <label class="block font-semibold text-brand-dark mb-1">مجموعة الصلاحيات (User Group) *</label>
+          <select
+            v-model="editForm.userGroupId"
+            class="w-full px-3 py-2 bg-brand-light border border-brand-gray/25 focus:border-brand-accent text-brand-dark text-xs rounded-xl outline-none cursor-pointer"
+          >
+            <option :value="null">اختر مجموعة الصلاحيات...</option>
+            <option v-for="opt in groupOptions" :key="opt.value" :value="opt.value">
+              {{ opt.label }}
+            </option>
+          </select>
         </div>
 
         <div>
           <label class="block font-semibold text-brand-dark mb-1">رقم الهاتف</label>
-          <InputText v-model="editForm.phoneNumber" class="w-full !bg-brand-light !border-brand-gray/25 focus:!border-brand-accent !text-brand-dark font-mono" placeholder="01xxxxxxxxx" />
+          <InputText
+            v-model="editForm.phoneNumber"
+            @keypress="allowOnlyNumbers"
+            @input="editForm.phoneNumber = filterPhone(editForm.phoneNumber)"
+            maxlength="15"
+            class="w-full !bg-brand-light !border-brand-gray/25 focus:!border-brand-accent !text-brand-dark font-mono"
+            placeholder="01xxxxxxxxx"
+          />
+          <p v-if="editForm.phoneNumber && !isValidPhone(editForm.phoneNumber)" class="text-[10px] text-amber-500 mt-1">
+            رقم الهاتف يجب أن يتكون من 7 إلى 15 رقماً.
+          </p>
         </div>
 
         <div>
@@ -618,24 +673,9 @@
           </div>
         </div>
 
-        <!-- Email hidden per requirement -->
-
         <div>
           <label class="block font-semibold text-brand-dark mb-1">تحديث كلمة المرور (اختياري)</label>
           <InputText v-model="editForm.password" type="password" placeholder="أدخل كلمة مرور جديدة..." class="w-full !bg-brand-light !border-brand-gray/25 focus:!border-brand-accent !text-brand-dark font-mono" />
-        </div>
-
-        <div>
-          <label class="block font-semibold text-brand-dark mb-1">مجموعة الصلاحيات (User Group)</label>
-          <select
-            v-model="editForm.userGroupId"
-            class="w-full px-3 py-2 bg-brand-light border border-brand-gray/25 focus:border-brand-accent text-brand-dark text-xs rounded-xl outline-none cursor-pointer"
-          >
-            <option :value="null">اختر مجموعة الصلاحيات...</option>
-            <option v-for="opt in groupOptions" :key="opt.value" :value="opt.value">
-              {{ opt.label }}
-            </option>
-          </select>
         </div>
 
         <div class="flex items-center justify-end gap-3 pt-3 border-t border-brand-gray/10">
@@ -663,7 +703,7 @@
             class="flex items-center justify-between p-3 rounded-xl border border-brand-gray/10 bg-brand-light"
           >
             <div>
-              <div class="font-semibold text-brand-dark text-xs">{{ page.title || page.name }}</div>
+              <div class="font-semibold text-brand-dark text-xs">{{ getPageTitle(page) }}</div>
               <div class="font-mono text-[10px] text-brand-gray">{{ page.path }}</div>
             </div>
 
@@ -777,7 +817,7 @@
             class="flex items-center justify-between p-3 rounded-xl border border-brand-gray/10 bg-brand-light"
           >
             <div>
-              <div class="font-semibold text-brand-dark text-xs">{{ page.title || page.name }}</div>
+              <div class="font-semibold text-brand-dark text-xs">{{ getPageTitle(page) }}</div>
               <div class="font-mono text-[10px] text-brand-gray">{{ page.path }}</div>
             </div>
 
@@ -908,6 +948,7 @@ import { useOhdaUserPermissionStore } from "../stores/useOhdaUserPermissionStore
 import { useOhdaGroupStore } from "../stores/useOhdaGroupStore";
 import { useOhdaBranchStore } from "../stores/useOhdaBranchStore";
 import { useOhdaAuthStore } from "../stores/useOhdaAuthStore";
+import { filterPhone, isValidPhone, allowOnlyNumbers } from "@/utilities/validations";
 import {
   Shield,
   UserPlus,
@@ -938,9 +979,105 @@ const { t } = useI18n();
 
 const activeTab = ref("users");
 
+const legacyBlacklist = [
+  "compass",
+  "entry-request",
+  "exit-request",
+  "department",
+  "product-state",
+  "approval-config",
+  "acceptance",
+  "untracked",
+  "package",
+  "orders"
+];
+
+const pageTitleMap = {
+  "/ohda/dashboard": "لوحة التحكم والمؤشرات",
+  "/dashboard": "لوحة التحكم والمؤشرات",
+  "/ohda/pos": "نقطة بيع المنتجات (POS)",
+  "/pos": "نقطة بيع المنتجات (POS)",
+  "/ohda/jobs": "أوامر الشغل والفواتير",
+  "/jobs": "أوامر الشغل والفواتير",
+  "/ohda/clients": "العملاء وسجل المركبات",
+  "/clients": "العملاء وسجل المركبات",
+  "/ohda/estimates": "عروض الأسعار والمقايسات",
+  "/estimates": "عروض الأسعار والمقايسات",
+  "/ohda/reminders": "المتابعات وتذكيرات الصيانة",
+  "/reminders": "المتابعات وتذكيرات الصيانة",
+  "/ohda/bookings-calendar": "تقويم الحجوزات ومناطق الصيانة",
+  "/bookings-calendar": "تقويم الحجوزات ومناطق الصيانة",
+  "/ohda/todays-board": "لوحة اليوم السريعة للورشة",
+  "/todays-board": "لوحة اليوم السريعة للورشة",
+  "/ohda/bays-settings": "إعدادات مناطق الصيانة والمواعيد",
+  "/bays-settings": "إعدادات مناطق الصيانة والمواعيد",
+  "/ohda/products": "المنتجات وقطع الغيار",
+  "/products": "المنتجات وقطع الغيار",
+  "/ohda/services": "الخدمات وباقات الصيانة",
+  "/services": "الخدمات وباقات الصيانة",
+  "/ohda/purchases": "فواتير المشتريات والتوريد",
+  "/purchases": "فواتير المشتريات والتوريد",
+  "/ohda/returns": "مرتجعات العملاء والموردين",
+  "/returns": "مرتجعات العملاء والموردين",
+  "/ohda/inventory": "المخزون وحركات الأصناف",
+  "/inventory": "المخزون وحركات الأصناف",
+  "/ohda/warehouse-bins": "أماكن وأرفف التخزين",
+  "/warehouse-bins": "أماكن وأرفف التخزين",
+  "/ohda/categories": "تصنيفات المخزون والخدمات",
+  "/categories": "تصنيفات المخزون والخدمات",
+  "/ohda/suppliers": "الموردين والشركات",
+  "/suppliers": "الموردين والشركات",
+  "/ohda/scan": "فحص وقراءة الباركود",
+  "/scan": "فحص وقراءة الباركود",
+  "/ohda/barcode-print": "طباعة الباركود والملصقات",
+  "/barcode-print": "طباعة الباركود والملصقات",
+  "/ohda/finance": "المالية ودرج النقدية",
+  "/finance": "المالية ودرج النقدية",
+  "/ohda/expenses": "المصروفات والنثريات",
+  "/expenses": "المصروفات والنثريات",
+  "/ohda/month-closing": "الإغلاق المالي الشهري",
+  "/month-closing": "الإغلاق المالي الشهري",
+  "/ohda/employees": "الموظفين والرواتب والغياب",
+  "/employees": "الموظفين والرواتب والغياب",
+  "/ohda/users": "المستخدمين وإدارة الصلاحيات",
+  "/users": "المستخدمين وإدارة الصلاحيات",
+  "/ohda/lookups": "البيانات الأساسية والتصنيفات",
+  "/lookups": "البيانات الأساسية والتصنيفات",
+  "/ohda/reports": "التقارير والإحصائيات الشاملة",
+  "/reports": "التقارير والإحصائيات الشاملة",
+  "/ohda/settings": "إعدادات المركز وهوية الفرع",
+  "/settings": "إعدادات المركز وهوية الفرع",
+  "/ohda/branches": "إدارة الفروع (SuperAdmin)",
+  "/branches": "إدارة الفروع (SuperAdmin)",
+  "/ohda/branches-dashboard": "لوحة مؤشرات الفروع (SuperAdmin)",
+  "/branches-dashboard": "لوحة مؤشرات الفروع (SuperAdmin)"
+};
+
+function getPageTitle(page) {
+  if (!page) return "";
+  const rawPath = (page.path || "").toLowerCase().trim();
+  const cleanPath = rawPath.replace(/^\/+|\/+$/g, "");
+
+  if (pageTitleMap[rawPath]) return pageTitleMap[rawPath];
+  if (pageTitleMap["/" + cleanPath]) return pageTitleMap["/" + cleanPath];
+  if (pageTitleMap["/ohda/" + cleanPath]) return pageTitleMap["/ohda/" + cleanPath];
+
+  for (const [k, v] of Object.entries(pageTitleMap)) {
+    const cleanK = k.toLowerCase().replace(/^\/+|\/+$/g, "");
+    if (cleanK === cleanPath || cleanPath.endsWith(cleanK) || cleanK.endsWith(cleanPath)) return v;
+  }
+  return page.title || page.name || page.path;
+}
+
 const visibleSystemPages = computed(() => {
-  if (authStore.isSuperAdmin) return groupStore.pages || [];
-  return (groupStore.pages || []).filter(p => !p.path?.toLowerCase().includes("branches"));
+  const pages = (groupStore.pages || []).filter(p => {
+    if (!p || p.isDeleted) return false;
+    const path = (p.path || "").toLowerCase();
+    if (legacyBlacklist.some(b => path.includes(b))) return false;
+    if (!authStore.isSuperAdmin && path.includes("branches")) return false;
+    return true;
+  });
+  return pages.sort((a, b) => (a.sortOrder || 99) - (b.sortOrder || 99));
 });
 
 onMounted(async () => {
@@ -1037,7 +1174,7 @@ const filteredUsers = computed(() => {
       (u.username && u.username.toLowerCase().includes(q)) ||
       (u.personName && u.personName.toLowerCase().includes(q)) ||
       (u.id && u.id.toString().includes(q)) ||
-      (u.jobTitle && u.jobTitle.toLowerCase().includes(q)) ||
+      (getUserGroupName(u.userGroupId) && getUserGroupName(u.userGroupId).toLowerCase().includes(q)) ||
       (u.phoneNumber && u.phoneNumber.includes(q)) ||
       (u.email && u.email.toLowerCase().includes(q)) ||
       (u.branchName && u.branchName.toLowerCase().includes(q))
@@ -1046,9 +1183,24 @@ const filteredUsers = computed(() => {
   return list;
 });
 
+const filteredGroups = computed(() => {
+  let list = groupStore.groups || [];
+  if (authStore.isSuperAdmin) {
+    if (selectedBranchFilter.value > 0) {
+      list = list.filter(g => g.branchId === selectedBranchFilter.value);
+    } else {
+      list = list.filter(g => g.name.includes("مدير") || g.name.toLowerCase().includes("admin") || g.name.toLowerCase().includes("manager"));
+    }
+  }
+  return list;
+});
+
 async function handleBranchFilterChange() {
   if (authStore.isSuperAdmin) {
-    await userStore.fetchUsers(selectedBranchFilter.value);
+    await Promise.all([
+      userStore.fetchUsers(selectedBranchFilter.value),
+      groupStore.fetchUserGroups(selectedBranchFilter.value)
+    ]);
   }
 }
 
@@ -1079,7 +1231,6 @@ const editingUserId = ref(null);
 
 const registerForm = ref({
   id: null,
-  jobTitle: "",
   phoneNumber: "",
   username: "",
   personName: "",
@@ -1092,14 +1243,10 @@ const registerForm = ref({
 
 const editForm = ref({
   id: null,
-  jobTitle: "",
   phoneNumber: "",
   username: "",
   personName: "",
   email: "",
-  password: "",
-  role: 2,
-  branchId: null,
   password: "",
   role: 2,
   branchId: null,
@@ -1114,9 +1261,9 @@ const roleOptions = computed(() => [
 ]);
 
 const groupOptions = computed(() => {
-  return groupStore.groups.map(g => ({
+  return filteredGroups.value.map(g => ({
     value: g.id,
-    label: `${g.name} (${g.description || 'مجموعة'})`
+    label: `${g.name} (${g.branchName || getBranchName(g.branchId)})`
   }));
 });
 
@@ -1133,12 +1280,11 @@ function openRegisterModal() {
 
   registerForm.value = {
     id: null,
-    jobTitle: "",
     phoneNumber: "",
     username: "",
     personName: "",
     email: "",
-    password: "P@ssw0rd",
+    password: "123456",
     role: 2,
     branchId: defaultBranchId,
     userGroupId: groupStore.groups[0]?.id || null
@@ -1147,15 +1293,24 @@ function openRegisterModal() {
 }
 
 async function handleRegisterUser() {
+  if (registerForm.value.phoneNumber && !isValidPhone(registerForm.value.phoneNumber)) {
+    toast.add({
+      severity: "warn",
+      summary: "رقم الهاتف غير صالح",
+      detail: "يجب أن يتكون رقم الهاتف من 7 إلى 15 رقماً وبدون حروف أو رموز.",
+      life: 4000
+    });
+    return;
+  }
   const selectedGroup = groupStore.groups.find(g => g.id === registerForm.value.userGroupId);
   if (selectedGroup && (selectedGroup.name.includes("مدير") || selectedGroup.name.includes("Admin"))) {
     registerForm.value.role = 1;
   } else {
     registerForm.value.role = 2;
   }
+  const { id, ...dataToSend } = registerForm.value;
   const payload = {
-    ...registerForm.value,
-    jobTitle: registerForm.value.jobTitle?.trim() || null,
+    ...dataToSend,
     phoneNumber: registerForm.value.phoneNumber?.trim() || null,
     email: registerForm.value.email || null
   };
@@ -1165,7 +1320,7 @@ async function handleRegisterUser() {
     toast.add({
       severity: "success",
       summary: "تم بنجاح",
-      detail: "تم تسجيل حساب المستخدم بنجاح بكلمة المرور الافتراضية (P@ssw0rd)",
+      detail: "تم تسجيل حساب المستخدم بنجاح بكلمة المرور الافتراضية (123456)",
       life: 4000
     });
   } else {
@@ -1183,7 +1338,6 @@ function openEditModal(user) {
   editingUserId.value = userId;
   editForm.value = {
     id: userId,
-    jobTitle: user.jobTitle || "",
     phoneNumber: user.phoneNumber || "",
     username: user.username || "",
     personName: user.personName || "",
@@ -1197,13 +1351,21 @@ function openEditModal(user) {
 }
 
 async function handleUpdateUser() {
+  if (editForm.value.phoneNumber && !isValidPhone(editForm.value.phoneNumber)) {
+    toast.add({
+      severity: "warn",
+      summary: "رقم الهاتف غير صالح",
+      detail: "يجب أن يتكون رقم الهاتف من 7 إلى 15 رقماً وبدون حروف أو رموز.",
+      life: 4000
+    });
+    return;
+  }
   const selectedGroup = groupStore.groups.find(g => g.id === editForm.value.userGroupId);
   if (selectedGroup && (selectedGroup.name.includes("مدير") || selectedGroup.name.includes("Admin"))) {
     editForm.value.role = 1;
   }
   const payload = {
     ...editForm.value,
-    jobTitle: editForm.value.jobTitle?.trim() || null,
     phoneNumber: editForm.value.phoneNumber?.trim() || null,
     email: editForm.value.email || null
   };
@@ -1229,11 +1391,16 @@ async function handleUpdateUser() {
 async function openUserPermissionsModal(user) {
   selectedUser.value = user;
   await userStore.fetchUserPermissions(user.id || user.militaryNumber);
+  const refreshed = userStore.users.find(u => (u.id ?? u.militaryNumber) === (user.id || user.militaryNumber));
+  if (refreshed) {
+    selectedUser.value = { ...refreshed };
+  }
   showUserPermissionsModal.value = true;
 }
 
 function isPageAllowedForUser(user, pageId) {
-  return user?.allowedPages?.includes(pageId);
+  if (!user || !user.allowedPages) return false;
+  return user.allowedPages.includes(pageId);
 }
 
 async function toggleUserPageAccess(userId, pageId, grant) {
@@ -1241,6 +1408,10 @@ async function toggleUserPageAccess(userId, pageId, grant) {
     await userStore.grantPagePermission(userId, pageId);
   } else {
     await userStore.revokePagePermission(userId, pageId);
+  }
+  const refreshed = userStore.users.find(u => (u.id ?? u.militaryNumber) === userId);
+  if (refreshed) {
+    selectedUser.value = { ...refreshed };
   }
 }
 
@@ -1391,6 +1562,7 @@ async function toggleGroupPageAccess(groupId, pageId, grant) {
   } else {
     await groupStore.revokeGroupPermission(groupId, pageId);
   }
+  groupStore.groupPermissions = { ...groupStore.groupPermissions };
 }
 
 async function grantAllToGroup(groupId) {

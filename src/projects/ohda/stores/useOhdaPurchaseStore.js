@@ -1,5 +1,6 @@
 import { defineStore } from "pinia";
 import { apiGet, apiPost } from "@/utilities/fetchApi";
+import { useOhdaInventoryStore } from "./useOhdaInventoryStore";
 
 export const useOhdaPurchaseStore = defineStore("ohdaPurchase", {
   state: () => ({
@@ -36,6 +37,10 @@ export const useOhdaPurchaseStore = defineStore("ohdaPurchase", {
         const res = await apiPost("/api/Purchases", dto);
         if (res?.data?.isDone) {
           await this.fetchPurchases();
+          try {
+            const invStore = useOhdaInventoryStore();
+            await invStore.fetchProducts();
+          } catch (e) {}
           return { success: true, message: res.data.returnMessage, data: res.data.singleObject };
         }
         return { success: false, message: res?.data?.returnMessage || "فشل تسجيل فاتورة الشراء" };

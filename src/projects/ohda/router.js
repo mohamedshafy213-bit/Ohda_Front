@@ -15,6 +15,23 @@ export default [
         if (u && (u.role === 0 || u.role === "SuperAdmin" || u.role === "0")) {
           return "/ohda/branches";
         }
+        const allowed = JSON.parse(localStorage.getItem("ohdaAllowedPages") || "[]");
+        if (Array.isArray(allowed) && allowed.length > 0) {
+          const hasDashboard = allowed.some(p => {
+            const raw = typeof p === "string" ? p : (p?.path || p?.route || p?.Path);
+            return raw && raw.toLowerCase().includes("dashboard");
+          });
+          if (!hasDashboard) {
+            const first = allowed[0];
+            const raw = typeof first === "string" ? first : (first?.path || first?.route || first?.Path);
+            if (raw) {
+              let norm = raw.toLowerCase().trim();
+              if (!norm.startsWith("/ohda")) norm = `/ohda${norm.startsWith("/") ? "" : "/"}${norm}`;
+              if (norm.length > 5 && norm.endsWith("/")) norm = norm.slice(0, -1);
+              return norm;
+            }
+          }
+        }
       } catch (e) { }
       return "/ohda/dashboard";
     },
@@ -23,6 +40,12 @@ export default [
         path: "dashboard",
         name: "OhdaDashboard",
         component: () => import("./pages/DashboardPage.vue")
+      },
+      // Point of Sale (POS) - Products Only
+      {
+        path: "pos",
+        name: "OhdaPos",
+        component: () => import("./pages/PosPage.vue")
       },
       // Sales & Jobs
       {
@@ -77,6 +100,16 @@ export default [
         path: "products",
         name: "OhdaProducts",
         component: () => import("./pages/ProductsPage.vue")
+      },
+      {
+        path: "inventory",
+        name: "OhdaInventory",
+        component: () => import("./pages/InventoryPage.vue")
+      },
+      {
+        path: "warehouse-bins",
+        name: "OhdaWarehouseBins",
+        component: () => import("./pages/WarehouseBinsPage.vue")
       },
       {
         path: "services",

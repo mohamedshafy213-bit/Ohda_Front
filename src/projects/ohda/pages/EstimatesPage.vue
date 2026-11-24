@@ -225,7 +225,7 @@
             type="button"
             @click="triggerConvertToJob(data)"
             class="p-1.5 rounded-xl bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 transition cursor-pointer border border-emerald-500/25"
-            title="تحويل إلى أمر شغل"
+            title="إنشاء حجز مسبق بالورشة"
           >
             <ArrowRightCircle class="w-4 h-4" />
           </button>
@@ -1067,18 +1067,18 @@ async function changeStatus(id, newStatus) {
   }
 }
 
-// Convert to Job Card
+// Convert to Booking
 async function triggerConvertToJob(estimate) {
-  if (!confirm(`هل أنت متأكد من رغبتك في تحويل عرض السعر (${estimate.estimateNumber}) إلى أمر شغل فوري؟`)) {
+  if (!confirm(`هل أنت متأكد من رغبتك في تحويل عرض السعر (${estimate.estimateNumber}) إلى حجز مسبق بالورشة؟`)) {
     return;
   }
 
   const res = await estimateStore.convertToJob(estimate.id);
   if (res.success) {
     toastStore.showToast(res.message, "success");
-    router.push("/ohda/jobs");
+    router.push("/ohda/todays-board");
   } else {
-    toastStore.showToast(res.message || "فشل تحويل عرض السعر", "error");
+    toastStore.showToast(res.message || "فشل تحويل عرض السعر إلى حجز", "error");
   }
 }
 

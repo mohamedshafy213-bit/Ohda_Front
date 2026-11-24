@@ -12,7 +12,7 @@
               <span>التقويم التفاعلي | منظومة مواعيد وحجوزات الورشة</span>
             </h1>
             <p class="text-xs text-brand-gray mt-0.5">
-              متابعة وجدولة مواعيد الصيانة الدورية وتوزيع الرافعات والفنيين على مدار الأسبوع والشهر
+              متابعة وجدولة مواعيد الصيانة الدورية وتوزيع مناطق الصيانة والفنيين على مدار الأسبوع والشهر
             </p>
           </div>
         </div>
@@ -73,10 +73,10 @@
         <router-link
           to="/ohda/bays-settings"
           class="px-3 py-2 rounded-xl border border-brand-gray/20 hover:border-brand-accent text-brand-dark dark:text-white font-bold text-xs flex items-center gap-1.5 transition-colors"
-          title="إعدادات الرافعات ومواعيد العمل"
+          title="إعدادات مناطق الصيانة ومواعيد العمل"
         >
           <Settings class="w-3.5 h-3.5 text-brand-gray" />
-          <span>إعدادات الرافعات</span>
+          <span>إعدادات مناطق الصيانة</span>
         </router-link>
       </div>
     </div>
@@ -121,7 +121,7 @@
 
       <div class="p-4 rounded-2xl bg-brand-white dark:bg-white/5 border border-brand-gray/15 shadow-xs flex items-center justify-between">
         <div>
-          <span class="text-[11px] text-brand-gray block">نسبة إشغال رافعات الورشة</span>
+          <span class="text-[11px] text-brand-gray block">نسبة إشغال مناطق صيانة الورشة</span>
           <span class="text-2xl font-black font-mono text-brand-accent mt-1 block">
             {{ todayCapacityPct }}%
           </span>
@@ -196,7 +196,7 @@
               </div>
 
               <div class="flex items-center justify-between text-[11px] text-brand-gray">
-                <span>{{ bk.bayName || 'رافعة عامة' }}</span>
+                <span>{{ bk.bayName || 'منطقة صيانة' }}</span>
                 <span class="font-mono bg-black/5 dark:bg-white/10 px-1.5 py-0.5 rounded text-[10px] text-brand-dark dark:text-white font-bold">
                   {{ bk.plateNumber || 'بدون لوحة' }}
                 </span>
@@ -231,7 +231,7 @@
             </div>
             <div class="flex items-center gap-2">
               <span class="w-3 h-3 rounded-full bg-cyan-500 shrink-0"></span>
-              <span>قيد العمل بالرافعة</span>
+              <span>قيد العمل بمنطقة الصيانة</span>
             </div>
             <div class="flex items-center gap-2">
               <span class="w-3 h-3 rounded-full bg-teal-600 shrink-0"></span>
@@ -285,7 +285,7 @@
                 @change="loadCalendar"
                 class="px-2.5 py-1.5 rounded-xl border border-brand-gray/25 bg-white dark:bg-brand-dark text-brand-dark dark:text-white text-xs font-medium"
               >
-                <option :value="null">كل الرافعات</option>
+                <option :value="null">كل مناطق الصيانة</option>
                 <option v-for="b in bookingStore.bays" :key="b.id" :value="b.id">{{ b.name }}</option>
               </select>
             </div>
@@ -436,7 +436,7 @@
                     <!-- Time & Bay -->
                     <div class="flex items-center justify-between text-[10px] font-mono text-brand-gray">
                       <span class="font-bold text-brand-dark dark:text-slate-200">{{ bk.startTime }} - {{ bk.endTime }}</span>
-                      <span class="truncate">{{ bk.bayName || 'رافعة' }}</span>
+                      <span class="truncate">{{ bk.bayName || 'منطقة صيانة' }}</span>
                     </div>
 
                     <!-- Plate & Model -->
@@ -542,7 +542,7 @@
       :visible="showNewBookingModal"
       @close="showNewBookingModal = false"
       title="تسجيل حجز موعد جديد بالورشة"
-      description="أدخل بيانات العميل والمركبة واختر الرافعة والخدمات المطلوبة مع التحقق الفوري من التوفر"
+      description="أدخل بيانات العميل والمركبة واختر منطقة الصيانة والخدمات المطلوبة مع التحقق الفوري من التوفر"
       :icon="CalendarDays"
       :close-on-backdrop="false"
       max-width="max-w-xl"
@@ -776,11 +776,17 @@
                 <label class="block font-semibold mb-1">رقم الهاتف <span class="text-red-500">*</span></label>
                 <input
                   v-model="bookingForm.newClientPhone"
+                  @keypress="allowOnlyNumbers"
+                  @input="bookingForm.newClientPhone = filterPhone(bookingForm.newClientPhone)"
+                  maxlength="15"
                   type="tel"
                   required
                   placeholder="010XXXXXXXX"
                   class="w-full px-3 py-2 rounded-xl border border-brand-gray/25 bg-white dark:bg-brand-dark text-brand-dark dark:text-white font-mono font-bold"
                 />
+                <p v-if="bookingForm.newClientPhone && !isValidPhone(bookingForm.newClientPhone)" class="text-[10px] text-amber-500 mt-1">
+                  رقم الهاتف يجب أن يتكون من 7 إلى 15 رقماً.
+                </p>
               </div>
             </div>
 
@@ -811,7 +817,7 @@
         <!-- Section 2: Bay, Date, Time & Tech -->
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div>
-            <label class="block font-semibold mb-1">الرافعة / منطقة العمل <span class="text-red-500">*</span></label>
+            <label class="block font-semibold mb-1">منطقة الصيانة <span class="text-red-500">*</span></label>
             <select
               v-model="bookingForm.bayId"
               @change="checkAvailabilityRealtime"
@@ -1059,7 +1065,7 @@
         <!-- Appointment Info -->
         <div class="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
           <div class="p-2.5 rounded-xl border border-brand-gray/15 bg-white dark:bg-brand-dark">
-            <div class="text-[10px] text-brand-gray">الرافعة / الحارة</div>
+            <div class="text-[10px] text-brand-gray">منطقة الصيانة</div>
             <div class="font-bold text-brand-dark dark:text-white mt-0.5">{{ selectedBooking.bayName }}</div>
           </div>
 
@@ -1187,11 +1193,17 @@
             <label class="block font-semibold mb-1">رقم الهاتف <span class="text-red-500">*</span></label>
             <input
               v-model="newClientFormData.phone"
+              @keypress="allowOnlyNumbers"
+              @input="newClientFormData.phone = filterPhone(newClientFormData.phone)"
+              maxlength="15"
               type="tel"
               required
               placeholder="010XXXXXXXX"
               class="w-full px-3 py-2 rounded-xl border border-brand-gray/25 bg-white dark:bg-brand-dark text-brand-dark dark:text-white font-mono font-bold"
             />
+            <p v-if="newClientFormData.phone && !isValidPhone(newClientFormData.phone)" class="text-[10px] text-amber-500 mt-1">
+              رقم الهاتف يجب أن يتكون من 7 إلى 15 رقماً.
+            </p>
           </div>
         </div>
 
@@ -1200,10 +1212,16 @@
             <label class="block font-semibold mb-1">رقم هاتف ثانٍ (اختياري)</label>
             <input
               v-model="newClientFormData.secondPhone"
+              @keypress="allowOnlyNumbers"
+              @input="newClientFormData.secondPhone = filterPhone(newClientFormData.secondPhone)"
+              maxlength="15"
               type="tel"
               placeholder="01XXXXXXXXX"
               class="w-full px-3 py-2 rounded-xl border border-brand-gray/25 bg-white dark:bg-brand-dark text-brand-dark dark:text-white font-mono"
             />
+            <p v-if="newClientFormData.secondPhone && !isValidPhone(newClientFormData.secondPhone)" class="text-[10px] text-amber-500 mt-1">
+              رقم الهاتف يجب أن يتكون من 7 إلى 15 رقماً.
+            </p>
           </div>
 
           <div>
@@ -1291,6 +1309,7 @@ import { useOhdaClientStore } from "../stores/useOhdaClientStore";
 import apiClient from "@/utilities/apiClient";
 import OhdaModal from "../components/OhdaModal.vue";
 import { exportToExcelCsv } from "../utils/excelHelper";
+import { filterPhone, isValidPhone, allowOnlyNumbers } from "@/utilities/validations";
 import {
   CalendarDays,
   Warehouse,
@@ -2134,7 +2153,7 @@ function exportBookingsToExcel() {
     { key: "clientPhone", label: "رقم الهاتف" },
     { key: "carPlate", label: "رقم اللوحة" },
     { key: "carModel", label: "موديل وطراز السيارة" },
-    { key: "bayName", label: "الرافعة / الحارة" },
+    { key: "bayName", label: "منطقة الصيانة" },
     { key: "technicianName", label: "الفني المسؤول" },
     { key: "durationMinutes", label: "المدة (دقيقة)" },
     { key: "estimatedTotal", label: "التكلفة التقديرية (ج.م)" },

@@ -13,6 +13,7 @@ declare global {
   const PERSON_TYPE_MEDIC: typeof import('./src/utilities/roleUtils.js').PERSON_TYPE_MEDIC
   const REGEX_PATTERNS: typeof import('./src/utilities/validations.js').REGEX_PATTERNS
   const ROLE_DASHBOARD_FALLBACK: typeof import('./src/utilities/roleUtils.js').ROLE_DASHBOARD_FALLBACK
+  const allowOnlyNumbers: typeof import('./src/utilities/validations.js').allowOnlyNumbers
   const apiClient: typeof import('./src/utilities/apiClient.js').default
   const apiDelete: typeof import('./src/utilities/fetchApi.js').apiDelete
   const apiGet: typeof import('./src/utilities/fetchApi.js').apiGet
@@ -34,6 +35,8 @@ declare global {
   const extractBirthDateFromNationalId: typeof import('./src/utilities/functions.js').extractBirthDateFromNationalId
   const extractGenderFromNationalId: typeof import('./src/utilities/functions.js').extractGenderFromNationalId
   const extractRealmRolesFromPayload: typeof import('./src/composables/useAllowedControls.js').extractRealmRolesFromPayload
+  const filterNationalId: typeof import('./src/utilities/validations.js').filterNationalId
+  const filterPhone: typeof import('./src/utilities/validations.js').filterPhone
   const formatDate: typeof import('./src/utilities/functions.js').formatDate
   const formatFileSize: typeof import('./src/utilities/fileProcessor.js').formatFileSize
   const formatNumber: typeof import('./src/utilities/functions.js').formatNumber
@@ -64,6 +67,8 @@ declare global {
   const isRef: typeof import('vue').isRef
   const isScopedAuthToken: typeof import('./src/utilities/authTokens.js').isScopedAuthToken
   const isShallow: typeof import('vue').isShallow
+  const isValidNationalIdNumber: typeof import('./src/utilities/validations.js').isValidNationalIdNumber
+  const isValidPhone: typeof import('./src/utilities/validations.js').isValidPhone
   const markRaw: typeof import('vue').markRaw
   const nextTick: typeof import('vue').nextTick
   const onActivated: typeof import('vue').onActivated

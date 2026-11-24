@@ -13,6 +13,14 @@
       </div>
 
       <div class="flex items-center gap-2">
+        <button
+          @click="openWalkInModal"
+          class="px-3.5 py-2 rounded-xl bg-brand-accent hover:bg-brand-accent/90 text-brand-dark font-bold text-xs flex items-center gap-1.5 cursor-pointer shadow-xs transition-transform active:scale-95"
+        >
+          <UserPlus class="w-4 h-4" />
+          <span>+ حضور مباشر للعميل (Walk-in)</span>
+        </button>
+
         <router-link
           to="/ohda/bookings-calendar"
           class="px-3.5 py-2 rounded-xl border border-brand-gray/20 hover:border-brand-accent text-brand-dark dark:text-white font-bold text-xs flex items-center gap-1.5 transition-colors cursor-pointer"
@@ -71,7 +79,7 @@
           filterStatus === 4 ? 'bg-orange-600 text-white font-bold' : 'text-brand-gray hover:text-brand-dark hover:bg-brand-light'
         ]"
       >
-        قيد الصيانة بالرافعة ({{ inProgressCount }})
+        قيد الصيانة بمنطقة العمل ({{ inProgressCount }})
       </button>
 
       <button
@@ -224,6 +232,93 @@
         </div>
       </div>
     </div>
+
+    <!-- Walk-in Instant Booking & Job Modal -->
+    <OhdaModal
+      :visible="showWalkInModal"
+      @close="showWalkInModal = false"
+      title="تسجيل حضور مباشر للعميل (Walk-In)"
+      description="إنشاء حجز فوري وبدء أمر الشغل واستلام المركبة بنقرة واحدة"
+      :icon="UserPlus"
+      max-width="max-w-lg"
+    >
+      <form @submit.prevent="submitWalkIn" id="walkInForm" class="space-y-4 text-xs">
+        <div>
+          <label class="block font-semibold mb-1">اسم العميل *</label>
+          <input
+            type="text"
+            v-model="walkInForm.customerName"
+            required
+            placeholder="الاسم ثلاثي..."
+            class="w-full text-xs p-2.5 rounded-xl border border-brand-gray/20 dark:border-white/10 bg-transparent text-brand-dark dark:text-white focus:border-brand-accent transition-all"
+          />
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+          <div>
+            <label class="block font-semibold mb-1">رقم الهاتف</label>
+            <input
+              type="tel"
+              v-model="walkInForm.customerPhone"
+              @keypress="allowOnlyNumbers"
+              @input="walkInForm.customerPhone = filterPhone(walkInForm.customerPhone)"
+              maxlength="15"
+              placeholder="01XXXXXXXXX"
+              class="w-full text-xs p-2.5 rounded-xl border border-brand-gray/20 dark:border-white/10 bg-transparent text-brand-dark dark:text-white font-mono focus:border-brand-accent transition-all"
+            />
+          </div>
+
+          <div>
+            <label class="block font-semibold mb-1">رقم اللوحة *</label>
+            <input
+              type="text"
+              v-model="walkInForm.carPlate"
+              required
+              placeholder="مثال: س ق ر 1 2 3"
+              class="w-full text-xs p-2.5 rounded-xl border border-brand-gray/20 dark:border-white/10 bg-transparent text-brand-dark dark:text-white font-mono font-bold focus:border-brand-accent transition-all"
+            />
+          </div>
+        </div>
+
+        <div>
+          <label class="block font-semibold mb-1">موديل / نوع السيارة</label>
+          <input
+            type="text"
+            v-model="walkInForm.carModel"
+            placeholder="مثال: كيا سيراتو 2020"
+            class="w-full text-xs p-2.5 rounded-xl border border-brand-gray/20 dark:border-white/10 bg-transparent text-brand-dark dark:text-white focus:border-brand-accent transition-all"
+          />
+        </div>
+
+        <div>
+          <label class="block font-semibold mb-1">شكوى العميل / ملاحظات الدخول</label>
+          <textarea
+            v-model="walkInForm.notes"
+            rows="2"
+            placeholder="سبب الدخول، الأعطال المطلوبة، أو فحص دوري..."
+            class="w-full text-xs p-2.5 rounded-xl border border-brand-gray/20 dark:border-white/10 bg-transparent text-brand-dark dark:text-white focus:border-brand-accent transition-all"
+          ></textarea>
+        </div>
+      </form>
+
+      <template #footer="{ close }">
+        <button
+          type="button"
+          @click="close"
+          class="px-4 py-2.5 rounded-xl text-xs font-bold text-slate-500 hover:text-slate-800 dark:hover:text-white cursor-pointer"
+        >
+          إلغاء
+        </button>
+        <button
+          type="submit"
+          form="walkInForm"
+          :disabled="bookingStore.loading"
+          class="px-5 py-2.5 rounded-xl text-xs font-bold bg-brand-accent hover:bg-brand-accent/90 text-brand-dark cursor-pointer shadow-sm disabled:opacity-50"
+        >
+          <span>{{ bookingStore.loading ? 'جاري التسجيل...' : 'بدء أمر الشغل فوراً' }}</span>
+        </button>
+      </template>
+    </OhdaModal>
   </div>
 </template>
 
@@ -232,6 +327,8 @@ import { ref, computed, onMounted } from "vue";
 import { useRouter } from "vue-router";
 import { useToast } from "primevue/usetoast";
 import { useOhdaBookingStore } from "../stores/useOhdaBookingStore";
+import OhdaModal from "../components/OhdaModal.vue";
+import { filterPhone, allowOnlyNumbers } from "@/utilities/validations";
 import {
   LayoutDashboard,
   CalendarDays,
@@ -243,7 +340,8 @@ import {
   CheckCircle2,
   UserX,
   XCircle,
-  CalendarCheck2
+  CalendarCheck2,
+  UserPlus
 } from "lucide-vue-next";
 
 const router = useRouter();
@@ -251,6 +349,55 @@ const toast = useToast();
 const bookingStore = useOhdaBookingStore();
 
 const filterStatus = ref(null);
+
+const showWalkInModal = ref(false);
+const walkInForm = ref({
+  customerName: "",
+  customerPhone: "",
+  carPlate: "",
+  carModel: "",
+  notes: ""
+});
+
+function openWalkInModal() {
+  walkInForm.value = {
+    customerName: "",
+    customerPhone: "",
+    carPlate: "",
+    carModel: "",
+    notes: ""
+  };
+  showWalkInModal.value = true;
+}
+
+async function submitWalkIn() {
+  if (!walkInForm.value.customerName?.trim() || !walkInForm.value.carPlate?.trim()) {
+    toast.add({ severity: "warn", summary: "تنبيه", detail: "اسم العميل ورقم اللوحة مطلوبان.", life: 3000 });
+    return;
+  }
+
+  const res = await bookingStore.createInstantWalkIn(walkInForm.value);
+  if (res.success) {
+    showWalkInModal.value = false;
+    toast.add({
+      severity: "success",
+      summary: "تم بنجاح",
+      detail: res.message || "تم تسجيل الحضور المباشر وبدء أمر الشغل بنجاح",
+      life: 4000
+    });
+    await loadBoard();
+    if (res.data?.jobId) {
+      router.push("/ohda/jobs");
+    }
+  } else {
+    toast.add({
+      severity: "error",
+      summary: "خطأ",
+      detail: res.message || "تعذر تسجيل الحضور وبدء الشغل",
+      life: 4000
+    });
+  }
+}
 
 onMounted(async () => {
   await loadBoard();

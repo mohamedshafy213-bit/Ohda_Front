@@ -22,6 +22,10 @@ apiClient.interceptors.request.use(
     const token = localStorage.getItem("accessToken");
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
+      const activeBranchId = localStorage.getItem("currentBranchId") || localStorage.getItem("selectedBranchId");
+      if (activeBranchId) {
+        config.headers["X-Branch-Id"] = activeBranchId;
+      }
     }
     config.headers["Accept-Language"] = localStorage.getItem("selectedLocale") || "ar";
 

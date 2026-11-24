@@ -25,6 +25,16 @@
 
         <button
           type="button"
+          @click="openDiagnosticModal"
+          class="bg-brand-light dark:bg-white/5 hover:bg-brand-soft text-brand-dark dark:text-white border border-brand-gray/20 rounded-xl px-3.5 py-2.5 text-xs font-semibold flex items-center gap-2 shadow-xs cursor-pointer transition-all"
+          title="فحص مطابقة رصيد المخزون مع الدفعات والحركات"
+        >
+          <ShieldCheck class="w-4 h-4 text-emerald-500" />
+          <span>فحص المطابقة</span>
+        </button>
+
+        <button
+          type="button"
           @click="downloadTemplate"
           class="bg-brand-light dark:bg-white/5 hover:bg-brand-soft text-brand-dark dark:text-white border border-brand-gray/20 rounded-xl px-3.5 py-2.5 text-xs font-semibold flex items-center gap-2 shadow-xs cursor-pointer transition-all"
           title="تحميل شيت Excel فارغ لإدخال الأصناف"
@@ -51,13 +61,23 @@
           <span>استيراد Excel</span>
         </button>
 
+        <router-link
+          to="/ohda/purchases"
+          class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl px-4 py-2.5 text-xs flex items-center gap-2 shadow-sm transition-all cursor-pointer"
+          title="تسجيل فاتورة شراء وتوريد لزيادة رصيد المخزون فعلياً"
+        >
+          <ShoppingCart class="w-4 h-4" />
+          <span>توريد بضاعة (شراء)</span>
+        </router-link>
+
         <button
           type="button"
           @click="openAddModal"
           class="bg-brand-accent hover:bg-brand-accent/90 text-brand-dark font-bold rounded-xl px-4 py-2.5 text-xs flex items-center gap-2 shadow-md shadow-brand-accent/10 transition-all cursor-pointer"
+          title="تعريف صنف جديد في دليل الأصناف برصيد ابتدائي صفر"
         >
           <Plus class="w-4 h-4" />
-          <span>إضافة صنف جديد</span>
+          <span>+ تعريف صنف (رصيد 0)</span>
         </button>
       </div>
     </div>
@@ -259,15 +279,25 @@
       <!-- Actions Slot -->
       <template #actions="{ data }">
         <div class="flex items-center justify-center gap-1.5">
-          <!-- Quick Stock Movement Button (+ / -) -->
+          <!-- Batches Button (الدفعات والشحنات) -->
           <button
             type="button"
-            @click="openStockMovementModal(data)"
-            class="px-2 py-1 rounded-xl bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-600 dark:text-emerald-400 text-xs font-bold transition cursor-pointer flex items-center gap-1 border border-emerald-500/25"
-            title="تسجيل حركة مخزون (توريد / تسوية)"
+            @click="openBatchesModal(data)"
+            class="px-2 py-1 rounded-xl bg-blue-500/15 hover:bg-blue-500/25 text-blue-600 dark:text-blue-400 text-xs font-bold transition cursor-pointer flex items-center gap-1 border border-blue-500/25"
+            title="عرض دفعات وشحنات الصنف ومواقع الرفوف"
           >
-            <Plus class="w-3.5 h-3.5" />
-            <span>حركة</span>
+            <Layers class="w-3.5 h-3.5" />
+            <span>الدفعات</span>
+          </button>
+
+          <!-- Packages Button (خيارات التعبئة) -->
+          <button
+            type="button"
+            @click="openPackagesModal(data)"
+            class="p-1.5 rounded-xl bg-purple-500/15 hover:bg-purple-500/25 text-purple-600 dark:text-purple-400 transition cursor-pointer border border-purple-500/25"
+            title="خيارات التعبئة والكراتين"
+          >
+            <Boxes class="w-3.5 h-3.5" />
           </button>
 
           <!-- Movements History Button -->
@@ -307,8 +337,8 @@
     <OhdaModal
       :visible="showModal"
       @close="showModal = false"
-      :title="isEditing ? 'تعديل بيانات الصنف' : 'إضافة صنف جديد للمخزون'"
-      description="أدخل تفاصيل الصنف، تصنيفه، أسعار الشراء والبيع، والحد الأدنى للتنبيهات"
+      :title="isEditing ? 'تعديل بيانات الصنف' : 'تعريف صنف جديد بالدليل (رصيد ابتدائي صفر)'"
+      description="تعريف الصنف وتصنيفه وأسعاره بالدليل. تنبيه: الرصيد يبدأ بصفر، وزيادة رصيد المخزون تتم حصراً عبر فواتير المشتريات من المورد."
       :icon="Package"
       max-width="max-w-2xl"
     >
@@ -389,17 +419,33 @@
             />
           </div>
 
-          <!-- Current / Initial Quantity -->
+          <!-- Quantity Note (Strict Document-Only) -->
+          <div class="sm:col-span-2 p-3 bg-brand-light/70 dark:bg-white/5 rounded-xl border border-brand-gray/15">
+            <div class="flex items-center justify-between">
+              <div>
+                <span class="block font-semibold text-brand-dark dark:text-white text-xs">
+                  {{ isEditing ? 'رصيد المخزون الحالي' : 'رصيد المخزون الأولي' }}
+                </span>
+                <span class="text-[11px] text-slate-500 dark:text-slate-400">
+                  {{ isEditing ? 'الرصيد يتم حسابه تلقائياً من دفعات فواتير المشتريات والمبيعات' : 'الأصناف الجديدة تبدأ برصيد صفر. يتم تسجيل رصيد المخزون والتكلفة عبر فواتير المشتريات فقط.' }}
+                </span>
+              </div>
+              <div class="text-end">
+                <span class="font-mono font-bold text-sm text-brand-accent px-3 py-1 bg-brand-accent/10 rounded-lg border border-brand-accent/20">
+                  {{ form.currentQuantity || 0 }} {{ form.unit }}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Default Shelf Location -->
           <div>
-            <label class="block font-semibold text-brand-dark dark:text-white mb-1.5">
-              {{ isEditing ? 'الرصيد الحالي' : 'الرصيد المبدئي' }} <span class="text-red-500">*</span>
-            </label>
+            <label class="block font-semibold text-brand-dark dark:text-white mb-1.5">موقع الرف الافتراضي</label>
             <input
-              v-model.number="form.currentQuantity"
-              type="number"
-              step="any"
-              min="0"
-              class="w-full px-3.5 py-2.5 rounded-xl border border-brand-gray/25 bg-brand-light/50 dark:bg-white/5 text-brand-dark dark:text-white font-mono text-xs font-bold focus:border-brand-accent transition-all"
+              v-model="form.defaultShelfLocation"
+              type="text"
+              placeholder="مثال: رف A-12، عمود 3، مخزن الزيوت..."
+              class="w-full px-3.5 py-2.5 rounded-xl border border-brand-gray/25 bg-brand-light/50 dark:bg-white/5 text-brand-dark dark:text-white text-xs focus:border-brand-accent transition-all"
             />
           </div>
 
@@ -414,6 +460,19 @@
               min="1"
               class="w-full px-3.5 py-2.5 rounded-xl border border-brand-gray/25 bg-brand-light/50 dark:bg-white/5 text-brand-dark dark:text-white font-mono text-xs focus:border-brand-accent transition-all"
             />
+          </div>
+
+          <!-- Advanced Options (IsMeasurable, HasExpiryDate) -->
+          <div class="sm:col-span-2 flex flex-wrap items-center gap-6 pt-1 p-2 bg-brand-light/30 dark:bg-white/5 rounded-xl border border-brand-gray/10">
+            <label class="flex items-center gap-2 cursor-pointer text-xs font-medium text-brand-dark dark:text-white">
+              <input type="checkbox" v-model="form.isMeasurable" class="rounded text-brand-accent focus:ring-brand-accent" />
+              <span>يقبل كسور وأوزان (مثل لتر بالكسر أو كجم)</span>
+            </label>
+
+            <label class="flex items-center gap-2 cursor-pointer text-xs font-medium text-brand-dark dark:text-white">
+              <input type="checkbox" v-model="form.hasExpiryDate" class="rounded text-brand-accent focus:ring-brand-accent" />
+              <span>صنف له تاريخ صلاحية وانتهاء</span>
+            </label>
           </div>
 
           <!-- SKU with Generator -->
@@ -504,109 +563,56 @@
       </template>
     </OhdaModal>
 
-    <!-- 2. Stock Movement Modal (+ / -) using OhdaModal -->
+    <!-- 2. Batches Modal (الدفعات والشحنات) using OhdaModal -->
     <OhdaModal
-      :visible="showMovementModal"
-      @close="showMovementModal = false"
-      title="تسجيل حركة مخزون جديدة"
-      description="تسجيل توريد، تسوية جردية، أو مرتجع وتحديث الرصيد مباشرة"
-      :icon="Boxes"
-      max-width="max-w-lg"
+      :visible="showBatchesModal"
+      @close="showBatchesModal = false"
+      :title="`شحنات ودفعات الصنف: ${targetProductForBatches?.name || ''}`"
+      description="تتبع شحنات التوريد بتواريخها، مواقع الرفوف، وتكلفة الشراء بنظام FIFO"
+      :icon="Layers"
+      max-width="max-w-3xl"
     >
-      <div v-if="targetProductForMovement" class="space-y-4 text-xs">
-        <!-- Target Product Summary -->
-        <div class="p-3 bg-brand-light/60 dark:bg-white/5 rounded-2xl border border-brand-gray/10 flex items-center justify-between">
-          <div>
-            <span class="font-bold text-brand-dark dark:text-white block">{{ targetProductForMovement.name }}</span>
-            <span class="text-[10px] text-brand-accent font-mono">{{ targetProductForMovement.sku }}</span>
-          </div>
-          <div class="text-end">
-            <span class="text-[10px] text-brand-gray dark:text-slate-400 block">الرصيد الحالي:</span>
-            <span class="font-mono font-bold text-sm text-brand-dark dark:text-white">
-              {{ targetProductForMovement.currentQuantity ?? targetProductForMovement.quantity ?? 0 }} {{ targetProductForMovement.unit || 'قطعة' }}
-            </span>
-          </div>
+      <div class="space-y-4 text-xs">
+        <div v-if="loadingBatches" class="py-12 text-center text-slate-400">
+          <RefreshCw class="w-6 h-6 animate-spin mx-auto mb-2 text-brand-accent" />
+          <span>جاري تحميل بيانات الشحنات...</span>
         </div>
 
-        <!-- Movement Type Selection -->
-        <div>
-          <label class="block font-semibold text-brand-dark dark:text-white mb-1.5">نوع الحركة</label>
-          <div class="grid grid-cols-2 gap-2">
-            <label
-              class="flex items-center gap-2 p-2.5 rounded-xl border cursor-pointer text-xs transition"
-              :class="movementForm.movementType === 1 ? 'bg-emerald-500/15 border-emerald-500 text-emerald-700 dark:text-emerald-300 font-bold' : 'border-brand-gray/20 hover:bg-white/5'"
-            >
-              <input type="radio" :value="1" v-model="movementForm.movementType" />
-              <span>توريد / شراء جديد (+)</span>
-            </label>
-
-            <label
-              class="flex items-center gap-2 p-2.5 rounded-xl border cursor-pointer text-xs transition"
-              :class="movementForm.movementType === 3 ? 'bg-blue-500/15 border-blue-500 text-blue-700 dark:text-blue-300 font-bold' : 'border-brand-gray/20 hover:bg-white/5'"
-            >
-              <input type="radio" :value="3" v-model="movementForm.movementType" />
-              <span>تسوية جردية (+/-)</span>
-            </label>
-
-            <label
-              class="flex items-center gap-2 p-2.5 rounded-xl border cursor-pointer text-xs transition"
-              :class="movementForm.movementType === 4 ? 'bg-purple-500/15 border-purple-500 text-purple-700 dark:text-purple-300 font-bold' : 'border-brand-gray/20 hover:bg-white/5'"
-            >
-              <input type="radio" :value="4" v-model="movementForm.movementType" />
-              <span>مرتجع للمخزن (+)</span>
-            </label>
-
-            <label
-              class="flex items-center gap-2 p-2.5 rounded-xl border cursor-pointer text-xs transition"
-              :class="movementForm.movementType === 2 ? 'bg-amber-500/15 border-amber-500 text-amber-700 dark:text-amber-300 font-bold' : 'border-brand-gray/20 hover:bg-white/5'"
-            >
-              <input type="radio" :value="2" v-model="movementForm.movementType" />
-              <span>صرف يدوي / تالف (-)</span>
-            </label>
-          </div>
+        <div v-else-if="!productBatches.length" class="py-12 text-center text-slate-400">
+          <Layers class="w-10 h-10 mx-auto mb-2 opacity-30" />
+          <span>لا توجد دفعات نشطة بمخزون متبقٍ لهذا الصنف</span>
         </div>
 
-        <!-- Quantity & Calculated Preview -->
-        <div class="grid grid-cols-2 gap-3">
-          <div>
-            <label class="block font-semibold text-brand-dark dark:text-white mb-1.5">الكمية</label>
-            <input
-              v-model.number="movementForm.quantity"
-              type="number"
-              step="any"
-              min="0.1"
-              class="w-full px-3.5 py-2.5 rounded-xl border border-brand-gray/25 bg-brand-light/50 dark:bg-white/5 font-mono font-bold text-xs text-brand-dark dark:text-white focus:border-brand-accent transition-all"
-            />
-          </div>
-
-          <div>
-            <label class="block font-semibold text-brand-dark dark:text-white mb-1.5">الرصيد بعد الحركة</label>
-            <div class="h-10 flex items-center px-3 rounded-xl bg-brand-light dark:bg-white/5 border border-brand-gray/20 font-mono font-bold text-sm text-brand-accent">
-              {{ previewQuantityAfter }} {{ targetProductForMovement.unit || 'قطعة' }}
-            </div>
-          </div>
-        </div>
-
-        <!-- Reference & Notes -->
-        <div class="space-y-3">
-          <div>
-            <label class="block font-semibold text-brand-dark dark:text-white mb-1.5">البيان / رقم الفاتورة أو الإذن</label>
-            <input
-              v-model="movementForm.reference"
-              type="text"
-              placeholder="مثال: فاتورة توريد رقم 102، تسوية جرد أسبوعي..."
-              class="w-full px-3.5 py-2.5 rounded-xl border border-brand-gray/25 bg-brand-light/50 dark:bg-white/5 text-xs text-brand-dark dark:text-white focus:border-brand-accent transition-all"
-            />
-          </div>
-
-          <div>
-            <label class="block font-semibold text-brand-dark dark:text-white mb-1.5">ملاحظات إضافية (اختياري)</label>
-            <input
-              v-model="movementForm.notes"
-              type="text"
-              placeholder="أي تفاصيل أو ملاحظات حول الحركة..."
-              class="w-full px-3.5 py-2.5 rounded-xl border border-brand-gray/25 bg-brand-light/50 dark:bg-white/5 text-xs text-brand-dark dark:text-white focus:border-brand-accent transition-all"
-            />
+        <div v-else class="space-y-3">
+          <div class="overflow-x-auto border border-brand-gray/10 rounded-2xl">
+            <table class="w-full text-right text-xs">
+              <thead class="bg-brand-light/70 dark:bg-white/5 border-b border-brand-gray/10 text-brand-dark dark:text-white font-bold">
+                <tr>
+                  <th class="p-3">كود الدفعة</th>
+                  <th class="p-3">تاريخ التوريد</th>
+                  <th class="p-3">الصلاحية</th>
+                  <th class="p-3">موقع الرف</th>
+                  <th class="p-3">التكلفة / وحدة</th>
+                  <th class="p-3">الوارد</th>
+                  <th class="p-3">المتبقي</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-brand-gray/10 text-brand-dark dark:text-slate-300">
+                <tr v-for="b in productBatches" :key="b.id" class="hover:bg-brand-soft/20 dark:hover:bg-white/5 transition">
+                  <td class="p-3 font-mono font-bold text-brand-accent select-all">{{ b.batchCode }}</td>
+                  <td class="p-3 font-mono text-[11px]">{{ formatDateTime(b.receivedDate) }}</td>
+                  <td class="p-3 font-mono text-[11px]">{{ b.expiryDate ? formatDateTime(b.expiryDate) : 'غير محدد' }}</td>
+                  <td class="p-3">
+                    <span class="px-2 py-0.5 rounded-md bg-brand-light dark:bg-white/10 font-medium">
+                      {{ b.shelfLocation || 'الرف الرئيسي' }}
+                    </span>
+                  </td>
+                  <td class="p-3 font-mono font-semibold">{{ b.costPerBaseUnit?.toLocaleString() }} ج.م</td>
+                  <td class="p-3 font-mono text-slate-500">{{ b.quantityReceived }}</td>
+                  <td class="p-3 font-mono font-black text-emerald-600 dark:text-emerald-400">{{ b.quantityRemaining }}</td>
+                </tr>
+              </tbody>
+            </table>
           </div>
         </div>
       </div>
@@ -615,18 +621,193 @@
         <button
           type="button"
           @click="close"
-          class="px-4 py-2.5 rounded-xl text-xs font-bold text-slate-500 hover:text-slate-800 dark:hover:text-white transition cursor-pointer"
+          class="px-4 py-2 rounded-xl text-xs font-bold bg-brand-light dark:bg-white/5 text-brand-dark dark:text-white border border-brand-gray/20 cursor-pointer"
         >
-          إلغاء
+          إغلاق
         </button>
+      </template>
+    </OhdaModal>
+
+    <!-- 2.1 Packaging Modal (خيارات التعبئة والكراتين) using OhdaModal -->
+    <OhdaModal
+      :visible="showPackagesModal"
+      @close="showPackagesModal = false"
+      :title="`خيارات التعبئة والتجزئة: ${targetProductForPackages?.name || ''}`"
+      description="إدارة أحجام العبوات والكراتين (مثال: كرتونة = 24 علبة) للشراء والبيع بالتجزئة والجملة"
+      :icon="Boxes"
+      max-width="max-w-xl"
+    >
+      <div class="space-y-4 text-xs">
+        <!-- Existing Packaging Options Table -->
+        <div v-if="productPackages.length" class="border border-brand-gray/10 rounded-2xl overflow-hidden">
+          <table class="w-full text-right text-xs">
+            <thead class="bg-brand-light/70 dark:bg-white/5 border-b border-brand-gray/10 text-brand-dark dark:text-white font-bold">
+              <tr>
+                <th class="p-3">اسم العبوة</th>
+                <th class="p-3">المعامل (وحدات أساسية)</th>
+                <th class="p-3">الباركود</th>
+                <th class="p-3">سعر البيع</th>
+                <th class="p-3 text-center">حذف</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-brand-gray/10">
+              <tr v-for="pkg in productPackages" :key="pkg.id" class="hover:bg-brand-soft/20 dark:hover:bg-white/5">
+                <td class="p-3 font-bold text-brand-dark dark:text-white">{{ pkg.name }}</td>
+                <td class="p-3 font-mono">{{ pkg.multiplier }} {{ targetProductForPackages?.unit || 'قطعة' }}</td>
+                <td class="p-3 font-mono text-[11px] text-brand-accent">{{ pkg.barcode || '-' }}</td>
+                <td class="p-3 font-mono font-semibold">{{ pkg.salePrice ? `${pkg.salePrice.toLocaleString()} ج.م` : '-' }}</td>
+                <td class="p-3 text-center">
+                  <button
+                    type="button"
+                    @click="deletePackage(pkg.id)"
+                    class="p-1 text-red-500 hover:bg-red-500/10 rounded-lg cursor-pointer transition"
+                    title="حذف خيار التعبئة"
+                  >
+                    <Trash2 class="w-3.5 h-3.5" />
+                  </button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div v-else class="p-4 bg-brand-light/40 dark:bg-white/5 rounded-2xl text-center text-slate-400">
+          لا توجد خيارات تعبئة مسجلة لهذا الصنف (يباع ويشترى بالوحدة الأساسية فقط).
+        </div>
+
+        <!-- Add New Package Form -->
+        <div class="p-4 bg-brand-light/60 dark:bg-white/5 rounded-2xl border border-brand-gray/15 space-y-3">
+          <h4 class="font-bold text-brand-dark dark:text-white flex items-center gap-2">
+            <Plus class="w-4 h-4 text-brand-accent" />
+            <span>إضافة حجم عبوة جديد</span>
+          </h4>
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <label class="block font-semibold mb-1 text-brand-dark dark:text-white">اسم العبوة *</label>
+              <input
+                v-model="newPackageForm.name"
+                placeholder="مثال: كرتونة 24 علبة، طرد 12..."
+                class="w-full px-3 py-2 rounded-xl border border-brand-gray/25 bg-white dark:bg-brand-dark text-xs text-brand-dark dark:text-white focus:border-brand-accent"
+              />
+            </div>
+
+            <div>
+              <label class="block font-semibold mb-1 text-brand-dark dark:text-white">المعامل بالوحدات الأساسية *</label>
+              <input
+                v-model.number="newPackageForm.multiplier"
+                type="number"
+                min="1"
+                placeholder="24"
+                class="w-full px-3 py-2 rounded-xl border border-brand-gray/25 bg-white dark:bg-brand-dark text-xs font-mono font-bold text-brand-dark dark:text-white focus:border-brand-accent"
+              />
+            </div>
+
+            <div>
+              <label class="block font-semibold mb-1 text-brand-dark dark:text-white">باركود العبوة (اختياري)</label>
+              <input
+                v-model="newPackageForm.barcode"
+                placeholder="مسح باركود الكرتونة"
+                class="w-full px-3 py-2 rounded-xl border border-brand-gray/25 bg-white dark:bg-brand-dark text-xs font-mono text-brand-dark dark:text-white focus:border-brand-accent"
+              />
+            </div>
+
+            <div>
+              <label class="block font-semibold mb-1 text-brand-dark dark:text-white">سعر بيع العبوة (ج.م - اختياري)</label>
+              <input
+                v-model.number="newPackageForm.salePrice"
+                type="number"
+                step="any"
+                min="0"
+                placeholder="0.00"
+                class="w-full px-3 py-2 rounded-xl border border-brand-gray/25 bg-white dark:bg-brand-dark text-xs font-mono text-brand-dark dark:text-white focus:border-brand-accent"
+              />
+            </div>
+          </div>
+
+          <button
+            type="button"
+            @click="submitNewPackage"
+            :disabled="savingPackage || !newPackageForm.name || !newPackageForm.multiplier"
+            class="px-4 py-2 bg-brand-accent text-brand-dark font-bold rounded-xl text-xs flex items-center gap-2 cursor-pointer shadow-sm hover:bg-brand-accent/90 disabled:opacity-50"
+          >
+            <RefreshCw v-if="savingPackage" class="w-3.5 h-3.5 animate-spin" />
+            <span>حفظ خيار التعبئة</span>
+          </button>
+        </div>
+      </div>
+
+      <template #footer="{ close }">
         <button
           type="button"
-          @click="submitStockMovement"
-          :disabled="savingMovement"
-          class="px-5 py-2.5 rounded-xl text-xs font-bold bg-emerald-600 hover:bg-emerald-500 text-white flex items-center gap-2 shadow-sm cursor-pointer transition-all disabled:opacity-50"
+          @click="close"
+          class="px-4 py-2 rounded-xl text-xs font-bold bg-brand-light dark:bg-white/5 text-brand-dark dark:text-white border border-brand-gray/20 cursor-pointer"
         >
-          <RefreshCw v-if="savingMovement" class="w-4 h-4 animate-spin" />
-          <span>تأكيد وتسجيل الحركة</span>
+          إغلاق
+        </button>
+      </template>
+    </OhdaModal>
+
+    <!-- 2.2 Diagnostic Check Modal (فحص مطابقة المخزون والنزاهة) using OhdaModal -->
+    <OhdaModal
+      :visible="showDiagnosticModal"
+      @close="showDiagnosticModal = false"
+      title="تقرير فحص مطابقة المخزون والنزاهة المحاسبية"
+      description="التحقق التلقائي من تطابق رصيد كل صنف مع مجموع الشحنات (Batches) وسجل الحركات"
+      :icon="ShieldCheck"
+      max-width="max-w-2xl"
+    >
+      <div class="space-y-4 text-xs">
+        <div v-if="loadingDiagnostic" class="py-12 text-center text-slate-400">
+          <RefreshCw class="w-6 h-6 animate-spin mx-auto mb-2 text-brand-accent" />
+          <span>جاري مطابقة الأرصدة والدفعات عبر قاعدة البيانات...</span>
+        </div>
+
+        <div v-else-if="diagnosticResult" class="space-y-4">
+          <!-- Summary Banner -->
+          <div
+            class="p-4 rounded-2xl border flex items-center gap-3"
+            :class="diagnosticResult.hasMismatches ? 'bg-red-500/10 border-red-500/30 text-red-700 dark:text-red-300' : 'bg-emerald-500/10 border-emerald-500/30 text-emerald-800 dark:text-emerald-300'"
+          >
+            <ShieldCheck class="w-6 h-6 shrink-0" />
+            <div>
+              <strong class="text-sm font-bold block">
+                {{ diagnosticResult.hasMismatches ? `تنبيه: تم رصد ${diagnosticResult.mismatchesCount} فروقات في مطابقة الدفعات!` : 'المخزون سليم 100% ومطابق لجميع دفعات التوريد' }}
+              </strong>
+              <span class="text-xs">
+                تم فحص {{ diagnosticResult.totalCheckedProducts }} صنف في الفرع الحالي وفق قاعدة البيانات.
+              </span>
+            </div>
+          </div>
+
+          <!-- Mismatches List if any -->
+          <div v-if="diagnosticResult.hasMismatches" class="space-y-2">
+            <h4 class="font-bold text-brand-dark dark:text-white">الأصناف التي بها فروقات:</h4>
+            <div
+              v-for="item in diagnosticResult.discrepancies"
+              :key="item.productId"
+              class="p-3 bg-brand-light/50 dark:bg-white/5 rounded-xl border border-red-500/20 flex items-center justify-between"
+            >
+              <div>
+                <span class="font-bold text-brand-dark dark:text-white block">{{ item.productName }}</span>
+                <span class="text-[10px] text-brand-accent font-mono">{{ item.sku }}</span>
+              </div>
+              <div class="text-end">
+                <span class="font-mono text-xs block text-slate-500">رصيد الصنف: {{ item.productCurrentQuantity }} | مجموع الدفعات: {{ item.sumBatchesRemaining }}</span>
+                <span class="text-[10px] text-red-500 font-bold font-mono">الفرق: {{ item.difference }} ({{ item.status }})</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <template #footer="{ close }">
+        <button
+          type="button"
+          @click="close"
+          class="px-4 py-2 rounded-xl text-xs font-bold bg-brand-light dark:bg-white/5 text-brand-dark dark:text-white border border-brand-gray/20 cursor-pointer"
+        >
+          إغلاق
         </button>
       </template>
     </OhdaModal>
@@ -837,6 +1018,7 @@ import LoadingSkeleton from "@/components/LoadingSkeleton.vue";
 import {
   Package,
   Plus,
+  ShoppingCart,
   Edit,
   Trash2,
   History,
@@ -848,7 +1030,9 @@ import {
   Coins,
   AlertTriangle,
   RefreshCw,
-  Sparkles
+  Sparkles,
+  Layers,
+  ShieldCheck
 } from "lucide-vue-next";
 
 const inventoryStore = useOhdaInventoryStore();
@@ -889,19 +1073,117 @@ const form = ref({
   sku: "",
   barcode: "",
   supplierId: null,
-  description: ""
+  description: "",
+  isMeasurable: false,
+  hasExpiryDate: false,
+  defaultShelfLocation: ""
 });
 
-// Stock Movement State
-const showMovementModal = ref(false);
-const targetProductForMovement = ref(null);
-const savingMovement = ref(false);
-const movementForm = ref({
-  movementType: 1, // 1: PurchaseIn, 2: JobUsed, 3: ManualAdjustment, 4: Return
-  quantity: 1,
-  reference: "",
-  notes: ""
+// Batches State
+const showBatchesModal = ref(false);
+const targetProductForBatches = ref(null);
+const productBatches = ref([]);
+const loadingBatches = ref(false);
+
+async function openBatchesModal(product) {
+  targetProductForBatches.value = product;
+  showBatchesModal.value = true;
+  loadingBatches.value = true;
+  try {
+    productBatches.value = await inventoryStore.fetchProductBatches(product.id);
+  } catch (err) {
+    productBatches.value = [];
+  } finally {
+    loadingBatches.value = false;
+  }
+}
+
+// Packages State
+const showPackagesModal = ref(false);
+const targetProductForPackages = ref(null);
+const productPackages = ref([]);
+const loadingPackages = ref(false);
+const savingPackage = ref(false);
+const newPackageForm = ref({
+  name: "",
+  multiplier: 1,
+  barcode: "",
+  salePrice: null
 });
+
+async function openPackagesModal(product) {
+  targetProductForPackages.value = product;
+  showPackagesModal.value = true;
+  loadingPackages.value = true;
+  newPackageForm.value = { name: "", multiplier: 1, barcode: "", salePrice: null };
+  try {
+    productPackages.value = await inventoryStore.fetchProductPackages(product.id);
+  } catch (err) {
+    productPackages.value = [];
+  } finally {
+    loadingPackages.value = false;
+  }
+}
+
+async function submitNewPackage() {
+  if (!targetProductForPackages.value || !newPackageForm.value.name || !newPackageForm.value.multiplier) return;
+  savingPackage.value = true;
+  try {
+    const res = await inventoryStore.addProductPackage(targetProductForPackages.value.id, {
+      name: newPackageForm.value.name.trim(),
+      multiplier: Number(newPackageForm.value.multiplier),
+      barcode: newPackageForm.value.barcode?.trim() || null,
+      salePrice: newPackageForm.value.salePrice ? Number(newPackageForm.value.salePrice) : null
+    });
+    if (res.success) {
+      toastStore.addSuccessToast(res.message || "تمت إضافة خيار التعبئة بنجاح");
+      productPackages.value = await inventoryStore.fetchProductPackages(targetProductForPackages.value.id);
+      newPackageForm.value = { name: "", multiplier: 1, barcode: "", salePrice: null };
+    } else {
+      toastStore.addErrorToast(res.message);
+    }
+  } catch (err) {
+    toastStore.addErrorToast("حدث خطأ أثناء إضافة خيار التعبئة");
+  } finally {
+    savingPackage.value = false;
+  }
+}
+
+async function deletePackage(packageId) {
+  try {
+    const res = await inventoryStore.deleteProductPackage(packageId);
+    if (res.success) {
+      toastStore.addSuccessToast(res.message || "تم حذف خيار التعبئة");
+      productPackages.value = productPackages.value.filter(p => p.id !== packageId);
+    } else {
+      toastStore.addErrorToast(res.message);
+    }
+  } catch (err) {
+    toastStore.addErrorToast("حدث خطأ أثناء الحذف");
+  }
+}
+
+// Diagnostic State
+const showDiagnosticModal = ref(false);
+const loadingDiagnostic = ref(false);
+const diagnosticResult = ref(null);
+
+async function openDiagnosticModal() {
+  showDiagnosticModal.value = true;
+  loadingDiagnostic.value = true;
+  try {
+    const res = await inventoryStore.runInventoryDiagnosticCheck();
+    if (res.success) {
+      diagnosticResult.value = res.data;
+    } else {
+      toastStore.addErrorToast(res.message);
+    }
+  } catch (err) {
+    toastStore.addErrorToast("حدث خطأ أثناء تشغيل فحص المطابقة");
+  } finally {
+    loadingDiagnostic.value = false;
+  }
+}
 
 // History State
 const showHistoryModal = ref(false);
@@ -984,21 +1266,6 @@ const filteredProducts = computed(() => {
   return list;
 });
 
-// Preview Quantity After Movement
-const previewQuantityAfter = computed(() => {
-  if (!targetProductForMovement.value) return 0;
-  const current = Number(targetProductForMovement.value.currentQuantity ?? targetProductForMovement.value.quantity) || 0;
-  const qty = Number(movementForm.value.quantity) || 0;
-
-  if (movementForm.value.movementType === 2) {
-    // Deduct
-    return Math.max(0, current - qty);
-  } else {
-    // Add / Purchase / Return / Adjustment
-    return current + qty;
-  }
-});
-
 // Modal Actions
 function openAddModal() {
   isEditing.value = false;
@@ -1014,7 +1281,10 @@ function openAddModal() {
     sku: "",
     barcode: "",
     supplierId: null,
-    description: ""
+    description: "",
+    isMeasurable: false,
+    hasExpiryDate: false,
+    defaultShelfLocation: ""
   };
   generateSku();
   showModal.value = true;
@@ -1034,7 +1304,10 @@ function openEditModal(product) {
     sku: product.sku || "",
     barcode: product.barcode || "",
     supplierId: product.supplierId || null,
-    description: product.description || ""
+    description: product.description || "",
+    isMeasurable: Boolean(product.isMeasurable),
+    hasExpiryDate: Boolean(product.hasExpiryDate),
+    defaultShelfLocation: product.defaultShelfLocation || ""
   };
   showModal.value = true;
 }
@@ -1072,20 +1345,24 @@ async function saveProduct() {
       purchasePrice: form.value.costPrice || 0,
       sellingPrice: form.value.sellingPrice || 0,
       unitPrice: form.value.sellingPrice || 0,
-      currentQuantity: form.value.currentQuantity || 0,
-      amount: form.value.currentQuantity || 0,
+      currentQuantity: 0, // Strict rule: new definitions have 0 stock
+      amount: 0,
       minQuantity: form.value.minQuantity || 5,
       minThreshold: form.value.minQuantity || 5,
       sku: form.value.sku?.trim() || null,
       barcode: form.value.barcode?.trim() || null,
       supplierId: form.value.supplierId || null,
       description: form.value.description || null,
-      inventoryType: 1 // Default consumable/merchandise
+      isMeasurable: form.value.isMeasurable,
+      hasExpiryDate: form.value.hasExpiryDate,
+      defaultShelfLocation: form.value.defaultShelfLocation?.trim() || null,
+      inventoryType: 1
     };
 
     let res;
     if (isEditing.value) {
       payload.id = editingId.value;
+      payload.currentQuantity = form.value.currentQuantity; // preserve existing read-only value
       res = await inventoryStore.updateProduct(editingId.value, payload);
     } else {
       res = await inventoryStore.addProduct(payload);
@@ -1101,51 +1378,6 @@ async function saveProduct() {
     toastStore.addErrorToast("حدث خطأ أثناء حفظ الصنف");
   } finally {
     saving.value = false;
-  }
-}
-
-// Stock Movement
-function openStockMovementModal(product) {
-  targetProductForMovement.value = product;
-  movementForm.value = {
-    movementType: 1, // PurchaseIn
-    quantity: 1,
-    reference: "",
-    notes: ""
-  };
-  showMovementModal.value = true;
-}
-
-async function submitStockMovement() {
-  if (!targetProductForMovement.value) return;
-  if (!movementForm.value.quantity || movementForm.value.quantity <= 0) {
-    toastStore.addErrorToast("الكمية يجب أن تكون أكبر من صفر");
-    return;
-  }
-
-  savingMovement.value = true;
-  try {
-    const payload = {
-      productId: targetProductForMovement.value.id,
-      movementType: movementForm.value.movementType,
-      quantity: movementForm.value.quantity,
-      costPrice: targetProductForMovement.value.costPrice ?? targetProductForMovement.value.purchasePrice,
-      sellingPrice: targetProductForMovement.value.sellingPrice ?? targetProductForMovement.value.unitPrice,
-      reference: movementForm.value.reference?.trim() || null,
-      notes: movementForm.value.notes?.trim() || null
-    };
-
-    const res = await inventoryStore.recordStockMovement(payload);
-    if (res.success) {
-      toastStore.addSuccessToast(res.message || "تم تسجيل حركة المخزون بنجاح");
-      showMovementModal.value = false;
-    } else {
-      toastStore.addErrorToast(res.message || "فشل تسجيل الحركة");
-    }
-  } catch (err) {
-    toastStore.addErrorToast("حدث خطأ أثناء تسجيل حركة المخزون");
-  } finally {
-    savingMovement.value = false;
   }
 }
 

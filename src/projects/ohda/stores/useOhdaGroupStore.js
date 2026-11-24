@@ -11,10 +11,11 @@ export const useOhdaGroupStore = defineStore("ohdaGroup", {
 
   actions: {
     // --- User Groups CRUD ---
-    async fetchUserGroups() {
+    async fetchUserGroups(branchId = null) {
       this.loading = true;
       try {
-        const res = await apiGet("/api/UserGroup");
+        const url = (branchId && branchId > 0) ? `/api/UserGroup?branchId=${branchId}` : "/api/UserGroup";
+        const res = await apiGet(url);
         const data = res?.data?.objects || res?.data?.singleObject;
         if (res?.data?.isDone && data) {
           this.groups = data;
@@ -99,12 +100,11 @@ export const useOhdaGroupStore = defineStore("ohdaGroup", {
       try {
         const res = await apiPost("/api/GroupPagePermission/grant", { userGroupId, pageId }, false);
         if (res?.data?.isDone) {
-          if (!this.groupPermissions[userGroupId]) {
-            this.groupPermissions[userGroupId] = [];
+          const current = this.groupPermissions[userGroupId] ? [...this.groupPermissions[userGroupId]] : [];
+          if (!current.includes(pageId)) {
+            current.push(pageId);
           }
-          if (!this.groupPermissions[userGroupId].includes(pageId)) {
-            this.groupPermissions[userGroupId].push(pageId);
-          }
+          this.groupPermissions[userGroupId] = current;
           return { success: true };
         }
         return { success: false, message: res?.data?.returnMessage || "فشل منح صلاحيات المجموعة" };

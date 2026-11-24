@@ -21,8 +21,34 @@
         </router-link>
       </div>
 
+      <!-- Global Search Bar in Header (Ctrl+K) -->
+      <div class="flex-1 max-w-md mx-4 hidden md:block">
+        <button
+          type="button"
+          @click="showGlobalSearch = true"
+          class="w-full flex items-center justify-between px-3.5 py-1.5 bg-white/10 hover:bg-white/15 text-slate-300 hover:text-white border border-white/10 rounded-xl text-xs transition-all cursor-pointer shadow-xs"
+          title="البحث الموحد في النظام (Ctrl+K)"
+        >
+          <div class="flex items-center gap-2">
+            <Search class="w-3.5 h-3.5 text-brand-accent" />
+            <span class="text-slate-400">بحث سريع في الورشة (عميل، هاتف، لوحة، صنف، فاتورة)...</span>
+          </div>
+          <kbd class="px-1.5 py-0.5 rounded bg-white/10 text-[10px] font-mono text-slate-400 border border-white/10">
+            Ctrl+K
+          </kbd>
+        </button>
+      </div>
+
       <!-- Right Header Tools: Language Switcher, Notifications, Profile & Logout -->
       <div class="flex items-center gap-3">
+        <!-- Mobile Search Button -->
+        <button
+          @click="showGlobalSearch = true"
+          class="md:hidden p-2 bg-white/10 hover:bg-white/20 text-white border border-white/10 rounded-xl transition-all cursor-pointer"
+          title="البحث الموحد"
+        >
+          <Search class="w-4 h-4 text-brand-accent" />
+        </button>
         <!-- Page Help Guide Button -->
         <button
           @click="showPageHelp = true"
@@ -222,6 +248,9 @@
 
     <!-- Mandatory / Voluntary Force Change Password Dialog -->
     <ForceChangePasswordDialog :manual-open="showChangePasswordModal" @closed="showChangePasswordModal = false" />
+
+    <!-- Unified Global Search Dialog (Ctrl+K) -->
+    <GlobalSearchModal v-model="showGlobalSearch" />
   </div>
 </template>
 
@@ -234,6 +263,7 @@ import { useOhdaNotificationStore } from "../stores/useOhdaNotificationStore";
 import { useI18n } from "vue-i18n";
 import PageHelpDrawer from "../components/PageHelpDrawer.vue";
 import ForceChangePasswordDialog from "../components/ForceChangePasswordDialog.vue";
+import GlobalSearchModal from "../components/GlobalSearchModal.vue";
 import { 
   KeyRound, 
   Menu, 
@@ -245,7 +275,8 @@ import {
   User, 
   LogOut, 
   ChevronDown,
-  Sliders
+  Sliders,
+  Search
 } from "lucide-vue-next";
 import * as LucideIcons from "lucide-vue-next";
 import { getBranchSettings, getStoredThemeColor, applyTheme } from "../utilities/themeManager";
@@ -266,12 +297,13 @@ const sidebarOpen = ref(false);
 const showNotifications = ref(false);
 const showPageHelp = ref(false);
 const showChangePasswordModal = ref(false);
+const showGlobalSearch = ref(false);
 
 const branchSettings = ref(getBranchSettings());
 
 const displayBranchName = computed(() => {
   if (authStore.isSuperAdmin) return currentLocale.value === "ar" ? "نظام إدارة الورش والمنصة" : "Central Workshop Platform";
-  return branchSettings.value.branchName || authStore.branchName || (currentLocale.value === "ar" ? "نظام إدارة الورشة والعناية بالسيارات" : "AutoCare Workshop Management");
+  return  authStore.branchName || (currentLocale.value === "ar" ? "نظام إدارة الورشة والعناية بالسيارات" : "AutoCare Workshop Management");
 });
 
 window.addEventListener("storage", (e) => {
@@ -282,12 +314,16 @@ window.addEventListener("storage", (e) => {
 });
 
 const openGroups = ref({
-  general: true,
-  reservations: true,
-  sales: true,
+  today: true,
+  bookings: true,
+  jobs: true,
+  pos: true,
+  customers: true,
   inventory: true,
   finance: true,
-  hr: true,
+  team: true,
+  reports: true,
+  settings: true,
   branches: true,
   users_group: true
 });
@@ -305,6 +341,7 @@ const currentLocale = computed(() => getCurrentLocale());
 const pageMeta = {
   "/ohda/dashboard": { labelKey: "ohda.nav.dashboard", icon: "LayoutDashboard" },
   "/ohda/jobs": { labelKey: "ohda.nav.jobs", icon: "FileText" },
+  "/ohda/pos": { labelKey: "ohda.nav.pos", customLabelAr: "نقطة بيع المنتجات (POS)", icon: "ShoppingCart" },
   "/ohda/clients": { labelKey: "ohda.nav.clients", icon: "Users" },
   "/ohda/estimates": { labelKey: "ohda.nav.estimates", icon: "FileText" },
   "/ohda/reminders": { labelKey: "ohda.nav.reminders", icon: "BellRing" },
@@ -412,30 +449,43 @@ const groupDefinitions = computed(() => {
 
   return [
     {
-      key: "general",
-      labelKey: "ohda.groups.general",
-      icon: "LayoutDashboard",
+      key: "today",
+      customTitle: currentLocale.value === "ar" ? "لوحة اليوم" : "Today's Board",
+      icon: "Clock",
       paths: [
-        "/ohda/dashboard",
+        "/ohda/todays-board",
+        "/ohda/dashboard"
       ]
     },
     {
-      key: "reservations",
-      labelKey: "ohda.groups.reservations",
+      key: "bookings",
+      customTitle: currentLocale.value === "ar" ? "تقويم الحجوزات" : "Bookings Calendar",
       icon: "CalendarDays",
       paths: [
-        "/ohda/bookings-calendar",
-        "/ohda/todays-board",
-        "/ohda/bays-settings",
-        "/ohda/reports"
+        "/ohda/bookings-calendar"
       ]
     },
     {
-      key: "sales",
-      labelKey: "ohda.groups.sales",
+      key: "jobs",
+      customTitle: currentLocale.value === "ar" ? "أوامر الشغل" : "Job Cards",
       icon: "FileText",
       paths: [
-        "/ohda/jobs",
+        "/ohda/jobs"
+      ]
+    },
+    {
+      key: "pos",
+      customTitle: currentLocale.value === "ar" ? "نقطة بيع المنتجات (POS)" : "Point of Sale",
+      icon: "ShoppingCart",
+      paths: [
+        "/ohda/pos"
+      ]
+    },
+    {
+      key: "customers",
+      customTitle: currentLocale.value === "ar" ? "العملاء والمركبات" : "Customers & Vehicles",
+      icon: "Users",
+      paths: [
         "/ohda/clients",
         "/ohda/estimates",
         "/ohda/reminders"
@@ -443,21 +493,21 @@ const groupDefinitions = computed(() => {
     },
     {
       key: "inventory",
-      labelKey: "ohda.groups.inventory",
+      customTitle: currentLocale.value === "ar" ? "المخزون والمشتريات" : "Stock & Purchases",
       icon: "Boxes",
       paths: [
         "/ohda/products",
-        "/ohda/services",
         "/ohda/purchases",
-        "/ohda/returns",
-        "/ohda/suppliers",
         "/ohda/categories",
-        "/ohda/barcode-print"
+        "/ohda/suppliers",
+        "/ohda/returns",
+        "/ohda/inventory",
+        "/ohda/warehouse-bins"
       ]
     },
     {
       key: "finance",
-      labelKey: "ohda.groups.finance",
+      customTitle: currentLocale.value === "ar" ? "المالية ودرج النقدية" : "Finance & Drawer",
       icon: "Wallet",
       paths: [
         "/ohda/finance",
@@ -466,14 +516,31 @@ const groupDefinitions = computed(() => {
       ]
     },
     {
-      key: "hr",
-      labelKey: "ohda.groups.hr",
+      key: "team",
+      customTitle: currentLocale.value === "ar" ? "الفريق وشؤون العاملين" : "Team & Staff",
       icon: "UserCheck",
       paths: [
         "/ohda/employees",
-        "/ohda/users",
-        "/ohda/settings",
-        "/ohda/lookups"
+        "/ohda/users"
+      ]
+    },
+    {
+      key: "reports",
+      customTitle: currentLocale.value === "ar" ? "التقارير الشاملة" : "Reports",
+      icon: "BarChart3",
+      paths: [
+        "/ohda/reports"
+      ]
+    },
+    {
+      key: "settings",
+      customTitle: currentLocale.value === "ar" ? "الإعدادات والخدمات" : "Settings & Services",
+      icon: "Sliders",
+      paths: [
+        "/ohda/services",
+        "/ohda/bays-settings",
+        "/ohda/lookups",
+        "/ohda/settings"
       ]
     }
   ];

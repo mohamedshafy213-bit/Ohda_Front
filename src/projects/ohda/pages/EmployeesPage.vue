@@ -179,8 +179,9 @@
             <tr class="bg-black/5 dark:bg-white/5 border-b border-brand-gray/10 text-brand-gray dark:text-slate-400 font-semibold">
               <th class="p-3.5 text-start">الاسم</th>
               <th class="p-3.5 text-start">المسمى الوظيفي</th>
+              <th class="p-3.5 text-start">حساب المستخدم</th>
               <th class="p-3.5 text-start">رقم الهاتف</th>
-              <th class="p-3.5 text-start">الراتب الأساسي</th>
+              <th class="p-3.5 text-start">نظام الأجر / الراتب</th>
               <th class="p-3.5 text-start">العمولة %</th>
               <th class="p-3.5 text-start">تاريخ التعيين</th>
               <th class="p-3.5 text-start">الحالة</th>
@@ -210,14 +211,34 @@
                 </span>
               </td>
 
+              <!-- Linked User Account -->
+              <td class="p-3.5 whitespace-nowrap">
+                <span
+                  v-if="emp.userId || emp.userName"
+                  class="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-purple-500/10 text-purple-600 dark:text-purple-400 border border-purple-500/20 inline-flex items-center gap-1"
+                >
+                  <UserCheck class="w-3 h-3" />
+                  @{{ emp.userName || emp.userPersonName || 'مرتبط' }}
+                </span>
+                <span v-else class="text-[10px] text-slate-400">بدون حساب</span>
+              </td>
+
               <!-- Phone -->
               <td class="p-3.5 font-mono text-slate-600 dark:text-slate-400 whitespace-nowrap">
                 {{ emp.phone || '-' }}
               </td>
 
-              <!-- Base Salary -->
-              <td class="p-3.5 font-mono font-bold text-slate-800 dark:text-slate-200 whitespace-nowrap">
-                {{ formatCurrency(emp.baseSalary) }}
+              <!-- Base Salary & Type -->
+              <td class="p-3.5 font-mono whitespace-nowrap">
+                <div class="font-bold text-slate-800 dark:text-slate-200">
+                  {{ formatCurrency(emp.baseSalary) }}
+                </div>
+                <span
+                  class="px-1.5 py-0.2 rounded text-[9px] font-bold"
+                  :class="emp.salaryType === 2 ? 'bg-amber-500/15 text-amber-600 dark:text-amber-400' : 'bg-blue-500/15 text-blue-600 dark:text-blue-400'"
+                >
+                  {{ emp.salaryType === 2 ? 'أجر باليومية' : 'راتب شهري' }}
+                </span>
               </td>
 
               <!-- Commission Rate -->
@@ -412,8 +433,19 @@
               </td>
 
               <!-- Base Salary -->
-              <td class="p-3.5 font-mono text-slate-700 dark:text-slate-300 whitespace-nowrap">
-                {{ formatCurrency(p.baseSalary) }}
+              <td class="p-3.5 font-mono whitespace-nowrap">
+                <div class="font-bold text-slate-800 dark:text-slate-200">
+                  {{ formatCurrency(p.baseSalary) }}
+                </div>
+                <div v-if="p.salaryType === 2" class="text-[10px] text-amber-600 dark:text-amber-400 font-sans">
+                  ({{ p.daysWorked }} يوم عمل × {{ formatCurrency(p.dailyRate) }})
+                </div>
+                <span
+                  class="px-1.5 py-0.2 rounded text-[9px] font-bold"
+                  :class="p.salaryType === 2 ? 'bg-amber-500/15 text-amber-600 dark:text-amber-400' : 'bg-blue-500/15 text-blue-600 dark:text-blue-400'"
+                >
+                  {{ p.salaryType === 2 ? 'يومية' : 'شهري' }}
+                </span>
               </td>
 
               <!-- Bonus -->
@@ -503,16 +535,50 @@
           />
         </div>
 
+        <!-- User Account Link (Optional) -->
+        <div class="bg-purple-500/5 p-3 rounded-xl border border-purple-500/15">
+          <label class="block font-semibold mb-1 text-purple-700 dark:text-purple-300">
+            ربط بحساب مستخدم في النظام (اختياري)
+          </label>
+          <select
+            v-model="employeeForm.userId"
+            class="w-full text-xs p-2.5 rounded-xl border border-brand-gray/20 dark:border-white/10 bg-brand-white dark:bg-slate-800 text-brand-dark dark:text-white focus:border-purple-500 transition-all cursor-pointer"
+          >
+            <option :value="null">-- بدون حساب مستخدم (لا يوجد حساب له في النظام) --</option>
+            <option
+              v-for="u in userStore.users"
+              :key="u.id"
+              :value="u.id"
+            >
+              {{ u.personName || u.username }} (@{{ u.username }})
+            </option>
+          </select>
+          <p class="text-[10px] text-slate-500 dark:text-slate-400 mt-1">
+            يمكنك ربط هذا الموظف/الفني بحساب مستخدم مسجل مسبقاً، أو تركه بدون حساب إن لم يكن يحتاج تسجيل الدخول.
+          </p>
+        </div>
+
         <!-- Job Title & Phone -->
         <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
           <div>
             <label class="block font-semibold mb-1">المسمى الوظيفي *</label>
+            <select
+              v-model="selectedJobTitlePreset"
+              @change="onJobTitleSelectChange"
+              class="w-full text-xs p-2.5 rounded-xl border border-brand-gray/20 dark:border-white/10 bg-brand-white dark:bg-slate-800 text-brand-dark dark:text-white focus:border-brand-accent transition-all cursor-pointer"
+            >
+              <option v-for="title in availableJobTitles" :key="title" :value="title">
+                {{ title }}
+              </option>
+            </select>
             <input
+              v-if="selectedJobTitlePreset === 'أخرى...'"
               type="text"
-              v-model="employeeForm.jobTitle"
+              v-model="customJobTitle"
+              @input="employeeForm.jobTitle = customJobTitle"
+              placeholder="اكتب المسمى الوظيفي..."
+              class="w-full text-xs p-2.5 mt-2 rounded-xl border border-brand-gray/20 dark:border-white/10 bg-transparent text-brand-dark dark:text-white focus:border-brand-accent transition-all"
               required
-              placeholder="مثال: فني ميكانيكا، كهربائي..."
-              class="w-full text-xs p-2.5 rounded-xl border border-brand-gray/20 dark:border-white/10 bg-transparent text-brand-dark dark:text-white focus:border-brand-accent transition-all"
             />
           </div>
 
@@ -521,16 +587,48 @@
             <input
               type="tel"
               v-model="employeeForm.phone"
+              @keypress="allowOnlyNumbers"
+              @input="employeeForm.phone = filterPhone(employeeForm.phone)"
               placeholder="01XXXXXXXXX"
+              maxlength="15"
               class="w-full text-xs p-2.5 rounded-xl border border-brand-gray/20 dark:border-white/10 bg-transparent text-brand-dark dark:text-white font-mono focus:border-brand-accent transition-all"
             />
+            <p v-if="employeeForm.phone && !isValidPhone(employeeForm.phone)" class="text-[10px] text-amber-500 mt-1">
+              رقم الهاتف يجب أن يتكون من 7 إلى 15 رقماً.
+            </p>
           </div>
         </div>
 
-        <!-- Base Salary & Commission Rate -->
+        <!-- Salary Type Selector -->
+        <div>
+          <label class="block font-semibold mb-1">نظام احتساب الراتب / الأجر *</label>
+          <div class="grid grid-cols-2 gap-2">
+            <button
+              type="button"
+              @click="employeeForm.salaryType = 1"
+              class="p-2 rounded-xl border text-xs font-bold flex items-center justify-center gap-1.5 transition-all cursor-pointer"
+              :class="employeeForm.salaryType === 1 ? 'border-brand-accent bg-brand-accent/15 text-brand-dark dark:text-white shadow-xs' : 'border-brand-gray/20 text-slate-500 hover:bg-black/5 dark:hover:bg-white/5'"
+            >
+              <span>راتب شهري ثابت</span>
+            </button>
+            <button
+              type="button"
+              @click="employeeForm.salaryType = 2"
+              class="p-2 rounded-xl border text-xs font-bold flex items-center justify-center gap-1.5 transition-all cursor-pointer"
+              :class="employeeForm.salaryType === 2 ? 'border-amber-500 bg-amber-500/15 text-amber-700 dark:text-amber-300 shadow-xs' : 'border-brand-gray/20 text-slate-500 hover:bg-black/5 dark:hover:bg-white/5'"
+            >
+              <span>يومية (حساب باليوم)</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Base Salary / Daily Rate & Commission Rate -->
         <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
           <div>
-            <label class="block font-semibold mb-1">الراتب الأساسي الشهري (ج.م) *</label>
+            <label class="block font-semibold mb-1">
+              <span v-if="employeeForm.salaryType === 2">قيمة اليومية / الأجر اليومي (ج.م) *</span>
+              <span v-else>الراتب الأساسي الشهري (ج.م) *</span>
+            </label>
             <input
               type="number"
               v-model.number="employeeForm.baseSalary"
@@ -562,9 +660,20 @@
             <input
               type="text"
               v-model="employeeForm.nationalId"
+              @keypress="allowOnlyNumbers"
+              @input="employeeForm.nationalId = filterNationalId(employeeForm.nationalId)"
+              maxlength="14"
               placeholder="الرقم القومي (14 رقم)"
               class="w-full text-xs p-2.5 rounded-xl border border-brand-gray/20 dark:border-white/10 bg-transparent text-brand-dark dark:text-white font-mono focus:border-brand-accent transition-all"
             />
+            <div class="flex items-center justify-between mt-1 text-[10px]">
+              <span :class="employeeForm.nationalId && employeeForm.nationalId.length === 14 ? 'text-emerald-500 font-bold' : 'text-slate-400'">
+                {{ employeeForm.nationalId ? employeeForm.nationalId.length : 0 }} / 14 رقماً
+              </span>
+              <span v-if="employeeForm.nationalId && employeeForm.nationalId.length !== 14" class="text-amber-500">
+                يجب أن يكون 14 رقماً بالضبط
+              </span>
+            </div>
           </div>
 
           <div>
@@ -840,6 +949,9 @@
 <script setup>
 import { ref, computed, onMounted } from "vue";
 import { useOhdaHRStore } from "../stores/useOhdaHRStore";
+import { useOhdaUserPermissionStore } from "../stores/useOhdaUserPermissionStore";
+import { useOhdaLookupStore } from "../stores/useOhdaLookupStore";
+import { filterPhone, filterNationalId, isValidPhone, isValidNationalIdNumber, allowOnlyNumbers } from "@/utilities/validations";
 import OhdaModal from "../components/OhdaModal.vue";
 import LoadingSkeleton from "@/components/LoadingSkeleton.vue";
 import EmptyState from "@/components/EmptyState.vue";
@@ -863,6 +975,8 @@ import {
 } from "lucide-vue-next";
 
 const hrStore = useOhdaHRStore();
+const userStore = useOhdaUserPermissionStore();
+const lookupStore = useOhdaLookupStore();
 
 const activeView = ref("employees");
 const employeeSearch = ref("");
@@ -883,15 +997,54 @@ const showPayModal = ref(false);
 const showDeleteModal = ref(false);
 const employeeToDelete = ref(null);
 
+const fallbackJobTitles = [
+  "فني ميكانيكا",
+  "فني كهرباء سيارات",
+  "فني تكييف سيارات",
+  "فني عفشة وميزان",
+  "فني سمكرة ودهان",
+  "مهندس فحص وتشخيص",
+  "فني غيار زيوت وفلاتر",
+  "مستشار صيانة واستقبال",
+  "مدير الورشة / المشرف الفني",
+  "أمين مخزن وقطع غيار",
+  "محاسب / كاشير",
+  "مساعد فني / عامل",
+  "أخرى..."
+];
+
+const availableJobTitles = computed(() => {
+  const fromLookup = lookupStore.getValuesByCode("employee_job_title");
+  if (fromLookup && fromLookup.length > 0) {
+    const list = fromLookup.map(v => v.labelAr || v.value);
+    if (!list.includes("أخرى...")) list.push("أخرى...");
+    return list;
+  }
+  return fallbackJobTitles;
+});
+
+const selectedJobTitlePreset = ref("فني ميكانيكا");
+const customJobTitle = ref("");
+
+function onJobTitleSelectChange() {
+  if (selectedJobTitlePreset.value !== "أخرى...") {
+    employeeForm.value.jobTitle = selectedJobTitlePreset.value;
+  } else {
+    employeeForm.value.jobTitle = customJobTitle.value || "";
+  }
+}
+
 const employeeForm = ref({
   name: "",
-  jobTitle: "فني صيانة",
+  jobTitle: "فني ميكانيكا",
   phone: "",
+  salaryType: 1,
   baseSalary: 5000,
   commissionRate: 0,
   nationalId: "",
   hireDate: todayStr,
   isActive: true,
+  userId: null,
   notes: ""
 });
 
@@ -916,7 +1069,9 @@ onMounted(async () => {
   await Promise.all([
     hrStore.fetchEmployees(),
     loadAttendance(),
-    loadPayroll()
+    loadPayroll(),
+    userStore.fetchUsers(),
+    lookupStore.fetchAllActive()
   ]);
 });
 
@@ -984,15 +1139,19 @@ function openAddEmployeeModal() {
   editingEmployeeId.value = null;
   employeeForm.value = {
     name: "",
-    jobTitle: "فني صيانة",
+    jobTitle: "فني ميكانيكا",
     phone: "",
+    salaryType: 1,
     baseSalary: 5000,
     commissionRate: 0,
     nationalId: "",
     hireDate: todayStr,
     isActive: true,
+    userId: null,
     notes: ""
   };
+  selectedJobTitlePreset.value = "فني ميكانيكا";
+  customJobTitle.value = "";
   showEmployeeModal.value = true;
 }
 
@@ -1002,17 +1161,38 @@ function openEditEmployeeModal(emp) {
     name: emp.name,
     jobTitle: emp.jobTitle,
     phone: emp.phone || "",
+    salaryType: emp.salaryType || 1,
     baseSalary: emp.baseSalary,
     commissionRate: emp.commissionRate,
     nationalId: emp.nationalId || "",
     hireDate: emp.hireDate ? emp.hireDate.split("T")[0] : todayStr,
     isActive: emp.isActive,
+    userId: emp.userId || null,
     notes: emp.notes || ""
   };
+  if (availableJobTitles.value.includes(emp.jobTitle) && emp.jobTitle !== "أخرى...") {
+    selectedJobTitlePreset.value = emp.jobTitle;
+    customJobTitle.value = "";
+  } else {
+    selectedJobTitlePreset.value = "أخرى...";
+    customJobTitle.value = emp.jobTitle;
+  }
   showEmployeeModal.value = true;
 }
 
 async function submitEmployee() {
+  if (employeeForm.value.phone && !isValidPhone(employeeForm.value.phone)) {
+    alert("رقم الهاتف غير صالح. يجب أن يتكون من 7 إلى 15 رقماً.");
+    return;
+  }
+  if (employeeForm.value.nationalId && !isValidNationalIdNumber(employeeForm.value.nationalId)) {
+    alert("الرقم القومي غير صالح. يجب أن يتكون من 14 رقماً بالضبط وبدون حروف أو رموز.");
+    return;
+  }
+  if (selectedJobTitlePreset.value === "أخرى..." && customJobTitle.value) {
+    employeeForm.value.jobTitle = customJobTitle.value.trim();
+  }
+
   if (editingEmployeeId.value) {
     const res = await hrStore.updateEmployee(editingEmployeeId.value, employeeForm.value);
     if (res.success) {

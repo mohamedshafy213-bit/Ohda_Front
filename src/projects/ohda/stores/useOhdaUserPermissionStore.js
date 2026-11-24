@@ -117,10 +117,11 @@ export const useOhdaUserPermissionStore = defineStore("ohdaUserPermission", {
         if (res?.data?.isDone) {
           const user = this.users.find(u => (u.id ?? u.militaryNumber) === userId);
           if (user) {
-            if (!user.allowedPages) user.allowedPages = [];
-            if (!user.allowedPages.includes(pageId)) {
-              user.allowedPages.push(pageId);
+            const current = user.allowedPages ? [...user.allowedPages] : [];
+            if (!current.includes(pageId)) {
+              current.push(pageId);
             }
+            user.allowedPages = current;
           }
           return { success: true };
         }

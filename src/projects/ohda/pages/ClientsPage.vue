@@ -382,11 +382,11 @@
 
             <button
               type="button"
-              @click="openNewJobCardForClient(activeClient)"
+              @click="openNewBookingForClient(activeClient)"
               class="px-3 py-2 bg-brand-accent hover:bg-brand-accent/90 text-brand-dark font-bold rounded-xl text-xs flex items-center gap-1.5 cursor-pointer shadow-xs"
             >
-              <Plus class="w-3.5 h-3.5" />
-              <span>أمر شغل جديد</span>
+              <CalendarPlus class="w-3.5 h-3.5" />
+              <span>حجز موعد صيانة</span>
             </button>
 
             <button
@@ -731,12 +731,18 @@
             </label>
             <input
               v-model="clientForm.phone"
+              @keypress="allowOnlyNumbers"
+              @input="clientForm.phone = filterPhone(clientForm.phone)"
+              maxlength="15"
               type="tel"
               required
               placeholder="01xxxxxxxxx"
               dir="ltr"
               class="w-full px-3 py-2 rounded-xl border border-brand-gray/25 bg-brand-light/50 dark:bg-white/5 text-brand-dark dark:text-white font-mono text-xs focus:border-brand-accent transition-all text-left"
             />
+            <p v-if="clientForm.phone && !isValidPhone(clientForm.phone)" class="text-[10px] text-amber-500 mt-1">
+              رقم الهاتف يجب أن يتكون من 7 إلى 15 رقماً.
+            </p>
           </div>
 
           <div>
@@ -745,11 +751,40 @@
             </label>
             <input
               v-model="clientForm.secondPhone"
+              @keypress="allowOnlyNumbers"
+              @input="clientForm.secondPhone = filterPhone(clientForm.secondPhone)"
+              maxlength="15"
               type="tel"
               placeholder="هاتف أرضي أو رقم آخر..."
               dir="ltr"
               class="w-full px-3 py-2 rounded-xl border border-brand-gray/25 bg-brand-light/50 dark:bg-white/5 text-brand-dark dark:text-white font-mono text-xs focus:border-brand-accent transition-all text-left"
             />
+            <p v-if="clientForm.secondPhone && !isValidPhone(clientForm.secondPhone)" class="text-[10px] text-amber-500 mt-1">
+              رقم الهاتف يجب أن يتكون من 7 إلى 15 رقماً.
+            </p>
+          </div>
+
+          <div>
+            <label class="block font-semibold text-brand-dark dark:text-white mb-1">
+              الرقم القومي (اختياري)
+            </label>
+            <input
+              v-model="clientForm.nationalId"
+              @keypress="allowOnlyNumbers"
+              @input="clientForm.nationalId = filterNationalId(clientForm.nationalId)"
+              maxlength="14"
+              placeholder="14 رقماً"
+              dir="ltr"
+              class="w-full px-3 py-2 rounded-xl border border-brand-gray/25 bg-brand-light/50 dark:bg-white/5 text-brand-dark dark:text-white font-mono text-xs focus:border-brand-accent transition-all text-left"
+            />
+            <div class="flex items-center justify-between mt-1 text-[10px]">
+              <span :class="clientForm.nationalId && clientForm.nationalId.length === 14 ? 'text-emerald-500 font-bold' : 'text-slate-400'">
+                {{ clientForm.nationalId ? clientForm.nationalId.length : 0 }} / 14 رقماً
+              </span>
+              <span v-if="clientForm.nationalId && clientForm.nationalId.length !== 14" class="text-amber-500">
+                الرقم القومي يجب أن يتكون من 14 رقماً
+              </span>
+            </div>
           </div>
 
           <div>
@@ -1201,6 +1236,7 @@ import OhdaModal from "../components/OhdaModal.vue";
 import OhdaDataTable from "../components/OhdaDataTable.vue";
 import ExcelImportModal from "../components/ExcelImportModal.vue";
 import { exportToExcelCsv } from "../utils/excelHelper";
+import { filterPhone, filterNationalId, isValidPhone, isValidNationalIdNumber, allowOnlyNumbers } from "@/utilities/validations";
 import {
   Users,
   UserPlus,
@@ -1212,6 +1248,7 @@ import {
   Edit2,
   Trash2,
   Plus,
+  CalendarPlus,
   Wrench,
   Info,
   RefreshCw,
@@ -1428,6 +1465,34 @@ function toggleTagSelection(tagId) {
 }
 
 async function submitClientForm() {
+  if (!isValidPhone(clientForm.value.phone)) {
+    toast.add({
+      severity: "warn",
+      summary: "رقم الهاتف غير صالح",
+      detail: "يجب أن يتكون رقم الهاتف من 7 إلى 15 رقماً وبدون حروف أو رموز.",
+      life: 4000
+    });
+    return;
+  }
+  if (clientForm.value.secondPhone && !isValidPhone(clientForm.value.secondPhone)) {
+    toast.add({
+      severity: "warn",
+      summary: "الهاتف البديل غير صالح",
+      detail: "يجب أن يتكون رقم الهاتف البديل من 7 إلى 15 رقماً وبدون حروف أو رموز.",
+      life: 4000
+    });
+    return;
+  }
+  if (clientForm.value.nationalId && !isValidNationalIdNumber(clientForm.value.nationalId)) {
+    toast.add({
+      severity: "warn",
+      summary: "الرقم القومي غير صالح",
+      detail: "يجب أن يتكون الرقم القومي من 14 رقماً بالضبط وبدون حروف أو رموز.",
+      life: 4000
+    });
+    return;
+  }
+
   submitting.value = true;
   try {
     const payload = {
@@ -1623,12 +1688,12 @@ async function submitPaymentForm() {
   }
 }
 
-function openNewJobCardForClient(client) {
+function openNewBookingForClient(client) {
   showCustomer360.value = false;
   router.push({
-    path: "/ohda/jobs",
+    path: "/ohda/bookings-calendar",
     query: {
-      newJob: "1",
+      newBooking: "1",
       clientId: client.id,
       clientName: client.name,
       clientPhone: client.phone

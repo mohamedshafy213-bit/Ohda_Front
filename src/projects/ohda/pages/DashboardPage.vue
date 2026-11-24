@@ -21,10 +21,10 @@
 
       <!-- Quick Action Buttons -->
       <div class="flex flex-wrap items-center gap-2">
-        <router-link to="/ohda/jobs">
+        <router-link to="/ohda/todays-board">
           <Button class="!bg-brand-accent hover:!bg-brand-accent/90 !text-brand-dark !font-bold !rounded-xl !px-3.5 !py-2 !text-xs flex items-center gap-1.5 shadow-md shadow-brand-accent/10 cursor-pointer">
             <Plus class="w-4 h-4" />
-            <span>+ أمر شغل جديد</span>
+            <span>+ حجز جديد / حضور فوري</span>
           </Button>
         </router-link>
 
@@ -309,6 +309,7 @@ import { useOhdaJobCardStore } from "../stores/useOhdaJobCardStore";
 import { useOhdaExpenseStore } from "../stores/useOhdaExpenseStore";
 import { useOhdaInventoryStore } from "../stores/useOhdaInventoryStore";
 import { useOhdaFinanceStore } from "../stores/useOhdaFinanceStore";
+import { useOhdaPosStore } from "../stores/useOhdaPosStore";
 import CashDrawerWidget from "../components/CashDrawerWidget.vue";
 import Button from "primevue/button";
 import {
@@ -333,6 +334,7 @@ const jobStore = useOhdaJobCardStore();
 const expenseStore = useOhdaExpenseStore();
 const inventoryStore = useOhdaInventoryStore();
 const financeStore = useOhdaFinanceStore();
+const posStore = useOhdaPosStore();
 const cashDrawerWidgetRef = ref(null);
 
 const workshopSettings = ref(getBranchSettings());
@@ -356,7 +358,8 @@ onMounted(async () => {
     expenseStore.fetchExpenses(),
     inventoryStore.fetchProducts(),
     financeStore.fetchAccounts(),
-    financeStore.fetchCurrentDrawerSession()
+    financeStore.fetchCurrentDrawerSession(),
+    posStore.fetchInvoices()
   ]);
 });
 
@@ -364,27 +367,41 @@ function formatCurrency(amount) {
   return formatBranchCurrency(amount);
 }
 
-// 1. Today's Sales
+// 1. Today's Sales (Jobs + POS)
 const todaySales = computed(() => {
   const todayStr = new Date().toISOString().split("T")[0];
-  return jobStore.jobs
+  const jobsSum = jobStore.jobs
     .filter(j => j.status !== 4 && j.insertDate && j.insertDate.startsWith(todayStr))
     .reduce((sum, j) => sum + (Number(j.paidAmount) || 0), 0);
+  const posSum = (posStore.invoices || [])
+    .filter(i => i.insertDate && i.insertDate.startsWith(todayStr))
+    .reduce((sum, i) => sum + (Number(i.paidAmount) || 0), 0);
+  return jobsSum + posSum;
 });
 
-// 2. This Month's Sales
+// 2. This Month's Sales (Jobs + POS)
 const monthSales = computed(() => {
   const now = new Date();
   const m = now.getMonth() + 1;
   const y = now.getFullYear();
 
-  return jobStore.jobs
+  const jobsSum = jobStore.jobs
     .filter(j => {
       if (j.status === 4 || !j.insertDate) return false;
       const d = new Date(j.insertDate);
       return (d.getMonth() + 1) === m && d.getFullYear() === y;
     })
     .reduce((sum, j) => sum + (Number(j.paidAmount) || 0), 0);
+
+  const posSum = (posStore.invoices || [])
+    .filter(i => {
+      if (!i.insertDate) return false;
+      const d = new Date(i.insertDate);
+      return (d.getMonth() + 1) === m && d.getFullYear() === y;
+    })
+    .reduce((sum, i) => sum + (Number(i.paidAmount) || 0), 0);
+
+  return jobsSum + posSum;
 });
 
 // 3. This Month's Expenses

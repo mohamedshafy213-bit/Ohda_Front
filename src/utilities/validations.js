@@ -106,3 +106,49 @@ export const validateNationalId = () => {
             return true;
         });
 };
+
+/**
+ * Sanitizes phone input: strictly numbers only (0-9).
+ * Strips any letters, spaces, Arabic letters, symbols, or '+'.
+ */
+export const filterPhone = (val) => {
+    if (!val) return "";
+    return String(val).replace(/\D/g, "").slice(0, 15);
+};
+
+/**
+ * Sanitizes national ID input: strictly numbers only (0-9), max 14 digits.
+ */
+export const filterNationalId = (val) => {
+    if (!val) return "";
+    return String(val).replace(/\D/g, "").slice(0, 14);
+};
+
+/**
+ * Blocks keyboard entry of non-digits on keypress.
+ * Usage: @keypress="allowOnlyNumbers"
+ */
+export const allowOnlyNumbers = (event) => {
+    if (!event) return;
+    if (!/\d/.test(event.key)) {
+        event.preventDefault();
+    }
+};
+
+/**
+ * Checks if a phone number is valid (7-15 digits).
+ */
+export const isValidPhone = (val) => {
+    if (!val) return false;
+    const clean = String(val).replace(/\D/g, "");
+    return clean.length >= 7 && clean.length <= 15;
+};
+
+/**
+ * Checks if a national ID is valid (exactly 14 digits).
+ */
+export const isValidNationalIdNumber = (val) => {
+    if (!val) return false;
+    return /^\d{14}$/.test(String(val).trim());
+};
+

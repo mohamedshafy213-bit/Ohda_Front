@@ -181,10 +181,16 @@
             <label class="block text-xs font-semibold text-brand-dark dark:text-white mb-1.5">رقم الهاتف</label>
             <input
               v-model="form.phone"
+              @keypress="allowOnlyNumbers"
+              @input="form.phone = filterPhone(form.phone)"
+              maxlength="15"
               type="tel"
               placeholder="01xxxxxxxxx"
               class="w-full bg-brand-light dark:bg-white/5 border border-brand-gray/25 rounded-xl px-3 py-2 text-xs text-brand-dark dark:text-white font-mono"
             />
+            <p v-if="form.phone && !isValidPhone(form.phone)" class="text-[10px] text-amber-500 mt-1">
+              رقم الهاتف يجب أن يتكون من 7 إلى 15 رقماً.
+            </p>
           </div>
 
           <div>
@@ -448,6 +454,7 @@ import { useToast } from "primevue/usetoast";
 import { useOhdaInventoryStore } from "../stores/useOhdaInventoryStore";
 import { useOhdaFinanceStore } from "../stores/useOhdaFinanceStore";
 import OhdaDataTable from "../components/OhdaDataTable.vue";
+import { filterPhone, isValidPhone, allowOnlyNumbers } from "@/utilities/validations";
 import OhdaModal from "../components/OhdaModal.vue";
 import ExcelImportModal from "../components/ExcelImportModal.vue";
 import { exportToExcelCsv } from "../utils/excelHelper";
@@ -639,6 +646,10 @@ function editSupplier(s) {
 }
 
 async function saveSupplier() {
+  if (form.value.phone && !isValidPhone(form.value.phone)) {
+    toast.add({ severity: "warn", summary: "رقم الهاتف غير صالح", detail: "رقم الهاتف يجب أن يتكون من 7 إلى 15 رقماً وبدون حروف أو رموز.", life: 4000 });
+    return;
+  }
   submitting.value = true;
   let res;
   if (isEditing.value) {

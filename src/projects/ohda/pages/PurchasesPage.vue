@@ -180,67 +180,183 @@
             </button>
           </div>
 
-          <div class="space-y-2">
+          <div class="space-y-3">
             <div
               v-for="(item, idx) in createForm.items"
               :key="idx"
-              class="grid grid-cols-12 gap-2 items-center bg-brand-white dark:bg-brand-dark p-2.5 rounded-xl border border-brand-gray/10"
+              class="bg-brand-white dark:bg-brand-dark p-3.5 rounded-2xl border border-brand-gray/15 space-y-3"
             >
-              <div class="col-span-12 sm:col-span-5">
-                <label class="block text-[10px] text-brand-gray mb-1">الصنف</label>
-                <select
-                  v-model="item.productId"
-                  required
-                  @change="onProductSelect(item)"
-                  class="w-full bg-brand-light dark:bg-white/5 border border-brand-gray/25 rounded-lg px-2 py-1.5 text-xs text-brand-dark dark:text-white"
-                >
-                  <option value="" disabled>اختر الصنف من المخزن...</option>
-                  <option v-for="p in inventoryStore.products" :key="p.id" :value="p.id">
-                    {{ p.name }} (الرصيد: {{ p.currentQuantity }})
-                  </option>
-                </select>
-              </div>
-
-              <div class="col-span-4 sm:col-span-2">
-                <label class="block text-[10px] text-brand-gray mb-1">الكمية</label>
-                <input
-                  v-model.number="item.quantity"
-                  type="number"
-                  min="0.1"
-                  step="any"
-                  required
-                  class="w-full bg-brand-light dark:bg-white/5 border border-brand-gray/25 rounded-lg px-2 py-1.5 text-xs text-brand-dark dark:text-white font-mono text-center font-bold"
-                />
-              </div>
-
-              <div class="col-span-4 sm:col-span-2">
-                <label class="block text-[10px] text-brand-gray mb-1">سعر الوحدة (ج.م)</label>
-                <input
-                  v-model.number="item.unitCost"
-                  type="number"
-                  min="0"
-                  step="0.01"
-                  required
-                  class="w-full bg-brand-light dark:bg-white/5 border border-brand-gray/25 rounded-lg px-2 py-1.5 text-xs text-brand-dark dark:text-white font-mono text-center"
-                />
-              </div>
-
-              <div class="col-span-3 sm:col-span-2 text-center">
-                <span class="block text-[10px] text-brand-gray mb-1">الإجمالي</span>
-                <span class="font-mono font-bold text-xs text-brand-accent">
-                  {{ formatCurrency(item.quantity * item.unitCost) }}
-                </span>
-              </div>
-
-              <div class="col-span-1 flex justify-center">
+              <!-- Line Header: Mode toggle & Remove -->
+              <div class="flex items-center justify-between pb-2 border-b border-brand-gray/10 text-xs">
+                <div class="flex items-center gap-3">
+                  <span class="font-bold text-brand-dark dark:text-white">بند #{{ idx + 1 }}</span>
+                  <button
+                    type="button"
+                    @click="toggleInlineNewProduct(item)"
+                    class="px-2 py-0.5 rounded-lg text-[11px] font-semibold transition cursor-pointer"
+                    :class="item.isNewProduct ? 'bg-amber-500/15 text-amber-600 border border-amber-500/30' : 'bg-brand-light dark:bg-white/10 text-brand-gray hover:text-brand-dark'"
+                  >
+                    {{ item.isNewProduct ? 'صنف جديد (انقر للإلغاء)' : '+ إنشاء صنف جديد هنا' }}
+                  </button>
+                </div>
                 <button
                   type="button"
                   @click="removeItemRow(idx)"
                   :disabled="createForm.items.length <= 1"
                   class="p-1 text-red-500 hover:bg-red-500/10 rounded-md transition-colors disabled:opacity-20 cursor-pointer"
+                  title="حذف البند"
                 >
                   <Trash2 class="w-4 h-4" />
                 </button>
+              </div>
+
+              <!-- Inline New Product Fields -->
+              <div v-if="item.isNewProduct" class="grid grid-cols-1 sm:grid-cols-4 gap-3 bg-amber-500/5 p-3 rounded-xl border border-amber-500/20">
+                <div class="sm:col-span-2">
+                  <label class="block text-[10px] font-bold text-brand-dark dark:text-white mb-1">اسم الصنف الجديد *</label>
+                  <input
+                    v-model="item.newProductName"
+                    required
+                    placeholder="مثال: زيت توتال كوارتز 10W-40..."
+                    class="w-full bg-white dark:bg-brand-dark border border-brand-gray/25 rounded-lg px-2.5 py-1.5 text-xs text-brand-dark dark:text-white"
+                  />
+                </div>
+                <div>
+                  <label class="block text-[10px] font-bold text-brand-dark dark:text-white mb-1">التصنيف *</label>
+                  <select
+                    v-model="item.newProductCategoryId"
+                    required
+                    class="w-full bg-white dark:bg-brand-dark border border-brand-gray/25 rounded-lg px-2 py-1.5 text-xs text-brand-dark dark:text-white"
+                  >
+                    <option v-for="c in inventoryStore.categories" :key="c.id" :value="c.id">{{ c.name }}</option>
+                  </select>
+                </div>
+                <div>
+                  <label class="block text-[10px] font-bold text-brand-dark dark:text-white mb-1">الوحدة الأساسية</label>
+                  <select
+                    v-model="item.newProductBaseUnit"
+                    class="w-full bg-white dark:bg-brand-dark border border-brand-gray/25 rounded-lg px-2 py-1.5 text-xs text-brand-dark dark:text-white"
+                  >
+                    <option v-for="u in ['قطعة', 'لتر', 'عبوة', 'طقم', 'كجم', 'برميل']" :key="u" :value="u">{{ u }}</option>
+                  </select>
+                </div>
+              </div>
+
+              <!-- Existing Product Selector -->
+              <div v-else class="grid grid-cols-1 sm:grid-cols-12 gap-3 items-center">
+                <div class="sm:col-span-12">
+                  <label class="block text-[10px] text-brand-gray mb-1">اختيار الصنف من المخزن *</label>
+                  <select
+                    v-model="item.productId"
+                    required
+                    @change="onProductSelect(item)"
+                    class="w-full bg-brand-light dark:bg-white/5 border border-brand-gray/25 rounded-lg px-2.5 py-1.5 text-xs text-brand-dark dark:text-white font-medium"
+                  >
+                    <option value="" disabled>ابحث أو اختر الصنف...</option>
+                    <option v-for="p in inventoryStore.products" :key="p.id" :value="p.id">
+                      {{ p.name }} (كود: {{ p.sku }} | الرصيد: {{ p.currentQuantity }} {{ p.unit }})
+                    </option>
+                  </select>
+                </div>
+              </div>
+
+              <!-- Quantity, Units, Packaging & Price -->
+              <div class="grid grid-cols-2 sm:grid-cols-6 gap-3 items-center text-xs">
+                <!-- Purchase Unit & Packaging Multiplier -->
+                <div>
+                  <label class="block text-[10px] text-brand-gray mb-1">وحدة الشراء</label>
+                  <input
+                    v-model="item.purchaseUnitName"
+                    placeholder="قطعة أو كرتونة..."
+                    class="w-full bg-brand-light dark:bg-white/5 border border-brand-gray/25 rounded-lg px-2 py-1 text-xs text-brand-dark dark:text-white"
+                  />
+                </div>
+
+                <div>
+                  <label class="block text-[10px] text-brand-gray mb-1">محتوى العبوة (معامل)</label>
+                  <input
+                    v-model.number="item.packageMultiplier"
+                    type="number"
+                    min="1"
+                    placeholder="1"
+                    class="w-full bg-brand-light dark:bg-white/5 border border-brand-gray/25 rounded-lg px-2 py-1 text-xs font-mono text-center font-bold text-brand-dark dark:text-white"
+                  />
+                </div>
+
+                <div>
+                  <label class="block text-[10px] text-brand-gray mb-1">الكمية المشتراة</label>
+                  <input
+                    v-model.number="item.quantity"
+                    type="number"
+                    min="0.1"
+                    step="any"
+                    required
+                    class="w-full bg-brand-light dark:bg-white/5 border border-brand-gray/25 rounded-lg px-2 py-1 text-xs font-mono text-center font-bold text-brand-dark dark:text-white"
+                  />
+                </div>
+
+                <div>
+                  <label class="block text-[10px] text-brand-gray mb-1">سعر وحدة الشراء (ج.م)</label>
+                  <input
+                    v-model.number="item.unitCost"
+                    type="number"
+                    min="0"
+                    step="any"
+                    required
+                    class="w-full bg-brand-light dark:bg-white/5 border border-brand-gray/25 rounded-lg px-2 py-1 text-xs font-mono text-center text-brand-dark dark:text-white"
+                  />
+                </div>
+
+                <div>
+                  <label class="block text-[10px] text-brand-gray mb-1">تكلفة الوحدة الأساسية</label>
+                  <div class="px-2 py-1 bg-brand-light dark:bg-white/10 rounded-lg text-center font-mono font-bold text-xs text-brand-accent">
+                    {{ formatCurrency(getCostPerBaseUnit(item)) }} ج.م
+                  </div>
+                </div>
+
+                <div>
+                  <label class="block text-[10px] text-brand-gray mb-1">إجمالي البند</label>
+                  <div class="px-2 py-1 bg-brand-light dark:bg-white/10 rounded-lg text-center font-mono font-bold text-xs text-brand-dark dark:text-white">
+                    {{ formatCurrency(item.quantity * item.unitCost) }} ج.م
+                  </div>
+                </div>
+              </div>
+
+              <!-- Selling Price, Margin & Shelf Location -->
+              <div class="grid grid-cols-1 sm:grid-cols-4 gap-3 items-center text-xs pt-1 border-t border-brand-gray/10">
+                <div>
+                  <label class="block text-[10px] text-brand-gray mb-1">سعر البيع المقترح / الحالي</label>
+                  <input
+                    v-model.number="item.sellingPrice"
+                    type="number"
+                    step="any"
+                    min="0"
+                    class="w-full bg-brand-light dark:bg-white/5 border border-brand-gray/25 rounded-lg px-2 py-1 text-xs font-mono font-bold text-emerald-600 dark:text-emerald-400"
+                  />
+                </div>
+
+                <div>
+                  <label class="block text-[10px] text-brand-gray mb-1">هامش الربح المتوقع</label>
+                  <div class="px-2 py-1 rounded-lg font-mono font-bold text-xs" :class="getMargin(item) >= 20 ? 'text-emerald-600 bg-emerald-500/10' : 'text-amber-600 bg-amber-500/10'">
+                    {{ getMargin(item) }}%
+                  </div>
+                </div>
+
+                <div>
+                  <label class="block text-[10px] text-brand-gray mb-1">موقع الرف</label>
+                  <input
+                    v-model="item.shelfLocation"
+                    placeholder="الرف الرئيسي..."
+                    class="w-full bg-brand-light dark:bg-white/5 border border-brand-gray/25 rounded-lg px-2 py-1 text-xs text-brand-dark dark:text-white"
+                  />
+                </div>
+
+                <div class="flex items-center gap-2 pt-3">
+                  <label class="flex items-center gap-1.5 cursor-pointer text-[11px] font-semibold text-brand-dark dark:text-white">
+                    <input type="checkbox" v-model="item.updateSellingPrice" class="rounded text-brand-accent focus:ring-brand-accent" />
+                    <span>تحديث سعر البيع في المخزن</span>
+                  </label>
+                </div>
               </div>
             </div>
           </div>
@@ -333,7 +449,7 @@
                 v-if="createForm.invoiceImageUrl"
                 class="w-12 h-12 rounded-xl overflow-hidden border border-brand-gray/20 relative group shrink-0"
               >
-                <img :src="createForm.invoiceImageUrl" class="w-full h-full object-cover" />
+                <img :src="getImageUrl(createForm.invoiceImageUrl)" class="w-full h-full object-cover" />
                 <button
                   type="button"
                   @click="createForm.invoiceImageUrl = ''"
@@ -430,8 +546,8 @@
         <!-- Invoice Image Preview -->
         <div v-if="selectedPurchase.invoiceImageUrl" class="space-y-1.5 pt-2">
           <span class="text-brand-gray font-bold text-xs block">صورة الفاتورة المرفقة:</span>
-          <a :href="selectedPurchase.invoiceImageUrl" target="_blank" class="inline-block border border-brand-gray/20 rounded-xl overflow-hidden max-w-xs shadow-sm">
-            <img :src="selectedPurchase.invoiceImageUrl" class="max-h-48 object-contain" />
+          <a :href="getImageUrl(selectedPurchase.invoiceImageUrl)" target="_blank" rel="noopener noreferrer" class="inline-block border border-brand-gray/20 rounded-xl overflow-hidden max-w-xs shadow-sm hover:opacity-90 transition-opacity">
+            <img :src="getImageUrl(selectedPurchase.invoiceImageUrl)" class="max-h-48 object-contain" />
           </a>
         </div>
       </div>
@@ -524,24 +640,95 @@ function onSearch() {
 }
 
 function openCreateModal() {
+  const lastSupplier = localStorage.getItem("ohda_last_supplier") || "";
+  const lastPaymentType = parseInt(localStorage.getItem("ohda_last_payment_type") || "1");
+  const lastAccount = localStorage.getItem("ohda_last_account") || "";
+
   createForm.value = {
-    supplierId: "",
+    supplierId: lastSupplier,
     invoiceNumber: "",
     purchaseDate: new Date().toISOString(),
-    paymentType: 1,
+    paymentType: lastPaymentType,
     paidAmount: 0,
-    financialAccountId: "",
+    financialAccountId: lastAccount,
     invoiceImageUrl: "",
     notes: "",
     items: [
-      { productId: "", quantity: 1, unitCost: 0 }
+      {
+        isNewProduct: false,
+        productId: inventoryStore.products[0]?.id || "",
+        newProductName: "",
+        newProductCategoryId: inventoryStore.categories[0]?.id || null,
+        newProductBaseUnit: "قطعة",
+        newProductBarcode: "",
+        purchaseUnitName: "قطعة",
+        packageMultiplier: 1,
+        quantity: 1,
+        unitCost: 0,
+        sellingPrice: 0,
+        updateSellingPrice: false,
+        expiryDate: null,
+        shelfLocation: "الرف الرئيسي"
+      }
     ]
   };
+  if (createForm.value.items[0].productId) {
+    onProductSelect(createForm.value.items[0]);
+  }
   showCreateModalState.value = true;
 }
 
 function addItemRow() {
-  createForm.value.items.push({ productId: "", quantity: 1, unitCost: 0 });
+  createForm.value.items.push({
+    isNewProduct: false,
+    productId: inventoryStore.products[0]?.id || "",
+    newProductName: "",
+    newProductCategoryId: inventoryStore.categories[0]?.id || null,
+    newProductBaseUnit: "قطعة",
+    newProductBarcode: "",
+    purchaseUnitName: "قطعة",
+    packageMultiplier: 1,
+    quantity: 1,
+    unitCost: 0,
+    sellingPrice: 0,
+    updateSellingPrice: false,
+    expiryDate: null,
+    shelfLocation: "الرف الرئيسي"
+  });
+  if (createForm.value.items[createForm.value.items.length - 1].productId) {
+    onProductSelect(createForm.value.items[createForm.value.items.length - 1]);
+  }
+}
+
+function toggleInlineNewProduct(item) {
+  item.isNewProduct = !item.isNewProduct;
+  if (item.isNewProduct) {
+    item.productId = null;
+    item.newProductName = "";
+    item.newProductCategoryId = inventoryStore.categories[0]?.id || null;
+    item.newProductBaseUnit = "قطعة";
+    item.purchaseUnitName = "قطعة";
+    item.packageMultiplier = 1;
+    item.unitCost = 0;
+    item.sellingPrice = 0;
+    item.shelfLocation = "الرف الرئيسي";
+  } else {
+    item.productId = inventoryStore.products[0]?.id || "";
+    onProductSelect(item);
+  }
+}
+
+function getCostPerBaseUnit(item) {
+  const mult = Number(item.packageMultiplier) || 1;
+  const cost = Number(item.unitCost) || 0;
+  return mult > 0 ? (cost / mult) : cost;
+}
+
+function getMargin(item) {
+  const costPerBase = getCostPerBaseUnit(item);
+  const sell = Number(item.sellingPrice) || 0;
+  if (sell <= 0) return 0;
+  return Math.round(((sell - costPerBase) / sell) * 100);
 }
 
 function removeItemRow(idx) {
@@ -553,7 +740,11 @@ function removeItemRow(idx) {
 function onProductSelect(item) {
   const prod = inventoryStore.products.find(p => p.id === item.productId);
   if (prod) {
-    item.unitCost = prod.costPrice || 0;
+    item.purchaseUnitName = prod.unit || "قطعة";
+    item.packageMultiplier = 1;
+    item.unitCost = Number(prod.costPrice ?? prod.purchasePrice) || 0;
+    item.sellingPrice = Number(prod.sellingPrice ?? prod.unitPrice) || 0;
+    item.shelfLocation = prod.defaultShelfLocation || "الرف الرئيسي";
   }
 }
 
@@ -592,8 +783,9 @@ async function submitCreatePurchase() {
     toast.add({ severity: "warn", summary: "تنبيه", detail: "يرجى اختيار المورد", life: 3000 });
     return;
   }
-  if (!createForm.value.items.length || createForm.value.items.some(i => !i.productId || i.quantity <= 0)) {
-    toast.add({ severity: "warn", summary: "تنبيه", detail: "يرجى التحقق من بنود الأصناف والكميات", life: 3000 });
+  const hasInvalidItem = createForm.value.items.some(i => (!i.isNewProduct && !i.productId) || (i.isNewProduct && !i.newProductName) || i.quantity <= 0);
+  if (!createForm.value.items.length || hasInvalidItem) {
+    toast.add({ severity: "warn", summary: "تنبيه", detail: "يرجى التحقق من بنود الأصناف، أسمائها، والكميات", life: 3000 });
     return;
   }
 
@@ -610,6 +802,13 @@ async function submitCreatePurchase() {
   submitting.value = false;
 
   if (res.success) {
+    // Save memory defaults
+    localStorage.setItem("ohda_last_supplier", createForm.value.supplierId.toString());
+    localStorage.setItem("ohda_last_payment_type", createForm.value.paymentType.toString());
+    if (createForm.value.financialAccountId) {
+      localStorage.setItem("ohda_last_account", createForm.value.financialAccountId.toString());
+    }
+
     toast.add({ severity: "success", summary: "تم بنجاح", detail: res.message, life: 4000 });
     showCreateModalState.value = false;
     await inventoryStore.fetchProducts();
@@ -617,6 +816,14 @@ async function submitCreatePurchase() {
   } else {
     toast.add({ severity: "error", summary: "فشل الحفظ", detail: res.message, life: 5000 });
   }
+}
+
+function getImageUrl(url) {
+  if (!url) return "";
+  if (url.startsWith("http://") || url.startsWith("https://")) return url;
+  const base = (import.meta.env.VITE_ROOT_URL || "http://localhost:5146").replace(/\/$/, "");
+  const path = url.startsWith("/") ? url : `/${url}`;
+  return `${base}${path}`;
 }
 
 function viewDetails(p) {

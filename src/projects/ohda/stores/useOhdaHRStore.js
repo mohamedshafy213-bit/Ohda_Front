@@ -55,7 +55,13 @@ export const useOhdaHRStore = defineStore("ohdaHR", {
     async createEmployee(payload) {
       this.loading = true;
       try {
-        const res = await apiPost("/api/Employee", payload);
+        const cleanPayload = { ...payload };
+        if (!cleanPayload.userId || cleanPayload.userId === "") {
+          cleanPayload.userId = null;
+        } else {
+          cleanPayload.userId = Number(cleanPayload.userId);
+        }
+        const res = await apiPost("/api/Employee", cleanPayload);
         if (res?.data?.isDone) {
           await this.fetchEmployees();
           return {
@@ -81,7 +87,13 @@ export const useOhdaHRStore = defineStore("ohdaHR", {
     async updateEmployee(id, payload) {
       this.loading = true;
       try {
-        const res = await apiPut(`/api/Employee/${id}`, payload);
+        const cleanPayload = { ...payload };
+        if (!cleanPayload.userId || cleanPayload.userId === "") {
+          cleanPayload.userId = null;
+        } else {
+          cleanPayload.userId = Number(cleanPayload.userId);
+        }
+        const res = await apiPut(`/api/Employee/${id}`, cleanPayload);
         if (res?.data?.isDone) {
           await this.fetchEmployees();
           return {

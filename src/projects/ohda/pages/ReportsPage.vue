@@ -8,7 +8,7 @@
           <span>مركز التقارير والتحليلات (CRM & Operations)</span>
         </h1>
         <p class="text-xs text-brand-gray mt-1">
-          تقارير ولاء وإنفاق العملاء، كفاءة وإشغال الرافعات، ومعدل تحويل التذكيرات إلى حجوزات مدفوعة
+          تقارير ولاء وإنفاق العملاء، كفاءة وإشغال مناطق الصيانة، ومعدل تحويل التذكيرات إلى حجوزات مدفوعة
         </p>
       </div>
 
@@ -110,7 +110,7 @@
         ]"
       >
         <CalendarDays class="w-4 h-4" />
-        <span>تحليل الحجوزات وإشغال الرافعات</span>
+        <span>تحليل الحجوزات وإشغال مناطق الصيانة</span>
       </button>
 
       <button
@@ -254,7 +254,7 @@
         <div class="bg-brand-white dark:bg-white/5 p-4 sm:p-5 rounded-2xl border border-brand-gray/15 space-y-3">
           <h3 class="font-bold text-sm text-brand-dark dark:text-white flex items-center gap-2">
             <Warehouse class="w-4 h-4 text-brand-accent" />
-            <span>نسبة إشغال الرافعات وحارات العمل</span>
+            <span>نسبة إشغال مناطق الصيانة وحارات العمل</span>
           </h3>
 
           <div class="divide-y divide-brand-gray/10 text-xs">
@@ -449,7 +449,7 @@ function exportCurrentTabToExcel() {
       csvContent += `"${c.clientName}","${c.phone}","${c.clientType}","${c.totalSpent}","${c.totalPaid}","${c.remainingBalance}","${c.visitsCount}","${c.lastVisitDate || ''}"\n`;
     });
   } else if (activeTab.value === "bookings") {
-    csvContent += "الرافعة,عدد الحجوزات,ساعات التشغيل,نسبة الإشغال %\n";
+    csvContent += "منطقة الصيانة,عدد الحجوزات,ساعات التشغيل,نسبة الإشغال %\n";
     (reportsStore.bookingsAnalytics?.byBay || []).forEach(b => {
       csvContent += `"${b.bayName}","${b.bookingsCount}","${b.totalBookedHours}","${b.utilizationPercentage}%"\n`;
     });

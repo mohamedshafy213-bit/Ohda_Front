@@ -5,10 +5,10 @@
       <div>
         <h1 class="text-xl sm:text-2xl font-black text-brand-dark dark:text-white flex items-center gap-2">
           <Warehouse class="w-6 h-6 text-brand-accent" />
-          <span>إعدادات الرافعات ومواعيد العمل</span>
+          <span>إعدادات مناطق الصيانة ومواعيد العمل</span>
         </h1>
         <p class="text-xs text-brand-gray mt-1">
-          إدارة حارات ورافعات الورشة، وجدول ساعات العمل الرسمية، والعطلات لمنع تضارب مواعيد الحجوزات
+          إدارة مناطق وحارات صيانة الورشة، وجدول ساعات العمل الرسمية، والعطلات لمنع تضارب مواعيد الحجوزات
         </p>
       </div>
 
@@ -19,7 +19,7 @@
           class="px-4 py-2 rounded-xl bg-brand-accent hover:bg-brand-accent/90 text-brand-dark font-bold text-xs flex items-center gap-2 shadow-sm transition-all cursor-pointer active:scale-95"
         >
           <Plus class="w-4 h-4" />
-          <span>إضافة رافعة / حارة جديدة</span>
+          <span>إضافة منطقة صيانة جديدة</span>
         </button>
 
         <button
@@ -56,7 +56,7 @@
         ]"
       >
         <Warehouse class="w-4 h-4" />
-        <span>الرافعات ومناطق العمل ({{ (bookingStore.bays || []).length }})</span>
+        <span>مناطق وحارات الصيانة ({{ (bookingStore.bays || []).length }})</span>
       </button>
 
       <button
@@ -91,21 +91,21 @@
     <!-- TAB 1: Bays Management -->
     <div v-if="activeTab === 'bays'" class="space-y-4">
       <div v-if="bookingStore.loading && bookingStore.bays.length === 0" class="text-center py-12 text-brand-gray text-xs">
-        جاري تحميل الرافعات ومناطق العمل...
+        جاري تحميل مناطق الصيانة...
       </div>
 
       <div v-else-if="bookingStore.bays.length === 0" class="text-center py-16 bg-brand-white dark:bg-white/5 rounded-2xl border border-brand-gray/15">
         <Warehouse class="w-12 h-12 text-brand-gray mx-auto mb-3 opacity-40" />
-        <h3 class="font-bold text-sm text-brand-dark dark:text-white">لم يتم تعريف أي رافعات أو حارات عمل بعد</h3>
+        <h3 class="font-bold text-sm text-brand-dark dark:text-white">لم يتم تعريف أي مناطق صيانة بعد</h3>
         <p class="text-xs text-brand-gray mt-1 max-w-sm mx-auto">
-          أضف رافعات الورشة وحارات الصيانة مثل رافعة 1، حارة الكهرباء، منطقة الغسيل لتنظيم وتوزيع الحجوزات.
+          أضف مناطق صيانة الورشة مثل منطقة 1، حارة الكهرباء، منطقة الغسيل لتنظيم وتوزيع الحجوزات.
         </p>
         <button
           @click="openAddBayModal"
           class="mt-4 px-4 py-2 rounded-xl bg-brand-accent text-brand-dark font-bold text-xs inline-flex items-center gap-2 cursor-pointer"
         >
           <Plus class="w-4 h-4" />
-          <span>إضافة رافعة أولى</span>
+          <span>إضافة منطقة صيانة أولى</span>
         </button>
       </div>
 
@@ -329,8 +329,8 @@
     <OhdaModal
       :visible="showBayModal"
       @close="showBayModal = false"
-      :title="editingBayId ? 'تعديل بيانات الرافعة' : 'إضافة رافعة / حارة صيانة جديدة'"
-      :description="'حدد اسم الرافعة ونوعها وترتيب ظهورها في تقويم الحجوزات'"
+      :title="editingBayId ? 'تعديل بيانات منطقة الصيانة' : 'إضافة منطقة صيانة جديدة'"
+      :description="'حدد اسم منطقة الصيانة ونوعها وترتيب ظهورها في تقويم الحجوزات'"
       :icon="Warehouse"
       :close-on-backdrop="false"
       max-width="max-w-md"
@@ -338,13 +338,13 @@
       <form @submit.prevent="submitBayForm" id="bayForm" class="space-y-4 text-xs">
         <div>
           <label class="block font-semibold text-brand-dark dark:text-white mb-1.5">
-            اسم الرافعة أو الحارة <span class="text-red-500">*</span>
+            اسم منطقة الصيانة أو الحارة <span class="text-red-500">*</span>
           </label>
           <input
             v-model="bayForm.name"
             type="text"
             required
-            placeholder="مثال: رافعة 1 - فحص سريع"
+            placeholder="مثال: منطقة صيانة 1 - فحص سريع"
             class="w-full px-3.5 py-2.5 rounded-xl border border-brand-gray/25 bg-brand-light/50 dark:bg-white/5 text-brand-dark dark:text-white font-medium focus:border-brand-accent transition-all"
           />
         </div>
@@ -379,12 +379,12 @@
 
         <div>
           <label class="block font-semibold text-brand-dark dark:text-white mb-1.5">
-            ملاحظات وتجهيزات الرافعة
+            ملاحظات وتجهيزات منطقة الصيانة
           </label>
           <textarea
             v-model="bayForm.notes"
             rows="2"
-            placeholder="مثال: رافعة 4 طن، مجهزة بعدة عفشة وتغيير زيت..."
+            placeholder="مثال: منطقة صيانة مجهزة بعدة عفشة وتغيير زيت..."
             class="w-full px-3.5 py-2 rounded-xl border border-brand-gray/25 bg-brand-light/50 dark:bg-white/5 text-brand-dark dark:text-white focus:border-brand-accent transition-all"
           ></textarea>
         </div>
@@ -404,7 +404,7 @@
           :disabled="submitting"
           class="px-5 py-2 rounded-xl bg-brand-accent hover:bg-brand-accent/90 text-brand-dark font-bold text-xs cursor-pointer shadow-sm disabled:opacity-50"
         >
-          {{ submitting ? 'جاري الحفظ...' : (editingBayId ? 'حفظ التعديلات' : 'إضافة الرافعة') }}
+          {{ submitting ? 'جاري الحفظ...' : (editingBayId ? 'حفظ التعديلات' : 'إضافة منطقة الصيانة') }}
         </button>
       </template>
     </OhdaModal>
@@ -623,7 +623,7 @@ async function submitBayForm() {
     toast.add({
       severity: "success",
       summary: "تم بنجاح",
-      detail: editingBayId.value ? "تم تحديث بيانات الرافعة بنجاح" : "تمت إضافة الرافعة بنجاح",
+      detail: editingBayId.value ? "تم تحديث بيانات منطقة الصيانة بنجاح" : "تمت إضافة منطقة الصيانة بنجاح",
       life: 3000
     });
     showBayModal.value = false;
@@ -640,10 +640,10 @@ async function submitBayForm() {
 }
 
 async function confirmDeleteBay(bay) {
-  if (!confirm(`هل أنت متأكد من حذف الرافعة "${bay.name}"؟`)) return;
+  if (!confirm(`هل أنت متأكد من حذف منطقة الصيانة "${bay.name}"؟`)) return;
   try {
     await bookingStore.deleteBay(bay.id);
-    toast.add({ severity: "success", summary: "تم الحذف", detail: "تم حذف الرافعة بنجاح", life: 3000 });
+    toast.add({ severity: "success", summary: "تم الحذف", detail: "تم حذف منطقة الصيانة بنجاح", life: 3000 });
   } catch (err) {
     toast.add({
       severity: "error",

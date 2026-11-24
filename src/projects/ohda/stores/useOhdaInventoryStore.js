@@ -166,29 +166,65 @@ export const useOhdaInventoryStore = defineStore("ohdaInventory", {
       }
     },
 
-    async adjustStockQuantity(productId, deltaQty) {
-      const product = this.products.find(p => p.id === productId);
-      if (!product) {
-        return { success: false, message: "المنتج غير موجود" };
+    async fetchProductBatches(productId) {
+      try {
+        const res = await apiGet(`/api/Product/${productId}/batches`);
+        if (res?.data?.isDone) {
+          return res.data.objects || [];
+        }
+        return [];
+      } catch (err) {
+        console.warn("Fetch product batches failed", err);
+        return [];
       }
-      const updatedPayload = {
-        ...product,
-        quantity: Math.max(0, (product.quantity || 0) + deltaQty)
-      };
-      return this.updateProduct(productId, updatedPayload);
     },
 
-    async adjustStock(productId, newQuantity) {
+    async fetchProductPackages(productId) {
       try {
-        const res = await apiPost("/api/Inventory/adjust-quantity", { productId, newQuantity });
+        const res = await apiGet(`/api/Product/${productId}/packages`);
         if (res?.data?.isDone) {
-          await this.fetchProducts();
-          await this.fetchInventory();
-          return { success: true, message: res?.data?.returnMessage || "تم تعديل الرصيد بنجاح" };
+          return res.data.objects || [];
         }
-        return { success: false, message: res?.data?.returnMessage || "فشل تعديل الرصيد" };
+        return [];
       } catch (err) {
-        return { success: false, message: err?.response?.data?.returnMessage || "فشل تعديل الرصيد" };
+        console.warn("Fetch product packages failed", err);
+        return [];
+      }
+    },
+
+    async addProductPackage(productId, payload) {
+      try {
+        const res = await apiPost(`/api/Product/${productId}/packages`, payload);
+        if (res?.data?.isDone) {
+          return { success: true, message: res.data.returnMessage };
+        }
+        return { success: false, message: res?.data?.returnMessage || "فشل إضافة خيار التعبئة" };
+      } catch (err) {
+        return { success: false, message: err?.response?.data?.returnMessage || "فشل إضافة خيار التعبئة" };
+      }
+    },
+
+    async deleteProductPackage(packageId) {
+      try {
+        const res = await apiDelete(`/api/Product/packages/${packageId}`);
+        if (res?.data?.isDone) {
+          return { success: true, message: res.data.returnMessage };
+        }
+        return { success: false, message: res?.data?.returnMessage || "فشل حذف خيار التعبئة" };
+      } catch (err) {
+        return { success: false, message: err?.response?.data?.returnMessage || "فشل حذف خيار التعبئة" };
+      }
+    },
+
+    async runInventoryDiagnosticCheck() {
+      try {
+        const res = await apiGet("/api/Product/diagnostic-check");
+        if (res?.data?.isDone && res?.data?.singleObject) {
+          return { success: true, data: res.data.singleObject, message: res.data.returnMessage };
+        }
+        return { success: false, message: res?.data?.returnMessage || "فشل فحص مطابقة المخزون" };
+      } catch (err) {
+        return { success: false, message: err?.response?.data?.returnMessage || "فشل فحص مطابقة المخزون" };
       }
     },
 
@@ -263,6 +299,19 @@ export const useOhdaInventoryStore = defineStore("ohdaInventory", {
       } catch (err) {
         console.warn("Delete category API failed", err);
         return { success: false, message: err?.response?.data?.returnMessage || "فشل حذف التصنيف" };
+      }
+    },
+
+    async bulkMoveCategory(fromCategoryId, toCategoryId) {
+      try {
+        const res = await apiPost("/api/Category/bulk-move", { fromCategoryId, toCategoryId });
+        if (res?.data?.isDone) {
+          await this.fetchProducts();
+          return { success: true, message: res.data.returnMessage };
+        }
+        return { success: false, message: res?.data?.returnMessage || "فشل نقل الأصناف" };
+      } catch (err) {
+        return { success: false, message: err?.response?.data?.returnMessage || "فشل نقل الأصناف" };
       }
     },
 
