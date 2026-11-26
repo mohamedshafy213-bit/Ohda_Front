@@ -37,7 +37,7 @@ export const useOhdaInventoryStore = defineStore("ohdaInventory", {
     async fetchProducts() {
       this.loading = true;
       try {
-        const res = await apiGet("/api/Product");
+        const res = await apiGet("/api/Product?pageNumber=1&pageSize=2000");
         const data = res?.data?.objects || res?.data?.singleObject;
         if (res?.data?.isDone && data) {
           const raw = Array.isArray(data) ? data : [data];

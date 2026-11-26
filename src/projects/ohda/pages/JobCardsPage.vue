@@ -25,11 +25,11 @@
         </button>
 
         <router-link
-          to="/ohda/todays-board"
+          to="/ohda/bookings-calendar"
           class="bg-brand-accent hover:bg-brand-accent/90 text-brand-dark font-bold rounded-xl px-4 py-2.5 text-xs flex items-center gap-2 shadow-md shadow-brand-accent/10 transition-all cursor-pointer"
         >
           <Plus class="w-4 h-4" />
-          <span>بدء عمل من الحجوزات أو حضور فوري</span>
+          <span>دخول سيارة / حجز جديد</span>
         </router-link>
       </div>
     </div>
@@ -154,11 +154,11 @@
     >
       <template #empty-action>
         <router-link
-          to="/ohda/todays-board"
+          to="/ohda/bookings-calendar"
           class="inline-flex items-center gap-2 px-4 py-2 bg-brand-accent text-brand-dark font-bold text-xs rounded-xl shadow-sm cursor-pointer hover:bg-brand-accent/90"
         >
           <Plus class="w-4 h-4" />
-          <span>الانتقال للحجوزات لبدء عمل أو تسجيل حضور</span>
+          <span>الانتقال لصفحة الحجوزات لإدخال سيارة وبدء عمل</span>
         </router-link>
       </template>
 
@@ -536,6 +536,14 @@
                   <X class="w-3.5 h-3.5" />
                 </button>
               </div>
+              <div v-if="inventoryStore.products.find(p => p.id === prod.productId)?.trackSerialNumbers" class="col-span-12 pt-1">
+                <input
+                  v-model="prod.serialsText"
+                  type="text"
+                  placeholder="أدخل الأرقام التسلسلية المختارة مفصولة بفاصلة (مطلوب لهذا الصنف)..."
+                  class="w-full px-2.5 py-1.5 rounded-lg border border-amber-500/40 bg-amber-500/5 text-xs font-mono"
+                />
+              </div>
             </div>
           </div>
         </div>
@@ -716,8 +724,16 @@
           <!-- Financial Summary -->
           <div class="border-t pt-3 space-y-1.5 text-xs font-mono">
             <div class="flex justify-between">
-              <span class="text-gray-500">الإجمالي النهائي:</span>
+              <span class="text-gray-500">الإجمالي الأصلي:</span>
               <span class="font-bold">{{ targetJobForInvoice.totalAmount.toLocaleString() }} ج.م</span>
+            </div>
+            <div v-if="targetJobForInvoice.returnedAmount > 0" class="flex justify-between text-purple-600">
+              <span>إجمالي المرتجعات / إشعار دائن:</span>
+              <span class="font-bold">- {{ targetJobForInvoice.returnedAmount.toLocaleString() }} ج.م</span>
+            </div>
+            <div v-if="targetJobForInvoice.returnedAmount > 0" class="flex justify-between font-extrabold border-t pt-1">
+              <span>الصافي بعد المرتجع:</span>
+              <span>{{ Math.max(0, targetJobForInvoice.totalAmount - targetJobForInvoice.returnedAmount).toLocaleString() }} ج.م</span>
             </div>
             <div class="flex justify-between text-emerald-600">
               <span>المدفوع:</span>
@@ -727,6 +743,15 @@
               <span>المتبقي المطلوب:</span>
               <span>{{ targetJobForInvoice.remainingBalance.toLocaleString() }} ج.م</span>
             </div>
+          </div>
+
+          <!-- Invoice QR Code -->
+          <div v-if="targetJobForInvoice.documentToken" class="mt-4 pt-3 border-t border-dashed border-gray-300 flex items-center justify-between gap-3">
+            <div class="text-[10px] text-gray-500">
+              <p class="font-bold text-gray-700">رمز التحقق والمرتجع السريع (QR)</p>
+              <p>امسح الرمز ضوئياً للتحقق من الفاتورة أو إجراء مرتجع سريع داخل الفرع.</p>
+            </div>
+            <QrCodeCanvas :value="targetJobForInvoice.documentToken" :size="76" />
           </div>
         </div>
       </div>
@@ -738,6 +763,14 @@
           class="px-4 py-2 rounded-xl text-xs font-bold bg-brand-light dark:bg-white/5 text-brand-dark dark:text-white border border-brand-gray/20 cursor-pointer"
         >
           إغلاق
+        </button>
+        <button
+          type="button"
+          @click="downloadServerPdf(`/api/ReportsPdf/jobcard/${selectedJobForPrint?.id}?paperSize=${invoicePrintMode === 'receipt' ? 'Thermal80mm' : 'A4'}`, `JobCard_${selectedJobForPrint?.jobNumber || 'invoice'}.pdf`)"
+          class="px-4 py-2 rounded-xl text-xs font-bold bg-rose-600/15 text-rose-700 dark:text-rose-300 border border-rose-500/30 flex items-center gap-1.5 cursor-pointer"
+        >
+          <Download class="w-4 h-4" />
+          <span>تنزيل PDF</span>
         </button>
         <button
           type="button"
@@ -882,6 +915,8 @@ import { useOhdaInventoryStore } from "../stores/useOhdaInventoryStore";
 import { useToastStore } from "@/stores/toastStore";
 import OhdaDataTable from "../components/OhdaDataTable.vue";
 import OhdaModal from "../components/OhdaModal.vue";
+import QrCodeCanvas from "../components/QrCodeCanvas.vue";
+import { downloadServerPdf } from "../utils/pdfHelper";
 import searchField from "@/components/searchField.vue";
 import LoadingSkeleton from "@/components/LoadingSkeleton.vue";
 import { exportToExcelCsv } from "../utils/excelHelper";
@@ -1126,6 +1161,7 @@ function openEditModal(job) {
       productName: p.productName,
       quantity: p.quantity,
       unitPrice: p.unitPrice,
+      serialsText: Array.isArray(p.serialNumbers) ? p.serialNumbers.join(", ") : "",
       notes: p.notes
     }))
   };
@@ -1233,7 +1269,16 @@ async function saveJobCard() {
       tax: form.value.tax || 0,
       notes: form.value.notes?.trim() || null,
       services: form.value.services.filter(s => s.serviceName?.trim()),
-      products: form.value.products.filter(p => p.productId && p.quantity > 0)
+      products: form.value.products.filter(p => p.productId && p.quantity > 0).map(p => ({
+        productId: p.productId,
+        productName: p.productName,
+        quantity: p.quantity,
+        unitPrice: p.unitPrice,
+        serialNumbers: p.serialsText
+          ? p.serialsText.split(/[,،;\n]+/).map(s => s.trim()).filter(Boolean)
+          : [],
+        notes: p.notes
+      }))
     };
 
     let res;

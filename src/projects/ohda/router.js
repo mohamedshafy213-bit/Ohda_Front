@@ -81,8 +81,7 @@ export default [
       },
       {
         path: "todays-board",
-        name: "OhdaTodaysBoard",
-        component: () => import("./pages/TodaysBoardPage.vue")
+        redirect: "/ohda/bookings-calendar"
       },
       {
         path: "bays-settings",
@@ -125,6 +124,16 @@ export default [
         path: "returns",
         name: "OhdaReturns",
         component: () => import("./pages/ReturnsPage.vue")
+      },
+      {
+        path: "damage",
+        name: "OhdaDamage",
+        component: () => import("./pages/DamagePage.vue")
+      },
+      {
+        path: "system-health",
+        name: "OhdaSystemHealth",
+        component: () => import("./pages/SystemHealthPage.vue")
       },
       {
         path: "suppliers",

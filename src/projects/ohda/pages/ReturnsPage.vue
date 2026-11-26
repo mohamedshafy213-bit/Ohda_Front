@@ -1,364 +1,556 @@
 <template>
   <div class="space-y-6">
-    <!-- Header Card -->
-    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-brand-white dark:bg-brand-dark p-6 rounded-3xl border border-brand-gray/15 shadow-xs">
-      <div class="flex items-center gap-3">
-        <div class="w-12 h-12 rounded-2xl bg-brand-soft dark:bg-brand-accent/15 text-brand-accent flex items-center justify-center border border-brand-accent/20 shrink-0">
-          <RotateCcw class="w-6 h-6" />
+    <!-- ==================== VIEW 1: RETURNS LIST ==================== -->
+    <template v-if="viewMode === 'list'">
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-brand-white dark:bg-brand-dark p-6 rounded-3xl border border-brand-gray/15 shadow-xs">
+        <div class="flex items-center gap-3">
+          <div class="w-12 h-12 rounded-2xl bg-brand-soft dark:bg-brand-accent/15 text-brand-accent flex items-center justify-center border border-brand-accent/20 shrink-0">
+            <RotateCcw class="w-6 h-6" />
+          </div>
+          <div>
+            <h1 class="text-xl font-bold text-brand-dark dark:text-white">المرتجعات وإشعارات الدائن (عملاء وموردين)</h1>
+            <p class="text-xs text-brand-gray mt-0.5">
+              كل مرتجع مربوط بمستند البيع أو الشراء الأصلي — يدعم قطع الغيار والخدمات والمصنعيات ومسح الـ QR والسيريال
+            </p>
+          </div>
         </div>
-        <div>
-          <h1 class="text-xl font-bold text-brand-dark dark:text-white">إدارة المرتجعات (موردين وعملاء)</h1>
-          <p class="text-xs text-brand-gray dark:text-brand-gray/80 mt-0.5">
-            تسجيل مرتجعات البضاعة للموردين ومرتجعات العملاء مع تسوية المخزون والحسابات المالية فورياً
-          </p>
+
+        <div class="flex flex-wrap items-center gap-2">
+          <button
+            type="button"
+            @click="openSupplierReturnPage"
+            class="px-4 py-2.5 bg-amber-500 hover:bg-amber-600 text-white font-bold rounded-2xl text-xs flex items-center gap-1.5 shadow-xs cursor-pointer"
+          >
+            <ArrowUpRight class="w-4 h-4" />
+            <span>مرتجع فاتورة شراء لمورد</span>
+          </button>
+
+          <button
+            type="button"
+            @click="openCustomerReturnPage()"
+            class="px-5 py-2.5 bg-brand-accent hover:bg-brand-accent/90 text-brand-dark font-bold rounded-2xl text-xs flex items-center gap-1.5 shadow-xs cursor-pointer"
+          >
+            <ArrowDownLeft class="w-4 h-4" />
+            <span>+ مرتجع عميل (من فاتورة أو QR)</span>
+          </button>
         </div>
       </div>
 
-      <div class="flex items-center gap-2">
+      <!-- Tabs Bar -->
+      <div class="flex items-center gap-2 border-b border-brand-gray/15 pb-2">
         <button
           type="button"
-          @click="openCreateReturnModal(1)"
-          class="px-3.5 py-2.5 bg-amber-500 hover:bg-amber-600 text-white font-bold rounded-2xl text-xs flex items-center gap-1.5 shadow-xs transition-all cursor-pointer"
-        >
-          <ArrowUpRight class="w-4 h-4" />
-          <span>مرتجع لمورد</span>
-        </button>
-
-        <button
-          type="button"
-          @click="openCreateReturnModal(2)"
-          class="px-3.5 py-2.5 bg-brand-accent hover:bg-brand-accent/90 text-brand-dark font-bold rounded-2xl text-xs flex items-center gap-1.5 shadow-xs transition-all cursor-pointer"
+          @click="activeTab = 2; onTabChange()"
+          class="px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-2"
+          :class="activeTab === 2 ? 'bg-brand-soft text-brand-accent border border-brand-accent/30' : 'text-brand-gray'"
         >
           <ArrowDownLeft class="w-4 h-4" />
-          <span>مرتجع من عميل</span>
+          <span>مرتجعات العملاء وإشعارات الدائن</span>
         </button>
-      </div>
-    </div>
 
-    <!-- Tabs Bar (Tab 1: Supplier Returns, Tab 2: Client Returns) -->
-    <div class="flex items-center gap-2 border-b border-brand-gray/15 pb-2">
-      <button
-        type="button"
-        @click="activeTab = 1; onTabChange()"
-        class="px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-2"
-        :class="activeTab === 1 ? 'bg-amber-500/15 text-amber-700 dark:text-amber-400 border border-amber-500/30' : 'text-brand-gray hover:text-brand-dark'"
-      >
-        <ArrowUpRight class="w-4 h-4" />
-        <span>مرتجعات الموردين (إرجاع للمورد)</span>
-      </button>
-
-      <button
-        type="button"
-        @click="activeTab = 2; onTabChange()"
-        class="px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-2"
-        :class="activeTab === 2 ? 'bg-brand-soft text-brand-accent border border-brand-accent/30' : 'text-brand-gray hover:text-brand-dark'"
-      >
-        <ArrowDownLeft class="w-4 h-4" />
-        <span>مرتجعات العملاء (استرجاع من عميل)</span>
-      </button>
-    </div>
-
-    <!-- Returns Table -->
-    <OhdaDataTable
-      :columns="tableColumns"
-      :items="returnStore.returns"
-      :loading="returnStore.loading"
-      :rowsPerPage="10"
-      :emptyTitle="activeTab === 1 ? 'لا توجد مرتجعات موردين' : 'لا توجد مرتجعات عملاء'"
-      :emptyMessage="activeTab === 1 ? 'لم يتم تسجيل أي بضاعة مرتجعة للموردين حتى الآن.' : 'لم يتم تسجيل أي بضاعة مرتجعة من العملاء حتى الآن.'"
-      :emptyIcon="RotateCcw"
-    >
-      <template #returnNumber="{ data }">
-        <span class="font-mono font-bold text-brand-accent">{{ data.returnNumber }}</span>
-      </template>
-
-      <template #partyName="{ data }">
-        <span class="font-semibold">{{ data.returnType === 1 ? data.supplierName : data.clientName }}</span>
-      </template>
-
-      <template #returnDate="{ data }">
-        <span class="font-mono text-xs">{{ formatDate(data.returnDate) }}</span>
-      </template>
-
-      <template #totalAmount="{ data }">
-        <span class="font-mono font-bold text-red-600 dark:text-red-400">{{ formatCurrency(data.totalAmount) }} ج.م</span>
-      </template>
-
-      <template #refundMethod="{ data }">
-        <span class="px-2.5 py-1 rounded-full text-[10px] font-bold bg-brand-light dark:bg-white/10 text-brand-dark dark:text-white border border-brand-gray/20">
-          {{ data.refundMethodArabic }}
-        </span>
-      </template>
-
-      <template #actions="{ data }">
         <button
           type="button"
-          @click="viewDetails(data)"
-          class="p-1.5 rounded-lg text-brand-dark hover:bg-brand-light dark:hover:bg-white/10 transition-colors cursor-pointer"
-          title="عرض التفاصيل"
+          @click="activeTab = 1; onTabChange()"
+          class="px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-2"
+          :class="activeTab === 1 ? 'bg-amber-500/15 text-amber-700 dark:text-amber-400 border border-amber-500/30' : 'text-brand-gray'"
         >
-          <Eye class="w-4 h-4" />
+          <ArrowUpRight class="w-4 h-4" />
+          <span>مرتجعات الموردين</span>
         </button>
-      </template>
-    </OhdaDataTable>
+      </div>
 
-    <!-- Create Return Modal (Tab A or Tab B) -->
-    <OhdaModal
-      v-model:visible="showCreateModal"
-      :title="returnForm.returnType === 1 ? 'تسجيل مرتجع بضاعة لمورد' : 'تسجيل مرتجع بضاعة من عميل'"
-      :description="returnForm.returnType === 1 ? 'إرجاع قطع غيار للمورد: يؤدي إلى خفض المخزون وخفض مديونية المورد (أو استرداد نقدي).' : 'استرجاع قطع غيار من عميل: يؤدي إلى زيادة رصيد المخزون وخفض مديونية العميل (أو استرداد نقدي).'"
-      :icon="RotateCcw"
-      maxWidth="max-w-4xl"
-    >
-      <form id="createReturnForm" @submit.prevent="submitCreateReturn" class="space-y-4">
-        <!-- 2-Column Form Grid: Party & Link -->
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <!-- Supplier or Client Select -->
-          <div v-if="returnForm.returnType === 1">
-            <label class="block text-xs font-semibold text-brand-dark dark:text-white mb-1.5">
-              المورد <span class="text-red-500">*</span>
-            </label>
-            <select
-              v-model="returnForm.supplierId"
-              required
-              class="w-full bg-brand-light dark:bg-white/5 border border-brand-gray/25 rounded-xl px-3 py-2 text-xs text-brand-dark dark:text-white"
-            >
-              <option value="" disabled>اختر المورد...</option>
-              <option v-for="s in inventoryStore.suppliers" :key="s.id" :value="s.id">
-                {{ s.companyName }} (الرصيد: {{ formatCurrency(s.currentBalance) }} ج.م)
-              </option>
-            </select>
-          </div>
+      <OhdaDataTable
+        :columns="tableColumns"
+        :items="returnStore.returns"
+        :loading="returnStore.loading"
+        :rowsPerPage="12"
+        emptyTitle="لا توجد مرتجعات مسجلة"
+        emptyMessage="لا توجد مرتجعات في هذا التصنيف حتى الآن."
+        :emptyIcon="RotateCcw"
+      >
+        <template #returnNumber="{ data }">
+          <span class="font-mono font-bold text-brand-accent">{{ data.returnNumber }}</span>
+        </template>
 
-          <div v-else>
-            <label class="block text-xs font-semibold text-brand-dark dark:text-white mb-1.5">
-              العميل <span class="text-red-500">*</span>
-            </label>
-            <select
-              v-model="returnForm.clientId"
-              required
-              class="w-full bg-brand-light dark:bg-white/5 border border-brand-gray/25 rounded-xl px-3 py-2 text-xs text-brand-dark dark:text-white"
-            >
-              <option value="" disabled>اختر العميل...</option>
-              <option v-for="c in clientStore.clients" :key="c.id" :value="c.id">
-                {{ c.name }} (المديونية: {{ formatCurrency(c.currentBalance) }} ج.م)
-              </option>
-            </select>
-          </div>
-
-          <!-- Refund Method -->
+        <template #partyName="{ data }">
           <div>
-            <label class="block text-xs font-semibold text-brand-dark dark:text-white mb-1.5">طريقة التسوية / الرد</label>
-            <select
-              v-model="returnForm.refundMethod"
-              class="w-full bg-brand-light dark:bg-white/5 border border-brand-gray/25 rounded-xl px-3 py-2 text-xs text-brand-dark dark:text-white font-semibold"
-            >
-              <option :value="1">تسوية على رصيد الحساب (دائن / خفض مديونية)</option>
-              <option :value="2">استرداد نقدي (صرف / إيداع كاش بالخزينة)</option>
-            </select>
+            <span class="font-semibold block">{{ data.returnType === 1 ? data.supplierName : data.clientName }}</span>
+            <span class="font-mono text-[10px] text-brand-gray">
+              {{ data.returnType === 1 ? `فاتورة شراء: ${data.originalPurchaseInvoiceNumber || '-'}` : `فاتورة أصلية: ${data.originalJobCardNumber || data.originalPosInvoiceNumber || '-'}` }}
+            </span>
           </div>
-        </div>
+        </template>
 
-        <!-- Optional Cash Account Select if Cash Refund -->
-        <div v-if="returnForm.refundMethod === 2" class="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div>
-            <label class="block text-xs font-semibold text-brand-dark dark:text-white mb-1.5">الخزينة النقدية</label>
-            <select
-              v-model="returnForm.financialAccountId"
-              class="w-full bg-brand-light dark:bg-white/5 border border-brand-gray/25 rounded-xl px-3 py-2 text-xs text-brand-dark dark:text-white"
-            >
-              <option value="">الخزينة النقدية الرئيسية</option>
-              <option v-for="acc in financeStore.accounts" :key="acc.id" :value="acc.id">
-                {{ acc.name }}
-              </option>
-            </select>
-          </div>
-          <div>
-            <label class="block text-xs font-semibold text-brand-dark dark:text-white mb-1.5">سبب الإرجاع</label>
-            <input
-              v-model="returnForm.reason"
-              type="text"
-              placeholder="تالف، غير مطابق، زيادة بالطلب..."
-              class="w-full bg-brand-light dark:bg-white/5 border border-brand-gray/25 rounded-xl px-3 py-2 text-xs text-brand-dark dark:text-white"
-            />
-          </div>
-        </div>
+        <template #returnDate="{ data }">
+          <span class="font-mono text-xs">{{ formatDate(data.returnDate) }}</span>
+        </template>
 
-        <div v-else>
-          <label class="block text-xs font-semibold text-brand-dark dark:text-white mb-1.5">سبب الإرجاع</label>
-          <input
-            v-model="returnForm.reason"
-            type="text"
-            placeholder="تالف، غير مطابق، زيادة بالطلب..."
-            class="w-full bg-brand-light dark:bg-white/5 border border-brand-gray/25 rounded-xl px-3 py-2 text-xs text-brand-dark dark:text-white"
-          />
-        </div>
+        <template #totalAmount="{ data }">
+          <span class="font-mono font-bold text-red-600">{{ formatCurrency(data.totalAmount) }} ج.م</span>
+        </template>
 
-        <!-- Items Table Section -->
-        <div class="border border-brand-gray/15 rounded-2xl p-4 bg-brand-light/30 dark:bg-white/5 space-y-3">
-          <div class="flex items-center justify-between">
-            <h4 class="text-xs font-bold text-brand-dark dark:text-white flex items-center gap-1.5">
-              <Package class="w-4 h-4 text-amber-500" />
-              <span>الأصناف المرتجعة</span>
-            </h4>
+        <template #refundMethod="{ data }">
+          <span class="px-2.5 py-1 rounded-full text-[10px] font-bold bg-brand-light dark:bg-white/10 text-brand-dark dark:text-white border border-brand-gray/20">
+            {{ data.refundMethodArabic }}
+          </span>
+        </template>
+
+        <template #actions="{ data }">
+          <div class="flex items-center justify-center gap-1">
             <button
               type="button"
-              @click="addItemRow"
-              class="px-2.5 py-1 bg-brand-accent/20 hover:bg-brand-accent text-brand-dark dark:text-white hover:text-brand-dark text-[11px] font-bold rounded-lg flex items-center gap-1 transition-all cursor-pointer"
+              @click="viewDetails(data)"
+              class="p-1.5 rounded-lg hover:bg-brand-light dark:hover:bg-white/10 cursor-pointer"
+              title="عرض وطباعة إشعار الدائن"
             >
-              <Plus class="w-3.5 h-3.5" />
-              <span>إضافة صنف</span>
+              <Printer class="w-4 h-4 text-brand-accent" />
             </button>
           </div>
+        </template>
+      </OhdaDataTable>
+    </template>
 
-          <div class="space-y-2">
-            <div
-              v-for="(item, idx) in returnForm.items"
-              :key="idx"
-              class="grid grid-cols-12 gap-2 items-center bg-brand-white dark:bg-brand-dark p-2.5 rounded-xl border border-brand-gray/10"
-            >
-              <div class="col-span-12 sm:col-span-5">
-                <label class="block text-[10px] text-brand-gray mb-1">الصنف</label>
-                <select
-                  v-model="item.productId"
-                  required
-                  @change="onProductSelect(item)"
-                  class="w-full bg-brand-light dark:bg-white/5 border border-brand-gray/25 rounded-lg px-2 py-1.5 text-xs text-brand-dark dark:text-white"
-                >
-                  <option value="" disabled>اختر الصنف...</option>
-                  <option v-for="p in inventoryStore.products" :key="p.id" :value="p.id">
-                    {{ p.name }} (الرصيد الحالي بالمخزن: {{ p.currentQuantity }})
-                  </option>
-                </select>
-              </div>
+    <!-- ==================== VIEW 2: CUSTOMER RETURN FROM ORIGINAL INVOICE ==================== -->
+    <template v-else-if="viewMode === 'customer-create'">
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-brand-white dark:bg-brand-dark p-5 rounded-3xl border border-brand-gray/15 shadow-xs">
+        <div class="flex items-center gap-3">
+          <button type="button" @click="viewMode = 'list'" class="p-2.5 rounded-xl border border-brand-gray/20 cursor-pointer">
+            <ArrowRight class="w-4 h-4" />
+          </button>
+          <div>
+            <h1 class="text-lg font-bold text-brand-dark dark:text-white">إنشاء مرتجع عميل / إشعار دائن من فاتورة أصلية</h1>
+            <p class="text-xs text-brand-gray">ابحث برمز الـ QR للفاتورة، أو سيريال القطعة، أو اسم العميل / الهاتف / اللوحة لإظهار كافة بنود الفاتورة</p>
+          </div>
+        </div>
+      </div>
 
-              <div class="col-span-4 sm:col-span-2">
-                <label class="block text-[10px] text-brand-gray mb-1">الكمية المرتجعة</label>
-                <input
-                  v-model.number="item.quantity"
-                  type="number"
-                  min="0.1"
-                  step="any"
-                  required
-                  class="w-full bg-brand-light dark:bg-white/5 border border-brand-gray/25 rounded-lg px-2 py-1.5 text-xs text-brand-dark dark:text-white font-mono text-center font-bold"
-                />
-              </div>
+      <!-- Universal Scan & Invoice Finder -->
+      <div class="bg-brand-white dark:bg-brand-dark p-5 rounded-3xl border border-brand-gray/15 shadow-xs space-y-4">
+        <div class="flex flex-col sm:flex-row gap-3">
+          <div class="relative flex-1">
+            <QrCode class="w-5 h-5 text-brand-accent absolute start-3 top-1/2 -translate-y-1/2" />
+            <input
+              v-model="invoiceSearchQuery"
+              @keydown.enter.prevent="searchCustomerInvoices"
+              type="text"
+              placeholder="امسح QR الفاتورة، أو السيريال، أو رقم الفاتورة، أو اسم/هاتف/لوحة العميل..."
+              class="w-full ps-11 pe-4 py-3 rounded-2xl border border-brand-accent/40 bg-brand-accent/5 text-sm font-semibold text-brand-dark dark:text-white focus:outline-none focus:ring-2 focus:ring-brand-accent"
+              autofocus
+            />
+          </div>
+          <button
+            type="button"
+            @click="searchCustomerInvoices"
+            :disabled="searchingInvoices"
+            class="px-6 py-3 rounded-2xl bg-brand-accent text-brand-dark font-bold text-xs cursor-pointer shrink-0"
+          >
+            {{ searchingInvoices ? 'جاري البحث...' : 'بحث عن الفاتورة' }}
+          </button>
+        </div>
 
-              <div class="col-span-4 sm:col-span-2">
-                <label class="block text-[10px] text-brand-gray mb-1">سعر الوحدة (ج.م)</label>
-                <input
-                  v-model.number="item.unitPrice"
-                  type="number"
-                  min="0"
-                  step="0.01"
-                  required
-                  class="w-full bg-brand-light dark:bg-white/5 border border-brand-gray/25 rounded-lg px-2 py-1.5 text-xs text-brand-dark dark:text-white font-mono text-center"
-                />
-              </div>
-
-              <div class="col-span-3 sm:col-span-2 text-center">
-                <span class="block text-[10px] text-brand-gray mb-1">قيمة المرتجع</span>
-                <span class="font-mono font-bold text-xs text-red-600">
-                  {{ formatCurrency(item.quantity * item.unitPrice) }} ج.م
+        <!-- Invoice Candidates List -->
+        <div v-if="foundInvoices.length > 0 && !selectedInvoice" class="grid grid-cols-1 md:grid-cols-2 gap-3 pt-2">
+          <div
+            v-for="inv in foundInvoices"
+            :key="inv.sourceType + '-' + inv.documentId"
+            @click="selectOriginalInvoice(inv)"
+            class="p-4 rounded-2xl border border-brand-gray/20 hover:border-brand-accent bg-brand-light/40 dark:bg-white/5 cursor-pointer transition-all flex items-center justify-between gap-3"
+          >
+            <div class="space-y-1 text-xs">
+              <div class="flex items-center gap-2">
+                <span class="px-2 py-0.5 rounded text-[10px] font-bold" :class="inv.sourceType === 'JobCard' ? 'bg-blue-500/15 text-blue-700' : 'bg-emerald-500/15 text-emerald-700'">
+                  {{ inv.sourceType === 'JobCard' ? 'أمر شغل' : 'فاتورة كاشير POS' }}
                 </span>
+                <span class="font-mono font-bold text-brand-accent">{{ inv.documentNumber }}</span>
+                <span v-if="inv.isOutsideReturnWindow" class="px-2 py-0.5 rounded bg-red-500/15 text-red-600 text-[10px] font-bold">تجاوز مهلة الإرجاع</span>
               </div>
-
-              <div class="col-span-1 flex justify-center">
-                <button
-                  type="button"
-                  @click="removeItemRow(idx)"
-                  :disabled="returnForm.items.length <= 1"
-                  class="p-1 text-red-500 hover:bg-red-500/10 rounded-md transition-colors disabled:opacity-20 cursor-pointer"
-                >
-                  <Trash2 class="w-4 h-4" />
-                </button>
+              <div class="font-bold text-brand-dark dark:text-white">
+                {{ inv.clientName }} {{ inv.clientPhone ? `• ${inv.clientPhone}` : '' }} {{ inv.carPlate ? `• لوحة ${inv.carPlate}` : '' }}
               </div>
+              <div class="text-[11px] text-brand-gray font-mono">التاريخ: {{ formatDate(inv.invoiceDate) }}</div>
+            </div>
+            <div class="text-left font-mono text-xs shrink-0">
+              <div class="font-bold text-sm">{{ formatCurrency(inv.totalAmount) }} ج.م</div>
+              <div v-if="inv.remainingBalance > 0" class="text-[10px] text-amber-600">متبقي: {{ formatCurrency(inv.remainingBalance) }}</div>
+              <span class="text-brand-accent text-[11px] font-bold block mt-1">اختيار &larr;</span>
             </div>
           </div>
         </div>
+      </div>
 
-        <!-- Total Return Value Bar -->
-        <div class="flex items-center justify-between p-4 bg-brand-light/50 dark:bg-white/5 rounded-2xl border border-brand-gray/15">
-          <span class="text-xs font-bold text-brand-dark dark:text-white">إجمالي قيمة المرتجع المستحقة:</span>
-          <span class="font-mono font-bold text-base text-red-600">
-            {{ formatCurrency(totalReturnAmount) }} ج.م
-          </span>
+      <!-- Selected Invoice Lines (Services + Products) -->
+      <div v-if="selectedInvoice" class="space-y-5">
+        <div class="bg-brand-white dark:bg-brand-dark p-5 rounded-3xl border border-brand-accent/30 shadow-xs space-y-4">
+          <div class="flex flex-wrap items-center justify-between gap-3 border-b border-brand-gray/10 pb-3 text-xs">
+            <div>
+              <span class="text-brand-gray">الفاتورة المختارة:</span>
+              <strong class="font-mono text-base text-brand-accent ms-2">{{ selectedInvoice.documentNumber }}</strong>
+              <span class="ms-3 font-bold">{{ selectedInvoice.clientName }}</span>
+              <span v-if="selectedInvoice.isOutsideReturnWindow" class="ms-2 px-2 py-0.5 rounded bg-red-500/15 text-red-600 font-bold">
+                ⚠️ تنبيه: الفاتورة مر عليها {{ selectedInvoice.daysSinceInvoice }} يوماً (يتطلب صلاحية مدير)
+              </span>
+            </div>
+            <button type="button" @click="selectedInvoice = null" class="px-3 py-1 rounded-lg bg-black/5 dark:bg-white/10 font-semibold cursor-pointer">
+              تغيير الفاتورة
+            </button>
+          </div>
+
+          <!-- All Lines Table (Services & Products) -->
+          <div class="space-y-3">
+            <div
+              v-for="(line, idx) in returnLinesForm"
+              :key="idx"
+              class="p-4 rounded-2xl border transition-all text-xs space-y-3"
+              :class="line.selected ? 'border-brand-accent bg-brand-accent/5' : 'border-brand-gray/15 bg-brand-light/30 dark:bg-white/5 opacity-80'"
+            >
+              <div class="flex flex-wrap items-center justify-between gap-3">
+                <label class="flex items-center gap-2.5 cursor-pointer font-bold">
+                  <input
+                    type="checkbox"
+                    v-model="line.selected"
+                    :disabled="line.remainingReturnableAmount <= 0"
+                    class="w-4 h-4 rounded text-brand-accent"
+                  />
+                  <span
+                    class="px-2 py-0.5 rounded text-[10px] font-bold"
+                    :class="line.lineType === 2 ? 'bg-purple-500/15 text-purple-700' : 'bg-blue-500/15 text-blue-700'"
+                  >
+                    {{ line.lineType === 2 ? 'خدمة / مصنعية' : 'صنف / قطعة غيار' }}
+                  </span>
+                  <span class="text-sm text-brand-dark dark:text-white">{{ line.description }}</span>
+                </label>
+
+                <div class="font-mono text-xs text-brand-gray">
+                  الأصل: {{ line.lineType === 2 ? formatCurrency(line.originalTotalAmount) + ' ج.م' : `${line.originalQuantity} ${line.unit} × ${formatCurrency(line.unitPrice)}` }}
+                  | المتاح للإرجاع: <strong class="text-emerald-600">{{ line.lineType === 2 ? formatCurrency(line.remainingReturnableAmount) + ' ج.م' : `${line.remainingReturnableQuantity} ${line.unit}` }}</strong>
+                </div>
+              </div>
+
+              <!-- Controls when line is selected -->
+              <div v-if="line.selected" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 pt-2 border-t border-brand-gray/10">
+                <!-- Qty (for Product) or Amount (for Service / Price adjustment) -->
+                <div v-if="line.lineType === 1">
+                  <label class="block text-brand-gray mb-1">الكمية المرتجعة (أقصى: {{ line.remainingReturnableQuantity }})</label>
+                  <input
+                    v-model.number="line.returnQuantity"
+                    type="number"
+                    min="0.01"
+                    :max="line.remainingReturnableQuantity"
+                    step="any"
+                    class="w-full px-3 py-2 rounded-xl border border-brand-gray/25 bg-white dark:bg-slate-900 font-mono font-bold text-center"
+                  />
+                </div>
+                <div v-else>
+                  <label class="block text-brand-gray mb-1">مبلغ الخصم / الاسترجاع من الخدمة (أقصى: {{ line.remainingReturnableAmount }})</label>
+                  <input
+                    v-model.number="line.returnAmount"
+                    type="number"
+                    min="0.01"
+                    :max="line.remainingReturnableAmount"
+                    step="0.01"
+                    class="w-full px-3 py-2 rounded-xl border border-brand-gray/25 bg-white dark:bg-slate-900 font-mono font-bold text-center"
+                  />
+                </div>
+
+                <div>
+                  <label class="block text-brand-gray mb-1">سبب الإرجاع</label>
+                  <select v-model="line.reason" class="w-full px-3 py-2 rounded-xl border border-brand-gray/25 bg-white dark:bg-slate-900">
+                    <option value="تالف / عيب بالصنف">تالف / عيب بالصنف</option>
+                    <option value="صنف غير مطابق / خطأ">صنف غير مطابق / خطأ</option>
+                    <option value="عدول العميل عن الشراء">عدول العميل عن الشراء</option>
+                    <option value="شكوى عميل / إعادة خدمة">شكوى عميل / إعادة خدمة</option>
+                    <option value="تعديل أو تسوية سعر">تعديل أو تسوية سعر</option>
+                    <option value="أخرى">أخرى</option>
+                  </select>
+                </div>
+
+                <div v-if="line.lineType === 1" class="flex items-center pt-4">
+                  <label class="flex items-center gap-2 cursor-pointer font-bold">
+                    <input type="checkbox" v-model="line.restockToInventory" class="rounded text-brand-accent" />
+                    <span>إرجاع القطعة لرصيد المخزن (سليمة)</span>
+                  </label>
+                </div>
+
+                <div>
+                  <label class="block text-brand-gray mb-1">قيمة المرتجع للبند</label>
+                  <div class="px-3 py-2 rounded-xl bg-red-500/10 text-red-600 font-mono font-bold text-center">
+                    {{ formatCurrency(getLineReturnValue(line)) }} ج.م
+                  </div>
+                </div>
+
+                <!-- Serial Picker for Serialized Products -->
+                <div v-if="line.lineType === 1 && line.trackSerialNumbers && line.soldSerials.length > 0" class="sm:col-span-2 lg:col-span-4 bg-blue-500/5 p-3 rounded-xl border border-blue-500/20">
+                  <label class="block font-bold mb-1.5 text-blue-700 dark:text-blue-300">اختر الأرقام التسلسلية المسترجعة:</label>
+                  <div class="flex flex-wrap gap-2">
+                    <label
+                      v-for="sn in line.soldSerials"
+                      :key="sn"
+                      class="px-2.5 py-1 rounded-lg border font-mono cursor-pointer text-[11px]"
+                      :class="line.selectedSerials.includes(sn) ? 'bg-blue-600 text-white border-blue-600' : 'bg-white dark:bg-slate-900 border-brand-gray/25'"
+                    >
+                      <input type="checkbox" :value="sn" v-model="line.selectedSerials" class="hidden" />
+                      <span>{{ sn }}</span>
+                    </label>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Refund Settlement Split Box -->
+          <div class="p-5 rounded-2xl bg-brand-light/60 dark:bg-white/5 border border-brand-gray/15 space-y-4 text-xs">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 font-mono">
+              <div class="p-3 rounded-xl bg-white dark:bg-slate-900 border border-brand-gray/10">
+                <span class="text-brand-gray block text-[10px]">إجمالي قيمة المرتجع</span>
+                <span class="font-bold text-base text-red-600">{{ formatCurrency(customerReturnTotal) }} ج.م</span>
+              </div>
+              <div class="p-3 rounded-xl bg-white dark:bg-slate-900 border border-brand-gray/10">
+                <span class="text-brand-gray block text-[10px]">يُخصم أولاً من المتبقي غير المسدد بالفاتورة</span>
+                <span class="font-bold text-base text-amber-600">{{ formatCurrency(unpaidAppliedPreview) }} ج.م</span>
+              </div>
+              <div class="p-3 rounded-xl bg-white dark:bg-slate-900 border border-emerald-500/30">
+                <span class="text-brand-gray block text-[10px]">الصافي المستحق رده للعميل</span>
+                <span class="font-bold text-base text-emerald-600">{{ formatCurrency(netRefundDuePreview) }} ج.م</span>
+              </div>
+            </div>
+
+            <div v-if="netRefundDuePreview > 0" class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label class="block font-bold mb-1">طريقة رد الصافي للعميل</label>
+                <select v-model.number="customerRefundMethod" class="w-full px-3 py-2 rounded-xl border border-brand-gray/25 bg-white dark:bg-slate-900">
+                  <option :value="2">استرداد نقدي / بنكي فوري</option>
+                  <option :value="1">إضافة كرصيد دائن في حساب العميل</option>
+                </select>
+              </div>
+              <div v-if="customerRefundMethod === 2">
+                <label class="block font-bold mb-1">قناة الدفع</label>
+                <select v-model.number="customerPaymentChannel" class="w-full px-3 py-2 rounded-xl border border-brand-gray/25 bg-white dark:bg-slate-900">
+                  <option :value="1">كاش (من درج النقدية المفتوح)</option>
+                  <option :value="3">إنستاباي (InstaPay)</option>
+                  <option :value="4">تحويل بنكي</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="flex justify-end gap-3 pt-2">
+              <button type="button" @click="viewMode = 'list'" class="px-4 py-2.5 rounded-xl border border-brand-gray/25 font-semibold cursor-pointer">
+                إلغاء
+              </button>
+              <button
+                type="button"
+                @click="submitCustomerReturn"
+                :disabled="submitting || customerReturnTotal <= 0"
+                class="px-6 py-2.5 rounded-xl bg-brand-accent text-brand-dark font-extrabold shadow-sm cursor-pointer disabled:opacity-50"
+              >
+                {{ submitting ? 'جاري التنفيذ...' : 'اعتماد المرتجع وإصدار إشعار الدائن' }}
+              </button>
+            </div>
+          </div>
         </div>
-      </form>
+      </div>
+    </template>
 
-      <template #footer="{ close }">
-        <button
-          type="button"
-          @click="close"
-          class="px-4 py-2 border border-brand-gray/20 rounded-xl text-xs font-semibold hover:bg-brand-light transition-colors cursor-pointer"
-        >
-          إلغاء
+    <!-- ==================== VIEW 3: SUPPLIER RETURN FROM ORIGINAL PURCHASE ==================== -->
+    <template v-else-if="viewMode === 'supplier-create'">
+      <div class="flex items-center gap-3 bg-brand-white dark:bg-brand-dark p-5 rounded-3xl border border-brand-gray/15 shadow-xs">
+        <button type="button" @click="viewMode = 'list'" class="p-2.5 rounded-xl border border-brand-gray/20 cursor-pointer">
+          <ArrowRight class="w-4 h-4" />
         </button>
-        <button
-          type="submit"
-          form="createReturnForm"
-          :disabled="submitting"
-          class="px-5 py-2 bg-brand-accent hover:bg-brand-accent/90 text-brand-dark font-bold rounded-xl text-xs flex items-center gap-2 cursor-pointer shadow-sm disabled:opacity-50"
-        >
-          <RefreshCw v-if="submitting" class="w-4 h-4 animate-spin" />
-          <span>تأكيد المرتجع وتحديث الحسابات</span>
-        </button>
-      </template>
-    </OhdaModal>
+        <div>
+          <h1 class="text-lg font-bold text-brand-dark dark:text-white">مرتجع مشتريات لمورد (مربوط بفاتورة الشراء ودفعاتها)</h1>
+          <p class="text-xs text-brand-gray">اختر فاتورة الشراء الأصلية ليتم الخصم من دفعاتها وتحديد السيريالات بدقة</p>
+        </div>
+      </div>
 
-    <!-- Return Details Modal -->
+      <div class="bg-brand-white dark:bg-brand-dark p-5 rounded-3xl border border-brand-gray/15 shadow-xs space-y-4 text-xs">
+        <div class="flex gap-3">
+          <input
+            v-model="purchaseSearchQuery"
+            @keydown.enter.prevent="searchSupplierPurchases"
+            type="text"
+            placeholder="ابحث برقم فاتورة الشراء أو اسم المورد..."
+            class="flex-1 px-4 py-2.5 rounded-xl border border-brand-gray/25 bg-brand-light dark:bg-white/5"
+          />
+          <button type="button" @click="searchSupplierPurchases" class="px-5 py-2.5 rounded-xl bg-amber-500 text-white font-bold cursor-pointer">
+            بحث
+          </button>
+        </div>
+
+        <div v-if="!selectedPurchase && foundPurchases.length > 0" class="grid grid-cols-1 md:grid-cols-2 gap-3">
+          <div
+            v-for="p in foundPurchases"
+            :key="p.purchaseId"
+            @click="selectPurchaseForReturn(p)"
+            class="p-4 rounded-2xl border border-brand-gray/20 hover:border-amber-500 cursor-pointer flex items-center justify-between"
+          >
+            <div>
+              <div class="font-mono font-bold text-amber-600">{{ p.invoiceNumber }}</div>
+              <div class="font-bold text-brand-dark dark:text-white">{{ p.supplierName }}</div>
+              <div class="text-[11px] text-brand-gray">{{ formatDate(p.purchaseDate) }} • {{ p.items.length }} دفعات متاحة</div>
+            </div>
+            <span class="font-bold text-amber-600">اختيار &larr;</span>
+          </div>
+        </div>
+
+        <div v-if="selectedPurchase" class="space-y-4 pt-2">
+          <div class="flex items-center justify-between border-b border-brand-gray/10 pb-2">
+            <div>
+              <strong>فاتورة الشراء: {{ selectedPurchase.invoiceNumber }}</strong> — المورد: <strong>{{ selectedPurchase.supplierName }}</strong>
+            </div>
+            <button type="button" @click="selectedPurchase = null" class="px-3 py-1 rounded-lg bg-black/5 cursor-pointer">تغيير الفاتورة</button>
+          </div>
+
+          <div v-for="(line, idx) in supplierReturnLines" :key="idx" class="p-3.5 rounded-xl border border-brand-gray/15 space-y-2">
+            <label class="flex items-center justify-between cursor-pointer font-bold">
+              <div class="flex items-center gap-2">
+                <input type="checkbox" v-model="line.selected" class="rounded text-amber-600" />
+                <span>{{ line.productName }} (دفعة {{ line.batchCode }})</span>
+              </div>
+              <span class="font-mono text-emerald-600">متاح بالدفعة: {{ line.batchRemaining }} {{ line.unit }} | تكلفة: {{ formatCurrency(line.costPerBaseUnit) }}</span>
+            </label>
+            <div v-if="line.selected" class="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2">
+              <div>
+                <label class="block text-brand-gray mb-1">الكمية المرتجعة (أقصى: {{ line.batchRemaining }})</label>
+                <input v-model.number="line.returnQuantity" type="number" min="0.01" :max="line.batchRemaining" step="any" class="w-full px-3 py-1.5 rounded-lg border font-mono font-bold text-center" />
+              </div>
+              <div>
+                <label class="block text-brand-gray mb-1">سعر الإرجاع للوحدة (ج.م)</label>
+                <input v-model.number="line.unitPrice" type="number" min="0" step="0.01" class="w-full px-3 py-1.5 rounded-lg border font-mono text-center" />
+              </div>
+              <div>
+                <label class="block text-brand-gray mb-1">الإجمالي</label>
+                <div class="px-3 py-1.5 rounded-lg bg-amber-500/10 font-mono font-bold text-center text-amber-700">
+                  {{ formatCurrency(line.returnQuantity * line.unitPrice) }} ج.م
+                </div>
+              </div>
+              <div v-if="line.trackSerialNumbers && line.availableSerials.length" class="sm:col-span-3">
+                <span class="block font-bold mb-1">اختر السيريالات المرتجعة للمورد:</span>
+                <div class="flex flex-wrap gap-1.5">
+                  <label
+                    v-for="sn in line.availableSerials"
+                    :key="sn"
+                    class="px-2 py-1 rounded border font-mono text-[11px] cursor-pointer"
+                    :class="line.selectedSerials.includes(sn) ? 'bg-amber-600 text-white border-amber-600' : 'bg-white dark:bg-slate-900'"
+                  >
+                    <input type="checkbox" :value="sn" v-model="line.selectedSerials" class="hidden" />
+                    <span>{{ sn }}</span>
+                  </label>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
+            <div>
+              <label class="block font-bold mb-1">طريقة التسوية مع المورد</label>
+              <select v-model.number="supplierRefundMethod" class="w-full px-3 py-2 rounded-xl border border-brand-gray/25">
+                <option :value="1">خصم من رصيد مديونية المورد</option>
+                <option :value="2">استرداد نقدي من المورد للخزينة</option>
+              </select>
+            </div>
+            <div>
+              <label class="block font-bold mb-1">السبب</label>
+              <input v-model="supplierReturnReason" placeholder="عيب تصنيع، زيادة عن الطلب..." class="w-full px-3 py-2 rounded-xl border border-brand-gray/25" />
+            </div>
+          </div>
+
+          <div class="flex justify-end gap-3 pt-2">
+            <button type="button" @click="submitSupplierReturn" :disabled="submitting" class="px-6 py-2.5 rounded-xl bg-amber-600 text-white font-bold cursor-pointer">
+              {{ submitting ? 'جاري التنفيذ...' : 'اعتماد مرتجع المورد' }}
+            </button>
+          </div>
+        </div>
+      </div>
+    </template>
+
+    <!-- Credit Note Print Modal (A4 / 80mm + QR) -->
     <OhdaModal
       v-model:visible="showDetailsModal"
-      :title="`تفاصيل المرتجع #${selectedReturn?.returnNumber || ''}`"
-      :description="`الطرف: ${selectedReturn?.partyName} - التاريخ: ${formatDate(selectedReturn?.returnDate)}`"
-      :icon="RotateCcw"
+      :title="`إشعار دائن / مستند مرتجع #${selectedReturn?.returnNumber || ''}`"
+      :description="`${selectedReturn?.returnTypeArabic} - ${formatDate(selectedReturn?.returnDate)}`"
+      :icon="Printer"
       maxWidth="max-w-3xl"
     >
-      <div v-if="selectedReturn" class="space-y-4 text-xs">
-        <div class="grid grid-cols-3 gap-3 bg-brand-light/40 dark:bg-white/5 p-4 rounded-2xl border border-brand-gray/10">
-          <div>
-            <span class="text-brand-gray block text-[10px]">نوع المرتجع</span>
-            <span class="font-bold text-brand-dark dark:text-white">{{ selectedReturn.returnTypeArabic }}</span>
-          </div>
-          <div>
-            <span class="text-brand-gray block text-[10px]">إجمالي القيمة</span>
-            <span class="font-mono font-bold text-sm text-red-600">{{ formatCurrency(selectedReturn.totalAmount) }} ج.م</span>
-          </div>
-          <div>
-            <span class="text-brand-gray block text-[10px]">طريقة الرد</span>
-            <span class="font-bold text-brand-dark dark:text-white">{{ selectedReturn.refundMethodArabic }}</span>
-          </div>
+      <div v-if="selectedReturn" class="space-y-4">
+        <div class="flex gap-2 pb-2 border-b border-brand-gray/15 print:hidden">
+          <button type="button" @click="creditPrintMode = 'a4'" class="px-3 py-1 rounded-lg text-xs font-bold border cursor-pointer" :class="creditPrintMode === 'a4' ? 'bg-brand-accent text-brand-dark' : ''">
+            طباعة A4
+          </button>
+          <button type="button" @click="creditPrintMode = 'receipt'" class="px-3 py-1 rounded-lg text-xs font-bold border cursor-pointer" :class="creditPrintMode === 'receipt' ? 'bg-brand-accent text-brand-dark' : ''">
+            إيصال حراري 80mm
+          </button>
         </div>
 
-        <div class="border border-brand-gray/15 rounded-xl overflow-hidden">
-          <table class="w-full text-right text-xs">
-            <thead class="bg-brand-light/60 dark:bg-white/5 text-brand-gray font-bold">
-              <tr>
-                <th class="py-2.5 px-3">الصنف</th>
-                <th class="py-2.5 px-3 text-center">الكمية المرتجعة</th>
-                <th class="py-2.5 px-3 text-center">سعر الوحدة</th>
-                <th class="py-2.5 px-3 text-center">الإجمالي</th>
+        <div id="creditNotePrintArea" class="bg-white text-black p-5 rounded-xl border border-gray-200 text-xs space-y-4" :class="creditPrintMode === 'receipt' ? 'max-w-xs mx-auto font-mono' : ''">
+          <div class="flex justify-between items-start border-b pb-3">
+            <div>
+              <h2 class="text-base font-bold">{{ selectedReturn.returnType === 1 ? 'إشعار مرتجع مورد' : 'إشعار دائن ومرتجع مبيعات' }}</h2>
+              <p class="font-mono font-bold text-sm mt-1">{{ selectedReturn.returnNumber }}</p>
+              <p class="text-[11px] text-gray-500">التاريخ: {{ formatDate(selectedReturn.returnDate) }}</p>
+            </div>
+            <QrCodeCanvas v-if="selectedReturn.documentToken" :value="selectedReturn.documentToken" :size="68" />
+          </div>
+
+          <div class="grid grid-cols-2 gap-3 bg-gray-50 p-3 rounded-lg">
+            <div>
+              <span class="text-gray-400 block text-[10px]">الطرف:</span>
+              <strong>{{ selectedReturn.returnType === 1 ? selectedReturn.supplierName : selectedReturn.clientName }}</strong>
+            </div>
+            <div>
+              <span class="text-gray-400 block text-[10px]">المستند الأصلي:</span>
+              <strong class="font-mono">{{ selectedReturn.originalJobCardNumber || selectedReturn.originalPosInvoiceNumber || selectedReturn.originalPurchaseInvoiceNumber || '—' }}</strong>
+            </div>
+          </div>
+
+          <table class="w-full text-right text-xs border-collapse">
+            <thead>
+              <tr class="border-b border-gray-300 text-gray-600">
+                <th class="py-1.5">النوع</th>
+                <th class="py-1.5">البند</th>
+                <th class="py-1.5 text-center">الكمية</th>
+                <th class="py-1.5 text-end">الإجمالي</th>
               </tr>
             </thead>
-            <tbody class="divide-y divide-brand-gray/10">
+            <tbody class="divide-y divide-gray-200">
               <tr v-for="item in selectedReturn.items" :key="item.id">
-                <td class="py-2 px-3 font-semibold">{{ item.productName }}</td>
-                <td class="py-2 px-3 text-center font-mono">{{ item.quantity }} {{ item.unit }}</td>
-                <td class="py-2 px-3 text-center font-mono">{{ formatCurrency(item.unitPrice) }} ج.م</td>
-                <td class="py-2 px-3 text-center font-mono font-bold text-red-600">{{ formatCurrency(item.totalPrice) }} ج.م</td>
+                <td class="py-1.5 text-[10px]">{{ item.lineTypeArabic }}</td>
+                <td class="py-1.5 font-semibold">{{ item.description || item.productName }}</td>
+                <td class="py-1.5 text-center font-mono">{{ item.quantity }} {{ item.unit }}</td>
+                <td class="py-1.5 text-end font-mono font-bold">{{ formatCurrency(item.totalPrice) }} ج.م</td>
               </tr>
             </tbody>
           </table>
+
+          <div class="border-t pt-3 space-y-1 font-mono">
+            <div class="flex justify-between font-bold text-sm">
+              <span>إجمالي قيمة المرتجع:</span>
+              <span class="text-red-600">{{ formatCurrency(selectedReturn.totalAmount) }} ج.م</span>
+            </div>
+            <div v-if="selectedReturn.unpaidBalanceApplied > 0" class="flex justify-between text-amber-700">
+              <span>تسوية من متبقي الفاتورة:</span>
+              <span>{{ formatCurrency(selectedReturn.unpaidBalanceApplied) }} ج.م</span>
+            </div>
+            <div class="flex justify-between text-emerald-700 font-bold">
+              <span>صافي المسترد / الرصيد الدائن:</span>
+              <span>{{ formatCurrency(selectedReturn.cashOrBalanceRefunded) }} ج.م ({{ selectedReturn.refundMethodArabic }})</span>
+            </div>
+          </div>
         </div>
       </div>
 
       <template #footer="{ close }">
+        <button type="button" @click="close" class="px-4 py-2 bg-brand-light dark:bg-white/10 rounded-xl text-xs font-semibold cursor-pointer">إغلاق</button>
         <button
+          v-if="selectedReturn?.id"
           type="button"
-          @click="close"
-          class="px-5 py-2 bg-brand-light dark:bg-white/10 rounded-xl text-xs font-semibold cursor-pointer"
+          @click="downloadServerPdf(`/api/ReportsPdf/return/${selectedReturn.id}?paperSize=${creditPrintMode === 'receipt' ? 'Thermal80mm' : 'A4'}`, `Return_${selectedReturn.returnNumber || 'note'}.pdf`)"
+          class="px-4 py-2 bg-rose-600/15 text-rose-700 dark:text-rose-300 border border-rose-500/30 rounded-xl text-xs font-bold cursor-pointer"
         >
-          إغلاق
+          تنزيل PDF
+        </button>
+        <button type="button" @click="printWindow" class="px-5 py-2 bg-brand-accent text-brand-dark rounded-xl text-xs font-bold flex items-center gap-1.5 cursor-pointer">
+          <Printer class="w-4 h-4" />
+          <span>طباعة إشعار الدائن</span>
         </button>
       </template>
     </OhdaModal>
@@ -367,156 +559,223 @@
 
 <script setup>
 import { ref, computed, onMounted } from "vue";
+import { useRoute } from "vue-router";
 import { useToast } from "primevue/usetoast";
 import { useOhdaReturnStore } from "../stores/useOhdaReturnStore";
-import { useOhdaInventoryStore } from "../stores/useOhdaInventoryStore";
-import { useOhdaClientStore } from "../stores/useOhdaClientStore";
-import { useOhdaFinanceStore } from "../stores/useOhdaFinanceStore";
 import OhdaDataTable from "../components/OhdaDataTable.vue";
 import OhdaModal from "../components/OhdaModal.vue";
-import {
-  RotateCcw,
-  ArrowUpRight,
-  ArrowDownLeft,
-  Plus,
-  Package,
-  Trash2,
-  Eye,
-  RefreshCw
-} from "lucide-vue-next";
+import QrCodeCanvas from "../components/QrCodeCanvas.vue";
+import { downloadServerPdf } from "../utils/pdfHelper";
+import { RotateCcw, ArrowUpRight, ArrowDownLeft, ArrowRight, QrCode, Printer } from "lucide-vue-next";
 
+const route = useRoute();
 const toast = useToast();
 const returnStore = useOhdaReturnStore();
-const inventoryStore = useOhdaInventoryStore();
-const clientStore = useOhdaClientStore();
-const financeStore = useOhdaFinanceStore();
 
-const activeTab = ref(1); // 1 = Supplier Returns, 2 = Client Returns
-const showCreateModal = ref(false);
+const viewMode = ref("list"); // "list" | "customer-create" | "supplier-create"
+const activeTab = ref(2);
 const showDetailsModal = ref(false);
 const selectedReturn = ref(null);
+const creditPrintMode = ref("a4");
 const submitting = ref(false);
+
+// Customer Return State
+const invoiceSearchQuery = ref("");
+const searchingInvoices = ref(false);
+const foundInvoices = ref([]);
+const selectedInvoice = ref(null);
+const returnLinesForm = ref([]);
+const customerRefundMethod = ref(2);
+const customerPaymentChannel = ref(1);
+
+// Supplier Return State
+const purchaseSearchQuery = ref("");
+const foundPurchases = ref([]);
+const selectedPurchase = ref(null);
+const supplierReturnLines = ref([]);
+const supplierRefundMethod = ref(1);
+const supplierReturnReason = ref("");
 
 const tableColumns = [
   { field: "returnNumber", header: "رقم المرتجع", width: "160px", sortable: true },
-  { field: "returnDate", header: "تاريخ المرتجع", width: "130px", sortable: true },
-  { field: "partyName", header: activeTab.value === 1 ? "المورد" : "العميل", sortable: true },
-  { field: "totalAmount", header: "إجمالي القيمة", width: "130px", align: "center", sortable: true },
-  { field: "refundMethod", header: "طريقة الرد", width: "150px", align: "center" },
-  { field: "actions", header: "الإجراءات", width: "90px", align: "center" }
+  { field: "returnDate", header: "تاريخ المرتجع", width: "120px", sortable: true },
+  { field: "partyName", header: "الطرف والمستند الأصلي", sortable: true },
+  { field: "totalAmount", header: "قيمة المرتجع", width: "130px", align: "center", sortable: true },
+  { field: "refundMethod", header: "طريقة الرد", width: "180px", align: "center" },
+  { field: "actions", header: "طباعة", width: "80px", align: "center" }
 ];
 
-const returnForm = ref({
-  returnType: 1,
-  returnDate: new Date().toISOString(),
-  supplierId: "",
-  clientId: "",
-  refundMethod: 1,
-  financialAccountId: "",
-  reason: "",
-  notes: "",
-  items: [
-    { productId: "", quantity: 1, unitPrice: 0 }
-  ]
-});
-
 onMounted(async () => {
-  await Promise.all([
-    returnStore.fetchReturns(activeTab.value),
-    inventoryStore.fetchSuppliers(),
-    inventoryStore.fetchProducts(),
-    clientStore.fetchClients(),
-    financeStore.fetchAccounts()
-  ]);
+  await returnStore.fetchReturns(activeTab.value);
+  // Auto-handle deep link from Global Search QR token or Serial scan
+  if (route.query.token || route.query.serial) {
+    invoiceSearchQuery.value = String(route.query.token || route.query.serial);
+    await openCustomerReturnPage(invoiceSearchQuery.value);
+  }
 });
 
 function onTabChange() {
   returnStore.fetchReturns(activeTab.value);
 }
 
-function openCreateReturnModal(type) {
-  returnForm.value = {
-    returnType: type,
-    returnDate: new Date().toISOString(),
-    supplierId: "",
-    clientId: "",
-    refundMethod: 1,
-    financialAccountId: "",
-    reason: "",
-    notes: "",
-    items: [
-      { productId: "", quantity: 1, unitPrice: 0 }
-    ]
-  };
-  showCreateModal.value = true;
+async function openCustomerReturnPage(prefillQuery = "") {
+  viewMode.value = "customer-create";
+  selectedInvoice.value = null;
+  invoiceSearchQuery.value = prefillQuery;
+  await searchCustomerInvoices();
 }
 
-function addItemRow() {
-  returnForm.value.items.push({ productId: "", quantity: 1, unitPrice: 0 });
-}
-
-function removeItemRow(idx) {
-  if (returnForm.value.items.length > 1) {
-    returnForm.value.items.splice(idx, 1);
+async function searchCustomerInvoices() {
+  searchingInvoices.value = true;
+  foundInvoices.value = await returnStore.findInvoicesForReturn(invoiceSearchQuery.value);
+  searchingInvoices.value = false;
+  if (foundInvoices.value.length === 1 && invoiceSearchQuery.value.trim()) {
+    selectOriginalInvoice(foundInvoices.value[0]);
   }
 }
 
-function onProductSelect(item) {
-  const prod = inventoryStore.products.find(p => p.id === item.productId);
-  if (prod) {
-    item.unitPrice = returnForm.value.returnType === 1 ? (prod.costPrice || 0) : (prod.sellingPrice || 0);
-  }
+function selectOriginalInvoice(inv) {
+  selectedInvoice.value = inv;
+  returnLinesForm.value = (inv.lines || []).map(l => ({
+    ...l,
+    selected: false,
+    returnQuantity: l.remainingReturnableQuantity > 0 ? l.remainingReturnableQuantity : 0,
+    returnAmount: l.remainingReturnableAmount > 0 ? l.remainingReturnableAmount : 0,
+    restockToInventory: true,
+    reason: l.lineType === 2 ? "شكوى عميل / إعادة خدمة" : "تالف / عيب بالصنف",
+    selectedSerials: []
+  }));
 }
 
-const totalReturnAmount = computed(() => {
-  return returnForm.value.items.reduce((acc, i) => acc + ((i.quantity || 0) * (i.unitPrice || 0)), 0);
+function getLineReturnValue(line) {
+  if (!line.selected) return 0;
+  if (line.lineType === 2) return Number(line.returnAmount) || 0;
+  return (Number(line.returnQuantity) || 0) * (Number(line.unitPrice) || 0);
+}
+
+const customerReturnTotal = computed(() =>
+  returnLinesForm.value.reduce((s, l) => s + getLineReturnValue(l), 0)
+);
+
+const unpaidAppliedPreview = computed(() => {
+  if (!selectedInvoice.value) return 0;
+  return Math.min(selectedInvoice.value.remainingBalance || 0, customerReturnTotal.value);
 });
 
-async function submitCreateReturn() {
-  if (returnForm.value.returnType === 1 && !returnForm.value.supplierId) {
-    toast.add({ severity: "warn", summary: "تنبيه", detail: "يرجى تحديد المورد", life: 3000 });
-    return;
-  }
-  if (returnForm.value.returnType === 2 && !returnForm.value.clientId) {
-    toast.add({ severity: "warn", summary: "تنبيه", detail: "يرجى تحديد العميل", life: 3000 });
-    return;
-  }
-  if (!returnForm.value.items.length || returnForm.value.items.some(i => !i.productId || i.quantity <= 0)) {
-    toast.add({ severity: "warn", summary: "تنبيه", detail: "يرجى التحقق من الأصناف والكميات المرتجعة", life: 3000 });
+const netRefundDuePreview = computed(() =>
+  Math.max(0, customerReturnTotal.value - unpaidAppliedPreview.value)
+);
+
+async function submitCustomerReturn() {
+  const chosen = returnLinesForm.value.filter(l => l.selected);
+  if (!chosen.length) {
+    toast.add({ severity: "warn", summary: "تنبيه", detail: "اختر بنداً واحداً على الأقل للاسترجاع", life: 3000 });
     return;
   }
 
   submitting.value = true;
+  const payload = {
+    returnType: 2,
+    clientId: selectedInvoice.value.clientId,
+    originalJobCardId: selectedInvoice.value.sourceType === "JobCard" ? selectedInvoice.value.documentId : null,
+    originalPosInvoiceId: selectedInvoice.value.sourceType === "PosInvoice" ? selectedInvoice.value.documentId : null,
+    refundMethod: customerRefundMethod.value,
+    paymentChannel: customerPaymentChannel.value,
+    reason: chosen[0]?.reason || "مرتجع عميل",
+    items: chosen.map(l => ({
+      lineType: l.lineType,
+      productId: l.productId,
+      batchId: l.batchId,
+      jobCardProductId: l.jobCardProductId,
+      jobCardServiceId: l.jobCardServiceId,
+      posInvoiceItemId: l.posInvoiceItemId,
+      description: l.description,
+      quantity: l.lineType === 2 ? 1 : Number(l.returnQuantity),
+      unitPrice: l.lineType === 2 ? Number(l.returnAmount) : Number(l.unitPrice),
+      returnAmountOverride: l.lineType === 2 ? Number(l.returnAmount) : null,
+      restockToInventory: l.lineType === 1 ? l.restockToInventory : false,
+      serialNumbers: l.selectedSerials || [],
+      reason: l.reason
+    }))
+  };
+
+  const res = await returnStore.createReturn(payload);
+  submitting.value = false;
+  if (res.success) {
+    toast.add({ severity: "success", summary: "تم بنجاح", detail: res.message, life: 4500 });
+    viewMode.value = "list";
+    activeTab.value = 2;
+    if (res.data) viewDetails(res.data);
+  } else {
+    toast.add({ severity: "error", summary: "فشل المرتجع", detail: res.message, life: 5000 });
+  }
+}
+
+async function openSupplierReturnPage() {
+  viewMode.value = "supplier-create";
+  selectedPurchase.value = null;
+  await searchSupplierPurchases();
+}
+
+async function searchSupplierPurchases() {
+  foundPurchases.value = await returnStore.findPurchasesForReturn(purchaseSearchQuery.value);
+}
+
+function selectPurchaseForReturn(p) {
+  selectedPurchase.value = p;
+  supplierReturnLines.value = (p.items || []).map(it => ({
+    ...it,
+    selected: false,
+    returnQuantity: 1,
+    unitPrice: it.costPerBaseUnit,
+    selectedSerials: []
+  }));
+}
+
+async function submitSupplierReturn() {
+  const chosen = supplierReturnLines.value.filter(l => l.selected && l.returnQuantity > 0);
+  if (!chosen.length) {
+    toast.add({ severity: "warn", summary: "تنبيه", detail: "اختر بنداً واحداً على الأقل", life: 3000 });
+    return;
+  }
+  submitting.value = true;
   const res = await returnStore.createReturn({
-    ...returnForm.value,
-    supplierId: returnForm.value.supplierId ? parseInt(returnForm.value.supplierId) : null,
-    clientId: returnForm.value.clientId ? parseInt(returnForm.value.clientId) : null,
-    financialAccountId: returnForm.value.financialAccountId ? parseInt(returnForm.value.financialAccountId) : null
+    returnType: 1,
+    supplierId: selectedPurchase.value.supplierId,
+    originalPurchaseId: selectedPurchase.value.purchaseId,
+    refundMethod: supplierRefundMethod.value,
+    paymentChannel: 1,
+    reason: supplierReturnReason.value || "مرتجع لمورد",
+    items: chosen.map(l => ({
+      lineType: 1,
+      productId: l.productId,
+      batchId: l.batchId,
+      quantity: Number(l.returnQuantity),
+      unitPrice: Number(l.unitPrice),
+      serialNumbers: l.selectedSerials || []
+    }))
   });
   submitting.value = false;
-
   if (res.success) {
-    toast.add({ severity: "success", summary: "تم المرتجع", detail: res.message, life: 4000 });
-    showCreateModal.value = false;
-    await inventoryStore.fetchProducts();
-    if (returnForm.value.returnType === 1) await inventoryStore.fetchSuppliers();
-    else await clientStore.fetchClients();
+    toast.add({ severity: "success", summary: "تم بنجاح", detail: res.message, life: 4000 });
+    viewMode.value = "list";
+    activeTab.value = 1;
   } else {
-    toast.add({ severity: "error", summary: "فشل الحفظ", detail: res.message, life: 5000 });
+    toast.add({ severity: "error", summary: "خطأ", detail: res.message, life: 5000 });
   }
 }
 
 function viewDetails(r) {
-  selectedReturn.value = {
-    ...r,
-    partyName: r.returnType === 1 ? r.supplierName : r.clientName
-  };
+  selectedReturn.value = r;
   showDetailsModal.value = true;
 }
 
+function printWindow() {
+  window.print();
+}
+
 function formatCurrency(val) {
-  if (!val && val !== 0) return "0.00";
-  return Number(val).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  return Number(val || 0).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
 
 function formatDate(val) {

@@ -260,7 +260,7 @@
             class="text-[10px] font-semibold mt-0.5"
             :class="((row || data)?.currentBalance || 0) > 0 ? 'text-red-600 dark:text-red-400 font-bold' : ((row || data)?.currentBalance || 0) < 0 ? 'text-emerald-600' : 'text-brand-gray'"
           >
-            {{ (row || data)?.balanceStatus }}
+            {{ getClientBalanceLabel((row || data)?.currentBalance || 0) }}
           </div>
         </div>
       </template>
@@ -291,12 +291,13 @@
             <span>الملف</span>
           </button>
 
-          <!-- Record Payment Action -->
+          <!-- Record Payment Action (Only if client has unpaid balance) -->
           <button
+            v-if="((row || data)?.currentBalance || 0) > 0"
             type="button"
             @click="openPaymentModal(row || data)"
             class="px-2 py-1.5 bg-emerald-500/10 hover:bg-emerald-500 text-emerald-700 hover:text-white rounded-xl text-[11px] font-bold transition-colors cursor-pointer flex items-center gap-1"
-            title="تحصيل دفعة مالية"
+            title="تحصيل مديونية مستحقة"
           >
             <Banknote class="w-3.5 h-3.5" />
             <span>تحصيل</span>
@@ -367,9 +368,11 @@
               <div class="text-[9px] text-brand-gray">الرصيد القائم</div>
               <div
                 class="font-mono font-bold text-xs"
-                :class="activeClient.currentBalance > 0 ? 'text-rose-600' : activeClient.currentBalance < 0 ? 'text-emerald-600' : 'text-brand-gray'"
+                :class="activeClient.currentBalance > 0 ? 'text-rose-600' : 'text-emerald-600'"
               >
-                {{ formatCurrency(activeClient.currentBalance) }}
+                <span v-if="activeClient.currentBalance > 0">{{ formatCurrency(activeClient.currentBalance) }} (مستحق سداده)</span>
+                <span v-else-if="activeClient.currentBalance < 0">{{ formatCurrency(Math.abs(activeClient.currentBalance)) }} (رصيد دائن للعميل)</span>
+                <span v-else class="text-emerald-600">0.00 ج.م (الحساب خالص ✓)</span>
               </div>
             </div>
 
@@ -389,7 +392,9 @@
               <span>حجز موعد صيانة</span>
             </button>
 
+            <!-- ONLY show 'تحصيل دفعة' if the client has an unpaid debt -->
             <button
+              v-if="activeClient.currentBalance > 0"
               type="button"
               @click="openPaymentModal(activeClient)"
               class="px-3 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl text-xs flex items-center gap-1.5 cursor-pointer shadow-xs"
@@ -397,6 +402,13 @@
               <Banknote class="w-3.5 h-3.5" />
               <span>تحصيل دفعة</span>
             </button>
+            <div
+              v-else
+              class="px-3 py-2 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-700 dark:text-emerald-400 font-bold text-xs flex items-center gap-1.5"
+            >
+              <CheckCircle class="w-4 h-4 text-emerald-500" />
+              <span>الحساب مسدد بالكامل</span>
+            </div>
           </div>
         </div>
 
@@ -1132,7 +1144,7 @@
             class="text-[10px] font-bold px-2 py-0.5 rounded-md"
             :class="payingClient?.currentBalance > 0 ? 'bg-rose-500/10 text-rose-600' : 'bg-emerald-500/10 text-emerald-600'"
           >
-            {{ payingClient?.balanceStatus }}
+            {{ getClientBalanceLabel(payingClient?.currentBalance || 0) }}
           </span>
         </div>
 
@@ -1212,14 +1224,9 @@
     <!-- Excel Import Modal for Clients -->
     <ExcelImportModal
       v-model:visible="showImportModal"
-      entity-name="العملاء والمركبات"
-      title="استيراد بيانات العملاء والمركبات من ملف Excel"
-      template-filename="قالب_استيراد_العملاء"
-      :template-columns="clientTemplateColumns"
-      :sample-rows="clientSampleRows"
-      endpoint="/api/Excel/import/clients"
-      :custom-import-handler="handleClientsImport"
-      @success="onClientsImportSuccess"
+      entity-type="clients"
+      entity-label="العملاء السابقين والمركبات والأرصدة"
+      @imported="clientStore.fetchClients()"
     />
   </div>
 </template>
@@ -1232,6 +1239,7 @@ import { useOhdaClientStore } from "../stores/useOhdaClientStore";
 import { useOhdaLookupStore } from "../stores/useOhdaLookupStore";
 import { useOhdaFinanceStore } from "../stores/useOhdaFinanceStore";
 import { useOhdaJobCardStore } from "../stores/useOhdaJobCardStore";
+import { useOhdaConfirmStore } from "../stores/useOhdaConfirmStore";
 import OhdaModal from "../components/OhdaModal.vue";
 import OhdaDataTable from "../components/OhdaDataTable.vue";
 import ExcelImportModal from "../components/ExcelImportModal.vue";
@@ -1253,13 +1261,15 @@ import {
   Info,
   RefreshCw,
   FileSpreadsheet,
-  Upload
+  Upload,
+  CheckCircle
 } from "lucide-vue-next";
 
 const clientStore = useOhdaClientStore();
 const lookupStore = useOhdaLookupStore();
 const financeStore = useOhdaFinanceStore();
 const jobCardStore = useOhdaJobCardStore();
+const confirmStore = useOhdaConfirmStore();
 const router = useRouter();
 const toast = useToast();
 
@@ -1635,7 +1645,13 @@ async function submitVehicleForm() {
 }
 
 async function confirmDeleteVehicle(v) {
-  if (confirm(`هل أنت متأكد من حذف المركبة ${v.plateNumber}؟`)) {
+  const ok = await confirmStore.showConfirm({
+    title: "حذف المركبة",
+    message: `هل أنت متأكد من رغبتك في حذف المركبة ذات اللوحة (${v.plateNumber})؟`,
+    confirmText: "نعم، حذف",
+    isDestructive: true
+  });
+  if (ok) {
     const res = await clientStore.deleteVehicle(v.id);
     if (res.success) {
       toast.add({ severity: "success", summary: "تم الحذف", detail: res.message, life: 3000 });
@@ -1702,7 +1718,13 @@ function openNewBookingForClient(client) {
 }
 
 async function confirmDelete(row) {
-  if (confirm(`هل أنت متأكد من حذف العميل "${row.name}"؟`)) {
+  const ok = await confirmStore.showConfirm({
+    title: "حذف العميل",
+    message: `هل أنت متأكد من رغبتك في حذف بيانات العميل "${row.name}"؟`,
+    confirmText: "نعم، حذف",
+    isDestructive: true
+  });
+  if (ok) {
     const res = await clientStore.deleteClient(row.id);
     if (res.success) {
       toast.add({ severity: "success", summary: "تم الحذف", detail: res.message, life: 3000 });
@@ -1713,7 +1735,12 @@ async function confirmDelete(row) {
 }
 
 function formatCurrency(val) {
-  return (Number(val) || 0).toLocaleString("ar-EG", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + " ج.م";
+  const num = Number(val) || 0;
+  const formatted = Math.abs(num).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  if (num < 0) {
+    return `-${formatted} ج.م`;
+  }
+  return `${formatted} ج.م`;
 }
 
 // Excel Import & Export Handlers
@@ -1815,6 +1842,13 @@ function getBalanceBadgeClass(bal) {
   if (bal > 0) return "bg-rose-500/15 text-rose-700 dark:text-rose-300";
   if (bal < 0) return "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300";
   return "bg-black/5 dark:bg-white/10 text-brand-gray";
+}
+
+function getClientBalanceLabel(bal) {
+  const num = Number(bal) || 0;
+  if (num > 0) return "مديونية مستحقة";
+  if (num < 0) return "رصيد دائن للعميل";
+  return "الحساب خالص";
 }
 
 onMounted(async () => {

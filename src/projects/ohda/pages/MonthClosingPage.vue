@@ -36,6 +36,14 @@
 
         <!-- Print Report -->
         <Button
+          @click="downloadServerPdf(`/api/ReportsPdf/month-closing/${selectedYear}/${selectedMonth}`, `MonthClosing_${selectedYear}_${selectedMonth}.pdf`)"
+          class="!bg-rose-600/15 hover:!bg-rose-600/25 !text-rose-700 dark:!text-rose-300 !border !border-rose-500/30 !font-bold !rounded-xl !px-3.5 !py-2 !text-xs flex items-center gap-1.5 cursor-pointer"
+        >
+          <Printer class="w-4 h-4" />
+          <span>تنزيل PDF</span>
+        </Button>
+
+        <Button
           @click="triggerPrint"
           class="!bg-black/5 dark:!bg-white/5 hover:!bg-black/10 !text-brand-dark dark:!text-white !border !border-brand-gray/20 dark:!border-white/10 !font-bold !rounded-xl !px-3.5 !py-2 !text-xs flex items-center gap-1.5 cursor-pointer"
         >
@@ -144,6 +152,14 @@
         <span class="text-[11px] text-red-600 dark:text-red-400 block font-medium">إجمالي المصروفات</span>
         <span class="text-base font-bold text-red-600 dark:text-red-400 font-mono mt-1 block">
           {{ formatCurrency(closingStore.preview?.totalExpenses) }}
+        </span>
+      </div>
+
+      <!-- Total Damage Loss -->
+      <div class="bg-brand-white dark:bg-white/5 p-4 rounded-2xl border border-rose-500/20 shadow-sm">
+        <span class="text-[11px] text-rose-600 dark:text-rose-400 block font-medium">قيمة التالف والهالك</span>
+        <span class="text-base font-bold text-rose-600 dark:text-rose-400 font-mono mt-1 block">
+          {{ formatCurrency(closingStore.preview?.totalDamageLoss) }}
         </span>
       </div>
 
@@ -322,6 +338,98 @@
             </span>
           </div>
         </div>
+      </div>
+    </div>
+
+    <!-- Section D2: Fixed Expenses Review & Monthly Override (before closing) -->
+    <div v-if="fixedMonthlyRows.length > 0" class="bg-brand-white dark:bg-white/5 p-5 rounded-2xl border border-brand-gray/10 shadow-sm space-y-4 print:hidden">
+      <div class="flex items-center justify-between border-b border-brand-gray/10 pb-3">
+        <div>
+          <h2 class="text-sm font-bold text-brand-dark dark:text-white flex items-center gap-2">
+            <Building2 class="w-4 h-4 text-brand-accent" />
+            <span>مراجعة واعتماد المصروفات الثابتة لشهر {{ selectedMonth }}/{{ selectedYear }}</span>
+          </h2>
+          <p class="text-[11px] text-brand-gray mt-0.5">
+            قم بمراجعة أو تعديل قيمة الفواتير الثابتة (كهرباء، مياه، إيجار...) وإرفاق صور الإيصالات قبل إقفال الشهر
+          </p>
+        </div>
+        <router-link to="/ohda/expenses" class="text-xs font-bold text-brand-accent hover:underline">
+          إدارة بنود المصروفات الثابتة &larr;
+        </router-link>
+      </div>
+
+      <div class="overflow-x-auto">
+        <table class="w-full text-right text-xs">
+          <thead>
+            <tr class="border-b border-brand-gray/10 text-brand-gray dark:text-slate-400">
+              <th class="py-2 px-3">البند الثابت</th>
+              <th class="py-2 px-3">الحالة</th>
+              <th class="py-2 px-3 w-36">القيمة الفعلية (ج.م)</th>
+              <th class="py-2 px-3">صورة الفاتورة</th>
+              <th class="py-2 px-3 text-center">حفظ التعديل</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-brand-gray/10">
+            <tr v-for="row in fixedMonthlyRows" :key="row.templateId">
+              <td class="py-2.5 px-3 font-bold text-brand-dark dark:text-white">
+                {{ row.name }}
+                <span class="block text-[10px] font-normal text-brand-gray">{{ row.expenseTypeText }}</span>
+              </td>
+              <td class="py-2.5 px-3">
+                <span
+                  class="px-2 py-0.5 rounded-full text-[10px] font-bold"
+                  :class="row.isRecorded ? 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-400' : 'bg-amber-500/15 text-amber-700 dark:text-amber-400'"
+                >
+                  {{ row.isRecorded ? 'مسجل ✓' : 'غير مسجل' }}
+                </span>
+              </td>
+              <td class="py-2.5 px-3">
+                <input
+                  v-model.number="row.actualAmount"
+                  :disabled="closingStore.isMonthLocked"
+                  type="number"
+                  min="0.01"
+                  step="0.01"
+                  class="w-full px-2 py-1 rounded-lg border border-brand-gray/25 bg-transparent font-mono font-bold text-center disabled:opacity-50"
+                />
+              </td>
+              <td class="py-2.5 px-3">
+                <div class="flex items-center gap-2">
+                  <label
+                    v-if="!closingStore.isMonthLocked"
+                    class="px-2 py-1 rounded-lg border border-brand-gray/25 bg-black/5 dark:bg-white/5 hover:border-brand-accent cursor-pointer flex items-center gap-1 text-[11px]"
+                  >
+                    <Upload class="w-3.5 h-3.5 text-brand-accent" />
+                    <span>{{ row.uploading ? 'رفع...' : (row.receiptAttachmentPath ? 'تغيير' : 'إرفاق صورة') }}</span>
+                    <input type="file" accept="image/*,.pdf" class="hidden" @change="(e) => handleFixedRowUpload(e, row)" />
+                  </label>
+                  <a
+                    v-if="row.receiptAttachmentPath"
+                    :href="getFileUrl(row.receiptAttachmentPath)"
+                    target="_blank"
+                    class="w-7 h-7 rounded overflow-hidden border border-brand-gray/20 shrink-0 block"
+                    title="معاينة الصورة"
+                  >
+                    <img :src="getFileUrl(row.receiptAttachmentPath)" class="w-full h-full object-cover" />
+                  </a>
+                  <span v-else-if="closingStore.isMonthLocked" class="text-[10px] text-slate-400">لا يوجد مرفق</span>
+                </div>
+              </td>
+              <td class="py-2.5 px-3 text-center">
+                <button
+                  type="button"
+                  v-if="!closingStore.isMonthLocked"
+                  @click="saveFixedRow(row)"
+                  :disabled="row.saving"
+                  class="px-3 py-1 rounded-lg bg-brand-accent text-brand-dark font-bold text-[11px] cursor-pointer hover:bg-brand-accent/90 disabled:opacity-50"
+                >
+                  {{ row.saving ? '...' : (row.isRecorded ? 'تحديث' : 'اعتماد') }}
+                </button>
+                <span v-else class="text-[10px] text-slate-400">مقفل</span>
+              </td>
+            </tr>
+          </tbody>
+        </table>
       </div>
     </div>
 
@@ -541,7 +649,9 @@
 <script setup>
 import { ref, computed, onMounted } from "vue";
 import { useOhdaClosingStore } from "../stores/useOhdaClosingStore";
+import { useOhdaExpenseStore } from "../stores/useOhdaExpenseStore";
 import OhdaModal from "../components/OhdaModal.vue";
+import { downloadServerPdf } from "../utils/pdfHelper";
 import {
   CalendarCheck2,
   Lock,
@@ -554,14 +664,18 @@ import {
   PieChart,
   Landmark,
   Boxes,
-  RotateCcw
+  RotateCcw,
+  Building2,
+  Upload
 } from "lucide-vue-next";
 
 const closingStore = useOhdaClosingStore();
+const expenseStore = useOhdaExpenseStore();
 
 const now = new Date();
 const selectedMonth = ref(now.getMonth() + 1);
 const selectedYear = ref(now.getFullYear());
+const fixedMonthlyRows = ref([]);
 
 const showCloseModal = ref(false);
 const showReopenModal = ref(false);
@@ -573,7 +687,58 @@ onMounted(async () => {
 });
 
 async function loadMonthData() {
-  await closingStore.fetchPreview(selectedMonth.value, selectedYear.value);
+  await Promise.all([
+    closingStore.fetchPreview(selectedMonth.value, selectedYear.value),
+    loadFixedRows()
+  ]);
+}
+
+async function loadFixedRows() {
+  const rows = await expenseStore.fetchFixedMonthlyStatus(selectedMonth.value, selectedYear.value);
+  fixedMonthlyRows.value = rows.map(r => ({ ...r, uploading: false, saving: false }));
+}
+
+function getFileUrl(path) {
+  if (!path) return "";
+  if (path.startsWith("http://") || path.startsWith("https://")) return path;
+  const base = (import.meta.env.VITE_ROOT_URL || "http://localhost:5146").replace(/\/$/, "");
+  return `${base}${path.startsWith("/") ? path : `/${path}`}`;
+}
+
+async function handleFixedRowUpload(e, row) {
+  const file = e.target.files[0];
+  if (!file) return;
+  row.uploading = true;
+  const res = await expenseStore.uploadReceipt(file);
+  row.uploading = false;
+  if (res.success) {
+    row.receiptAttachmentPath = res.url;
+  } else {
+    alert(res.message);
+  }
+}
+
+async function saveFixedRow(row) {
+  if (!row.actualAmount || row.actualAmount <= 0) {
+    alert("يرجى إدخال قيمة أكبر من صفر");
+    return;
+  }
+  row.saving = true;
+  const res = await expenseStore.recordMonthlyFixedExpense({
+    templateId: row.templateId,
+    month: selectedMonth.value,
+    year: selectedYear.value,
+    amount: Number(row.actualAmount),
+    paymentMethod: row.paymentMethod || 1,
+    receiptAttachmentPath: row.receiptAttachmentPath,
+    notes: row.notes
+  });
+  row.saving = false;
+  if (res.success) {
+    await loadMonthData();
+  } else {
+    alert(res.message);
+  }
 }
 
 function formatCurrency(amount) {

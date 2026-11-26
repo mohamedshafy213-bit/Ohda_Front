@@ -15,6 +15,15 @@
       <div class="flex items-center gap-2 flex-wrap">
         <button
           type="button"
+          @click="showImportModal = true"
+          class="px-4 py-2 rounded-xl border border-brand-gray/25 hover:border-brand-accent text-brand-dark dark:text-white text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer"
+        >
+          <Upload class="w-4 h-4 text-blue-500" />
+          <span>استيراد Excel</span>
+        </button>
+
+        <button
+          type="button"
           @click="handleSeedDefaults"
           :disabled="lookupStore.loading"
           class="px-4 py-2 rounded-xl border border-brand-gray/25 hover:border-brand-accent text-brand-dark dark:text-white text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer disabled:opacity-50"
@@ -357,6 +366,13 @@
         </button>
       </template>
     </OhdaModal>
+
+    <ExcelImportModal
+      v-model:visible="showImportModal"
+      entity-type="lookups"
+      entity-label="القوائم الأساسية"
+      @imported="lookupStore.fetchTypes()"
+    />
   </div>
 </template>
 
@@ -364,12 +380,15 @@
 import { ref, computed, onMounted } from "vue";
 import { useToast } from "primevue/usetoast";
 import { useOhdaLookupStore } from "../stores/useOhdaLookupStore";
+import { useOhdaConfirmStore } from "../stores/useOhdaConfirmStore";
 import OhdaModal from "../components/OhdaModal.vue";
+import ExcelImportModal from "../components/ExcelImportModal.vue";
 import OhdaDataTable from "../components/OhdaDataTable.vue";
 import {
   Database,
   Plus,
   RotateCcw,
+  Upload,
   Search,
   ListFilter,
   Edit3,
@@ -391,6 +410,7 @@ const toast = useToast();
 const searchTypeQuery = ref("");
 const searchValueQuery = ref("");
 const showModal = ref(false);
+const showImportModal = ref(false);
 const editingId = ref(null);
 const submitting = ref(false);
 
@@ -565,7 +585,13 @@ async function toggleActiveStatus(row) {
 }
 
 async function confirmDeleteValue(row) {
-  if (confirm(`هل أنت متأكد من حذف العنصر "${row.labelAr}"؟`)) {
+  const ok = await confirmStore.showConfirm({
+    title: "حذف عنصر القائمة",
+    message: `هل أنت متأكد من رغبتك في حذف العنصر "${row.labelAr}"؟`,
+    confirmText: "نعم، حذف",
+    isDestructive: true
+  });
+  if (ok) {
     const res = await lookupStore.deleteValue(row.id);
     if (res.success) {
       toast.add({
@@ -587,7 +613,13 @@ async function confirmDeleteValue(row) {
 }
 
 async function handleSeedDefaults() {
-  if (confirm("هل تريد استعادة البيانات الافتراضية لقوائم النظام الأساسية؟")) {
+  const ok = await confirmStore.showConfirm({
+    title: "استعادة القوائم الافتراضية",
+    message: "هل تريد استعادة البيانات الافتراضية لقوائم النظام الأساسية؟",
+    confirmText: "نعم، استعادة",
+    isDestructive: false
+  });
+  if (ok) {
     const res = await lookupStore.seedDefaults();
     if (res.success) {
       toast.add({

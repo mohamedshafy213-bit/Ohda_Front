@@ -177,8 +177,17 @@
       </div>
 
       <!-- Search Field -->
-      <div class="bg-brand-white dark:bg-white/5 border border-brand-gray/10 p-3 rounded-2xl shadow-sm flex items-center justify-between gap-3">
+      <div class="bg-brand-white dark:bg-white/5 border border-brand-gray/10 p-3 rounded-2xl shadow-sm flex flex-wrap items-center justify-between gap-3">
         <searchField v-model="searchQuery" placeholder="ابحث باسم الصنف، الكود SKU، أو الباركود..." class="flex-1" />
+        <button
+          type="button"
+          @click="filterOnlyMissingSerials = !filterOnlyMissingSerials"
+          class="px-3 py-1.5 rounded-xl text-xs font-bold border transition-all cursor-pointer flex items-center gap-1.5"
+          :class="filterOnlyMissingSerials ? 'bg-orange-500 text-white border-orange-500' : 'bg-orange-500/10 text-orange-700 dark:text-orange-300 border-orange-500/30'"
+        >
+          <QrCode class="w-3.5 h-3.5" />
+          <span>ناقص أرقام تسلسلية ({{ missingSerialsProductsCount }})</span>
+        </button>
         <span class="text-xs text-brand-gray dark:text-slate-400 font-mono px-2">
           عرض {{ filteredProducts.length }} من {{ inventoryStore.products.length }}
         </span>
@@ -214,7 +223,16 @@
       <template #name="{ data }">
         <div>
           <span class="font-bold text-brand-dark dark:text-white text-xs block">{{ data.name }}</span>
-          <span class="text-[10px] text-brand-gray dark:text-slate-400">{{ data.categoryName || 'عام' }}</span>
+          <div class="flex flex-wrap items-center gap-1.5 mt-0.5">
+            <span class="text-[10px] text-brand-gray dark:text-slate-400">{{ data.categoryName || 'عام' }}</span>
+            <span
+              v-if="data.missingSerialsCount > 0"
+              class="px-1.5 py-0.5 rounded-md text-[9px] font-bold bg-orange-500/20 text-orange-700 dark:text-orange-300 border border-orange-500/30 cursor-pointer"
+              @click="openSerialsModal(data)"
+            >
+              ناقص أرقام تسلسلية: {{ data.missingSerialsCount }}
+            </span>
+          </div>
         </div>
       </template>
 
@@ -279,6 +297,19 @@
       <!-- Actions Slot -->
       <template #actions="{ data }">
         <div class="flex items-center justify-center gap-1.5">
+          <!-- Serials Button (السيريالات) -->
+          <button
+            v-if="data.trackSerialNumbers || data.missingSerialsCount > 0"
+            type="button"
+            @click="openSerialsModal(data)"
+            class="px-2 py-1 rounded-xl text-xs font-bold transition cursor-pointer flex items-center gap-1 border"
+            :class="data.missingSerialsCount > 0 ? 'bg-orange-500/20 text-orange-700 dark:text-orange-300 border-orange-500/40' : 'bg-emerald-500/10 text-emerald-600 border-emerald-500/25'"
+            title="إدارة وتتبع الأرقام التسلسلية"
+          >
+            <QrCode class="w-3.5 h-3.5" />
+            <span>السيريالات</span>
+          </button>
+
           <!-- Batches Button (الدفعات والشحنات) -->
           <button
             type="button"
@@ -462,16 +493,21 @@
             />
           </div>
 
-          <!-- Advanced Options (IsMeasurable, HasExpiryDate) -->
-          <div class="sm:col-span-2 flex flex-wrap items-center gap-6 pt-1 p-2 bg-brand-light/30 dark:bg-white/5 rounded-xl border border-brand-gray/10">
+          <!-- Advanced Options (IsMeasurable, HasExpiryDate, TrackSerialNumbers) -->
+          <div class="sm:col-span-2 flex flex-wrap items-center gap-6 pt-1 p-2.5 bg-brand-light/30 dark:bg-white/5 rounded-xl border border-brand-gray/10">
             <label class="flex items-center gap-2 cursor-pointer text-xs font-medium text-brand-dark dark:text-white">
-              <input type="checkbox" v-model="form.isMeasurable" class="rounded text-brand-accent focus:ring-brand-accent" />
-              <span>يقبل كسور وأوزان (مثل لتر بالكسر أو كجم)</span>
+              <input type="checkbox" v-model="form.trackSerialNumbers" class="rounded text-brand-accent focus:ring-brand-accent" />
+              <span>يتطلب أرقاماً تسلسلية (Serial Numbers)</span>
             </label>
 
             <label class="flex items-center gap-2 cursor-pointer text-xs font-medium text-brand-dark dark:text-white">
               <input type="checkbox" v-model="form.hasExpiryDate" class="rounded text-brand-accent focus:ring-brand-accent" />
               <span>صنف له تاريخ صلاحية وانتهاء</span>
+            </label>
+
+            <label class="flex items-center gap-2 cursor-pointer text-xs font-medium text-brand-dark dark:text-white">
+              <input type="checkbox" v-model="form.isMeasurable" class="rounded text-brand-accent focus:ring-brand-accent" />
+              <span>يقبل كسور وأوزان (مثل لتر بالكسر أو كجم)</span>
             </label>
           </div>
 
@@ -962,47 +998,102 @@
       </template>
     </OhdaModal>
 
-    <!-- 6. Excel Import Modal using OhdaModal -->
+    <!-- 7. Serials Management & Traceability Modal -->
     <OhdaModal
-      :visible="showImportModal"
-      @close="showImportModal = false"
-      title="استيراد أصناف من ملف إكسل"
-      description="رفع ملف أصناف مجمع لإضافتها وتحديث المخزون بنقرة واحدة"
-      :icon="FileSpreadsheet"
-      max-width="max-w-md"
+      :visible="showSerialsModal"
+      @close="showSerialsModal = false"
+      :title="`سيريالات الصنف: ${targetProductForSerials?.name || ''}`"
+      :description="`تتبع حالة كل وحدة (بالمخزن / مباعة / تالفة / مرتجعة) واستكمال الأرقام الناقصة`"
+      :icon="QrCode"
+      max-width="max-w-4xl"
     >
       <div class="space-y-4 text-xs">
-        <p class="text-slate-600 dark:text-slate-300">
-          اختر ملف Excel (.xlsx) يحتوي على الأصناف لإضافتها مباشرة إلى المخزن. يفضل استخدام نموذج Excel المتاح بالأعلى.
-        </p>
+        <div v-if="targetProductForSerials?.missingSerialsCount > 0" class="p-3.5 rounded-xl bg-orange-500/10 border border-orange-500/30 space-y-2">
+          <div class="font-bold text-orange-700 dark:text-orange-300">
+            تنبيه: يوجد {{ targetProductForSerials.missingSerialsCount }} وحدة بالمخزن بدون أرقام تسلسلية مسجلة (لا يمكن بيعها قبل استكمال السيريالات).
+          </div>
+          <div class="flex flex-wrap gap-2">
+            <input
+              v-model="newSerialsInput"
+              type="text"
+              placeholder="امسح أو الصق السيريالات الجديدة مفصولة بفاصلة أو مسافة..."
+              class="flex-1 px-3 py-2 rounded-xl border border-orange-500/30 bg-white dark:bg-slate-900 font-mono text-xs"
+            />
+            <button
+              type="button"
+              @click="submitAddMissingSerials"
+              :disabled="savingSerials"
+              class="px-4 py-2 rounded-xl bg-orange-600 text-white font-bold cursor-pointer"
+            >
+              {{ savingSerials ? 'جاري الحفظ...' : 'إضافة السيريالات' }}
+            </button>
+          </div>
+        </div>
 
-        <input
-          type="file"
-          accept=".xlsx,.xls"
-          @change="onFileSelected"
-          class="block w-full text-xs text-slate-500 file:mr-4 file:py-2.5 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-brand-accent/20 file:text-brand-accent hover:file:bg-brand-accent/30 cursor-pointer border border-brand-gray/20 rounded-xl p-2 bg-brand-light/50 dark:bg-white/5"
-        />
+        <div class="flex items-center justify-between gap-3">
+          <input
+            v-model="serialSearchFilter"
+            type="text"
+            placeholder="بحث برقم السيريال أو اسم العميل أو الفاتورة..."
+            class="flex-1 px-3 py-2 rounded-xl border border-brand-gray/25 bg-brand-light/40 dark:bg-white/5 font-mono text-xs"
+          />
+          <span class="text-brand-gray font-mono">الإجمالي: {{ filteredProductSerials.length }}</span>
+        </div>
+
+        <div v-if="loadingSerials" class="py-10 text-center text-slate-400">جاري تحميل السيريالات...</div>
+        <div v-else class="max-h-96 overflow-y-auto border border-brand-gray/15 rounded-xl">
+          <table class="w-full text-right text-xs">
+            <thead class="bg-brand-light/60 dark:bg-white/5 text-brand-gray font-bold">
+              <tr>
+                <th class="p-2.5">السيريال</th>
+                <th class="p-2.5">الحالة</th>
+                <th class="p-2.5">الدفعة / تاريخ الشراء</th>
+                <th class="p-2.5">المورد</th>
+                <th class="p-2.5">فاتورة البيع / العميل</th>
+                <th class="p-2.5">انتهاء الضمان</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-brand-gray/10">
+              <tr v-if="filteredProductSerials.length === 0">
+                <td colspan="6" class="p-6 text-center text-slate-400">لا توجد سيريالات مطابقة</td>
+              </tr>
+              <tr v-for="s in filteredProductSerials" :key="s.id" class="hover:bg-black/5 dark:hover:bg-white/5">
+                <td class="p-2.5 font-mono font-bold text-brand-accent">{{ s.serialNumber }}</td>
+                <td class="p-2.5">
+                  <span
+                    class="px-2 py-0.5 rounded-full text-[10px] font-bold"
+                    :class="s.status === 1 ? 'bg-emerald-500/15 text-emerald-700' : s.status === 2 ? 'bg-blue-500/15 text-blue-700' : 'bg-red-500/15 text-red-700'"
+                  >
+                    {{ s.statusName }}
+                  </span>
+                </td>
+                <td class="p-2.5 font-mono text-[11px]">
+                  {{ s.batchCode || '—' }}
+                  <span class="block text-[10px] text-slate-400">{{ s.purchaseDate ? formatDateTime(s.purchaseDate) : '' }}</span>
+                </td>
+                <td class="p-2.5">{{ s.supplierName || '—' }}</td>
+                <td class="p-2.5">
+                  <span class="font-mono font-bold block">{{ s.saleInvoiceNumber || '—' }}</span>
+                  <span class="text-[10px] text-slate-400">{{ s.customerName || '' }}</span>
+                </td>
+                <td class="p-2.5 font-mono text-[11px]">{{ s.warrantyEndDate ? formatDateTime(s.warrantyEndDate) : '—' }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
       </div>
-
       <template #footer="{ close }">
-        <button
-          type="button"
-          @click="close"
-          class="px-4 py-2.5 rounded-xl text-xs font-bold text-slate-500 hover:text-slate-800 dark:hover:text-white cursor-pointer"
-        >
-          إلغاء
-        </button>
-        <button
-          type="button"
-          @click="submitExcelImport"
-          :disabled="!selectedFile || isImporting"
-          class="px-5 py-2.5 rounded-xl text-xs font-bold bg-brand-accent text-brand-dark flex items-center gap-2 cursor-pointer shadow-sm hover:bg-brand-accent/90 disabled:opacity-50"
-        >
-          <RefreshCw v-if="isImporting" class="w-4 h-4 animate-spin" />
-          <span>بدء الاستيراد</span>
-        </button>
+        <button type="button" @click="close" class="px-5 py-2 rounded-xl bg-brand-light dark:bg-white/10 text-xs font-bold cursor-pointer">إغلاق</button>
       </template>
     </OhdaModal>
+
+    <!-- 6. Unified Excel Import Modal -->
+    <ExcelImportModal
+      v-model:visible="showImportModal"
+      entity-type="products"
+      entity-label="الأصناف (تعريف فقط)"
+      @imported="inventoryStore.fetchProducts()"
+    />
   </div>
 </template>
 
@@ -1012,9 +1103,11 @@ import { useOhdaInventoryStore } from "../stores/useOhdaInventoryStore";
 import { useToastStore } from "@/stores/toastStore";
 import OhdaDataTable from "../components/OhdaDataTable.vue";
 import OhdaModal from "../components/OhdaModal.vue";
+import ExcelImportModal from "../components/ExcelImportModal.vue";
 import searchField from "@/components/searchField.vue";
 import LoadingSkeleton from "@/components/LoadingSkeleton.vue";
 
+import { apiGet, apiPost } from "@/utilities/fetchApi";
 import {
   Package,
   Plus,
@@ -1032,7 +1125,8 @@ import {
   RefreshCw,
   Sparkles,
   Layers,
-  ShieldCheck
+  ShieldCheck,
+  QrCode
 } from "lucide-vue-next";
 
 const inventoryStore = useOhdaInventoryStore();
@@ -1041,6 +1135,7 @@ const toastStore = useToastStore();
 const searchQuery = ref("");
 const selectedCategory = ref(null);
 const filterOnlyLowStock = ref(false);
+const filterOnlyMissingSerials = ref(false);
 
 const commonUnits = ["قطعة", "لتر", "طقم", "كرتونة", "عبوة", "علبة", "جالون", "متر", "كجم", "برميل"];
 
@@ -1075,9 +1170,71 @@ const form = ref({
   supplierId: null,
   description: "",
   isMeasurable: false,
+  trackSerialNumbers: false,
   hasExpiryDate: false,
   defaultShelfLocation: ""
 });
+
+// Serials State
+const showSerialsModal = ref(false);
+const targetProductForSerials = ref(null);
+const productSerials = ref([]);
+const loadingSerials = ref(false);
+const serialSearchFilter = ref("");
+const newSerialsInput = ref("");
+const savingSerials = ref(false);
+
+async function openSerialsModal(product) {
+  targetProductForSerials.value = product;
+  showSerialsModal.value = true;
+  loadingSerials.value = true;
+  serialSearchFilter.value = "";
+  newSerialsInput.value = "";
+  try {
+    const res = await apiGet(`/api/ProductItem/product/${product.id}`);
+    productSerials.value = res?.data?.objects || [];
+  } catch {
+    productSerials.value = [];
+  } finally {
+    loadingSerials.value = false;
+  }
+}
+
+const filteredProductSerials = computed(() => {
+  if (!serialSearchFilter.value?.trim()) return productSerials.value;
+  const q = serialSearchFilter.value.toLowerCase().trim();
+  return productSerials.value.filter(s =>
+    (s.serialNumber && s.serialNumber.toLowerCase().includes(q)) ||
+    (s.customerName && s.customerName.toLowerCase().includes(q)) ||
+    (s.saleInvoiceNumber && s.saleInvoiceNumber.toLowerCase().includes(q)) ||
+    (s.batchCode && s.batchCode.toLowerCase().includes(q))
+  );
+});
+
+async function submitAddMissingSerials() {
+  if (!targetProductForSerials.value || !newSerialsInput.value.trim()) return;
+  const tokens = newSerialsInput.value.split(/[\s,;،\n]+/).map(s => s.trim()).filter(Boolean);
+  if (!tokens.length) return;
+  savingSerials.value = true;
+  try {
+    const res = await apiPost("/api/ProductItem/add-serials", {
+      productId: targetProductForSerials.value.id,
+      serialNumbers: tokens
+    });
+    if (res?.data?.isDone) {
+      toastStore.addSuccessToast(res.data.returnMessage);
+      newSerialsInput.value = "";
+      await Promise.all([
+        openSerialsModal(targetProductForSerials.value),
+        inventoryStore.fetchProducts()
+      ]);
+    } else {
+      toastStore.addErrorToast(res?.data?.returnMessage || "فشل إضافة السيريالات");
+    }
+  } finally {
+    savingSerials.value = false;
+  }
+}
 
 // Batches State
 const showBatchesModal = ref(false);
@@ -1231,6 +1388,10 @@ const lowStockItemsCount = computed(() => {
   return inventoryStore.products.filter(p => isLowStock(p)).length;
 });
 
+const missingSerialsProductsCount = computed(() => {
+  return (inventoryStore.products || []).filter(p => (p.missingSerialsCount || 0) > 0).length;
+});
+
 function isLowStock(product) {
   const current = Number(product.currentQuantity ?? product.quantity) || 0;
   const min = Number(product.minQuantity ?? product.minThreshold) || 5;
@@ -1247,6 +1408,10 @@ const filteredProducts = computed(() => {
 
   if (filterOnlyLowStock.value) {
     list = list.filter(p => isLowStock(p));
+  }
+
+  if (filterOnlyMissingSerials.value) {
+    list = list.filter(p => (p.missingSerialsCount || 0) > 0);
   }
 
   if (selectedCategory.value) {
@@ -1283,6 +1448,7 @@ function openAddModal() {
     supplierId: null,
     description: "",
     isMeasurable: false,
+    trackSerialNumbers: false,
     hasExpiryDate: false,
     defaultShelfLocation: ""
   };
@@ -1306,6 +1472,7 @@ function openEditModal(product) {
     supplierId: product.supplierId || null,
     description: product.description || "",
     isMeasurable: Boolean(product.isMeasurable),
+    trackSerialNumbers: Boolean(product.trackSerialNumbers),
     hasExpiryDate: Boolean(product.hasExpiryDate),
     defaultShelfLocation: product.defaultShelfLocation || ""
   };
@@ -1397,10 +1564,11 @@ async function openMovementsHistoryModal(product) {
 
 function getMovementTypeName(type) {
   switch (type) {
-    case 1: return "توريد / شراء جديد";
-    case 2: return "صرف لعملية صيانة";
-    case 3: return "تسوية جردية";
-    case 4: return "مرتجع للمخزن";
+    case 1: return "شراء وتوريد جديد";
+    case 2: return "صرف مبيعات";
+    case 5: return "مرتجع لمورد";
+    case 6: return "مرتجع من عميل";
+    case 7: return "تالف / هالك";
     default: return "حركة مخزون";
   }
 }
@@ -1408,9 +1576,10 @@ function getMovementTypeName(type) {
 function getMovementBadgeClass(type) {
   switch (type) {
     case 1: return "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/25";
-    case 2: return "bg-red-500/15 text-red-600 dark:text-red-400 border border-red-500/25";
-    case 3: return "bg-blue-500/15 text-blue-600 dark:text-blue-400 border border-blue-500/25";
-    case 4: return "bg-purple-500/15 text-purple-600 dark:text-purple-400 border border-purple-500/25";
+    case 2: return "bg-blue-500/15 text-blue-600 dark:text-blue-400 border border-blue-500/25";
+    case 5: return "bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/25";
+    case 6: return "bg-purple-500/15 text-purple-600 dark:text-purple-400 border border-purple-500/25";
+    case 7: return "bg-red-500/15 text-red-600 dark:text-red-400 border border-red-500/25";
     default: return "bg-slate-500/15 text-slate-600 border border-slate-500/25";
   }
 }

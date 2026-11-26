@@ -646,10 +646,12 @@
 import { ref, reactive, computed, onMounted } from "vue";
 import { useOhdaAuthStore } from "../stores/useOhdaAuthStore";
 import { useOhdaBranchStore } from "../stores/useOhdaBranchStore";
+import { useOhdaConfirmStore } from "../stores/useOhdaConfirmStore";
 import { useToast } from "primevue/usetoast";
 
 const authStore = useOhdaAuthStore();
 const branchStore = useOhdaBranchStore();
+const confirmStore = useOhdaConfirmStore();
 const toast = useToast();
 
 const searchQuery = ref("");
@@ -831,7 +833,13 @@ async function submitEditBranch() {
 
 async function confirmToggleStatus(branch) {
   const action = branch.isActive ? "تعليق" : "تفعيل";
-  if (!confirm(`هل أنت متأكد من ${action} فرع "${branch.name}"؟`)) return;
+  const ok = await confirmStore.showConfirm({
+    title: `${action} الفرع`,
+    message: `هل أنت متأكد من ${action} فرع "${branch.name}"؟`,
+    confirmText: `نعم، ${action}`,
+    isDestructive: branch.isActive
+  });
+  if (!ok) return;
 
   const res = await branchStore.toggleStatus(branch.id);
   if (res.success) {

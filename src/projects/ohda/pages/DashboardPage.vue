@@ -21,10 +21,10 @@
 
       <!-- Quick Action Buttons -->
       <div class="flex flex-wrap items-center gap-2">
-        <router-link to="/ohda/todays-board">
+        <router-link to="/ohda/bookings-calendar">
           <Button class="!bg-brand-accent hover:!bg-brand-accent/90 !text-brand-dark !font-bold !rounded-xl !px-3.5 !py-2 !text-xs flex items-center gap-1.5 shadow-md shadow-brand-accent/10 cursor-pointer">
             <Plus class="w-4 h-4" />
-            <span>+ حجز جديد / حضور فوري</span>
+            <span>+ حجز جديد / دخول سيارة للورشة</span>
           </Button>
         </router-link>
 
@@ -140,6 +140,20 @@
             {{ openJobsCount }}
           </span>
           <span class="text-[10px] text-slate-400">أمر مفتوح</span>
+        </div>
+      </router-link>
+
+      <!-- 8. Expiring Soon Alert Widget -->
+      <router-link to="/ohda/damage" class="bg-brand-white dark:bg-white/5 p-4 rounded-2xl border shadow-sm flex flex-col justify-between transition-colors" :class="expiringAlerts.length > 0 ? 'border-orange-500/40 bg-orange-500/5 hover:border-orange-500' : 'border-brand-gray/10 hover:border-brand-accent/40'">
+        <div class="flex items-center justify-between text-orange-600 dark:text-orange-400 mb-2">
+          <span class="text-[11px] font-bold">تنبيهات الصلاحية</span>
+          <AlertTriangle class="w-4 h-4" />
+        </div>
+        <div class="flex items-baseline gap-1">
+          <span class="text-base font-bold font-mono text-orange-600 dark:text-orange-400">
+            {{ expiringAlerts.length }}
+          </span>
+          <span class="text-[10px] text-slate-400">دفعة قريبة الانتهاء</span>
         </div>
       </router-link>
     </div>
@@ -310,6 +324,7 @@ import { useOhdaExpenseStore } from "../stores/useOhdaExpenseStore";
 import { useOhdaInventoryStore } from "../stores/useOhdaInventoryStore";
 import { useOhdaFinanceStore } from "../stores/useOhdaFinanceStore";
 import { useOhdaPosStore } from "../stores/useOhdaPosStore";
+import { apiGet } from "@/utilities/fetchApi";
 import CashDrawerWidget from "../components/CashDrawerWidget.vue";
 import Button from "primevue/button";
 import {
@@ -336,6 +351,7 @@ const inventoryStore = useOhdaInventoryStore();
 const financeStore = useOhdaFinanceStore();
 const posStore = useOhdaPosStore();
 const cashDrawerWidgetRef = ref(null);
+const expiringAlerts = ref([]);
 
 const workshopSettings = ref(getBranchSettings());
 
@@ -359,7 +375,8 @@ onMounted(async () => {
     inventoryStore.fetchProducts(),
     financeStore.fetchAccounts(),
     financeStore.fetchCurrentDrawerSession(),
-    posStore.fetchInvoices()
+    posStore.fetchInvoices(),
+    apiGet("/api/Damage/expiring-soon").then(r => { if (r?.data?.isDone) expiringAlerts.value = r.data.objects || []; }).catch(() => {})
   ]);
 });
 

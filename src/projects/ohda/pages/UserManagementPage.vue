@@ -948,6 +948,7 @@ import { useOhdaUserPermissionStore } from "../stores/useOhdaUserPermissionStore
 import { useOhdaGroupStore } from "../stores/useOhdaGroupStore";
 import { useOhdaBranchStore } from "../stores/useOhdaBranchStore";
 import { useOhdaAuthStore } from "../stores/useOhdaAuthStore";
+import { useOhdaConfirmStore } from "../stores/useOhdaConfirmStore";
 import { filterPhone, isValidPhone, allowOnlyNumbers } from "@/utilities/validations";
 import {
   Shield,
@@ -974,6 +975,7 @@ const userStore = useOhdaUserPermissionStore();
 const groupStore = useOhdaGroupStore();
 const branchStore = useOhdaBranchStore();
 const authStore = useOhdaAuthStore();
+const confirmStore = useOhdaConfirmStore();
 const toast = useToast();
 const { t } = useI18n();
 
@@ -1005,10 +1007,8 @@ const pageTitleMap = {
   "/estimates": "عروض الأسعار والمقايسات",
   "/ohda/reminders": "المتابعات وتذكيرات الصيانة",
   "/reminders": "المتابعات وتذكيرات الصيانة",
-  "/ohda/bookings-calendar": "تقويم الحجوزات ومناطق الصيانة",
-  "/bookings-calendar": "تقويم الحجوزات ومناطق الصيانة",
-  "/ohda/todays-board": "لوحة اليوم السريعة للورشة",
-  "/todays-board": "لوحة اليوم السريعة للورشة",
+  "/ohda/bookings-calendar": "تقويم الحجوزات ودخول السيارات",
+  "/bookings-calendar": "تقويم الحجوزات ودخول السيارات",
   "/ohda/bays-settings": "إعدادات مناطق الصيانة والمواعيد",
   "/bays-settings": "إعدادات مناطق الصيانة والمواعيد",
   "/ohda/products": "المنتجات وقطع الغيار",
@@ -1613,7 +1613,13 @@ async function handleUpdatePage() {
 }
 
 async function deletePage(id) {
-  if (confirm("هل أنت تأكد من حذف صفحة النظام هذه؟")) {
+  const confirmed = await confirmStore.showConfirm({
+    title: "حذف صفحة النظام",
+    message: "هل أنت متأكد من حذف صفحة النظام هذه؟",
+    confirmText: "حذف",
+    isDestructive: true
+  });
+  if (confirmed) {
     await groupStore.deletePage(id);
   }
 }

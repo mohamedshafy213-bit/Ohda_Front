@@ -434,16 +434,10 @@
     </OhdaModal>
     <!-- Excel Import Modal -->
     <ExcelImportModal
-      :visible="showImportModal"
-      @close="showImportModal = false"
-      title="استيراد موردين من ملف إكسل"
-      description="رفع ملف يحتوي على بيانات الموردين، أرقام التواصل والأرصدة الافتتاحية"
-      endpoint="/api/Excel/import/suppliers"
-      template-name="نموذج_استيراد_الموردين.csv"
-      :template-columns="supplierTemplateColumns"
-      :sample-rows="supplierSampleRows"
-      :custom-import-handler="handleSuppliersImport"
-      @imported="onSuppliersImported"
+      v-model:visible="showImportModal"
+      entity-type="suppliers"
+      entity-label="الموردين"
+      @imported="inventoryStore.fetchSuppliers()"
     />
   </div>
 </template>
@@ -453,6 +447,7 @@ import { ref, onMounted } from "vue";
 import { useToast } from "primevue/usetoast";
 import { useOhdaInventoryStore } from "../stores/useOhdaInventoryStore";
 import { useOhdaFinanceStore } from "../stores/useOhdaFinanceStore";
+import { useOhdaConfirmStore } from "../stores/useOhdaConfirmStore";
 import OhdaDataTable from "../components/OhdaDataTable.vue";
 import { filterPhone, isValidPhone, allowOnlyNumbers } from "@/utilities/validations";
 import OhdaModal from "../components/OhdaModal.vue";
@@ -473,6 +468,7 @@ import {
 const toast = useToast();
 const inventoryStore = useOhdaInventoryStore();
 const financeStore = useOhdaFinanceStore();
+const confirmStore = useOhdaConfirmStore();
 
 const showModal = ref(false);
 const showPaymentModal = ref(false);
@@ -716,7 +712,13 @@ async function openStatementModal(s) {
 }
 
 async function promptDelete(s) {
-  if (confirm(`هل أنت متأكد من حذف المورد "${s.companyName}"؟`)) {
+  const ok = await confirmStore.showConfirm({
+    title: "حذف المورد",
+    message: `هل أنت متأكد من رغبتك في حذف بيانات المورد "${s.companyName}"؟`,
+    confirmText: "نعم، حذف",
+    isDestructive: true
+  });
+  if (ok) {
     const res = await inventoryStore.deleteSupplier(s.id);
     if (res.success) {
       toast.add({ severity: "success", summary: "تم الحذف", detail: "تم حذف المورد بنجاح", life: 3000 });

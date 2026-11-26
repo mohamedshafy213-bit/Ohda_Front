@@ -135,9 +135,10 @@ apiClient.interceptors.response.use(
           msg || getLocalizedText("يرجى مراجعة البيانات المدخلة والتأكد من صحتها.", "Invalid data provided. Please check the fields and try again.")
         );
       } else if (status >= 500) {
+        const msg = data?.returnMessage || data?.detail || data?.title;
         toastStore.addErrorToast(
-          getLocalizedText(
-            "حدث خطأ غير متوقع في الخادم. تم تسجيل المشكلة وسيتم معالجتها.",
+          msg || getLocalizedText(
+            "حدث خطأ في الخادم أثناء معالجة العملية.",
             "Internal server error occurred. Please try again shortly."
           )
         );

@@ -11,6 +11,7 @@ export const useOhdaFinanceStore = defineStore("ohdaFinance", {
     hasActiveDrawer: false,
     defaultDrawerAccount: null,
     drawerHistory: [],
+    latestReport: null,
     loading: false
   }),
 
@@ -299,13 +300,18 @@ export const useOhdaFinanceStore = defineStore("ohdaFinance", {
       try {
         const res = await apiPost("/api/Finance/cash-drawer/close", payload);
         if (res?.data?.isDone) {
+          const report = res.data?.singleObject?.report || res.data?.singleObject?.Report;
+          if (report) {
+            this.latestReport = report;
+          }
           await this.fetchCurrentDrawerSession();
           await this.fetchAccounts();
           await this.fetchDrawerHistory();
           return {
             success: true,
-            message: res?.data?.returnMessage || "تم تقفيل درج النقدية بنجاح",
-            data: res.data.singleObject
+            message: res?.data?.returnMessage || "تم تقفيل درج النقدية والحسابات بنجاح",
+            data: res.data.singleObject,
+            report: report
           };
         }
         return {
@@ -319,6 +325,19 @@ export const useOhdaFinanceStore = defineStore("ohdaFinance", {
         };
       } finally {
         this.loading = false;
+      }
+    },
+
+    async fetchCashDrawerReport(sessionId) {
+      try {
+        const res = await apiGet(`/api/Finance/cash-drawer/report/${sessionId}`);
+        if (res?.data?.isDone && res?.data?.singleObject) {
+          return res.data.singleObject;
+        }
+        return null;
+      } catch (err) {
+        console.warn("Fetch cash drawer report failed", err);
+        return null;
       }
     },
 

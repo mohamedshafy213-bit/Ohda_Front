@@ -744,6 +744,7 @@ import { useOhdaEstimateStore } from "../stores/useOhdaEstimateStore";
 import { useOhdaClientStore } from "../stores/useOhdaClientStore";
 import { useOhdaServiceStore } from "../stores/useOhdaServiceStore";
 import { useOhdaInventoryStore } from "../stores/useOhdaInventoryStore";
+import { useOhdaConfirmStore } from "../stores/useOhdaConfirmStore";
 import { useToastStore } from "@/stores/toastStore";
 import OhdaDataTable from "../components/OhdaDataTable.vue";
 import OhdaModal from "../components/OhdaModal.vue";
@@ -769,6 +770,7 @@ import {
 
 const router = useRouter();
 const estimateStore = useOhdaEstimateStore();
+const confirmStore = useOhdaConfirmStore();
 const clientStore = useOhdaClientStore();
 const serviceStore = useOhdaServiceStore();
 const inventoryStore = useOhdaInventoryStore();
@@ -1069,14 +1071,18 @@ async function changeStatus(id, newStatus) {
 
 // Convert to Booking
 async function triggerConvertToJob(estimate) {
-  if (!confirm(`هل أنت متأكد من رغبتك في تحويل عرض السعر (${estimate.estimateNumber}) إلى حجز مسبق بالورشة؟`)) {
-    return;
-  }
+  const ok = await confirmStore.showConfirm({
+    title: "تحويل عرض السعر إلى حجز",
+    message: `هل أنت متأكد من رغبتك في تحويل عرض السعر (${estimate.estimateNumber}) إلى حجز مسبق بالورشة؟`,
+    confirmText: "نعم، تحويل لحجز",
+    isDestructive: false
+  });
+  if (!ok) return;
 
   const res = await estimateStore.convertToJob(estimate.id);
   if (res.success) {
     toastStore.showToast(res.message, "success");
-    router.push("/ohda/todays-board");
+    router.push("/ohda/bookings-calendar");
   } else {
     toastStore.showToast(res.message || "فشل تحويل عرض السعر إلى حجز", "error");
   }

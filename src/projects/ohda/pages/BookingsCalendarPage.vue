@@ -60,16 +60,18 @@
           <span>+ حجز موعد جديد</span>
         </button>
 
-        <!-- Secondary Navigation Links -->
-        <router-link
-          to="/ohda/todays-board"
-          class="px-3 py-2 rounded-xl border border-brand-gray/20 hover:border-brand-accent text-brand-dark dark:text-white font-bold text-xs flex items-center gap-1.5 transition-colors"
-          title="لوحة اليوم السريعة للورشة"
+        <!-- Instant Walk-In Car Entrance Button (Single Workshop Entrance) -->
+        <button
+          type="button"
+          @click="openWalkInModal"
+          class="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-black text-xs flex items-center gap-2 shadow-sm transition-all cursor-pointer active:scale-95"
+          title="تسجيل دخول فوري لسيارة بدون موعد مسبق وبدء أمر الشغل"
         >
-          <LayoutDashboard class="w-3.5 h-3.5 text-brand-gray" />
-          <span>لوحة اليوم</span>
-        </router-link>
+          <Car class="w-4 h-4" />
+          <span>+ دخول سيارة مباشرة (Walk-In)</span>
+        </button>
 
+        <!-- Secondary Navigation Link -->
         <router-link
           to="/ohda/bays-settings"
           class="px-3 py-2 rounded-xl border border-brand-gray/20 hover:border-brand-accent text-brand-dark dark:text-white font-bold text-xs flex items-center gap-1.5 transition-colors"
@@ -728,7 +730,7 @@
               </div>
 
               <!-- Vehicle Plate & Model info -->
-              <div class="grid grid-cols-2 gap-2">
+              <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
                 <div>
                   <label class="block font-semibold mb-1 text-[11px]">رقم اللوحة</label>
                   <input
@@ -740,11 +742,23 @@
                   />
                 </div>
                 <div>
-                  <label class="block font-semibold mb-1 text-[11px]">طراز المركبة</label>
+                  <label class="block font-semibold mb-1 text-[11px]">نوع / ماركة السيارة</label>
+                  <select
+                    v-model="bookingForm.selectedCarType"
+                    @change="onBookingCarTypeChange"
+                    class="w-full px-2.5 py-2 rounded-xl border border-brand-gray/25 bg-white dark:bg-brand-dark text-brand-dark dark:text-white text-xs cursor-pointer"
+                    :disabled="selectedVehicleOption !== '__NEW_VEHICLE__' && !!bookingForm.vehicleId"
+                  >
+                    <option value="">-- اختر نوع السيارة --</option>
+                    <option v-for="t in availableCarTypes" :key="t" :value="t">{{ t }}</option>
+                  </select>
+                </div>
+                <div>
+                  <label class="block font-semibold mb-1 text-[11px]">طراز وموديل السيارة</label>
                   <input
                     v-model="bookingForm.newVehicleModel"
                     type="text"
-                    placeholder="مثال: تويوتا كورولا"
+                    placeholder="اكتب نوع وموديل السيارة..."
                     class="w-full px-2.5 py-2 rounded-xl border border-brand-gray/25 bg-white dark:bg-brand-dark text-brand-dark dark:text-white text-xs"
                     :disabled="selectedVehicleOption !== '__NEW_VEHICLE__' && !!bookingForm.vehicleId"
                   />
@@ -790,7 +804,7 @@
               </div>
             </div>
 
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
               <div>
                 <label class="block font-semibold mb-1">رقم اللوحة</label>
                 <input
@@ -802,11 +816,23 @@
               </div>
 
               <div>
+                <label class="block font-semibold mb-1">نوع / ماركة السيارة</label>
+                <select
+                  v-model="bookingForm.selectedCarType"
+                  @change="onBookingCarTypeChange"
+                  class="w-full px-3 py-2 rounded-xl border border-brand-gray/25 bg-white dark:bg-brand-dark text-brand-dark dark:text-white font-medium cursor-pointer"
+                >
+                  <option value="">-- اختر نوع السيارة --</option>
+                  <option v-for="t in availableCarTypes" :key="t" :value="t">{{ t }}</option>
+                </select>
+              </div>
+
+              <div>
                 <label class="block font-semibold mb-1">طراز وموديل السيارة</label>
                 <input
                   v-model="bookingForm.newVehicleModel"
                   type="text"
-                  placeholder="مثال: تويوتا كورولا 2021"
+                  placeholder="اكتب نوع وموديل السيارة..."
                   class="w-full px-3 py-2 rounded-xl border border-brand-gray/25 bg-white dark:bg-brand-dark text-brand-dark dark:text-white"
                 />
               </div>
@@ -1105,6 +1131,13 @@
         <div class="pt-3 border-t border-brand-gray/15 space-y-2">
           <h4 class="font-bold text-brand-dark dark:text-white">إجراءات الموعد السريعة</h4>
 
+          <div v-if="selectedBooking.convertedJobCardId" class="p-2.5 rounded-xl bg-emerald-500/10 border border-emerald-500/25 text-emerald-800 dark:text-emerald-300 text-xs font-bold flex items-center justify-between mb-2">
+            <span>مرتبط بأمر الشغل:</span>
+            <router-link to="/ohda/jobs" class="font-mono underline">
+              {{ selectedBooking.convertedJobCardNumber || ('JOB #' + selectedBooking.convertedJobCardId) }}
+            </router-link>
+          </div>
+
           <div class="grid grid-cols-2 gap-2">
             <button
               v-if="selectedBooking.status === 2 || selectedBooking.status === 1"
@@ -1243,7 +1276,7 @@
             <span>بيانات المركبة الأولى للعميل (اختياري)</span>
           </div>
 
-          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
             <div>
               <label class="block font-semibold mb-1 text-[11px]">رقم اللوحة</label>
               <input
@@ -1255,11 +1288,23 @@
             </div>
 
             <div>
+              <label class="block font-semibold mb-1 text-[11px]">نوع / ماركة السيارة</label>
+              <select
+                v-model="newClientFormData.selectedCarType"
+                @change="onNewClientCarTypeChange"
+                class="w-full px-2.5 py-1.5 rounded-xl border border-brand-gray/25 bg-white dark:bg-brand-dark text-brand-dark dark:text-white text-xs cursor-pointer"
+              >
+                <option value="">-- اختر نوع السيارة --</option>
+                <option v-for="t in availableCarTypes" :key="t" :value="t">{{ t }}</option>
+              </select>
+            </div>
+
+            <div>
               <label class="block font-semibold mb-1 text-[11px]">طراز وموديل السيارة</label>
               <input
                 v-model="newClientFormData.carModel"
                 type="text"
-                placeholder="مثال: تويوتا كورولا 2022"
+                placeholder="اكتب نوع وموديل السيارة..."
                 class="w-full px-2.5 py-1.5 rounded-xl border border-brand-gray/25 bg-white dark:bg-brand-dark text-brand-dark dark:text-white text-xs"
               />
             </div>
@@ -1296,6 +1341,103 @@
         </button>
       </template>
     </OhdaModal>
+
+    <!-- 7. Modal: Instant Walk-In Entrance (All car arrivals happen inside Reservations Page) -->
+    <OhdaModal
+      :visible="showWalkInModal"
+      @close="showWalkInModal = false"
+      title="تسجيل دخول سيارة مباشرة للورشة (Walk-In)"
+      description="بوابة الدخول الوحيدة للسيارات — يُسجَّل حجز فوري بالورشة وبدء أمر الشغل بنقرة واحدة"
+      :icon="Car"
+      max-width="max-w-lg"
+      :close-on-backdrop="false"
+    >
+      <form @submit.prevent="submitWalkIn" id="walkInForm" class="space-y-4 text-xs">
+        <div>
+          <label class="block font-semibold mb-1">اسم العميل <span class="text-red-500">*</span></label>
+          <input
+            type="text"
+            v-model="walkInForm.customerName"
+            required
+            placeholder="الاسم ثلاثي..."
+            class="w-full p-2.5 rounded-xl border border-brand-gray/25 bg-white dark:bg-brand-dark text-brand-dark dark:text-white"
+          />
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+          <div>
+            <label class="block font-semibold mb-1">رقم الهاتف <span class="text-red-500">*</span></label>
+            <input
+              type="tel"
+              v-model="walkInForm.customerPhone"
+              @keypress="allowOnlyNumbers"
+              @input="walkInForm.customerPhone = filterPhone(walkInForm.customerPhone)"
+              maxlength="15"
+              required
+              placeholder="01XXXXXXXXX"
+              class="w-full p-2.5 rounded-xl border border-brand-gray/25 bg-white dark:bg-brand-dark text-brand-dark dark:text-white font-mono"
+            />
+          </div>
+
+          <div>
+            <label class="block font-semibold mb-1">رقم اللوحة <span class="text-red-500">*</span></label>
+            <input
+              type="text"
+              v-model="walkInForm.carPlate"
+              required
+              placeholder="مثال: س ق ر 1 2 3"
+              class="w-full p-2.5 rounded-xl border border-brand-gray/25 bg-white dark:bg-brand-dark text-brand-dark dark:text-white font-mono font-bold"
+            />
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div>
+            <label class="block font-semibold mb-1">نوع / ماركة السيارة</label>
+            <select
+              v-model="walkInForm.selectedCarType"
+              @change="onWalkInCarTypeChange"
+              class="w-full p-2.5 rounded-xl border border-brand-gray/25 bg-white dark:bg-brand-dark text-brand-dark dark:text-white cursor-pointer"
+            >
+              <option value="">-- اختر نوع السيارة --</option>
+              <option v-for="t in availableCarTypes" :key="t" :value="t">{{ t }}</option>
+            </select>
+          </div>
+
+          <div>
+            <label class="block font-semibold mb-1">موديل وطراز السيارة</label>
+            <input
+              type="text"
+              v-model="walkInForm.carModel"
+              placeholder="اكتب نوع وموديل السيارة (مثال: سيراتو 2020)..."
+              class="w-full p-2.5 rounded-xl border border-brand-gray/25 bg-white dark:bg-brand-dark text-brand-dark dark:text-white"
+            />
+          </div>
+        </div>
+
+        <div>
+          <label class="block font-semibold mb-1">شكوى العميل / سبب الدخول</label>
+          <textarea
+            v-model="walkInForm.notes"
+            rows="2"
+            placeholder="سبب الدخول، الأعطال المطلوبة، أو فحص دوري..."
+            class="w-full p-2.5 rounded-xl border border-brand-gray/25 bg-white dark:bg-brand-dark text-brand-dark dark:text-white"
+          ></textarea>
+        </div>
+      </form>
+
+      <template #footer="{ close }">
+        <button type="button" @click="close" class="px-4 py-2 rounded-xl border text-xs font-bold cursor-pointer">إلغاء</button>
+        <button
+          type="submit"
+          form="walkInForm"
+          :disabled="submittingWalkIn"
+          class="px-5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold cursor-pointer disabled:opacity-50"
+        >
+          {{ submittingWalkIn ? 'جاري الدخول...' : 'تأكيد دخول السيارة وفتح أمر الشغل' }}
+        </button>
+      </template>
+    </OhdaModal>
   </div>
 </template>
 
@@ -1306,6 +1448,7 @@ import { useToast } from "primevue/usetoast";
 import { useOhdaBookingStore } from "../stores/useOhdaBookingStore";
 import { useOhdaServiceStore } from "../stores/useOhdaServiceStore";
 import { useOhdaClientStore } from "../stores/useOhdaClientStore";
+import { useOhdaLookupStore } from "../stores/useOhdaLookupStore";
 import apiClient from "@/utilities/apiClient";
 import OhdaModal from "../components/OhdaModal.vue";
 import { exportToExcelCsv } from "../utils/excelHelper";
@@ -1343,6 +1486,91 @@ const toast = useToast();
 const bookingStore = useOhdaBookingStore();
 const serviceStore = useOhdaServiceStore();
 const clientStore = useOhdaClientStore();
+const lookupStore = useOhdaLookupStore();
+
+// Common car brands & body types for rapid selection
+const commonCarBrands = [
+  "تويوتا",
+  "هيونداي",
+  "نيسان",
+  "كيا",
+  "ميتسوبيشي",
+  "مرسيدس",
+  "بي إم دبليو",
+  "شيفروليه",
+  "إم جي",
+  "شيري",
+  "جيلي",
+  "سوزوكي",
+  "فيات",
+  "رينو",
+  "بيجو",
+  "أوبل",
+  "سكودا",
+  "فولكس فاجن",
+  "فورد",
+  "هوندا",
+  "جيب",
+  "بي واي دي",
+  "سيدان (Sedan)",
+  "دفع رباعي (SUV)",
+  "بيك آب / نصف نقل",
+  "فان / باص",
+  "أخرى / يدوي"
+];
+
+const availableCarTypes = computed(() => {
+  const fromLookup = (lookupStore.getValuesByCode?.("vehicle_brand") || []).map((b) => b.labelAr || b.value).filter(Boolean);
+  return Array.from(new Set([...fromLookup, ...commonCarBrands]));
+});
+
+function onBookingCarTypeChange(e) {
+  const val = e.target.value;
+  if (!val || val === "أخرى / يدوي") return;
+  const current = bookingForm.value.newVehicleModel?.trim() || "";
+  if (!current) {
+    bookingForm.value.newVehicleModel = val + " ";
+  } else {
+    const matched = availableCarTypes.value.find((b) => current.startsWith(b));
+    if (matched) {
+      bookingForm.value.newVehicleModel = val + " " + current.slice(matched.length).trim();
+    } else {
+      bookingForm.value.newVehicleModel = val + " " + current;
+    }
+  }
+}
+
+function onNewClientCarTypeChange(e) {
+  const val = e.target.value;
+  if (!val || val === "أخرى / يدوي") return;
+  const current = newClientFormData.value.carModel?.trim() || "";
+  if (!current) {
+    newClientFormData.value.carModel = val + " ";
+  } else {
+    const matched = availableCarTypes.value.find((b) => current.startsWith(b));
+    if (matched) {
+      newClientFormData.value.carModel = val + " " + current.slice(matched.length).trim();
+    } else {
+      newClientFormData.value.carModel = val + " " + current;
+    }
+  }
+}
+
+function onWalkInCarTypeChange(e) {
+  const val = e.target.value;
+  if (!val || val === "أخرى / يدوي") return;
+  const current = walkInForm.value.carModel?.trim() || "";
+  if (!current) {
+    walkInForm.value.carModel = val + " ";
+  } else {
+    const matched = availableCarTypes.value.find((b) => current.startsWith(b));
+    if (matched) {
+      walkInForm.value.carModel = val + " " + current.slice(matched.length).trim();
+    } else {
+      walkInForm.value.carModel = val + " " + current;
+    }
+  }
+}
 
 // Calendar View State: 'week' (Default) | 'month' | 'day'
 const calendarView = ref("week");
@@ -1356,6 +1584,33 @@ const sidebarSearch = ref("");
 // Filters
 const selectedBayFilter = ref(null);
 const selectedStatusFilter = ref(null);
+
+// Instant Walk-In Modal State
+const showWalkInModal = ref(false);
+const submittingWalkIn = ref(false);
+const walkInForm = ref({ customerName: "", customerPhone: "", carPlate: "", selectedCarType: "", carModel: "", notes: "" });
+
+function openWalkInModal() {
+  walkInForm.value = { customerName: "", customerPhone: "", carPlate: "", selectedCarType: "", carModel: "", notes: "" };
+  showWalkInModal.value = true;
+}
+
+async function submitWalkIn() {
+  if (!walkInForm.value.customerName?.trim() || !walkInForm.value.carPlate?.trim()) return;
+  submittingWalkIn.value = true;
+  try {
+    const res = await bookingStore.createInstantWalkIn(walkInForm.value);
+    if (res.success) {
+      showWalkInModal.value = false;
+      toast.add({ severity: "success", summary: "تم دخول السيارة", detail: res.message || "تم تسجيل الدخول المباشر وفتح أمر الشغل", life: 4000 });
+      await loadCalendar();
+    } else {
+      toast.add({ severity: "error", summary: "خطأ", detail: res.message || "تعذر تسجيل الدخول المباشر", life: 4000 });
+    }
+  } finally {
+    submittingWalkIn.value = false;
+  }
+}
 
 // Modals State
 const showNewBookingModal = ref(false);
@@ -1388,6 +1643,7 @@ const newClientFormData = ref({
   secondPhone: "",
   type: 1,
   carPlate: "",
+  selectedCarType: "",
   carModel: "",
   notes: ""
 });
@@ -1410,6 +1666,7 @@ const bookingForm = ref({
   newClientPhone: "",
   vehicleId: null,
   newVehiclePlate: "",
+  selectedCarType: "",
   newVehicleModel: "",
   bayId: null,
   technicianEmployeeId: null,
@@ -1632,6 +1889,7 @@ onMounted(async () => {
       bookingStore.fetchBays(true),
       serviceStore.fetchServices(),
       clientStore.fetchClients(),
+      lookupStore.fetchLookups?.(),
       loadEmployees()
     ]);
     availableServices.value = serviceStore.services || [];
@@ -1719,6 +1977,7 @@ function openAddClientModal() {
     secondPhone: "",
     type: 1,
     carPlate: "",
+    selectedCarType: "",
     carModel: "",
     notes: ""
   };
@@ -1732,6 +1991,7 @@ function openAddClientModalWithQuery() {
     secondPhone: "",
     type: 1,
     carPlate: "",
+    selectedCarType: "",
     carModel: "",
     notes: ""
   };
@@ -1942,6 +2202,7 @@ function onSlotClick(bay, hour) {
     newClientPhone: "",
     vehicleId: null,
     newVehiclePlate: "",
+    selectedCarType: "",
     newVehicleModel: "",
     bayId: bay.id,
     technicianEmployeeId: null,
@@ -1978,6 +2239,7 @@ function openNewBookingForDay(dateStr) {
     newClientPhone: "",
     vehicleId: null,
     newVehiclePlate: "",
+    selectedCarType: "",
     newVehicleModel: "",
     bayId: bookingStore.bays[0]?.id || null,
     technicianEmployeeId: null,

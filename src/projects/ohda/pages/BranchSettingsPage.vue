@@ -96,16 +96,18 @@
               </div>
               <div class="relative">
                 <input
-                  :value="form.branchName || authStore.branchName || 'مركز الصيانة المعتمد'"
+                  v-model="form.branchName"
                   type="text"
-                  disabled
-                  readonly
-                  class="w-full px-3.5 py-2.5 rounded-xl text-xs bg-slate-100 dark:bg-white/10 border border-brand-gray/25 text-brand-dark dark:text-white font-bold cursor-not-allowed select-none opacity-90"
+                  :disabled="!isSuperAdmin"
+                  :readonly="!isSuperAdmin"
+                  :class="isSuperAdmin
+                    ? 'w-full px-3.5 py-2.5 rounded-xl text-xs bg-brand-light dark:bg-white/5 border border-brand-accent/50 text-brand-dark dark:text-white font-bold focus:outline-none focus:border-brand-accent'
+                    : 'w-full px-3.5 py-2.5 rounded-xl text-xs bg-slate-100 dark:bg-white/10 border border-brand-gray/25 text-brand-dark dark:text-white font-bold cursor-not-allowed select-none opacity-90'"
                 />
               </div>
-              <!-- <span class="text-[10px] text-amber-600 dark:text-amber-400 font-semibold block mt-1">
-                🔒 اسم المركز مثبت من إدارة المنصة ومرخص حصرياً لمنع إعادة بيع أو نقل النظام (لطلب تعديل الاسم التجاري يرجى مراجعة إدارة المنصة).
-              </span> -->
+              <span v-if="!isSuperAdmin" class="text-[10px] text-amber-600 dark:text-amber-400 font-semibold block mt-1">
+                اسم المركز مثبت وفق ترخيص المنصة ولا يمكن تعديله إلا من الإدارة العليا (SuperAdmin).
+              </span>
             </div>
 
             <div>
@@ -431,52 +433,110 @@
           </div>
         </div>
 
-        <!-- 6. Invoice & Print Format Settings -->
+            <!-- 6. Structured Invoice & Document Settings + Live Preview -->
         <div class="bg-brand-white dark:bg-white/5 p-6 rounded-2xl border border-brand-gray/10 shadow-sm space-y-4">
           <div class="flex items-center gap-2.5 border-b border-brand-gray/10 pb-3">
             <Printer class="w-5 h-5 text-brand-accent" />
-            <h2 class="text-sm font-bold text-brand-dark dark:text-white">إعدادات الطباعة وشروط الفاتورة</h2>
+            <h2 class="text-sm font-bold text-brand-dark dark:text-white">إعدادات الفواتير والمستندات والطباعة</h2>
           </div>
 
-          <div class="space-y-3.5">
-            <div>
-              <label class="block text-xs font-bold text-brand-dark dark:text-slate-200 mb-1">
-                تنسيق الطباعة الافتراضي
-              </label>
-              <select
-                v-model="form.printFormat"
-                class="w-full px-3.5 py-2.5 rounded-xl text-xs bg-brand-light dark:bg-white/5 border border-brand-gray/25 text-brand-dark dark:text-white focus:outline-none focus:border-brand-accent font-sans cursor-pointer"
-              >
-                <option value="a4">صفحة كاملة رسمية (A4 Standard)</option>
-                <option value="thermal">إيصال حراري سريع (80mm Thermal POS)</option>
-              </select>
+          <div class="space-y-3">
+            <div class="grid grid-cols-2 gap-2.5">
+              <div>
+                <label class="block text-[11px] font-bold text-brand-dark dark:text-slate-200 mb-1">عنوان الفاتورة</label>
+                <input v-model="form.invoiceTitle" type="text" placeholder="فاتورة صيانة وقطع غيار" class="w-full px-3 py-2 rounded-xl text-xs bg-brand-light dark:bg-white/5 border border-brand-gray/25" />
+              </div>
+              <div>
+                <label class="block text-[11px] font-bold text-brand-dark dark:text-slate-200 mb-1">بادئة الترقيم</label>
+                <input v-model="form.numberingPrefix" type="text" placeholder="INV-" class="w-full px-3 py-2 rounded-xl text-xs font-mono bg-brand-light dark:bg-white/5 border border-brand-gray/25" />
+              </div>
             </div>
 
-            <div class="flex items-center gap-2 pt-1">
-              <input
-                id="showLogoPrint"
-                v-model="form.showLogoOnPrint"
-                type="checkbox"
-                class="w-4 h-4 rounded text-brand-accent focus:ring-brand-accent border-brand-gray/30 cursor-pointer"
-              />
-              <label for="showLogoPrint" class="text-xs text-brand-dark dark:text-slate-200 cursor-pointer select-none">
-                طباعة شعار الورشة في أعلى الفواتير المطبوعة
-              </label>
+            <div class="grid grid-cols-2 gap-2.5">
+              <div>
+                <label class="block text-[11px] font-bold text-brand-dark dark:text-slate-200 mb-1">مقاس الورق الافتراضي</label>
+                <select v-model="form.defaultPaperSize" class="w-full px-3 py-2 rounded-xl text-xs bg-brand-light dark:bg-white/5 border border-brand-gray/25 cursor-pointer">
+                  <option value="A4">صفحة رسمية (A4)</option>
+                  <option value="Thermal80mm">إيصال حراري (80mm)</option>
+                  <option value="Thermal58mm">إيصال حراري صغير (58mm)</option>
+                </select>
+              </div>
+              <div>
+                <label class="block text-[11px] font-bold text-brand-dark dark:text-slate-200 mb-1">لغة المستند</label>
+                <select v-model="form.invoiceLanguage" class="w-full px-3 py-2 rounded-xl text-xs bg-brand-light dark:bg-white/5 border border-brand-gray/25 cursor-pointer">
+                  <option value="ar">عربي</option>
+                  <option value="both">ثنائي اللغة (عربي / إنجليزي)</option>
+                  <option value="en">إنجليزي</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="grid grid-cols-2 gap-2 pt-1 text-[11px]">
+              <label class="flex items-center gap-2 cursor-pointer"><input v-model="form.showLogo" type="checkbox" class="w-3.5 h-3.5" /> إظهار الشعار</label>
+              <label class="flex items-center gap-2 cursor-pointer"><input v-model="form.showQR" type="checkbox" class="w-3.5 h-3.5" /> إظهار رمز QR</label>
+              <label class="flex items-center gap-2 cursor-pointer"><input v-model="form.showCarDetails" type="checkbox" class="w-3.5 h-3.5" /> تفاصيل السيارة</label>
+              <label class="flex items-center gap-2 cursor-pointer"><input v-model="form.showMechanic" type="checkbox" class="w-3.5 h-3.5" /> اسم الفني</label>
+              <label class="flex items-center gap-2 cursor-pointer"><input v-model="form.showNotes" type="checkbox" class="w-3.5 h-3.5" /> الملاحظات والتنبيهات</label>
             </div>
 
             <div>
-              <label class="block text-xs font-bold text-brand-dark dark:text-slate-200 mb-1">
-                شروط الضمان وسياسة الفاتورة الافتراضية
-              </label>
-              <textarea
-                v-model="form.warrantyTerms"
-                rows="3"
-                placeholder="شروط الضمان وسياسة الفاتورة..."
-                class="w-full px-3 py-2 rounded-xl text-xs bg-brand-light dark:bg-white/5 border border-brand-gray/25 text-brand-dark dark:text-white focus:outline-none focus:border-brand-accent font-sans resize-none"
-              ></textarea>
-              <span class="text-[10px] text-brand-gray block mt-0.5">
-                تظهر هذه النصوص في تذييل كافة أوامر الشغل والفواتير المطبوعة للعميل.
-              </span>
+              <label class="block text-[11px] font-bold text-brand-dark dark:text-slate-200 mb-1">شروط الضمان وسياسة الفاتورة</label>
+              <textarea v-model="form.warrantyTermsText" rows="2" class="w-full px-3 py-2 rounded-xl text-xs bg-brand-light dark:bg-white/5 border border-brand-gray/25 resize-none"></textarea>
+            </div>
+
+            <div class="grid grid-cols-1 gap-2">
+              <input v-model="form.footerText" type="text" placeholder="نص التذييل الثابت..." class="w-full px-3 py-2 rounded-xl text-xs bg-brand-light dark:bg-white/5 border border-brand-gray/25" />
+              <input v-model="form.thankYouMessage" type="text" placeholder="رسالة شكر للعميل..." class="w-full px-3 py-2 rounded-xl text-xs bg-brand-light dark:bg-white/5 border border-brand-gray/25" />
+            </div>
+
+            <!-- Live Document Preview Card -->
+            <div class="p-3.5 rounded-2xl bg-white text-slate-900 border-2 shadow-sm space-y-2 text-[10px]" :style="{ borderColor: form.primaryColor || form.themeColor }">
+              <div class="flex items-center justify-between border-b pb-2">
+                <div class="flex items-center gap-2">
+                  <img v-if="form.showLogo && form.logoUrl" :src="form.logoUrl" class="w-8 h-8 object-contain rounded" />
+                  <div>
+                    <div class="font-bold text-xs" :style="{ color: form.primaryColor || form.themeColor }">{{ form.branchName || 'اسم المركز' }}</div>
+                    <div class="text-slate-500">{{ form.address || 'عنوان المركز' }} • {{ form.contactPhone || '010xxxxxxx' }}</div>
+                    <div v-if="form.taxNumber || form.crNumber" class="text-[9px] text-slate-400 font-mono">
+                      ضريبي: {{ form.taxNumber || '—' }} | س.ت: {{ form.crNumber || '—' }}
+                    </div>
+                  </div>
+                </div>
+                <div class="text-left">
+                  <div class="font-extrabold text-[11px]">{{ form.invoiceTitle || 'فاتورة ضريبية' }}</div>
+                  <div class="font-mono text-slate-500">{{ form.numberingPrefix || 'INV-' }}000125</div>
+                </div>
+              </div>
+              <div v-if="form.showCarDetails" class="flex justify-between text-[9px] bg-slate-50 p-1.5 rounded">
+                <span>العميل: أحمد علي</span>
+                <span>السيارة: أ ب ج 1234 — هيونداي إلنترا</span>
+                <span v-if="form.showMechanic">الفني: مصطفى</span>
+              </div>
+              <div class="flex justify-between font-bold border-t pt-1.5">
+                <span>الإجمالي التجريبي: 1,250.00 {{ form.currency }}</span>
+                <span v-if="form.showQR" class="px-1.5 py-0.5 rounded bg-slate-100 border font-mono">[QR]</span>
+              </div>
+              <p v-if="form.warrantyTermsText" class="text-[9px] text-slate-500 leading-snug border-t pt-1">{{ form.warrantyTermsText }}</p>
+              <div class="text-center font-bold text-[9px] text-slate-600">{{ form.thankYouMessage }} {{ form.footerText ? '• ' + form.footerText : '' }}</div>
+            </div>
+
+            <!-- Operational Alerts & Guards -->
+            <div class="pt-2 border-t border-brand-gray/10 space-y-2">
+              <span class="block text-[11px] font-bold text-brand-gray">حدود التشغيل والتنبيهات</span>
+              <div class="grid grid-cols-3 gap-2 text-[10px]">
+                <div>
+                  <label class="block mb-0.5">تنبيه الصلاحية (يوم)</label>
+                  <input v-model.number="form.expiryAlertDays" type="number" min="1" class="w-full p-1.5 rounded-lg border font-mono" />
+                </div>
+                <div>
+                  <label class="block mb-0.5">فرق التكلفة %</label>
+                  <input v-model.number="form.costDiffWarnPercent" type="number" min="1" class="w-full p-1.5 rounded-lg border font-mono" />
+                </div>
+                <div>
+                  <label class="block mb-0.5">نافذة المرتجع (يوم)</label>
+                  <input v-model.number="form.returnWindowDays" type="number" min="1" class="w-full p-1.5 rounded-lg border font-mono" />
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -528,6 +588,7 @@ const router = useRouter();
 const toast = useToast();
 const authStore = useOhdaAuthStore();
 
+const isSuperAdmin = computed(() => authStore.isSuperAdmin || String(authStore.role || "").toLowerCase() === "superadmin");
 const isOnboarding = computed(() => route.query.onboarding === "1");
 const showOnboardingBanner = ref(isOnboarding.value);
 const isDragging = ref(false);
@@ -546,6 +607,23 @@ const form = ref({
   address: "",
   taxNumber: "",
   crNumber: "",
+  invoiceTitle: "فاتورة ضريبية / أمر شغل",
+  defaultPaperSize: "A4",
+  showLogo: true,
+  showQR: true,
+  showCarDetails: true,
+  showMechanic: true,
+  showNotes: true,
+  footerText: "",
+  warrantyTermsText: "الضمان سارٍ لمدة 30 يوماً أو 1,000 كم ضد عيوب التركيب وقطع الغيار الأصلية. لا يشمل الضمان سوء الاستخدام.",
+  thankYouMessage: "شكراً لزيارتكم — نسعد بخدمتكم دائماً",
+  primaryColor: "#7C3AED",
+  numberingPrefix: "INV-",
+  invoiceLanguage: "ar",
+  signatureLines: "توقيع العميل | توقيع المدير",
+  expiryAlertDays: 30,
+  costDiffWarnPercent: 30,
+  returnWindowDays: 14,
   warrantyTerms: "الضمان سارٍ لمدة 30 يوماً أو 1,000 كم ضد عيوب التركيب وقطع الغيار الأصلية. لا يشمل الضمان سوء الاستخدام.",
   themeColor: "#10b981",
   printFormat: "a4",
@@ -645,6 +723,26 @@ async function loadSettings() {
       if (data.contactEmail) form.value.contactEmail = data.contactEmail;
       if (data.currency) form.value.currency = data.currency;
       if (!form.value.currency) form.value.currency = "EGP";
+      if (data.address) form.value.address = data.address;
+      if (data.taxNumber) form.value.taxNumber = data.taxNumber;
+      if (data.commercialRegister) form.value.crNumber = data.commercialRegister;
+      if (data.invoiceTitle) form.value.invoiceTitle = data.invoiceTitle;
+      if (data.defaultPaperSize) form.value.defaultPaperSize = data.defaultPaperSize;
+      if (typeof data.showLogo === "boolean") form.value.showLogo = data.showLogo;
+      if (typeof data.showQR === "boolean") form.value.showQR = data.showQR;
+      if (typeof data.showCarDetails === "boolean") form.value.showCarDetails = data.showCarDetails;
+      if (typeof data.showMechanic === "boolean") form.value.showMechanic = data.showMechanic;
+      if (typeof data.showNotes === "boolean") form.value.showNotes = data.showNotes;
+      if (data.footerText != null) form.value.footerText = data.footerText;
+      if (data.warrantyTermsText) form.value.warrantyTermsText = data.warrantyTermsText;
+      if (data.thankYouMessage) form.value.thankYouMessage = data.thankYouMessage;
+      if (data.primaryColor) form.value.primaryColor = data.primaryColor;
+      if (data.numberingPrefix) form.value.numberingPrefix = data.numberingPrefix;
+      if (data.invoiceLanguage) form.value.invoiceLanguage = data.invoiceLanguage;
+      if (data.signatureLines) form.value.signatureLines = data.signatureLines;
+      if (data.expiryAlertDays) form.value.expiryAlertDays = data.expiryAlertDays;
+      if (data.costDiffWarnPercent) form.value.costDiffWarnPercent = data.costDiffWarnPercent;
+      if (data.returnWindowDays) form.value.returnWindowDays = data.returnWindowDays;
 
       // Extract extended template settings if stored as JSON
       if (data.industryTemplate && data.industryTemplate.startsWith("{")) {
@@ -677,33 +775,38 @@ async function saveAllSettings() {
   saving.value = true;
   try {
     // 1. Save locally and apply theme permanently
+    form.value.warrantyTerms = form.value.warrantyTermsText;
+    form.value.showLogoOnPrint = form.value.showLogo;
     saveBranchSettings(form.value);
 
-    // 2. Prepare payload for backend API
-    const extSettings = JSON.stringify({
-      slogan: form.value.slogan,
-      whatsapp: form.value.whatsapp,
-      address: form.value.address,
-      taxNumber: form.value.taxNumber,
-      crNumber: form.value.crNumber,
-      warrantyTerms: form.value.warrantyTerms,
-      themeColor: form.value.themeColor,
-      printFormat: form.value.printFormat,
-      showLogoOnPrint: form.value.showLogoOnPrint
-    });
-
-    // Note: IndustryTemplate is limited to varchar(50) in database.
-    // Extended customization (slogan, colors, warranty) is safely persisted in localStorage.
     const payload = {
       name: form.value.branchName,
       contactName: authStore.userName,
       contactPhone: form.value.contactPhone,
       contactEmail: form.value.contactEmail,
       logoUrl: form.value.logoUrl,
-      currency: form.value.currency,
-      industryTemplate: extSettings,
       currency: form.value.currency || "EGP",
-      industryTemplate: "AutoRepairWorkshop"
+      industryTemplate: "AutoRepairWorkshop",
+      address: form.value.address,
+      taxNumber: form.value.taxNumber,
+      commercialRegister: form.value.crNumber,
+      invoiceTitle: form.value.invoiceTitle,
+      defaultPaperSize: form.value.defaultPaperSize,
+      showLogo: form.value.showLogo,
+      showQR: form.value.showQR,
+      showCarDetails: form.value.showCarDetails,
+      showMechanic: form.value.showMechanic,
+      showNotes: form.value.showNotes,
+      footerText: form.value.footerText,
+      warrantyTermsText: form.value.warrantyTermsText,
+      thankYouMessage: form.value.thankYouMessage,
+      primaryColor: form.value.themeColor || form.value.primaryColor,
+      numberingPrefix: form.value.numberingPrefix,
+      invoiceLanguage: form.value.invoiceLanguage,
+      signatureLines: form.value.signatureLines,
+      expiryAlertDays: form.value.expiryAlertDays,
+      costDiffWarnPercent: form.value.costDiffWarnPercent,
+      returnWindowDays: form.value.returnWindowDays
     };
 
     const res = await apiPost("/api/Branches/settings", payload);

@@ -4,11 +4,41 @@ import apiClient from "@/utilities/apiClient";
 export const useOhdaPosStore = defineStore("ohdaPos", {
   state: () => ({
     invoices: [],
+    catalog: [],
     loading: false,
+    catalogLoading: false,
     activeInvoice: null
   }),
 
   actions: {
+    async fetchCatalog(q = "") {
+      this.catalogLoading = true;
+      try {
+        const url = q ? `/api/Pos/products?q=${encodeURIComponent(q)}` : "/api/Pos/products";
+        const res = await apiClient.get(url);
+        if (res?.data?.isDone && res?.data?.objects) {
+          this.catalog = res.data.objects;
+        }
+      } catch (err) {
+        console.warn("Fetch POS catalog failed:", err);
+      } finally {
+        this.catalogLoading = false;
+      }
+    },
+
+    async quickSetPrice(productId, sellingPrice) {
+      try {
+        const res = await apiClient.patch(`/api/Pos/products/${productId}/price`, { sellingPrice });
+        if (res?.data?.isDone) {
+          await this.fetchCatalog();
+          return { success: true, message: res.data.returnMessage };
+        }
+        return { success: false, message: res?.data?.returnMessage || "فشل تحديث السعر" };
+      } catch (err) {
+        return { success: false, message: err?.response?.data?.returnMessage || "تعذر تحديث السعر" };
+      }
+    },
+
     async fetchInvoices(search = "", date = null) {
       this.loading = true;
       try {

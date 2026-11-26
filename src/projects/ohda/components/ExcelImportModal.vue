@@ -1,268 +1,253 @@
 <template>
   <OhdaModal
     :visible="visible"
-    @close="close"
-    :title="title || `استيراد ${entityName} من ملف Excel`"
-    subtitle="ارفع ملف Excel أو CSV لإضافة أو تحديث البيانات دفعة واحدة"
+    @close="closeModal"
+    :title="`استيراد ${resolvedLabel} من ملف Excel`"
+    description="تحميل القالب، معاينة الصفوف سطراً بسطر، معالجة المكرر، واعتماد الاستيراد بأمان"
     :icon="FileSpreadsheet"
-    z-index="z-[60]"
-    max-width="max-w-xl"
-    :close-on-backdrop="false"
+    max-width="max-w-4xl"
   >
     <div class="space-y-4 text-xs">
-      <!-- 1. Download Template Banner -->
-      <div class="p-3.5 rounded-2xl bg-brand-light/50 dark:bg-white/5 border border-brand-gray/15 flex items-center justify-between gap-3">
-        <div>
-          <div class="font-bold text-brand-dark dark:text-white flex items-center gap-1.5">
-            <Download class="w-4 h-4 text-brand-accent" />
-            <span>تحميل نموذج Excel الفارغ</span>
-          </div>
-          <p class="text-[11px] text-brand-gray mt-0.5">
-            يُفضل استخدام النموذج الجاهز لضمان توافق أسماء الأعمدة والحقول
-          </p>
+      <!-- Step 1: Download Template & Upload -->
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-3 p-4 rounded-2xl bg-brand-light/40 dark:bg-white/5 border border-brand-gray/15">
+        <div class="space-y-1.5">
+          <span class="font-bold block">1. تحميل قالب الإكسل المعتمد</span>
+          <button
+            type="button"
+            @click="downloadTemplate"
+            class="px-4 py-2 rounded-xl bg-emerald-600/15 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30 font-bold flex items-center gap-2 cursor-pointer"
+          >
+            <Download class="w-4 h-4" />
+            <span>تحميل قالب {{ resolvedLabel }} (.xlsx)</span>
+          </button>
         </div>
 
-        <button
-          type="button"
-          @click="downloadTemplate"
-          class="px-3 py-1.5 rounded-xl border border-brand-accent/40 bg-brand-accent/15 hover:bg-brand-accent/25 text-brand-dark dark:text-brand-accent font-bold text-xs flex items-center gap-1.5 transition-all cursor-pointer shrink-0 shadow-2xs"
-        >
-          <FileSpreadsheet class="w-3.5 h-3.5" />
-          <span>تحميل النموذج</span>
-        </button>
-      </div>
-
-      <!-- 2. File Upload Dropzone -->
-      <div
-        @dragover.prevent="isDragging = true"
-        @dragleave.prevent="isDragging = false"
-        @drop.prevent="onDrop"
-        class="border-2 border-dashed rounded-2xl p-6 text-center transition-all cursor-pointer relative"
-        :class="[
-          isDragging ? 'border-brand-accent bg-brand-accent/10' : 'border-brand-gray/25 hover:border-brand-accent/60 bg-white dark:bg-brand-dark',
-          selectedFile ? 'border-emerald-500 bg-emerald-500/5' : ''
-        ]"
-        @click="fileInputRef && fileInputRef.click()"
-      >
-        <input
-          ref="fileInputRef"
-          type="file"
-          accept=".xlsx, .xls, .csv"
-          class="hidden"
-          @change="onFileSelected"
-        />
-
-        <div v-if="!selectedFile" class="space-y-2">
-          <div class="w-12 h-12 rounded-2xl bg-brand-light dark:bg-white/5 text-brand-gray flex items-center justify-center mx-auto">
-            <Upload class="w-6 h-6 text-brand-accent" />
-          </div>
-          <div class="font-bold text-brand-dark dark:text-white">
-            اسحب وأفلت ملف Excel (.xlsx أو .csv) هنا
-          </div>
-          <p class="text-[11px] text-brand-gray">
-            أو اضغط لاختيار الملف من جهازك
-          </p>
-        </div>
-
-        <div v-else class="space-y-2">
-          <div class="w-12 h-12 rounded-2xl bg-emerald-500/15 text-emerald-600 flex items-center justify-center mx-auto">
-            <CheckCircle2 class="w-6 h-6" />
-          </div>
-          <div class="font-bold text-brand-dark dark:text-white flex items-center justify-center gap-2 font-mono">
-            <span>{{ selectedFile.name }}</span>
-            <span class="text-xs text-brand-gray">({{ (selectedFile.size / 1024).toFixed(1) }} KB)</span>
-          </div>
-          <p class="text-[11px] text-emerald-600 dark:text-emerald-400 font-bold">
-            تم تجهيز الملف للمعالجة
-          </p>
+        <div class="space-y-1.5">
+          <span class="font-bold block">2. رفع الملف للمعاينة والتحقق</span>
+          <input
+            type="file"
+            accept=".xlsx"
+            @change="onFileSelect"
+            class="w-full text-xs file:me-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:bg-brand-accent file:text-brand-dark file:font-bold cursor-pointer"
+          />
         </div>
       </div>
 
-      <!-- 3. Progress / Loading Indicator -->
-      <div v-if="uploading" class="p-4 rounded-2xl bg-brand-accent/10 border border-brand-accent/20 space-y-2">
-        <div class="flex items-center justify-between font-bold text-xs">
-          <span class="flex items-center gap-1.5 text-brand-dark dark:text-white">
-            <RefreshCw class="w-3.5 h-3.5 text-brand-accent animate-spin" />
-            <span>جاري استيراد ومعالجة البيانات...</span>
-          </span>
-          <span class="font-mono text-brand-accent">{{ progressPct }}%</span>
-        </div>
-        <div class="w-full h-2 rounded-full bg-black/10 dark:bg-white/10 overflow-hidden">
-          <div
-            class="h-full bg-brand-accent transition-all duration-300 rounded-full"
-            :style="{ width: `${progressPct}%` }"
-          ></div>
-        </div>
-      </div>
+      <!-- Loading -->
+      <div v-if="previewLoading" class="py-10 text-center text-brand-gray">جاري قراءة وفحص صفوف الملف...</div>
 
-      <!-- 4. Result Banner -->
-      <div
-        v-if="importResult"
-        class="p-3.5 rounded-xl border text-xs space-y-1"
-        :class="importResult.success ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-800 dark:text-emerald-300' : 'bg-rose-500/10 border-rose-500/30 text-rose-800 dark:text-rose-300'"
-      >
-        <div class="font-bold flex items-center gap-1.5">
-          <CheckCircle2 v-if="importResult.success" class="w-4 h-4 text-emerald-600 shrink-0" />
-          <AlertTriangle v-else class="w-4 h-4 text-rose-600 shrink-0" />
-          <span>{{ importResult.message }}</span>
+      <!-- Preview Results -->
+      <template v-else-if="previewData">
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          <div class="p-3 rounded-xl bg-black/5 dark:bg-white/5">
+            <span class="text-[10px] text-brand-gray block">إجمالي الصفوف</span>
+            <strong class="font-mono text-base">{{ previewData.totalRows }}</strong>
+          </div>
+          <div class="p-3 rounded-xl bg-emerald-500/10 text-emerald-700">
+            <span class="text-[10px] block">صالحة للاستيراد</span>
+            <strong class="font-mono text-base">{{ previewData.validCount }}</strong>
+          </div>
+          <div class="p-3 rounded-xl bg-orange-500/10 text-orange-700">
+            <span class="text-[10px] block">مكررة / تنبيهات</span>
+            <strong class="font-mono text-base">{{ previewData.warningCount }}</strong>
+          </div>
+          <div class="p-3 rounded-xl bg-red-500/10 text-red-600">
+            <span class="text-[10px] block">أخطاء مرفوضة</span>
+            <strong class="font-mono text-base">{{ previewData.errorCount }}</strong>
+          </div>
         </div>
-      </div>
+
+        <!-- Import Policy Options -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 p-3 rounded-xl border border-brand-gray/15">
+          <div>
+            <label class="block font-bold mb-1">التعامل مع السجلات المكررة</label>
+            <select v-model="duplicateStrategy" class="w-full p-2 rounded-lg border border-brand-gray/25 bg-transparent">
+              <option value="skip">تخطي المكرر (عدم التعديل)</option>
+              <option value="update">تحديث السجلات الموجودة</option>
+              <option value="stop">إيقاف العملية بالكامل إذا وُجد مكرر</option>
+            </select>
+          </div>
+          <div>
+            <label class="block font-bold mb-1">سياسة الصفوف الخاطئة</label>
+            <select v-model="importMode" class="w-full p-2 rounded-lg border border-brand-gray/25 bg-transparent">
+              <option value="valid_only">استيراد الصفوف الصحيحة فقط وتصدير الأخطاء</option>
+              <option value="all_or_nothing">الكل أو لا شيء (إلغاء عند وجود أي خطأ)</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Error export bar -->
+        <div v-if="errorRows.length > 0 || postFailedRows.length > 0" class="flex items-center justify-between p-3 rounded-xl bg-red-500/10 border border-red-500/20 text-red-700 dark:text-red-300">
+          <span>يوجد {{ errorRows.length || postFailedRows.length }} صفوف بها أخطاء تحتاج تصحيحاً.</span>
+          <button type="button" @click="exportErrorCsv" class="px-3 py-1.5 rounded-lg bg-red-600 text-white font-bold cursor-pointer">
+            تصدير تقرير الأخطاء (.csv)
+          </button>
+        </div>
+
+        <!-- Row-by-Row Preview Table -->
+        <div class="max-h-64 overflow-y-auto border border-brand-gray/15 rounded-xl">
+          <table class="w-full text-right text-xs">
+            <thead class="bg-brand-light/70 dark:bg-white/5 font-bold text-brand-gray">
+              <tr>
+                <th class="p-2">صف</th>
+                <th class="p-2">الحالة</th>
+                <th class="p-2">المحتوى</th>
+                <th class="p-2">ملاحظة الفحص</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-brand-gray/10">
+              <tr
+                v-for="r in previewData.rows"
+                :key="r.rowNumber + r.sheetName"
+                :class="r.status === 'error' ? 'bg-red-500/10' : r.status === 'warning' ? 'bg-orange-500/10' : ''"
+              >
+                <td class="p-2 font-mono">{{ r.rowNumber }}</td>
+                <td class="p-2 font-bold">
+                  <span v-if="r.status === 'valid'" class="text-emerald-600">سليم ✓</span>
+                  <span v-else-if="r.status === 'warning'" class="text-orange-600">تنبيه / مكرر</span>
+                  <span v-else class="text-red-600">خطأ ✗</span>
+                </td>
+                <td class="p-2 font-mono text-[11px] truncate max-w-xs">{{ Object.values(r.data).filter(Boolean).join(' • ') }}</td>
+                <td class="p-2">{{ r.message }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </template>
     </div>
 
-    <template #footer>
+    <template #footer="{ close }">
+      <button type="button" @click="close" class="px-4 py-2 rounded-xl border text-xs font-bold cursor-pointer">إغلاق</button>
       <button
+        v-if="previewData"
         type="button"
-        @click="close"
-        :disabled="uploading"
-        class="px-4 py-2 rounded-xl border border-brand-gray/20 text-brand-dark dark:text-white hover:bg-brand-light text-xs font-semibold cursor-pointer disabled:opacity-50"
+        @click="commitImport"
+        :disabled="committing"
+        class="px-5 py-2 rounded-xl bg-brand-accent text-brand-dark text-xs font-extrabold cursor-pointer disabled:opacity-50"
       >
-        إلغاء
-      </button>
-
-      <button
-        type="button"
-        @click="startImport"
-        :disabled="!selectedFile || uploading"
-        class="px-5 py-2 rounded-xl bg-brand-accent hover:bg-brand-accent/90 text-brand-dark font-bold text-xs cursor-pointer shadow-sm disabled:opacity-50 flex items-center gap-1.5"
-      >
-        <Upload class="w-4 h-4" />
-        <span>{{ uploading ? 'جاري الاستيراد...' : 'بدء الاستيراد الآن' }}</span>
+        {{ committing ? 'جاري التنفيذ...' : 'اعتماد واستيراد البيانات الآن' }}
       </button>
     </template>
   </OhdaModal>
 </template>
 
 <script setup>
-import { ref } from "vue";
-import OhdaModal from "./OhdaModal.vue";
-import { downloadTemplateCsv, parseCsvFile } from "../utils/excelHelper";
+import { ref, computed } from "vue";
+import { useToast } from "primevue/usetoast";
 import apiClient from "@/utilities/apiClient";
-import {
-  FileSpreadsheet,
-  Download,
-  Upload,
-  CheckCircle2,
-  AlertTriangle,
-  RefreshCw
-} from "lucide-vue-next";
+import OhdaModal from "./OhdaModal.vue";
+import { FileSpreadsheet, Download } from "lucide-vue-next";
 
 const props = defineProps({
-  visible: { type: Boolean, default: false },
-  title: { type: String, default: "" },
-  entityName: { type: String, default: "البيانات" },
-  templateFilename: { type: String, default: "template" },
-  templateColumns: { type: Array, default: () => [] },
-  sampleRows: { type: Array, default: () => [] },
-  endpoint: { type: String, default: "" },
-  customImportHandler: { type: Function, default: null }
+  visible: Boolean,
+  entityType: { type: String, required: true },
+  entityLabel: { type: String, default: "" },
+  entityName: { type: String, default: "" },
+  supplierId: { type: Number, default: null }
 });
 
-const emit = defineEmits(["update:visible", "close", "success"]);
+const emit = defineEmits(["update:visible", "close", "imported", "success"]);
+const toast = useToast();
 
-const fileInputRef = ref(null);
-const isDragging = ref(false);
-const selectedFile = ref(null);
-const uploading = ref(false);
-const progressPct = ref(0);
-const importResult = ref(null);
+const resolvedLabel = computed(() => props.entityLabel || props.entityName || "البيانات");
+const previewLoading = ref(false);
+const committing = ref(false);
+const previewData = ref(null);
+const postFailedRows = ref([]);
+const duplicateStrategy = ref("skip");
+const importMode = ref("valid_only");
 
-function close() {
-  selectedFile.value = null;
-  importResult.value = null;
-  uploading.value = false;
+const errorRows = computed(() => (previewData.value?.rows || []).filter(r => r.status === "error"));
+
+function closeModal() {
   emit("update:visible", false);
   emit("close");
 }
 
-function onFileSelected(e) {
-  const files = e.target.files;
-  if (files && files[0]) {
-    selectedFile.value = files[0];
-    importResult.value = null;
-  }
+function exportErrorCsv() {
+  const rowsToExport = postFailedRows.value.length ? postFailedRows.value : errorRows.value;
+  if (!rowsToExport.length) return;
+  const header = ["الصف", "الورقة", "السبب", "البيانات"];
+  const lines = rowsToExport.map(r => [
+    r.rowNumber ?? "",
+    r.sheetName ?? "",
+    (r.reason || r.message || "").replace(/"/g, '""'),
+    JSON.stringify(r.data || {}).replace(/"/g, '""')
+  ].map(v => `"${v}"`).join(","));
+  const csv = "\uFEFF" + [header.join(","), ...lines].join("\n");
+  const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `${props.entityType}_errors.csv`;
+  a.click();
+  URL.revokeObjectURL(url);
 }
 
-function onDrop(e) {
-  isDragging.value = false;
-  const files = e.dataTransfer.files;
-  if (files && files[0]) {
-    selectedFile.value = files[0];
-    importResult.value = null;
-  }
-}
-
-function downloadTemplate() {
-  if (props.templateColumns && props.templateColumns.length > 0) {
-    downloadTemplateCsv(props.templateFilename || "template", props.templateColumns, props.sampleRows || []);
-  } else if (props.endpoint) {
-    window.open(`/api/Excel/export/template/${props.templateFilename}`, "_blank");
-  }
-}
-
-async function startImport() {
-  if (!selectedFile.value) return;
-
-  uploading.value = true;
-  progressPct.value = 15;
-  importResult.value = null;
-
+async function downloadTemplate() {
   try {
-    // 1. Try server-side endpoint first if provided
-    let endpointSuccess = false;
-    if (props.endpoint) {
-      try {
-        const formData = new FormData();
-        formData.append("file", selectedFile.value);
-        progressPct.value = 40;
+    const res = await apiClient.get(`/api/UniversalImport/template/${props.entityType}`, { responseType: "blob" });
+    const blob = new Blob([res.data], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `${props.entityType}_template.xlsx`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(() => URL.revokeObjectURL(url), 2000);
+  } catch {
+    toast.add({ severity: "error", summary: "خطأ", detail: "فشل تحميل القالب", life: 3000 });
+  }
+}
 
-        const res = await apiClient.post(props.endpoint, formData, {
-          headers: { "Content-Type": "multipart/form-data" }
-        });
+async function onFileSelect(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  previewLoading.value = true;
+  previewData.value = null;
+  postFailedRows.value = [];
+  try {
+    const fd = new FormData();
+    fd.append("file", file);
+    const res = await apiClient.post(`/api/UniversalImport/preview/${props.entityType}`, fd, {
+      headers: { "Content-Type": "multipart/form-data" }
+    });
+    if (res?.data?.isDone) previewData.value = res.data.singleObject;
+  } catch (err) {
+    toast.add({ severity: "error", summary: "خطأ", detail: err?.response?.data?.returnMessage || "فشل فحص الملف", life: 3500 });
+  } finally {
+    previewLoading.value = false;
+  }
+}
 
-        if (res.data?.isDone || res.status === 200) {
-          progressPct.value = 100;
-          endpointSuccess = true;
-          importResult.value = {
-            success: true,
-            message: res.data?.returnMessage || "تم استيراد الملف بنجاح"
-          };
-          emit("success");
-          return;
-        }
-      } catch (err) {
-        console.warn("Backend Excel upload error, checking client fallback:", err);
+async function commitImport() {
+  if (!previewData.value) return;
+  committing.value = true;
+  postFailedRows.value = [];
+  try {
+    const res = await apiClient.post(`/api/UniversalImport/commit/${props.entityType}`, {
+      duplicateStrategy: duplicateStrategy.value,
+      importMode: importMode.value,
+      createMissingCategories: true,
+      supplierId: props.supplierId,
+      rows: previewData.value.rows
+    });
+    if (res?.data?.isDone) {
+      const obj = res.data.singleObject || {};
+      postFailedRows.value = obj.failedRows || [];
+      toast.add({ severity: "success", summary: "اكتمل الاستيراد", detail: res.data.returnMessage, life: 4500 });
+      emit("imported", obj);
+      emit("success", obj);
+      if (!postFailedRows.value.length) {
+        closeModal();
+        previewData.value = null;
       }
-    }
-
-    // 2. Client-side fallback if customImportHandler is provided
-    if (!endpointSuccess && props.customImportHandler) {
-      progressPct.value = 50;
-      const { rows } = await parseCsvFile(selectedFile.value);
-      if (!rows || rows.length === 0) {
-        throw new Error("الملف فارغ أو تعذر قراءة الصفوف");
-      }
-
-      progressPct.value = 75;
-      const res = await props.customImportHandler(rows);
-      progressPct.value = 100;
-      importResult.value = {
-        success: res.success !== false,
-        message: res.message || `تمت معالجة واستيراد ${rows.length} سجل بنجاح`
-      };
-      emit("success");
-      return;
-    }
-
-    if (!endpointSuccess) {
-      throw new Error("تعذر إتمام الاستيراد من الخادم، يرجى التأكد من صحة تنسيق الملف");
     }
   } catch (err) {
-    importResult.value = {
-      success: false,
-      message: err.message || "حدث خطأ أثناء معالجة الملف"
-    };
+    toast.add({ severity: "error", summary: "فشل الاعتماد", detail: err?.response?.data?.returnMessage || "حدث خطأ", life: 4500 });
   } finally {
-    uploading.value = false;
+    committing.value = false;
   }
 }
 </script>

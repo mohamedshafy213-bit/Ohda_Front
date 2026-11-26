@@ -664,6 +664,7 @@ import { ref, computed, onMounted } from "vue";
 import { useOhdaReminderStore } from "../stores/useOhdaReminderStore";
 import { useOhdaClientStore } from "../stores/useOhdaClientStore";
 import { useOhdaLookupStore } from "../stores/useOhdaLookupStore";
+import { useOhdaConfirmStore } from "../stores/useOhdaConfirmStore";
 import { useToastStore } from "@/stores/toastStore";
 import OhdaDataTable from "../components/OhdaDataTable.vue";
 import OhdaModal from "../components/OhdaModal.vue";
@@ -691,6 +692,7 @@ import {
 const reminderStore = useOhdaReminderStore();
 const clientStore = useOhdaClientStore();
 const lookupStore = useOhdaLookupStore();
+const confirmStore = useOhdaConfirmStore();
 const toastStore = useToastStore();
 
 const activeTab = ref("services");
@@ -862,7 +864,13 @@ async function submitContact() {
 }
 
 async function dismissReminder(id) {
-  if (!confirm("هل أنت متأكد من تجاهل هذا التذكير؟")) return;
+  const confirmed = await confirmStore.showConfirm({
+    title: "تجاهل التذكير",
+    message: "هل أنت متأكد من تجاهل هذا التذكير؟",
+    confirmText: "تجاهل",
+    isDestructive: false
+  });
+  if (!confirmed) return;
   const res = await reminderStore.dismissReminder(id);
   if (res.success) {
     toastStore.showToast(res.message, "success");
@@ -918,7 +926,13 @@ async function completeTask(id) {
 }
 
 async function deleteTask(id) {
-  if (!confirm("هل تريد حذف هذه المهمة نهائياً؟")) return;
+  const confirmed = await confirmStore.showConfirm({
+    title: "حذف المهمة",
+    message: "هل تريد حذف هذه المهمة نهائياً؟",
+    confirmText: "حذف",
+    isDestructive: true
+  });
+  if (!confirmed) return;
   const res = await reminderStore.deleteTask(id);
   if (res.success) {
     toastStore.showToast(res.message, "success");

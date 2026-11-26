@@ -495,6 +495,7 @@
 import { ref, onMounted } from "vue";
 import { useToast } from "primevue/usetoast";
 import { useOhdaBookingStore } from "../stores/useOhdaBookingStore";
+import { useOhdaConfirmStore } from "../stores/useOhdaConfirmStore";
 import OhdaModal from "../components/OhdaModal.vue";
 import {
   Warehouse,
@@ -508,6 +509,7 @@ import {
 
 const toast = useToast();
 const bookingStore = useOhdaBookingStore();
+const confirmStore = useOhdaConfirmStore();
 
 const activeTab = ref("bays");
 const showBayModal = ref(false);
@@ -640,7 +642,13 @@ async function submitBayForm() {
 }
 
 async function confirmDeleteBay(bay) {
-  if (!confirm(`هل أنت متأكد من حذف منطقة الصيانة "${bay.name}"؟`)) return;
+  const ok = await confirmStore.showConfirm({
+    title: "حذف منطقة الصيانة",
+    message: `هل أنت متأكد من حذف منطقة الصيانة "${bay.name}"؟`,
+    confirmText: "نعم، حذف",
+    isDestructive: true
+  });
+  if (!ok) return;
   try {
     await bookingStore.deleteBay(bay.id);
     toast.add({ severity: "success", summary: "تم الحذف", detail: "تم حذف منطقة الصيانة بنجاح", life: 3000 });
@@ -697,7 +705,13 @@ async function submitHolidayForm() {
 }
 
 async function confirmDeleteHoliday(h) {
-  if (!confirm(`هل تريد حذف عطلة "${h.name}"؟`)) return;
+  const ok = await confirmStore.showConfirm({
+    title: "حذف العطلة",
+    message: `هل تريد حذف عطلة "${h.name}"؟`,
+    confirmText: "نعم، حذف",
+    isDestructive: true
+  });
+  if (!ok) return;
   try {
     await bookingStore.deleteHoliday(h.id);
     toast.add({ severity: "success", summary: "تم الحذف", detail: "تم حذف العطلة بنجاح", life: 3000 });

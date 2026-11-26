@@ -22,6 +22,14 @@
         </button>
 
         <button
+          @click="downloadServerPdf('/api/ReportsPdf/report/customers-spending', 'CustomersReport.pdf')"
+          class="px-3.5 py-2 rounded-xl bg-rose-600/15 hover:bg-rose-600/25 text-rose-700 dark:text-rose-300 border border-rose-500/30 font-bold text-xs flex items-center gap-1.5 transition-colors cursor-pointer"
+        >
+          <Printer class="w-4 h-4" />
+          <span>تنزيل PDF</span>
+        </button>
+
+        <button
           @click="printReport"
           class="px-3.5 py-2 rounded-xl border border-brand-gray/20 hover:border-brand-accent text-brand-dark dark:text-white font-bold text-xs flex items-center gap-1.5 transition-colors cursor-pointer"
         >
@@ -379,6 +387,7 @@
 
 <script setup>
 import { ref, computed, onMounted } from "vue";
+import { downloadServerPdf } from "../utils/pdfHelper";
 import { useOhdaReportsStore } from "../stores/useOhdaReportsStore";
 import {
   BarChart3,

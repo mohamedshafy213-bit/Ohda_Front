@@ -14,6 +14,15 @@
 
       <!-- Action Buttons -->
       <div class="flex flex-wrap items-center gap-2.5">
+        <button
+          type="button"
+          @click="showImportModal = true"
+          class="px-3.5 py-2.5 rounded-xl border border-brand-gray/25 hover:border-brand-accent text-brand-dark dark:text-white text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer"
+        >
+          <Upload class="w-4 h-4 text-blue-500" />
+          <span>استيراد Excel</span>
+        </button>
+
         <Button
           @click="openAddEmployeeModal"
           class="!bg-brand-accent hover:!bg-brand-accent/90 !text-brand-dark !font-bold !rounded-xl !px-4 !py-2.5 !text-xs flex items-center gap-2 shadow-md shadow-brand-accent/10 transition-opacity cursor-pointer"
@@ -943,6 +952,13 @@
         </button>
       </template>
     </OhdaModal>
+
+    <ExcelImportModal
+      v-model:visible="showImportModal"
+      entity-type="employees"
+      entity-label="الموظفين"
+      @imported="hrStore.fetchEmployees()"
+    />
   </div>
 </template>
 
@@ -953,6 +969,7 @@ import { useOhdaUserPermissionStore } from "../stores/useOhdaUserPermissionStore
 import { useOhdaLookupStore } from "../stores/useOhdaLookupStore";
 import { filterPhone, filterNationalId, isValidPhone, isValidNationalIdNumber, allowOnlyNumbers } from "@/utilities/validations";
 import OhdaModal from "../components/OhdaModal.vue";
+import ExcelImportModal from "../components/ExcelImportModal.vue";
 import LoadingSkeleton from "@/components/LoadingSkeleton.vue";
 import EmptyState from "@/components/EmptyState.vue";
 import Button from "primevue/button";
@@ -960,6 +977,7 @@ import InputText from "primevue/inputtext";
 import {
   Users,
   UserPlus,
+  Upload,
   UserCheck,
   CalendarCheck,
   Banknote,
@@ -990,6 +1008,7 @@ const payrollYear = ref(now.getFullYear());
 
 // Modals State
 const showEmployeeModal = ref(false);
+const showImportModal = ref(false);
 const editingEmployeeId = ref(null);
 const showEditPayrollModal = ref(false);
 const selectedPayroll = ref(null);

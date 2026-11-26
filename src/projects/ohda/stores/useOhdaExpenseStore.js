@@ -1,9 +1,12 @@
 import { defineStore } from "pinia";
-import { apiGet, apiPost, apiDelete } from "@/utilities/fetchApi";
+import { apiGet, apiPost, apiPut, apiDelete } from "@/utilities/fetchApi";
+import apiClient from "@/utilities/apiClient";
 
 export const useOhdaExpenseStore = defineStore("ohdaExpense", {
   state: () => ({
     expenses: [],
+    fixedTemplates: [],
+    fixedMonthlyStatus: [],
     summary: null,
     loading: false
   }),
@@ -133,26 +136,103 @@ export const useOhdaExpenseStore = defineStore("ohdaExpense", {
       }
     },
 
-    async generateRecurringExpenses() {
+    async uploadReceipt(file) {
+      try {
+        const formData = new FormData();
+        formData.append("file", file);
+        const res = await apiClient.post("/api/Expense/upload-receipt", formData, {
+          headers: { "Content-Type": "multipart/form-data" }
+        });
+        if (res?.data?.isDone && res.data.singleObject?.fileUrl) {
+          return { success: true, url: res.data.singleObject.fileUrl };
+        }
+        return { success: false, message: res?.data?.returnMessage || "فشل رفع الصورة" };
+      } catch (err) {
+        return { success: false, message: err?.response?.data?.returnMessage || "فشل رفع ملف الفاتورة" };
+      }
+    },
+
+    async fetchFixedTemplates() {
+      try {
+        const res = await apiGet("/api/Expense/fixed-templates");
+        if (res?.data?.isDone) {
+          this.fixedTemplates = res.data.objects || [];
+        }
+      } catch (err) {
+        console.warn("Fetch fixed templates failed", err);
+      }
+    },
+
+    async createFixedTemplate(payload) {
+      try {
+        const res = await apiPost("/api/Expense/fixed-templates", payload);
+        if (res?.data?.isDone) {
+          await this.fetchFixedTemplates();
+          return { success: true, message: res.data.returnMessage };
+        }
+        return { success: false, message: res?.data?.returnMessage || "فشل إضافة البند الثابت" };
+      } catch (err) {
+        return { success: false, message: err?.response?.data?.returnMessage || "حدث خطأ أثناء الإضافة" };
+      }
+    },
+
+    async updateFixedTemplate(id, payload) {
+      try {
+        const res = await apiPut(`/api/Expense/fixed-templates/${id}`, payload);
+        if (res?.data?.isDone) {
+          await this.fetchFixedTemplates();
+          return { success: true, message: res.data.returnMessage };
+        }
+        return { success: false, message: res?.data?.returnMessage || "فشل تحديث البند الثابت" };
+      } catch (err) {
+        return { success: false, message: err?.response?.data?.returnMessage || "حدث خطأ أثناء التحديث" };
+      }
+    },
+
+    async deleteFixedTemplate(id) {
+      try {
+        const res = await apiDelete(`/api/Expense/fixed-templates/${id}`);
+        if (res?.data?.isDone) {
+          this.fixedTemplates = this.fixedTemplates.filter(t => t.id !== id);
+          return { success: true, message: res.data.returnMessage };
+        }
+        return { success: false, message: res?.data?.returnMessage || "فشل الحذف" };
+      } catch (err) {
+        return { success: false, message: err?.response?.data?.returnMessage || "حدث خطأ أثناء الحذف" };
+      }
+    },
+
+    async fetchFixedMonthlyStatus(month, year) {
+      try {
+        const now = new Date();
+        const m = month || (now.getMonth() + 1);
+        const y = year || now.getFullYear();
+        const res = await apiGet(`/api/Expense/fixed-monthly-status?month=${m}&year=${y}`);
+        if (res?.data?.isDone) {
+          this.fixedMonthlyStatus = res.data.objects || [];
+          return this.fixedMonthlyStatus;
+        }
+        return [];
+      } catch (err) {
+        console.warn("Fetch fixed monthly status failed", err);
+        return [];
+      }
+    },
+
+    async recordMonthlyFixedExpense(payload) {
       this.loading = true;
       try {
-        const res = await apiPost("/api/Expense/generate-recurring", {});
+        const res = await apiPost("/api/Expense/fixed-record-monthly", payload);
         if (res?.data?.isDone) {
-          await this.fetchExpenses();
-          return {
-            success: true,
-            message: res?.data?.returnMessage || "تم توليد فواتير الشهر الدورية بنجاح"
-          };
+          await Promise.all([
+            this.fetchExpenses(),
+            this.fetchFixedMonthlyStatus(payload.month, payload.year)
+          ]);
+          return { success: true, message: res.data.returnMessage };
         }
-        return {
-          success: false,
-          message: res?.data?.returnMessage || "فشل توليد الفواتير الدورية"
-        };
+        return { success: false, message: res?.data?.returnMessage || "فشل تسجيل المصروف الثابت" };
       } catch (err) {
-        return {
-          success: false,
-          message: err?.response?.data?.returnMessage || err.message || "حدث خطأ أثناء توليد الفواتير الدورية"
-        };
+        return { success: false, message: err?.response?.data?.returnMessage || "حدث خطأ أثناء التسجيل" };
       } finally {
         this.loading = false;
       }

@@ -14,6 +14,14 @@
 
       <!-- Action Buttons -->
       <div class="flex flex-wrap items-center gap-2.5">
+        <!-- <Button
+          @click="openOpeningBalanceModal"
+          class="!bg-amber-500/15 hover:!bg-amber-500/25 !text-amber-700 dark:!text-amber-300 !border !border-amber-500/30 !font-bold !rounded-xl !px-3.5 !py-2.5 !text-xs flex items-center gap-1.5 transition-all cursor-pointer"
+        >
+          <Lock class="w-4 h-4" />
+          <span>أرصدة أول المدة (قفل لمرة واحدة)</span>
+        </Button> -->
+
         <Button
           @click="openTransferModal"
           class="!bg-blue-600/10 hover:!bg-blue-600/20 !text-blue-600 dark:!text-blue-400 !border !border-blue-500/30 !font-bold !rounded-xl !px-3.5 !py-2.5 !text-xs flex items-center gap-1.5 transition-all cursor-pointer"
@@ -88,7 +96,7 @@
     </div>
 
     <!-- Cash Drawer Shift & Working Day Component -->
-    <CashDrawerWidget />
+    <CashDrawerWidget ref="drawerWidgetRef" />
 
     <!-- Navigation Tabs Toolbar -->
     <div class="bg-brand-white dark:bg-white/5 p-3 rounded-2xl border border-brand-gray/10 shadow-sm flex flex-wrap items-center justify-between gap-4 print:hidden">
@@ -264,114 +272,168 @@
       </div>
     </div>
 
-    <!-- VIEW 3: Daily Cash Closing Screen -->
+    <!-- VIEW 3: Daily Shift & Cash Closing Screen -->
     <div v-else-if="activeTab === 'closing'" class="space-y-6">
       <div class="bg-brand-white dark:bg-white/5 p-6 rounded-2xl border border-brand-gray/10 shadow-sm space-y-6">
         <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-brand-gray/10 pb-4">
           <div>
             <h2 class="text-base font-bold text-brand-dark dark:text-white flex items-center gap-2">
               <Scale class="w-5 h-5 text-purple-600" />
-              <span>تقفيل ومطابقة نقدية درج الكاش</span>
+              <span>تقفيل ومطابقة اليومية والوردية المالية</span>
             </h2>
             <p class="text-xs text-slate-400 mt-0.5">
-              عد النقدية الموجودة بالدرج ومقارنتها بالحساب الدفتري وحساب الفرق (عجز أو زيادة) تلقائياً
+              متابعة ومطابقة حركة اليومية الشاملة (كاش الدرج، فيزا وبنك، إنستاباي) وإنهاء الوردية مع إصدار التقرير اليومي
             </p>
           </div>
 
-          <!-- Closing Date Picker -->
           <div class="flex items-center gap-2">
-            <span class="text-xs text-slate-500 font-semibold">تاريخ التقفيل:</span>
-            <input
-              type="date"
-              v-model="closingDate"
-              @change="fetchClosingCalc"
-              class="text-xs p-2 rounded-xl border border-brand-gray/20 dark:border-white/10 bg-transparent text-brand-dark dark:text-white"
-            />
+            <button
+              v-if="financeStore.hasActiveDrawer"
+              type="button"
+              @click="drawerWidgetRef?.openCloseDayModal()"
+              class="px-4 py-2 rounded-xl bg-purple-600 hover:bg-purple-700 text-white font-bold text-xs flex items-center gap-1.5 cursor-pointer shadow-sm transition-transform active:scale-95"
+            >
+              <CheckCircle class="w-4 h-4" />
+              <span>تقفيل الوردية اليومية</span>
+            </button>
+            <button
+              v-else
+              type="button"
+              @click="drawerWidgetRef?.openStartDayModal()"
+              class="px-4 py-2 rounded-xl bg-brand-accent hover:bg-brand-accent/90 text-brand-dark font-bold text-xs flex items-center gap-1.5 cursor-pointer shadow-sm transition-transform active:scale-95"
+            >
+              <KeyRound class="w-4 h-4" />
+              <span>فتح درج النقدية وبدء يوم العمل</span>
+            </button>
           </div>
         </div>
 
-        <!-- 3 Breakdown Boxes -->
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <!-- Opening Balance -->
-          <div class="p-4 rounded-xl bg-black/5 dark:bg-white/5 border border-brand-gray/10">
-            <span class="text-xs text-slate-500 block mb-1">رصيد أول اليوم (الافتتاحي):</span>
-            <span class="text-lg font-bold font-mono text-slate-700 dark:text-slate-300">
-              {{ formatCurrency(financeStore.dailyCalculation?.openingBalance || 0) }}
-            </span>
+        <!-- If Active Shift exists -->
+        <div v-if="financeStore.hasActiveDrawer" class="space-y-4">
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <!-- 1. Cash Card -->
+            <div class="p-4 rounded-2xl border border-emerald-500/20 bg-emerald-500/5 space-y-2">
+              <div class="flex items-center justify-between">
+                <span class="font-bold text-xs text-emerald-800 dark:text-emerald-300 flex items-center gap-1.5">
+                  <Wallet class="w-4 h-4 text-emerald-600" />
+                  <span>كاش الدرج والخزينة</span>
+                </span>
+                <span class="text-[10px] text-brand-gray font-mono">الافتتاحي: {{ formatCurrency(financeStore.activeDrawerSession?.openingCash || financeStore.activeDrawerSession?.openingBalance || 0) }}</span>
+              </div>
+              <div class="space-y-1 text-xs">
+                <div class="flex justify-between text-slate-500">
+                  <span>مقبوضات نقدية (+):</span>
+                  <span class="font-mono text-emerald-600 font-bold">+{{ formatCurrency(financeStore.activeDrawerSession?.totalCashIn || 0) }}</span>
+                </div>
+                <div class="flex justify-between text-slate-500">
+                  <span>مصروفات نقدية (-):</span>
+                  <span class="font-mono text-rose-600 font-bold">-{{ formatCurrency(financeStore.activeDrawerSession?.totalCashOut || 0) }}</span>
+                </div>
+                <div class="flex justify-between font-bold border-t border-emerald-500/15 pt-1 text-brand-dark dark:text-white">
+                  <span>المتوقع بالدرج:</span>
+                  <span class="font-mono text-sm text-emerald-700 dark:text-emerald-300">{{ formatCurrency(financeStore.activeDrawerSession?.expectedCash || 0) }}</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- 2. Visa Card -->
+            <div class="p-4 rounded-2xl border border-blue-500/20 bg-blue-500/5 space-y-2">
+              <div class="flex items-center justify-between">
+                <span class="font-bold text-xs text-blue-800 dark:text-blue-300 flex items-center gap-1.5">
+                  <CreditCard class="w-4 h-4 text-blue-600" />
+                  <span>الفيزا وماكينات الدفع والبنك</span>
+                </span>
+                <span class="text-[10px] text-brand-gray font-mono">الافتتاحي: {{ formatCurrency(financeStore.activeDrawerSession?.openingVisa || 0) }}</span>
+              </div>
+              <div class="space-y-1 text-xs">
+                <div class="flex justify-between text-slate-500">
+                  <span>مقبوضات فيزا (+):</span>
+                  <span class="font-mono text-emerald-600 font-bold">+{{ formatCurrency(financeStore.activeDrawerSession?.totalVisaIn || 0) }}</span>
+                </div>
+                <div class="flex justify-between text-slate-500">
+                  <span>مدفوعات فيزا (-):</span>
+                  <span class="font-mono text-rose-600 font-bold">-{{ formatCurrency(financeStore.activeDrawerSession?.totalVisaOut || 0) }}</span>
+                </div>
+                <div class="flex justify-between font-bold border-t border-blue-500/15 pt-1 text-brand-dark dark:text-white">
+                  <span>المتوقع بالفيزا:</span>
+                  <span class="font-mono text-sm text-blue-700 dark:text-blue-300">{{ formatCurrency(financeStore.activeDrawerSession?.expectedVisa || 0) }}</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- 3. InstaPay Card -->
+            <div class="p-4 rounded-2xl border border-purple-500/20 bg-purple-500/5 space-y-2">
+              <div class="flex items-center justify-between">
+                <span class="font-bold text-xs text-purple-800 dark:text-purple-300 flex items-center gap-1.5">
+                  <Smartphone class="w-4 h-4 text-purple-600" />
+                  <span>إنستاباي والمحافظ الرقمية</span>
+                </span>
+                <span class="text-[10px] text-brand-gray font-mono">الافتتاحي: {{ formatCurrency(financeStore.activeDrawerSession?.openingInstaPay || 0) }}</span>
+              </div>
+              <div class="space-y-1 text-xs">
+                <div class="flex justify-between text-slate-500">
+                  <span>مقبوضات إنستاباي (+):</span>
+                  <span class="font-mono text-emerald-600 font-bold">+{{ formatCurrency(financeStore.activeDrawerSession?.totalInstaPayIn || 0) }}</span>
+                </div>
+                <div class="flex justify-between text-slate-500">
+                  <span>مدفوعات إنستاباي (-):</span>
+                  <span class="font-mono text-rose-600 font-bold">-{{ formatCurrency(financeStore.activeDrawerSession?.totalInstaPayOut || 0) }}</span>
+                </div>
+                <div class="flex justify-between font-bold border-t border-purple-500/15 pt-1 text-brand-dark dark:text-white">
+                  <span>المتوقع بإنستاباي:</span>
+                  <span class="font-mono text-sm text-purple-700 dark:text-purple-300">{{ formatCurrency(financeStore.activeDrawerSession?.expectedInstaPay || 0) }}</span>
+                </div>
+              </div>
+            </div>
           </div>
 
-          <!-- Cash In From Jobs -->
-          <div class="p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/20">
-            <span class="text-xs text-emerald-700 dark:text-emerald-300 block mb-1">+ مقبوضات نقدية اليوم:</span>
-            <span class="text-lg font-bold font-mono text-emerald-600 dark:text-emerald-400">
-              +{{ formatCurrency(financeStore.dailyCalculation?.totalCashIn || 0) }}
-            </span>
-          </div>
-
-          <!-- Cash Out From Expenses -->
-          <div class="p-4 rounded-xl bg-red-500/10 border border-red-500/20">
-            <span class="text-xs text-red-700 dark:text-red-300 block mb-1">- مصروفات نقدية اليوم:</span>
-            <span class="text-lg font-bold font-mono text-red-600 dark:text-red-400">
-              -{{ formatCurrency(financeStore.dailyCalculation?.totalCashOut || 0) }}
-            </span>
+          <!-- Total Day Summary Banner -->
+          <div class="p-4 rounded-2xl bg-brand-accent/10 border border-brand-accent/25 flex flex-col sm:flex-row items-center justify-between gap-4">
+            <div class="flex items-center gap-3">
+              <div class="w-10 h-10 rounded-xl bg-brand-accent/20 flex items-center justify-center text-brand-dark">
+                <Scale class="w-5 h-5" />
+              </div>
+              <div>
+                <span class="font-bold text-sm text-brand-dark dark:text-white block">إجمالي حركة اليوم الشاملة</span>
+                <span class="text-xs text-brand-gray">
+                  مقبوضات: <strong class="text-emerald-600 font-mono">+{{ formatCurrency(totalSessionIncome) }}</strong> &bull;
+                  مصروفات: <strong class="text-rose-600 font-mono">-{{ formatCurrency(totalSessionOutflow) }}</strong>
+                </span>
+              </div>
+            </div>
+            <div class="flex items-center gap-3">
+              <div class="text-right">
+                <span class="text-[10px] text-brand-gray block">صافي حركة اليوم:</span>
+                <span class="text-base font-extrabold font-mono text-brand-dark dark:text-white">{{ formatCurrency(totalSessionIncome - totalSessionOutflow) }}</span>
+              </div>
+              <button
+                type="button"
+                @click="drawerWidgetRef?.openCloseDayModal()"
+                class="px-5 py-2.5 rounded-xl bg-purple-600 hover:bg-purple-700 text-white font-bold text-xs cursor-pointer shadow-sm transition-transform active:scale-95"
+              >
+                تقفيل اليومية الآن
+              </button>
+            </div>
           </div>
         </div>
 
-        <!-- Expected vs Actual Cash Counted -->
-        <div class="p-5 rounded-2xl bg-purple-500/10 border border-purple-500/20 grid grid-cols-1 md:grid-cols-2 gap-6 items-center">
-          <div>
-            <span class="text-xs text-purple-700 dark:text-purple-300 font-bold block mb-1">النقدية المتوقعة دفترياً بالدرج:</span>
-            <span class="text-2xl font-bold font-mono text-purple-800 dark:text-purple-200">
-              {{ formatCurrency(financeStore.dailyCalculation?.expectedCash || 0) }}
-            </span>
+        <!-- No active shift banner -->
+        <div v-else class="p-8 text-center rounded-2xl border border-dashed border-brand-gray/25 bg-black/5 dark:bg-white/5 space-y-3">
+          <div class="w-12 h-12 rounded-2xl bg-amber-500/10 text-amber-600 flex items-center justify-center mx-auto">
+            <Lock class="w-6 h-6" />
           </div>
-
-          <div>
-            <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
-              النقدية الفعلية بعد الجرد والعد اليدوي (ج.م) *
-            </label>
-            <input
-              type="number"
-              v-model.number="actualCashCounted"
-              min="0"
-              step="any"
-              placeholder="اكتب المبلغ الفعلي الموجود بالدرج..."
-              class="w-full text-base p-2.5 rounded-xl border border-brand-gray/20 dark:border-white/10 bg-white dark:bg-slate-800 text-brand-dark dark:text-white font-mono font-bold"
-            />
-          </div>
-        </div>
-
-        <!-- Difference Result Box -->
-        <div
-          v-if="actualCashCounted !== null"
-          class="p-4 rounded-xl border flex items-center justify-between"
-          :class="calculatedDiffClass"
-        >
-          <div class="flex items-center gap-2">
-            <component :is="calculatedDiffIcon" class="w-5 h-5" />
-            <span class="text-xs font-bold">{{ calculatedDiffMessage }}</span>
-          </div>
-          <span class="text-lg font-bold font-mono">
-            {{ formatCurrency(Math.abs(calculatedDifference)) }}
-          </span>
-        </div>
-
-        <!-- Notes & Confirm Button -->
-        <div class="flex flex-col sm:flex-row items-center gap-4">
-          <input
-            type="text"
-            v-model="closingNotes"
-            placeholder="ملاحظات على التقفيل (اختياري)..."
-            class="w-full sm:flex-1 text-xs p-2.5 rounded-xl border border-brand-gray/20 dark:border-white/10 bg-transparent text-brand-dark dark:text-white"
-          />
-
-          <Button
-            @click="submitClosing"
-            :disabled="financeStore.loading || actualCashCounted === null"
-            class="w-full sm:w-auto !bg-purple-600 hover:!bg-purple-700 !text-white !font-bold !rounded-xl !px-6 !py-2.5 !text-xs cursor-pointer shrink-0"
+          <h3 class="font-bold text-sm text-brand-dark dark:text-white">لا يوجد وردية نشطة حالياً للتقفيل</h3>
+          <p class="text-xs text-brand-gray max-w-md mx-auto">
+            يوم العمل مغلق حالياً. يرجى فتح درج النقدية لتسجيل رصيد البداية والبدء في تسجيل الحركات والمقبوضات اليومية.
+          </p>
+          <button
+            type="button"
+            @click="drawerWidgetRef?.openStartDayModal()"
+            class="px-5 py-2.5 rounded-xl bg-brand-accent hover:bg-brand-accent/90 text-brand-dark font-bold text-xs inline-flex items-center gap-2 cursor-pointer shadow-sm transition-transform active:scale-95"
           >
-            تأكيد التقفيل والتسوية
-          </Button>
+            <KeyRound class="w-4 h-4" />
+            <span>فتح درج النقدية وبدء يوم العمل</span>
+          </button>
         </div>
       </div>
 
@@ -379,7 +441,7 @@
       <div class="bg-brand-white dark:bg-white/5 rounded-2xl border border-brand-gray/10 shadow-sm p-5 space-y-4">
         <h3 class="text-sm font-bold text-brand-dark dark:text-white flex items-center gap-2">
           <History class="w-4 h-4 text-brand-accent" />
-          <span>سجل تقفيلات النقدية السابقة</span>
+          <span>سجل تقفيلات الوردية واليومية السابقة</span>
         </h3>
 
         <div v-if="financeStore.closingHistory.length === 0" class="text-xs text-slate-400 py-4 text-center">
@@ -392,24 +454,35 @@
               <tr class="bg-black/5 dark:bg-white/5 border-b border-brand-gray/10 text-slate-400 font-semibold">
                 <th class="p-3 text-start">تاريخ التقفيل</th>
                 <th class="p-3 text-start">الخزينة</th>
-                <th class="p-3 text-start">المتوقع دفترياً</th>
+                <th class="p-3 text-start">الافتتاحي</th>
+                <th class="p-3 text-start">المتوقع بالدرج</th>
                 <th class="p-3 text-start">الفعلي بالدرج</th>
                 <th class="p-3 text-start">الفرق (عجز / زيادة)</th>
                 <th class="p-3 text-start">المسؤول</th>
-                <th class="p-3 text-start">ملاحظات</th>
+                <th class="p-3 text-center">التقرير والطباعة</th>
               </tr>
             </thead>
-            <tbody class="divide-y divide-brand-gray/10 dark:divide-white/5">
+            <tbody class="divide-y divide-brand-gray/10 dark:divide-white/5 font-mono">
               <tr v-for="c in financeStore.closingHistory" :key="c.id">
-                <td class="p-3 font-mono">{{ formatDate(c.closingDate) }}</td>
-                <td class="p-3 font-semibold">{{ c.accountName }}</td>
-                <td class="p-3 font-mono">{{ formatCurrency(c.expectedCash) }}</td>
-                <td class="p-3 font-mono font-bold">{{ formatCurrency(c.actualCash) }}</td>
-                <td class="p-3 font-mono font-bold" :class="c.difference === 0 ? 'text-emerald-500' : (c.difference > 0 ? 'text-blue-500' : 'text-red-500')">
+                <td class="p-3">{{ formatDate(c.closingDate || c.closedAt) }}</td>
+                <td class="p-3 font-semibold font-sans">{{ c.accountName }}</td>
+                <td class="p-3">{{ formatCurrency(c.openingBalance) }}</td>
+                <td class="p-3">{{ formatCurrency(c.expectedCash) }}</td>
+                <td class="p-3 font-bold">{{ formatCurrency(c.actualCash) }}</td>
+                <td class="p-3 font-bold" :class="c.difference === 0 ? 'text-emerald-500' : (c.difference > 0 ? 'text-blue-500' : 'text-red-500')">
                   {{ c.difference === 0 ? 'مطابق' : (c.difference > 0 ? `+${formatCurrency(c.difference)}` : formatCurrency(c.difference)) }}
                 </td>
-                <td class="p-3 text-[11px] text-slate-400">{{ c.closedByUserName }}</td>
-                <td class="p-3 text-[11px] text-slate-500">{{ c.notes || '-' }}</td>
+                <td class="p-3 text-[11px] font-sans text-slate-400">{{ c.closedByUserName }}</td>
+                <td class="p-3 text-center">
+                  <button
+                    type="button"
+                    @click="drawerWidgetRef?.openReportById(c.id)"
+                    class="px-2.5 py-1 rounded-lg bg-brand-light dark:bg-white/10 hover:bg-brand-accent hover:text-brand-dark text-slate-600 dark:text-slate-300 font-bold text-[11px] font-sans flex items-center gap-1 mx-auto cursor-pointer transition-colors"
+                  >
+                    <Receipt class="w-3.5 h-3.5" />
+                    <span>عرض التقرير</span>
+                  </button>
+                </td>
               </tr>
             </tbody>
           </table>
@@ -724,12 +797,71 @@
         </button>
       </template>
     </OhdaModal>
+
+    <!-- One-Time Locked Opening Balances Modal -->
+    <OhdaModal
+      :visible="showOpeningBalanceModal"
+      @close="showOpeningBalanceModal = false"
+      title="تسجيل الأرصدة الافتتاحية (مرة واحدة ثم يُقفل)"
+      description="تحديد الرصيد الافتتاحي عند بدء العمل لعميل أو مورد أو خزينة — يُقفل تلقائياً بعد الاعتماد لمنع التلاعب"
+      :icon="Lock"
+      max-width="max-w-lg"
+    >
+      <div class="space-y-4 text-xs">
+        <div>
+          <label class="block font-bold mb-1">نوع الحساب</label>
+          <select v-model="openingForm.entityType" @change="openingForm.entityId = ''" class="w-full p-2.5 rounded-xl border border-brand-gray/25 bg-transparent">
+            <option value="account">خزينة / حساب بنكي</option>
+            <option value="client">رصيد عميل</option>
+            <option value="supplier">رصيد مورد</option>
+          </select>
+        </div>
+
+        <div>
+          <label class="block font-bold mb-1">الاسم *</label>
+          <select v-model.number="openingForm.entityId" class="w-full p-2.5 rounded-xl border border-brand-gray/25 bg-transparent">
+            <option value="" disabled>اختر من القائمة...</option>
+            <option
+              v-for="item in openingEntityList"
+              :key="item.id"
+              :value="item.id"
+              :disabled="item.isOpeningBalanceLocked"
+            >
+              {{ item.name }} (الرصيد الحالي: {{ formatCurrency(item.currentBalance) }}) {{ item.isOpeningBalanceLocked ? '🔒 مُقفل مسبقاً' : '' }}
+            </option>
+          </select>
+        </div>
+
+        <div>
+          <label class="block font-bold mb-1">قيمة الرصيد الافتتاحي (ج.م) *</label>
+          <input type="number" step="0.01" v-model.number="openingForm.amount" class="w-full p-2.5 rounded-xl border border-brand-gray/25 bg-transparent font-mono font-bold" />
+        </div>
+
+        <div>
+          <label class="block font-bold mb-1">ملاحظة</label>
+          <input type="text" v-model="openingForm.notes" placeholder="مثال: رصيد بداية التشغيل..." class="w-full p-2.5 rounded-xl border border-brand-gray/25 bg-transparent" />
+        </div>
+      </div>
+
+      <template #footer="{ close }">
+        <button type="button" @click="close" class="px-4 py-2 rounded-xl border text-xs font-bold cursor-pointer">إلغاء</button>
+        <button
+          type="button"
+          @click="submitOpeningBalance"
+          :disabled="!openingForm.entityId || submittingOpening"
+          class="px-5 py-2 rounded-xl bg-amber-600 text-white text-xs font-bold cursor-pointer disabled:opacity-50"
+        >
+          {{ submittingOpening ? 'جاري الترحيل...' : 'تسجيل وقفل الرصيد الافتتاحي 🔒' }}
+        </button>
+      </template>
+    </OhdaModal>
   </div>
 </template>
 
 <script setup>
 import { ref, computed, onMounted } from "vue";
 import { useOhdaFinanceStore } from "../stores/useOhdaFinanceStore";
+import apiClient from "@/utilities/apiClient";
 import OhdaModal from "../components/OhdaModal.vue";
 import CashDrawerWidget from "../components/CashDrawerWidget.vue";
 import LoadingSkeleton from "@/components/LoadingSkeleton.vue";
@@ -754,10 +886,27 @@ import {
   ArrowDownLeft,
   ArrowLeft,
   Pencil,
-  Trash2
+  Trash2,
+  Lock,
+  Receipt,
+  KeyRound,
+  CreditCard
 } from "lucide-vue-next";
 
 const financeStore = useOhdaFinanceStore();
+const drawerWidgetRef = ref(null);
+
+const totalSessionIncome = computed(() => {
+  const s = financeStore.activeDrawerSession;
+  if (!s) return 0;
+  return (Number(s.totalCashIn) || 0) + (Number(s.totalVisaIn) || 0) + (Number(s.totalInstaPayIn) || 0);
+});
+
+const totalSessionOutflow = computed(() => {
+  const s = financeStore.activeDrawerSession;
+  if (!s) return 0;
+  return (Number(s.totalCashOut) || 0) + (Number(s.totalVisaOut) || 0) + (Number(s.totalInstaPayOut) || 0);
+});
 
 const activeTab = ref("accounts");
 const txSearch = ref("");
@@ -773,6 +922,41 @@ const showAddAccountModal = ref(false);
 const showEditAccountModal = ref(false);
 const showDeleteAccountModal = ref(false);
 const accountToDelete = ref(null);
+const showOpeningBalanceModal = ref(false);
+const submittingOpening = ref(false);
+const openingStatus = ref({ clients: [], suppliers: [], accounts: [] });
+const openingForm = ref({ entityType: "account", entityId: "", amount: 0, notes: "" });
+
+const openingEntityList = computed(() => {
+  if (openingForm.value.entityType === "client") return openingStatus.value.clients || [];
+  if (openingForm.value.entityType === "supplier") return openingStatus.value.suppliers || [];
+  return openingStatus.value.accounts || [];
+});
+
+async function openOpeningBalanceModal() {
+  try {
+    const res = await apiClient.get("/api/Finance/opening-balances/status");
+    if (res?.data?.isDone) openingStatus.value = res.data.singleObject || { clients: [], suppliers: [], accounts: [] };
+  } catch {}
+  openingForm.value = { entityType: "account", entityId: "", amount: 0, notes: "" };
+  showOpeningBalanceModal.value = true;
+}
+
+async function submitOpeningBalance() {
+  submittingOpening.value = true;
+  try {
+    const res = await apiClient.post("/api/Finance/opening-balance", openingForm.value);
+    if (res?.data?.isDone) {
+      alert(res.data.returnMessage);
+      showOpeningBalanceModal.value = false;
+      await Promise.all([financeStore.fetchAccounts(), financeStore.fetchTransactions()]);
+    }
+  } catch (err) {
+    alert(err?.response?.data?.returnMessage || "فشل تسجيل الرصيد الافتتاحي");
+  } finally {
+    submittingOpening.value = false;
+  }
+}
 
 const editAccountForm = ref({
   id: null,

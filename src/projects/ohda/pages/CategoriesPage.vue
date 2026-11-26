@@ -15,6 +15,16 @@
       <div class="flex items-center gap-2.5">
         <button
           type="button"
+          @click="showImportModal = true"
+          class="bg-brand-light dark:bg-white/5 hover:bg-brand-soft text-brand-dark dark:text-white border border-brand-gray/20 rounded-xl px-3.5 py-2.5 text-xs font-semibold flex items-center gap-2 shadow-xs cursor-pointer transition-all"
+          title="استيراد تصنيفات من Excel"
+        >
+          <Upload class="w-4 h-4 text-blue-500" />
+          <span>استيراد Excel</span>
+        </button>
+
+        <button
+          type="button"
           @click="exportCategoriesToExcel"
           class="bg-brand-light dark:bg-white/5 hover:bg-brand-soft text-brand-dark dark:text-white border border-brand-gray/20 rounded-xl px-3.5 py-2.5 text-xs font-semibold flex items-center gap-2 shadow-xs cursor-pointer transition-all"
           title="تصدير تصنيفات المخزن إلى Excel"
@@ -236,6 +246,13 @@
       :warningMessage="getCategoryProductsCount(selectedCategoryForDelete?.id) > 0 ? `لا يمكن حذف هذا التصنيف لوجود (${getCategoryProductsCount(selectedCategoryForDelete?.id)}) أصناف/أجهزة مرتبطة به في المخزون حالياً. يرجى نقل أو معالجة الأصناف التابعة له أولاً.` : ''"
       :confirm="handleDelete"
     />
+
+    <ExcelImportModal
+      v-model:visible="showImportModal"
+      entity-type="categories"
+      entity-label="التصنيفات"
+      @imported="inventoryStore.fetchCategories()"
+    />
   </div>
 </template>
 
@@ -245,10 +262,11 @@ import { useOhdaInventoryStore } from "../stores/useOhdaInventoryStore";
 import { useToastStore } from "@/stores/toastStore";
 import { useI18n } from "vue-i18n";
 import OhdaModal from "../components/OhdaModal.vue";
+import ExcelImportModal from "../components/ExcelImportModal.vue";
 import DeleteDialog from "@/components/DeleteDialog.vue";
 import EmptyState from "@/components/EmptyState.vue";
 import LoadingSkeleton from "@/components/LoadingSkeleton.vue";
-import { Download, ArrowRightLeft } from "lucide-vue-next";
+import { Download, Upload, ArrowRightLeft } from "lucide-vue-next";
 import { exportToExcelCsv } from "../utils/excelHelper";
 
 const { t } = useI18n();
@@ -257,6 +275,7 @@ const toastStore = useToastStore();
 
 const searchQuery = ref("");
 const showModal = ref(false);
+const showImportModal = ref(false);
 const isEditing = ref(false);
 const isSaving = ref(false);
 const editingId = ref(null);

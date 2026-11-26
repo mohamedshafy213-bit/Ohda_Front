@@ -474,14 +474,9 @@
     <!-- Excel Import Modal for Services -->
     <ExcelImportModal
       v-model:visible="showImportModal"
-      entity-name="الخدمات والمصنعيات"
-      title="استيراد خدمات وأسعار الورشة من ملف Excel"
-      template-filename="قالب_استيراد_الخدمات"
-      :template-columns="serviceTemplateColumns"
-      :sample-rows="serviceSampleRows"
-      endpoint="/api/Excel/import/services"
-      :custom-import-handler="handleServicesImport"
-      @success="onServicesImportSuccess"
+      entity-type="services"
+      entity-label="الخدمات والمصنعيات"
+      @imported="serviceStore.fetchServices()"
     />
   </div>
 </template>

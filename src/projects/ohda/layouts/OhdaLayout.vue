@@ -251,6 +251,9 @@
 
     <!-- Unified Global Search Dialog (Ctrl+K) -->
     <GlobalSearchModal v-model="showGlobalSearch" />
+
+    <!-- Global App-wide Confirm Modal (Replaces browser confirm popup) -->
+    <OhdaConfirmModal />
   </div>
 </template>
 
@@ -260,10 +263,12 @@ import { useRouter, useRoute } from "vue-router";
 import { setLocale, getCurrentLocale } from "@/i18n";
 import { useOhdaAuthStore } from "../stores/useOhdaAuthStore";
 import { useOhdaNotificationStore } from "../stores/useOhdaNotificationStore";
+import { useOhdaConfirmStore } from "../stores/useOhdaConfirmStore";
 import { useI18n } from "vue-i18n";
 import PageHelpDrawer from "../components/PageHelpDrawer.vue";
 import ForceChangePasswordDialog from "../components/ForceChangePasswordDialog.vue";
 import GlobalSearchModal from "../components/GlobalSearchModal.vue";
+import OhdaConfirmModal from "../components/OhdaConfirmModal.vue";
 import { 
   KeyRound, 
   Menu, 
@@ -291,6 +296,7 @@ const router = useRouter();
 const route = useRoute();
 const authStore = useOhdaAuthStore();
 const notifStore = useOhdaNotificationStore();
+const confirmStore = useOhdaConfirmStore();
 const { t } = useI18n();
 
 const sidebarOpen = ref(false);
@@ -346,13 +352,14 @@ const pageMeta = {
   "/ohda/estimates": { labelKey: "ohda.nav.estimates", icon: "FileText" },
   "/ohda/reminders": { labelKey: "ohda.nav.reminders", icon: "BellRing" },
   "/ohda/bookings-calendar": { labelKey: "ohda.nav.bookingsCalendar", icon: "CalendarDays" },
-  "/ohda/todays-board": { labelKey: "ohda.nav.todaysBoard", icon: "LayoutDashboard" },
   "/ohda/bays-settings": { labelKey: "ohda.nav.baysSettings", icon: "Warehouse" },
   "/ohda/reports": { labelKey: "ohda.nav.reports", icon: "BarChart3" },
   "/ohda/products": { labelKey: "ohda.nav.products", icon: "Package" },
   "/ohda/services": { labelKey: "ohda.nav.services", icon: "Wrench" },
   "/ohda/purchases": { labelKey: "ohda.nav.purchases", icon: "ShoppingCart" },
   "/ohda/returns": { labelKey: "ohda.nav.returns", icon: "RotateCcw" },
+  "/ohda/damage": { labelKey: "ohda.nav.damage", customLabelAr: "التالف وتواريخ الصلاحية", icon: "AlertTriangle" },
+  "/ohda/system-health": { labelKey: "ohda.nav.systemHealth", customLabelAr: "فحص سلامة النظام", icon: "ShieldCheck" },
   "/ohda/suppliers": { labelKey: "ohda.nav.suppliers", icon: "Truck" },
   "/ohda/categories": { labelKey: "ohda.nav.categories", icon: "Tags" },
   "/ohda/barcode-print": { labelKey: "ohda.nav.barcodePrint", icon: "Printer" },
@@ -449,20 +456,12 @@ const groupDefinitions = computed(() => {
 
   return [
     {
-      key: "today",
-      customTitle: currentLocale.value === "ar" ? "لوحة اليوم" : "Today's Board",
-      icon: "Clock",
-      paths: [
-        "/ohda/todays-board",
-        "/ohda/dashboard"
-      ]
-    },
-    {
       key: "bookings",
-      customTitle: currentLocale.value === "ar" ? "تقويم الحجوزات" : "Bookings Calendar",
+      customTitle: currentLocale.value === "ar" ? "الحجوزات ودخول السيارات" : "Bookings & Reception",
       icon: "CalendarDays",
       paths: [
-        "/ohda/bookings-calendar"
+        "/ohda/bookings-calendar",
+        "/ohda/dashboard"
       ]
     },
     {
@@ -501,6 +500,7 @@ const groupDefinitions = computed(() => {
         "/ohda/categories",
         "/ohda/suppliers",
         "/ohda/returns",
+        "/ohda/damage",
         "/ohda/inventory",
         "/ohda/warehouse-bins"
       ]
@@ -540,7 +540,8 @@ const groupDefinitions = computed(() => {
         "/ohda/services",
         "/ohda/bays-settings",
         "/ohda/lookups",
-        "/ohda/settings"
+        "/ohda/settings",
+        "/ohda/system-health"
       ]
     }
   ];
@@ -601,6 +602,7 @@ watch(
 );
 
 onMounted(async () => {
+  window.$confirm = (opts) => confirmStore.showConfirm(typeof opts === "string" ? { message: opts } : opts);
   applyTheme(getStoredThemeColor(), false);
   branchSettings.value = getBranchSettings();
   Promise.allSettled([
