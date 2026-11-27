@@ -270,14 +270,16 @@
       </DataTable>
     </div>
 
-    <!-- Quick Adjust Stock Dialog -->
-    <Dialog
-      v-model:visible="showAdjustModal"
-      modal
-      :header="'تعديل رصيد المخزون'"
-      class="max-w-md w-full !bg-brand-white dark:!bg-brand-dark !border-brand-gray/15 !text-brand-dark dark:!text-white rounded-3xl overflow-hidden shadow-2xl"
+    <!-- 1. Quick Adjust Stock Modal (OhdaModal) -->
+    <OhdaModal
+      :visible="showAdjustModal"
+      @close="showAdjustModal = false"
+      :title="'تعديل رصيد المخزون'"
+      :description="'تعديل الكمية المسجلة للصنف يدوياً'"
+      :icon="Edit3"
+      max-width="max-w-md"
     >
-      <div v-if="selectedProductForAdjust" class="p-2 space-y-4 text-xs">
+      <div v-if="selectedProductForAdjust" class="space-y-4 text-xs">
         <div class="p-3 bg-brand-light dark:bg-white/5 rounded-2xl border border-brand-gray/10 space-y-1">
           <div class="font-bold text-sm text-brand-dark dark:text-white">{{ selectedProductForAdjust.name }}</div>
           <div class="text-[11px] text-brand-gray font-mono">SKU: {{ selectedProductForAdjust.sku }}</div>
@@ -319,12 +321,14 @@
             +10 إضافة
           </button>
         </div>
+      </div>
 
-        <div class="flex items-center justify-end gap-2 pt-4 border-t border-brand-gray/10">
+      <template #footer="{ close }">
+        <div class="flex items-center justify-end gap-2 w-full">
           <button
             type="button"
-            @click="showAdjustModal = false"
-            class="px-4 py-2 rounded-xl text-xs font-semibold text-brand-gray hover:bg-brand-light dark:hover:bg-white/5 transition-colors cursor-pointer"
+            @click="close"
+            class="px-4 py-2 rounded-xl text-xs font-semibold text-brand-gray hover:bg-brand-light dark:hover:bg-white/5 transition cursor-pointer"
           >
             إلغاء
           </button>
@@ -334,11 +338,11 @@
             @click="submitStockAdjustment"
             class="px-5 py-2 rounded-xl bg-brand-accent hover:bg-brand-accent/90 text-brand-dark font-bold text-xs shadow-md cursor-pointer transition disabled:opacity-50"
           >
-            حفظ الرصيد
+            {{ isSubmittingAdjust ? 'جاري الحفظ...' : 'حفظ الرصيد' }}
           </button>
         </div>
-      </div>
-    </Dialog>
+      </template>
+    </OhdaModal>
 
     <!-- Delete Confirmation Dialog -->
     <DeleteDialog
@@ -350,12 +354,14 @@
       @confirm="handleDeleteProduct"
     />
 
-    <!-- PDF Upload Modal -->
-    <Dialog
-      v-model:visible="showPdfModal"
-      modal
-      :header="$t('ohda.inventory.pdfImportModalTitle') || 'استيراد فواتير المخزون عبر PDF'"
-      class="max-w-lg w-full !bg-brand-white dark:!bg-brand-dark !border-brand-gray/15 rounded-3xl overflow-hidden shadow-2xl"
+    <!-- 2. PDF Upload Modal (OhdaModal) -->
+    <OhdaModal
+      :visible="showPdfModal"
+      @close="showPdfModal = false"
+      :title="$t('ohda.inventory.pdfImportModalTitle') || 'استيراد فواتير المخزون عبر PDF'"
+      :description="'رفع وتحليل فواتير المشتريات والمخزون'"
+      :icon="Upload"
+      max-width="max-w-lg"
     >
       <div class="space-y-4 text-xs">
         <div
@@ -389,27 +395,31 @@
             <div class="bg-brand-accent h-1.5 rounded-full animate-pulse" style="width: 75%"></div>
           </div>
         </div>
+      </div>
 
-        <div class="flex items-center justify-end gap-2.5 pt-4 border-t border-brand-gray/10 dark:border-white/10">
+      <template #footer="{ close }">
+        <div class="flex items-center justify-end w-full">
           <button
             type="button"
-            @click="showPdfModal = false"
-            class="px-4 py-2 rounded-xl text-xs font-bold text-brand-gray hover:bg-brand-light dark:hover:bg-white/5 transition"
+            @click="close"
+            class="px-5 py-2 rounded-xl text-xs font-bold text-brand-gray hover:bg-brand-light dark:hover:bg-white/5 transition cursor-pointer"
           >
             {{ $t('ohda.common.close') || 'إغلاق' }}
           </button>
         </div>
-      </div>
-    </Dialog>
+      </template>
+    </OhdaModal>
 
     <!-- ======================================================== -->
-    <!-- 5. PHYSICAL STOCKTAKING & RECONCILIATION MODAL (FULL DIALOG) -->
+    <!-- 3. PHYSICAL STOCK AUDIT MODAL (OhdaModal - max-w-6xl)   -->
     <!-- ======================================================== -->
-    <Dialog
-      v-model:visible="showStockAuditModal"
-      modal
-      :header="'شاشة جرد المخزون الفعلي ومطابقة الفروقات'"
-      class="max-w-6xl w-full !bg-brand-white dark:!bg-brand-dark !border-brand-gray/15 rounded-3xl overflow-hidden shadow-2xl"
+    <OhdaModal
+      :visible="showStockAuditModal"
+      @close="showStockAuditModal = false"
+      :title="'شاشة جرد المخزون الفعلي ومطابقة الفروقات'"
+      :description="'مقارنة الجرد الفعلي للمستودع برصيد السيستم واعتماد الفروقات والتسويات'"
+      :icon="ClipboardCheck"
+      max-width="max-w-6xl"
     >
       <div class="space-y-4 text-xs">
         <!-- Live Audit Discrepancies KPI Ribbon -->
@@ -585,13 +595,14 @@
             </tbody>
           </table>
         </div>
+      </div>
 
-        <!-- Footer / Reconciliation Trigger Button -->
-        <div class="flex items-center justify-between pt-4 border-t border-brand-gray/10">
+      <template #footer="{ close }">
+        <div class="flex items-center justify-between w-full">
           <button
             type="button"
-            @click="showStockAuditModal = false"
-            class="px-5 py-2.5 rounded-xl bg-brand-light dark:bg-white/10 text-xs font-bold cursor-pointer"
+            @click="close"
+            class="px-5 py-2.5 rounded-xl bg-brand-light dark:bg-white/10 text-xs font-bold cursor-pointer hover:bg-black/5 transition"
           >
             إغلاق
           </button>
@@ -609,19 +620,21 @@
             </span>
           </button>
         </div>
-      </div>
-    </Dialog>
+      </template>
+    </OhdaModal>
 
     <!-- ======================================================== -->
-    <!-- 6. ADMIN SETTLEMENT DECISION DIALOG FOR SHORTAGES (العجز) -->
+    <!-- 4. ADMIN SETTLEMENT DECISION MODAL (OhdaModal - max-w-2xl)-->
     <!-- ======================================================== -->
-    <Dialog
-      v-model:visible="showSettlementDialog"
-      modal
-      :header="'خيارات الإدارة لتسوية العجز المخزني'"
-      class="max-w-2xl w-full !bg-brand-white dark:!bg-brand-dark !border-brand-gray/15 rounded-3xl overflow-hidden shadow-2xl"
+    <OhdaModal
+      :visible="showSettlementDialog"
+      @close="showSettlementDialog = false"
+      :title="'خيارات الإدارة لتسوية العجز المخزني'"
+      :description="'تحديد المعالجة الإدارية والمحاسبية المعتمدة للعجز في الجرد'"
+      :icon="AlertTriangle"
+      max-width="max-w-2xl"
     >
-      <div class="p-2 space-y-4 text-xs">
+      <div class="space-y-4 text-xs">
         <!-- Shortage Summary Card -->
         <div class="p-4 rounded-2xl bg-red-500/10 border border-red-500/25 space-y-2">
           <div class="flex items-center justify-between">
@@ -779,13 +792,14 @@
             class="w-full px-3.5 py-2.5 rounded-xl border border-brand-gray/20 dark:border-white/10 bg-white dark:bg-white/5 text-xs focus:outline-none focus:border-brand-accent"
           />
         </div>
+      </div>
 
-        <!-- Footer Actions -->
-        <div class="flex items-center justify-end gap-2.5 pt-4 border-t border-brand-gray/10">
+      <template #footer="{ close }">
+        <div class="flex items-center justify-end gap-2.5 w-full">
           <button
             type="button"
-            @click="showSettlementDialog = false"
-            class="px-4 py-2 rounded-xl text-xs font-semibold text-brand-gray hover:bg-brand-light dark:hover:bg-white/5 transition"
+            @click="close"
+            class="px-4 py-2 rounded-xl text-xs font-semibold text-brand-gray hover:bg-brand-light dark:hover:bg-white/5 transition cursor-pointer"
           >
             تراجع
           </button>
@@ -798,8 +812,54 @@
             {{ isReconciling ? 'جاري تنفيذ التسوية...' : 'تأكيد واعتماد التسوية وتحديث المخزون' }}
           </button>
         </div>
+      </template>
+    </OhdaModal>
+
+    <!-- ======================================================== -->
+    <!-- 5. CONFIRM MATCHING / SURPLUS RECONCILIATION MODAL      -->
+    <!-- ======================================================== -->
+    <OhdaModal
+      :visible="showConfirmReconcileModal"
+      @close="showConfirmReconcileModal = false"
+      :title="auditSurplusCount > 0 ? 'اعتماد الجرد وتوريد الزيادات' : 'اعتماد محضر الجرد (الأرصدة متطابقة)'"
+      :description="'تثبيت نتيجة الجرد الفعلي في سجلات النظام الرسمية'"
+      :icon="auditSurplusCount > 0 ? Boxes : CheckCircle2"
+      max-width="max-w-md"
+    >
+      <div class="space-y-3 text-xs">
+        <div
+          class="p-4 rounded-2xl border"
+          :class="auditSurplusCount > 0 ? 'bg-blue-500/10 border-blue-500/25 text-blue-800 dark:text-blue-200' : 'bg-emerald-500/10 border-emerald-500/25 text-emerald-800 dark:text-emerald-200'"
+        >
+          <p class="font-bold text-sm mb-1">
+            {{ auditSurplusCount > 0 ? `يوجد ${auditSurplusCount} أصناف بها زيادة بقيمة (+${auditTotalSurplusCost.toFixed(2)} ج.م)` : 'كافة الأصناف مطابقة تماماً لرصيد السيستم بدون أي عجز!' }}
+          </p>
+          <p class="text-[11px] leading-relaxed">
+            {{ auditSurplusCount > 0 ? 'عند الاعتماد، سيقوم النظام تلقائياً بإنشاء دفعة تسوية واردة وتحديث رصيد المخزون ليطابق العد الفعلي.' : 'سيتم توثيق تاريخ الجرد واعتماد المطابقة التامة في تقارير المخزون.' }}
+          </p>
+        </div>
       </div>
-    </Dialog>
+
+      <template #footer="{ close }">
+        <div class="flex items-center justify-end gap-2 w-full">
+          <button
+            type="button"
+            @click="close"
+            class="px-4 py-2 rounded-xl text-xs font-semibold text-brand-gray hover:bg-brand-light dark:hover:bg-white/5 transition cursor-pointer"
+          >
+            إلغاء
+          </button>
+          <button
+            type="button"
+            @click="executeFinalReconciliation"
+            :disabled="isReconciling"
+            class="px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-md transition cursor-pointer disabled:opacity-50"
+          >
+            {{ isReconciling ? 'جاري الاعتماد...' : 'تأكيد واعتماد الجرد' }}
+          </button>
+        </div>
+      </template>
+    </OhdaModal>
   </div>
 </template>
 
@@ -812,6 +872,7 @@ import apiClient from "@/utilities/apiClient";
 import EmptyState from "@/components/EmptyState.vue";
 import LoadingSkeleton from "@/components/LoadingSkeleton.vue";
 import DeleteDialog from "@/components/DeleteDialog.vue";
+import OhdaModal from "../components/OhdaModal.vue";
 import searchField from "@/components/searchField.vue";
 import { downloadServerPdf } from "../utils/pdfHelper";
 
@@ -860,6 +921,7 @@ const showDiscrepanciesOnly = ref(false);
 
 // Settlement Dialog State
 const showSettlementDialog = ref(false);
+const showConfirmReconcileModal = ref(false);
 const isReconciling = ref(false);
 const settlementType = ref(2); // 1 = DeductFromEmployee, 2 = WriteOffDamage, 3 = ConvertToSalesInvoice
 const selectedEmployeeId = ref(null);
@@ -1073,14 +1135,10 @@ const auditTotalSurplusCost = computed(() => {
 // Proceed to reconcile
 function handleProceedReconcile() {
   if (auditShortageCount.value > 0) {
-    // If shortages exist, show Admin settlement decision dialog
     settlementNotes.value = `محضر جرد مخزون بتاريخ ${new Date().toLocaleDateString('ar-EG')}`;
     showSettlementDialog.value = true;
   } else {
-    // No shortages: either all matching or surplus only
-    if (confirm(auditSurplusCount.value > 0 ? "يوجد زيادات في بعض الأصناف، هل تريد اعتماد الجرد وتوريد الزيادات تلقائياً إلى المخزن؟" : "جميع الأصناف مطابقة تماماً لرصيد السيستم. هل تريد اعتماد محضر الجرد؟")) {
-      executeFinalReconciliation();
-    }
+    showConfirmReconcileModal.value = true;
   }
 }
 
@@ -1110,6 +1168,7 @@ async function executeFinalReconciliation() {
     if (res.data?.isDone) {
       toastStore.addSuccessToast(res.data.returnMessage || "تمت تسوية واعتماد جرد المخزون بنجاح");
       showSettlementDialog.value = false;
+      showConfirmReconcileModal.value = false;
       showStockAuditModal.value = false;
       await Promise.all([
         inventoryStore.fetchProducts(),

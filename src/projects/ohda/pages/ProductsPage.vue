@@ -1305,6 +1305,82 @@
       entity-label="الأصناف (تعريف فقط)"
       @imported="inventoryStore.fetchProducts()"
     />
+
+    <!-- 7. Confirm Disable Serial for Target Product Modal -->
+    <OhdaModal
+      :visible="showDisableTargetSerialModal"
+      @close="showDisableTargetSerialModal = false"
+      :title="`إلغاء تتبع السيريالات: ${targetProductForSerials?.name || ''}`"
+      :description="'تحويل الصنف إلى صنف كميات عادي يباع بالعدد مباشرة دون طلب سيريالات'"
+      :icon="Layers"
+      max-width="max-w-md"
+    >
+      <div class="space-y-3 text-xs">
+        <div class="p-3.5 rounded-2xl bg-amber-500/10 border border-amber-500/25 text-amber-800 dark:text-amber-200">
+          <p class="font-bold mb-1">هل أنت متأكد من إلغاء تتبع السيريالات لهذا الصنف؟</p>
+          <p class="text-[11px] leading-relaxed">
+            سيتم تحويل الصنف فوراً إلى صنف عادي يباع بالكمية فقط، وتصفية قيود السيريالات المعلقة بالمخزن مع الحفاظ الكامل على رصيد المخزون، الدفعات، وأسعار الشراء والتكلفة دون أي مساس بها.
+          </p>
+        </div>
+      </div>
+      <template #footer="{ close }">
+        <div class="flex items-center justify-end gap-2 w-full">
+          <button
+            type="button"
+            @click="close"
+            class="px-4 py-2 rounded-xl text-xs font-semibold text-brand-gray hover:bg-brand-light dark:hover:bg-white/5 transition cursor-pointer"
+          >
+            إلغاء
+          </button>
+          <button
+            type="button"
+            @click="executeDisableSerialTrackingForTarget"
+            :disabled="disablingSerials"
+            class="px-5 py-2.5 rounded-xl bg-red-600 hover:bg-red-700 text-white font-bold text-xs shadow-md transition cursor-pointer disabled:opacity-50"
+          >
+            {{ disablingSerials ? 'جاري التحويل...' : 'تأكيد التحويل لكميات عادية' }}
+          </button>
+        </div>
+      </template>
+    </OhdaModal>
+
+    <!-- 8. Confirm Disable All Serials Bulk Modal -->
+    <OhdaModal
+      :visible="showDisableAllSerialsModal"
+      @close="showDisableAllSerialsModal = false"
+      :title="'إلغاء تتبع السيريالات لكافة الأصناف (حل الخطأ التجاري)'"
+      :description="'تحويل كافة الأصناف التي تطلب سيريالات ناقصة إلى أصناف كميات عادية دفعة واحدة'"
+      :icon="Layers"
+      max-width="max-w-md"
+    >
+      <div class="space-y-3 text-xs">
+        <div class="p-3.5 rounded-2xl bg-red-500/10 border border-red-500/25 text-red-800 dark:text-red-200">
+          <p class="font-bold mb-1">هل تريد تحويل كافة الأصناف دفعة واحدة؟</p>
+          <p class="text-[11px] leading-relaxed">
+            سيتم إلغاء شرط إدخال الأرقام التسلسلية لكافة الأصناف بالفرع، وتصبح جميعها أصناف كميات تباع مباشرة بالعدد في الفواتير وأوامر الشغل مع الحفاظ التام على كامل الأرصدة وسجلات الشراء.
+          </p>
+        </div>
+      </div>
+      <template #footer="{ close }">
+        <div class="flex items-center justify-end gap-2 w-full">
+          <button
+            type="button"
+            @click="close"
+            class="px-4 py-2 rounded-xl text-xs font-semibold text-brand-gray hover:bg-brand-light dark:hover:bg-white/5 transition cursor-pointer"
+          >
+            تراجع
+          </button>
+          <button
+            type="button"
+            @click="executeDisableAllSerialsTrackingBulk"
+            :disabled="disablingAllSerials"
+            class="px-5 py-2.5 rounded-xl bg-red-600 hover:bg-red-700 text-white font-bold text-xs shadow-md transition cursor-pointer disabled:opacity-50"
+          >
+            {{ disablingAllSerials ? 'جاري التحويل...' : 'تأكيد تحويل الكل' }}
+          </button>
+        </div>
+      </template>
+    </OhdaModal>
   </div>
 </template>
 
@@ -1454,18 +1530,23 @@ async function submitAddMissingSerials() {
 
 const disablingSerials = ref(false);
 const disablingAllSerials = ref(false);
+const showDisableTargetSerialModal = ref(false);
+const showDisableAllSerialsModal = ref(false);
 
-async function disableSerialTrackingForTarget() {
+function disableSerialTrackingForTarget() {
+  if (!targetProductForSerials.value) return;
+  showDisableTargetSerialModal.value = true;
+}
+
+async function executeDisableSerialTrackingForTarget() {
   if (!targetProductForSerials.value) return;
   const p = targetProductForSerials.value;
-  if (!confirm(`هل أنت متأكد من إلغاء تتبع السيريالات للصنف (${p.name})؟\nسيتم تحويله إلى صنف عادي يباع بالكمية فقط وتصفية السيريالات المعلقة بالمخزن مع الحفاظ على رصيد المخزون وأسعار الشراء بالكامل.`)) {
-    return;
-  }
   disablingSerials.value = true;
   try {
     const res = await apiPost(`/api/Product/${p.id}/disable-serial-tracking`);
     if (res?.data?.isDone) {
       toastStore.addSuccessToast(res.data.returnMessage || "تم تحويل الصنف لصنف كميات عادي بنجاح");
+      showDisableTargetSerialModal.value = false;
       showSerialsModal.value = false;
       await inventoryStore.fetchProducts();
     } else {
@@ -1478,15 +1559,17 @@ async function disableSerialTrackingForTarget() {
   }
 }
 
-async function disableAllSerialsTrackingBulk() {
-  if (!confirm("هل تريد إلغاء تتبع السيريالات لجميع الأصناف بالفرع دفعة واحدة؟\nسيتم تحويل كافة الأصناف التي كانت تطلب سيريالات إلى أصناف كميات عادية تباع بالعدد مباشرة دون طلب سيريالات، مع الحفاظ على كامل أرصدة المخزون وسجلات الشراء.")) {
-    return;
-  }
+function disableAllSerialsTrackingBulk() {
+  showDisableAllSerialsModal.value = true;
+}
+
+async function executeDisableAllSerialsTrackingBulk() {
   disablingAllSerials.value = true;
   try {
     const res = await apiPost("/api/Product/disable-all-serials-tracking");
     if (res?.data?.isDone) {
       toastStore.addSuccessToast(res.data.returnMessage || "تم تحويل جميع الأصناف إلى أصناف كميات عادية بنجاح");
+      showDisableAllSerialsModal.value = false;
       filterOnlyMissingSerials.value = false;
       await inventoryStore.fetchProducts();
     } else {
