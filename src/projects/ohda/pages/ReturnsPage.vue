@@ -565,7 +565,7 @@ import { useOhdaReturnStore } from "../stores/useOhdaReturnStore";
 import OhdaDataTable from "../components/OhdaDataTable.vue";
 import OhdaModal from "../components/OhdaModal.vue";
 import QrCodeCanvas from "../components/QrCodeCanvas.vue";
-import { downloadServerPdf } from "../utils/pdfHelper";
+import { downloadServerPdf, printServerPdf } from "../utils/pdfHelper";
 import { RotateCcw, ArrowUpRight, ArrowDownLeft, ArrowRight, QrCode, Printer } from "lucide-vue-next";
 
 const route = useRoute();
@@ -771,7 +771,12 @@ function viewDetails(r) {
 }
 
 function printWindow() {
-  window.print();
+  if (!selectedReturn.value?.id) return;
+  const paper = creditPrintMode.value === "receipt" ? "Thermal80mm" : "A4";
+  printServerPdf(
+    `/api/ReportsPdf/return/${selectedReturn.value.id}?paperSize=${paper}`,
+    `Return_${selectedReturn.value.returnNumber || "note"}.pdf`
+  );
 }
 
 function formatCurrency(val) {

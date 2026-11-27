@@ -121,6 +121,61 @@
       </div>
     </div>
 
+    <!-- Operational Days & Bookings Tracking Cards -->
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+      <!-- Working Days -->
+      <div class="bg-brand-white dark:bg-white/5 p-4 rounded-2xl border border-brand-gray/10 shadow-sm flex items-center justify-between">
+        <div>
+          <span class="text-[11px] text-brand-gray dark:text-slate-400 block font-medium">أيام العمل والتشغيل</span>
+          <span class="text-xl font-black text-brand-dark dark:text-white font-mono mt-1 block">
+            {{ closingStore.preview?.workingDaysCount || 0 }} <span class="text-xs font-normal text-brand-gray">يوم</span>
+          </span>
+        </div>
+        <div class="w-10 h-10 rounded-xl bg-blue-500/10 text-blue-600 flex items-center justify-center font-bold">
+          <CalendarCheck2 class="w-5 h-5" />
+        </div>
+      </div>
+
+      <!-- Vacation Days -->
+      <div class="bg-brand-white dark:bg-white/5 p-4 rounded-2xl border border-brand-gray/10 shadow-sm flex items-center justify-between">
+        <div>
+          <span class="text-[11px] text-brand-gray dark:text-slate-400 block font-medium">أيام الإجازات والعطلات</span>
+          <span class="text-xl font-black text-purple-600 dark:text-purple-400 font-mono mt-1 block">
+            {{ closingStore.preview?.vacationDaysCount || 0 }} <span class="text-xs font-normal text-brand-gray">يوم</span>
+          </span>
+        </div>
+        <div class="w-10 h-10 rounded-xl bg-purple-500/10 text-purple-600 flex items-center justify-center font-bold">
+          <CalendarDays class="w-5 h-5" />
+        </div>
+      </div>
+
+      <!-- Cash Drawer Opened Days -->
+      <div class="bg-brand-white dark:bg-white/5 p-4 rounded-2xl border border-brand-gray/10 shadow-sm flex items-center justify-between">
+        <div>
+          <span class="text-[11px] text-brand-gray dark:text-slate-400 block font-medium">أيام فتح درج النقدية</span>
+          <span class="text-xl font-black text-emerald-600 dark:text-emerald-400 font-mono mt-1 block">
+            {{ closingStore.preview?.cashDrawerOpenedDaysCount || 0 }} <span class="text-xs font-normal text-brand-gray">يوم</span>
+          </span>
+        </div>
+        <div class="w-10 h-10 rounded-xl bg-emerald-500/10 text-emerald-600 flex items-center justify-center font-bold">
+          <CheckCircle2 class="w-5 h-5" />
+        </div>
+      </div>
+
+      <!-- Bookings Count -->
+      <div class="bg-brand-white dark:bg-white/5 p-4 rounded-2xl border border-brand-gray/10 shadow-sm flex items-center justify-between">
+        <div>
+          <span class="text-[11px] text-brand-gray dark:text-slate-400 block font-medium">إجمالي الحجوزات والمواعيد</span>
+          <span class="text-xl font-black text-amber-600 dark:text-amber-400 font-mono mt-1 block">
+            {{ closingStore.preview?.totalBookingsCount || 0 }} <span class="text-xs font-normal text-brand-gray font-sans">(مكتمل: {{ closingStore.preview?.completedBookingsCount || 0 }})</span>
+          </span>
+        </div>
+        <div class="w-10 h-10 rounded-xl bg-amber-500/10 text-amber-600 flex items-center justify-center font-bold">
+          <Clock class="w-5 h-5" />
+        </div>
+      </div>
+    </div>
+
     <!-- 6 KPI Metric Cards -->
     <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
       <!-- Total Invoiced -->
@@ -177,6 +232,100 @@
         <span class="text-base font-bold text-purple-600 dark:text-purple-400 font-mono mt-1 block">
           {{ formatCurrency(closingStore.preview?.estimatedGrossProfit) }}
         </span>
+      </div>
+    </div>
+
+    <!-- Comprehensive Cash Flow In & Out Tracking (الوارد vs المنصرف الشامل) -->
+    <div class="bg-brand-white dark:bg-white/5 p-6 rounded-2xl border border-brand-gray/10 shadow-sm space-y-5">
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-brand-gray/10 pb-4">
+        <div>
+          <h2 class="text-base font-bold text-brand-dark dark:text-white flex items-center gap-2">
+            <Coins class="w-5 h-5 text-emerald-500" />
+            <span>كشف وتتبع التدفقات المالية الشاملة لشهر {{ selectedMonth }}/{{ selectedYear }} (الوارد vs المنصرف)</span>
+          </h2>
+          <p class="text-xs text-brand-gray dark:text-slate-400 mt-0.5">
+            تتبع دقيق ومفصل لكافة قنوات الدخل والمقبوضات، مقابل جميع المصروفات، المشتريات، ورواتب وأجور ومستحقات العاملين
+          </p>
+        </div>
+        <div class="flex items-center gap-3">
+          <div
+            class="px-4 py-2 rounded-xl border flex items-center gap-2.5 font-bold text-xs"
+            :class="(closingStore.preview?.netOperatingCashFlow ?? 0) >= 0 ? 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border-emerald-500/30' : 'bg-red-500/10 text-red-700 dark:text-red-300 border-red-500/30'"
+          >
+            <span>صافي السيولة النقدية (الوارد - المنصرف):</span>
+            <span class="font-mono text-sm font-black">{{ formatCurrency(closingStore.preview?.netOperatingCashFlow) }}</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <!-- 1. Incomes Breakdown (الوارد والتدفقات الداخلة) -->
+        <div class="p-5 rounded-2xl bg-emerald-500/5 dark:bg-emerald-500/10 border border-emerald-500/20 space-y-3">
+          <div class="flex items-center justify-between border-b border-emerald-500/20 pb-2.5">
+            <span class="text-xs font-bold text-emerald-800 dark:text-emerald-300 flex items-center gap-1.5">
+              <ArrowDownLeft class="w-4 h-4 text-emerald-600" />
+              <span>إجمالي الوارد والتحصيلات النقدية والبنكية</span>
+            </span>
+            <span class="font-mono font-black text-emerald-700 dark:text-emerald-300 text-sm">
+              {{ formatCurrency(closingStore.preview?.totalInflows || closingStore.preview?.totalCollected) }}
+            </span>
+          </div>
+
+          <div class="space-y-2 text-xs">
+            <div class="flex justify-between items-center py-1.5 border-b border-emerald-500/10">
+              <span class="text-slate-600 dark:text-slate-300">مقبوضات أوامر الشغل وفواتير الصيانة:</span>
+              <span class="font-mono font-bold text-emerald-600">{{ formatCurrency(closingStore.preview?.totalJobCardsIncome || closingStore.preview?.totalCollected) }}</span>
+            </div>
+            <div class="flex justify-between items-center py-1.5 border-b border-emerald-500/10">
+              <span class="text-slate-600 dark:text-slate-300">مبيعات نقطة البيع المباشرة (POS):</span>
+              <span class="font-mono font-bold text-emerald-600">{{ formatCurrency(closingStore.preview?.totalPosSales) }}</span>
+            </div>
+            <div class="flex justify-between items-center py-1.5 border-b border-emerald-500/10">
+              <span class="text-slate-600 dark:text-slate-300">سدادات وتحصيلات ديون العملاء:</span>
+              <span class="font-mono font-bold text-emerald-600">{{ formatCurrency(closingStore.preview?.totalClientPayments || 0) }}</span>
+            </div>
+            <div class="flex justify-between items-center py-1">
+              <span class="text-slate-600 dark:text-slate-300">مبالغ مستردة من مرتجعات الموردين:</span>
+              <span class="font-mono font-bold text-emerald-600">{{ formatCurrency(closingStore.preview?.totalSupplierReturns) }}</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- 2. Outputs Breakdown (المنصرف والتدفقات الخارجة) -->
+        <div class="p-5 rounded-2xl bg-rose-500/5 dark:bg-rose-500/10 border border-rose-500/20 space-y-3">
+          <div class="flex items-center justify-between border-b border-rose-500/20 pb-2.5">
+            <span class="text-xs font-bold text-rose-800 dark:text-rose-300 flex items-center gap-1.5">
+              <ArrowUpRight class="w-4 h-4 text-rose-600" />
+              <span>إجمالي المنصرف والالتزامات المالية</span>
+            </span>
+            <span class="font-mono font-black text-rose-700 dark:text-rose-300 text-sm">
+              {{ formatCurrency(closingStore.preview?.totalOutflows || closingStore.preview?.totalOutcome) }}
+            </span>
+          </div>
+
+          <div class="space-y-2 text-xs">
+            <div class="flex justify-between items-center py-1.5 border-b border-rose-500/10">
+              <span class="text-slate-600 dark:text-slate-300">مشتريات بضاعة وقطع غيار:</span>
+              <span class="font-mono font-bold text-rose-600">{{ formatCurrency(closingStore.preview?.totalPurchases) }}</span>
+            </div>
+            <div class="flex justify-between items-center py-1.5 border-b border-rose-500/10">
+              <span class="text-slate-600 dark:text-slate-300">المصروفات العامة والتشغيلية (إيجار، فواتير، نثريات):</span>
+              <span class="font-mono font-bold text-rose-600">{{ formatCurrency(closingStore.preview?.totalOperatingExpenses || closingStore.preview?.totalExpenses) }}</span>
+            </div>
+            <div class="flex justify-between items-center py-1.5 border-b border-rose-500/10 bg-purple-500/10 px-2.5 rounded-xl">
+              <span class="font-bold text-purple-900 dark:text-purple-300">رواتب وأجور ومستحقات العاملين:</span>
+              <span class="font-mono font-bold text-purple-700 dark:text-purple-300">{{ formatCurrency(closingStore.preview?.totalSalaries || closingStore.preview?.payrollTotal) }}</span>
+            </div>
+            <div class="flex justify-between items-center py-1.5 border-b border-rose-500/10">
+              <span class="text-slate-600 dark:text-slate-300">مرتجعات مبيعات مستردة للعملاء:</span>
+              <span class="font-mono font-bold text-rose-600">{{ formatCurrency(closingStore.preview?.totalClientReturns) }}</span>
+            </div>
+            <div class="flex justify-between items-center py-1">
+              <span class="text-slate-600 dark:text-slate-300">خسائر التوالف وهالك الصلاحية:</span>
+              <span class="font-mono font-bold text-rose-600">{{ formatCurrency(closingStore.preview?.totalDamageLoss) }}</span>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -537,6 +686,113 @@
       </div>
     </div>
 
+    <!-- Section E: Employee Attendance & Jobs Performance Evaluation -->
+    <div class="bg-brand-white dark:bg-white/5 p-5 rounded-2xl border border-brand-gray/10 shadow-sm space-y-4">
+      <div class="flex items-center justify-between border-b border-brand-gray/10 pb-3">
+        <div>
+          <h2 class="text-sm font-bold text-brand-dark dark:text-white flex items-center gap-2">
+            <UserCheck class="w-4 h-4 text-emerald-500" />
+            <span>كشف أداء وإنتاجية الموظفين والفنيين خلال الشهر</span>
+          </h2>
+          <p class="text-[11px] text-brand-gray dark:text-slate-400 mt-0.5">
+            متابعة أيام الحضور والغياب، عدد أوامر الشغل المنجزة، وإجمالي الإيراد والعمولات لكل فني
+          </p>
+        </div>
+        <span class="px-2.5 py-1 rounded-full text-xs font-bold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
+          {{ closingStore.preview?.employeePerformances?.length || 0 }} موظف وفني
+        </span>
+      </div>
+
+      <div v-if="!closingStore.preview?.employeePerformances?.length" class="p-6 text-center text-xs text-slate-400">
+        لا توجد بيانات حضور أو أوامر شغل منسوبة للفنيين في هذا الشهر.
+      </div>
+
+      <div v-else class="overflow-x-auto">
+        <table class="w-full text-right text-xs">
+          <thead>
+            <tr class="border-b border-brand-gray/10 text-brand-gray dark:text-slate-400 bg-black/5 dark:bg-white/5">
+              <th class="py-2.5 px-3 font-semibold">الموظف / الفني</th>
+              <th class="py-2.5 px-3 font-semibold">المسمى الوظيفي</th>
+              <th class="py-2.5 px-3 font-semibold text-center">أيام الحضور</th>
+              <th class="py-2.5 px-3 font-semibold text-center">أيام الغياب</th>
+              <th class="py-2.5 px-3 font-semibold text-center">أوامر الشغل</th>
+              <th class="py-2.5 px-3 font-semibold text-left">أعمال منجزة</th>
+              <th class="py-2.5 px-3 font-semibold text-left">الراتب الأساسي</th>
+              <th class="py-2.5 px-3 font-semibold text-left">العمولات المستحقة</th>
+              <th class="py-2.5 px-3 font-semibold text-left text-brand-dark dark:text-white">إجمالي المستحق</th>
+              <th class="py-2.5 px-3 font-semibold text-center">حالة الصرف</th>
+              <th class="py-2.5 px-3 font-semibold text-center">الإجراءات</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-brand-gray/10">
+            <tr
+              v-for="emp in closingStore.preview.employeePerformances"
+              :key="emp.employeeId"
+              class="hover:bg-black/5 dark:hover:bg-white/5 transition-colors"
+            >
+              <td class="py-2.5 px-3 font-bold text-brand-dark dark:text-white">
+                {{ emp.employeeName }}
+              </td>
+              <td class="py-2.5 px-3 text-brand-gray dark:text-slate-400">
+                {{ emp.jobTitle }}
+              </td>
+              <td class="py-2.5 px-3 text-center font-bold text-emerald-600 dark:text-emerald-400 font-mono">
+                {{ emp.daysAttended }} يوم
+              </td>
+              <td class="py-2.5 px-3 text-center font-bold font-mono" :class="emp.daysAbsent > 0 ? 'text-red-500' : 'text-slate-400'">
+                {{ emp.daysAbsent }} يوم
+              </td>
+              <td class="py-2.5 px-3 text-center font-mono font-bold text-brand-accent">
+                {{ emp.finishedJobsCount }} شغل
+              </td>
+              <td class="py-2.5 px-3 font-mono font-bold text-left text-brand-dark dark:text-white">
+                {{ formatCurrency(emp.totalLaborRevenue) }}
+              </td>
+              <td class="py-2.5 px-3 font-mono text-left text-brand-gray dark:text-slate-300">
+                {{ formatCurrency(emp.baseSalary) }}
+              </td>
+              <td class="py-2.5 px-3 font-mono font-bold text-left text-emerald-600 dark:text-emerald-400">
+                {{ formatCurrency(emp.totalCommissionEarned) }}
+              </td>
+              <td class="py-2.5 px-3 font-mono font-black text-left text-purple-700 dark:text-purple-300">
+                {{ formatCurrency((emp.baseSalary || 0) + (emp.totalCommissionEarned || 0)) }}
+              </td>
+              <td class="py-2.5 px-3 text-center">
+                <span
+                  class="px-2 py-0.5 rounded-full text-[10px] font-bold"
+                  :class="emp.isPaid ? 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-300' : 'bg-amber-500/15 text-amber-700 dark:text-amber-300'"
+                >
+                  {{ emp.isPaid ? 'تم الصرف ✓' : 'مستحق' }}
+                </span>
+              </td>
+              <td class="py-2.5 px-3 text-center whitespace-nowrap">
+                <div class="flex items-center justify-center gap-1.5">
+                  <button
+                    type="button"
+                    @click="downloadEmployeePdf(emp.employeeId, emp.employeeName)"
+                    class="p-1 text-purple-600 hover:bg-purple-500/10 rounded-lg transition-colors cursor-pointer"
+                    title="تحميل ملف أوامر الشغل للفني (PDF)"
+                  >
+                    <FileText class="w-4 h-4" />
+                  </button>
+                  <button
+                    v-if="!emp.isPaid"
+                    type="button"
+                    @click="openQuickPayFromClosing(emp)"
+                    class="px-2 py-0.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-[10px] flex items-center gap-1 cursor-pointer transition-colors shadow-sm"
+                    title="صرف الراتب فوراً"
+                  >
+                    <Banknote class="w-3 h-3" />
+                    <span>صرف</span>
+                  </button>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
     <!-- Signatures Block (Print Only) -->
     <div class="hidden print:grid grid-cols-3 gap-8 pt-12 text-center text-xs">
       <div>
@@ -643,6 +899,88 @@
         </button>
       </template>
     </OhdaModal>
+
+    <!-- 3. Modal: Quick Pay Employee from Month Closing -->
+    <OhdaModal
+      :visible="showQuickPayModal"
+      @close="showQuickPayModal = false"
+      title="صرف مستحقات الموظف / الفني"
+      description="صرف الراتب والعمولات واعتماد المصروف تلقائياً"
+      :icon="Banknote"
+      max-width="max-w-md"
+    >
+      <form @submit.prevent="submitQuickPayFromClosing" id="quickPayClosingForm" class="space-y-4 text-xs">
+        <div class="p-3 bg-emerald-500/10 border border-emerald-500/20 rounded-xl text-xs text-emerald-800 dark:text-emerald-300">
+          <div class="flex items-center justify-between font-bold">
+            <span>الموظف: {{ quickPayEmp?.employeeName }}</span>
+            <span class="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/20">{{ quickPayEmp?.jobTitle }}</span>
+          </div>
+          <div class="mt-1.5 flex items-center justify-between opacity-90">
+            <span>الراتب الأساسي:</span>
+            <span class="font-mono font-bold">{{ formatCurrency(quickPayEmp?.baseSalary) }}</span>
+          </div>
+          <div class="mt-0.5 flex items-center justify-between opacity-90">
+            <span>عمولات أوامر الشغل:</span>
+            <span class="font-mono font-bold text-emerald-700 dark:text-emerald-300">+{{ formatCurrency(quickPayEmp?.totalCommissionEarned) }}</span>
+          </div>
+        </div>
+
+        <div>
+          <label class="block font-semibold mb-1">المبلغ المطلوب صرفه *</label>
+          <input
+            type="number"
+            v-model.number="quickPayForm.amount"
+            min="1"
+            step="50"
+            required
+            class="w-full text-sm p-2.5 rounded-xl border border-brand-gray/20 dark:border-white/10 bg-transparent text-emerald-600 dark:text-emerald-400 font-mono font-bold"
+          />
+        </div>
+
+        <div>
+          <label class="block font-semibold mb-1">طريقة الصرف *</label>
+          <select
+            v-model.number="quickPayForm.paymentMethod"
+            required
+            class="w-full text-xs p-2.5 rounded-xl border border-brand-gray/20 dark:border-white/10 bg-brand-white dark:bg-brand-dark text-brand-dark dark:text-white"
+          >
+            <option :value="1">نقدي (كاش من درج النقدية / الخزينة)</option>
+            <option :value="2">بطاقة بنكية / فيزا</option>
+            <option :value="3">إنستاباي / محفظة إلكترونية</option>
+            <option :value="4">تحويل بنكي</option>
+          </select>
+        </div>
+
+        <div>
+          <label class="block font-semibold mb-1">ملاحظات</label>
+          <input
+            type="text"
+            v-model="quickPayForm.notes"
+            placeholder="ملاحظة..."
+            class="w-full text-xs p-2.5 rounded-xl border border-brand-gray/20 dark:border-white/10 bg-transparent text-brand-dark dark:text-white"
+          />
+        </div>
+      </form>
+
+      <template #footer="{ close }">
+        <button
+          type="button"
+          @click="close"
+          class="px-4 py-2.5 rounded-xl text-xs font-bold text-slate-500 hover:text-slate-800 dark:hover:text-white cursor-pointer"
+        >
+          إلغاء
+        </button>
+        <button
+          type="submit"
+          form="quickPayClosingForm"
+          :disabled="quickPayLoading"
+          class="px-5 py-2.5 rounded-xl text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white cursor-pointer shadow-sm disabled:opacity-50 flex items-center gap-1.5"
+        >
+          <Banknote class="w-4 h-4" />
+          <span>{{ quickPayLoading ? 'جاري الصرف...' : 'تأكيد الصرف' }}</span>
+        </button>
+      </template>
+    </OhdaModal>
   </div>
 </template>
 
@@ -651,9 +989,13 @@ import { ref, computed, onMounted } from "vue";
 import { useOhdaClosingStore } from "../stores/useOhdaClosingStore";
 import { useOhdaExpenseStore } from "../stores/useOhdaExpenseStore";
 import OhdaModal from "../components/OhdaModal.vue";
-import { downloadServerPdf } from "../utils/pdfHelper";
+import { downloadServerPdf, printServerPdf } from "../utils/pdfHelper";
 import {
   CalendarCheck2,
+  CalendarDays,
+  CheckCircle2,
+  Clock,
+  UserCheck,
   Lock,
   Unlock,
   Printer,
@@ -666,11 +1008,31 @@ import {
   Boxes,
   RotateCcw,
   Building2,
-  Upload
+  Upload,
+  Coins,
+  ArrowUpRight,
+  ArrowDownLeft,
+  FileText,
+  Banknote
 } from "lucide-vue-next";
+import { useOhdaHRStore } from "../stores/useOhdaHRStore";
 
 const closingStore = useOhdaClosingStore();
 const expenseStore = useOhdaExpenseStore();
+const hrStore = useOhdaHRStore();
+
+const showQuickPayModal = ref(false);
+const quickPayEmp = ref(null);
+const quickPayForm = ref({
+  employeeId: 0,
+  month: 1,
+  year: 2026,
+  amount: 0,
+  paymentMethod: 1,
+  paymentDate: new Date().toISOString().split("T")[0],
+  notes: ""
+});
+const quickPayLoading = ref(false);
 
 const now = new Date();
 const selectedMonth = ref(now.getMonth() + 1);
@@ -775,7 +1137,10 @@ function getExpenseBarColor(type) {
 }
 
 function triggerPrint() {
-  window.print();
+  printServerPdf(
+    `/api/ReportsPdf/month-closing/${selectedYear.value}/${selectedMonth.value}`,
+    `MonthClosing_${selectedYear.value}_${selectedMonth.value}.pdf`
+  );
 }
 
 function exportCsv() {
@@ -784,6 +1149,13 @@ function exportCsv() {
 
   let csvContent = "\uFEFF"; // UTF-8 BOM
   csvContent += `تقرير الإقفال الشهري - شهر ${selectedMonth.value} / ${selectedYear.value}\n\n`;
+  csvContent += `أيام العمل والتشغيل,${p.workingDaysCount || 0}\n`;
+  csvContent += `أيام الإجازات والعطلات,${p.vacationDaysCount || 0}\n`;
+  csvContent += `أيام فتح درج النقدية,${p.cashDrawerOpenedDaysCount || 0}\n`;
+  csvContent += `إجمالي الحجوزات,${p.totalBookingsCount || 0}\n`;
+  csvContent += `الحجوزات المكتملة,${p.completedBookingsCount || 0}\n`;
+  csvContent += `الحجوزات الملغاة,${p.cancelledBookingsCount || 0}\n\n`;
+
   csvContent += `إجمالي الفواتير,${p.totalInvoiced}\n`;
   csvContent += `المحصل الفعلي,${p.totalCollected}\n`;
   csvContent += `ديون العملاء المعلقة,${p.totalUnpaid}\n`;
@@ -792,7 +1164,19 @@ function exportCsv() {
   csvContent += `تكلفة قطع الغيار المستهلكة,${p.estimatedPartsCost}\n`;
   csvContent += `الربح التقديري,${p.estimatedGrossProfit}\n`;
   csvContent += `قيمة المخزون عند الإقفال,${p.stockValue}\n`;
-  csvContent += `إجمالي مسير الرواتب,${p.payrollTotal}\n\n`;
+  csvContent += `إجمالي الوارد والتحصيلات,${p.totalInflows || p.totalCollected}\n`;
+  csvContent += `إجمالي المنصرف والالتزامات,${p.totalOutflows || p.totalOutcome}\n`;
+  csvContent += `صافي السيولة النقدية,${p.netOperatingCashFlow}\n`;
+  csvContent += `إجمالي مسير الرواتب ومستحقات العاملين,${p.totalSalaries || p.payrollTotal}\n\n`;
+
+  if (p.employeePerformances?.length) {
+    csvContent += `كشف إنتاجية وتقييم أداء ورواتب الموظفين والفنيين:\n`;
+    csvContent += `اسم الموظف,المسمى الوظيفي,أيام الحضور,أيام الغياب,أوامر الشغل المنجزة,قيمة الأعمال المنجزة,الراتب الأساسي,العمولات المستحقة,إجمالي المستحق,حالة الصرف\n`;
+    p.employeePerformances.forEach(e => {
+      csvContent += `"${e.employeeName}","${e.jobTitle}",${e.daysAttended},${e.daysAbsent},${e.finishedJobsCount},${e.totalLaborRevenue},${e.baseSalary || 0},${e.totalCommissionEarned || 0},${(e.baseSalary || 0) + (e.totalCommissionEarned || 0)},"${e.isPaid ? 'تم الصرف' : 'مستحق'}"\n`;
+    });
+    csvContent += `\n`;
+  }
 
   csvContent += `فواتير العملاء غير المسددة:\n`;
   csvContent += `رقم الأمر,اسم العميل,الهاتف,لوحة السيارة,إجمالي الفاتورة,المدفوع,المتبقي\n`;
@@ -845,5 +1229,41 @@ async function submitReopenMonth() {
   } else {
     alert(res.message);
   }
+}
+
+function openQuickPayFromClosing(emp) {
+  quickPayEmp.value = emp;
+  const due = (emp.baseSalary || 0) + (emp.totalCommissionEarned || 0);
+  quickPayForm.value = {
+    employeeId: emp.employeeId,
+    month: selectedMonth.value,
+    year: selectedYear.value,
+    amount: due > 0 ? due : (emp.baseSalary || 0),
+    paymentMethod: 1,
+    paymentDate: new Date().toISOString().split("T")[0],
+    notes: `صرف مستحقات شهر ${selectedMonth.value}/${selectedYear.value}`
+  };
+  showQuickPayModal.value = true;
+}
+
+async function submitQuickPayFromClosing() {
+  if (!quickPayForm.value.amount || quickPayForm.value.amount <= 0) {
+    alert("يرجى إدخال مبلغ الراتب بشكل صحيح.");
+    return;
+  }
+  quickPayLoading.value = true;
+  const res = await hrStore.quickPayEmployee(quickPayForm.value);
+  quickPayLoading.value = false;
+  if (res.success) {
+    alert(res.message);
+    showQuickPayModal.value = false;
+    await closingStore.fetchPreview(selectedMonth.value, selectedYear.value);
+  } else {
+    alert(res.message);
+  }
+}
+
+function downloadEmployeePdf(empId, empName) {
+  downloadServerPdf(`/api/ReportsPdf/employee-card/${empId}?month=${selectedMonth.value}&year=${selectedYear.value}`, `ملف_الفني_${empName}_${selectedMonth.value}_${selectedYear.value}.pdf`);
 }
 </script>

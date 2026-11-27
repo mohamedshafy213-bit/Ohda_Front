@@ -13,71 +13,76 @@
       </div>
 
       <!-- Action Buttons -->
-      <div class="flex flex-wrap items-center gap-2.5">
-        <router-link
-          to="/ohda/barcode-print"
-          class="bg-brand-light dark:bg-white/5 hover:bg-brand-soft text-brand-dark dark:text-white border border-brand-gray/20 rounded-xl px-3.5 py-2.5 text-xs font-semibold flex items-center gap-2 transition-all shadow-xs"
-          title="طباعة الباركود"
-        >
-          <Printer class="w-4 h-4 text-brand-accent" />
-          <span>طباعة باركود</span>
-        </router-link>
-
+      <div class="flex flex-wrap items-center gap-2">
+        <!-- Primary Action 1: Add New Product -->
         <button
           type="button"
-          @click="openDiagnosticModal"
-          class="bg-brand-light dark:bg-white/5 hover:bg-brand-soft text-brand-dark dark:text-white border border-brand-gray/20 rounded-xl px-3.5 py-2.5 text-xs font-semibold flex items-center gap-2 shadow-xs cursor-pointer transition-all"
-          title="فحص مطابقة رصيد المخزون مع الدفعات والحركات"
+          @click="openAddModal"
+          class="bg-brand-accent hover:bg-brand-accent/90 text-brand-dark font-black rounded-xl px-4 py-2.5 text-xs flex items-center gap-2 shadow-sm transition-all cursor-pointer"
+          title="تعريف صنف جديد في دليل الأصناف"
         >
-          <ShieldCheck class="w-4 h-4 text-emerald-500" />
-          <span>فحص المطابقة</span>
+          <Plus class="w-4 h-4" />
+          <span>+ تعريف صنف جديد</span>
         </button>
 
-        <button
-          type="button"
-          @click="downloadTemplate"
-          class="bg-brand-light dark:bg-white/5 hover:bg-brand-soft text-brand-dark dark:text-white border border-brand-gray/20 rounded-xl px-3.5 py-2.5 text-xs font-semibold flex items-center gap-2 shadow-xs cursor-pointer transition-all"
-          title="تحميل شيت Excel فارغ لإدخال الأصناف"
-        >
-          <FileSpreadsheet class="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
-          <span>قالب Excel</span>
-        </button>
-
-        <button
-          type="button"
-          @click="exportExcel"
-          class="bg-brand-light dark:bg-white/5 hover:bg-brand-soft text-brand-dark dark:text-white border border-brand-gray/20 rounded-xl px-3.5 py-2.5 text-xs font-semibold flex items-center gap-2 shadow-xs cursor-pointer transition-all"
-        >
-          <Download class="w-4 h-4 text-brand-accent" />
-          <span>تصدير Excel</span>
-        </button>
-
-        <button
-          type="button"
-          @click="showImportModal = true"
-          class="bg-brand-light dark:bg-white/5 hover:bg-brand-soft text-brand-dark dark:text-white border border-brand-gray/20 rounded-xl px-3.5 py-2.5 text-xs font-semibold flex items-center gap-2 shadow-xs cursor-pointer transition-all"
-        >
-          <Upload class="w-4 h-4 text-blue-500" />
-          <span>استيراد Excel</span>
-        </button>
-
+        <!-- Primary Action 2: Purchase / Stock Entry -->
         <router-link
           to="/ohda/purchases"
-          class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl px-4 py-2.5 text-xs flex items-center gap-2 shadow-sm transition-all cursor-pointer"
+          class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl px-3.5 py-2.5 text-xs flex items-center gap-2 shadow-sm transition-all cursor-pointer"
           title="تسجيل فاتورة شراء وتوريد لزيادة رصيد المخزون فعلياً"
         >
           <ShoppingCart class="w-4 h-4" />
           <span>توريد بضاعة (شراء)</span>
         </router-link>
 
+        <div class="h-6 w-px bg-brand-gray/20 mx-1 hidden sm:block"></div>
+
+        <!-- Utility Tools -->
         <button
           type="button"
-          @click="openAddModal"
-          class="bg-brand-accent hover:bg-brand-accent/90 text-brand-dark font-bold rounded-xl px-4 py-2.5 text-xs flex items-center gap-2 shadow-md shadow-brand-accent/10 transition-all cursor-pointer"
-          title="تعريف صنف جديد في دليل الأصناف برصيد ابتدائي صفر"
+          @click="showImportModal = true"
+          class="bg-brand-light dark:bg-white/5 hover:bg-brand-soft text-brand-dark dark:text-white border border-brand-gray/20 rounded-xl px-3 py-2 text-xs font-semibold flex items-center gap-1.5 shadow-xs cursor-pointer transition-all"
         >
-          <Plus class="w-4 h-4" />
-          <span>+ تعريف صنف (رصيد 0)</span>
+          <Upload class="w-3.5 h-3.5 text-blue-500" />
+          <span>استيراد Excel</span>
+        </button>
+
+        <button
+          type="button"
+          @click="exportExcel"
+          class="bg-brand-light dark:bg-white/5 hover:bg-brand-soft text-brand-dark dark:text-white border border-brand-gray/20 rounded-xl px-3 py-2 text-xs font-semibold flex items-center gap-1.5 shadow-xs cursor-pointer transition-all"
+        >
+          <Download class="w-3.5 h-3.5 text-brand-accent" />
+          <span>تصدير Excel</span>
+        </button>
+
+        <router-link
+          to="/ohda/barcode-print"
+          class="bg-brand-light dark:bg-white/5 hover:bg-brand-soft text-brand-dark dark:text-white border border-brand-gray/20 rounded-xl px-3 py-2 text-xs font-semibold flex items-center gap-1.5 transition-all shadow-xs"
+          title="طباعة الباركود"
+        >
+          <Printer class="w-3.5 h-3.5 text-brand-accent" />
+          <span>طباعة باركود</span>
+        </router-link>
+
+        <button
+          type="button"
+          @click="downloadTemplate"
+          class="bg-brand-light dark:bg-white/5 hover:bg-brand-soft text-brand-dark dark:text-white border border-brand-gray/20 rounded-xl px-3 py-2 text-xs font-semibold flex items-center gap-1.5 shadow-xs cursor-pointer transition-all"
+          title="تحميل شيت Excel فارغ لإدخال الأصناف"
+        >
+          <FileSpreadsheet class="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+          <span>قالب Excel</span>
+        </button>
+
+        <button
+          type="button"
+          @click="openDiagnosticModal"
+          class="bg-brand-light dark:bg-white/5 hover:bg-brand-soft text-brand-dark dark:text-white border border-brand-gray/20 rounded-xl px-3 py-2 text-xs font-semibold flex items-center gap-1.5 shadow-xs cursor-pointer transition-all"
+          title="فحص مطابقة رصيد المخزون مع الدفعات والحركات"
+        >
+          <ShieldCheck class="w-3.5 h-3.5 text-emerald-500" />
+          <span>فحص المطابقة</span>
         </button>
       </div>
     </div>
@@ -176,30 +181,71 @@
         </button>
       </div>
 
-      <!-- Search Field -->
+      <!-- Search Field & View Mode Toggle -->
       <div class="bg-brand-white dark:bg-white/5 border border-brand-gray/10 p-3 rounded-2xl shadow-sm flex flex-wrap items-center justify-between gap-3">
-        <searchField v-model="searchQuery" placeholder="ابحث باسم الصنف، الكود SKU، أو الباركود..." class="flex-1" />
-        <button
-          type="button"
-          @click="filterOnlyMissingSerials = !filterOnlyMissingSerials"
-          class="px-3 py-1.5 rounded-xl text-xs font-bold border transition-all cursor-pointer flex items-center gap-1.5"
-          :class="filterOnlyMissingSerials ? 'bg-orange-500 text-white border-orange-500' : 'bg-orange-500/10 text-orange-700 dark:text-orange-300 border-orange-500/30'"
-        >
-          <QrCode class="w-3.5 h-3.5" />
-          <span>ناقص أرقام تسلسلية ({{ missingSerialsProductsCount }})</span>
-        </button>
-        <span class="text-xs text-brand-gray dark:text-slate-400 font-mono px-2">
-          عرض {{ filteredProducts.length }} من {{ inventoryStore.products.length }}
-        </span>
+        <searchField v-model="searchQuery" placeholder="ابحث باسم الصنف، الكود SKU، أو الباركود..." class="flex-1 min-w-[220px]" />
+        
+        <div class="flex items-center gap-2 flex-wrap">
+          <button
+            type="button"
+            @click="filterOnlyMissingSerials = !filterOnlyMissingSerials"
+            class="px-3 py-1.5 rounded-xl text-xs font-bold border transition-all cursor-pointer flex items-center gap-1.5"
+            :class="filterOnlyMissingSerials ? 'bg-orange-500 text-white border-orange-500' : 'bg-orange-500/10 text-orange-700 dark:text-orange-300 border-orange-500/30'"
+          >
+            <QrCode class="w-3.5 h-3.5" />
+            <span>ناقص سيريال ({{ missingSerialsProductsCount }})</span>
+          </button>
+
+          <!-- Bulk Fix Button if missing serials exist -->
+          <button
+            v-if="missingSerialsProductsCount > 0"
+            type="button"
+            @click="disableAllSerialsTrackingBulk"
+            :disabled="disablingAllSerials"
+            class="px-3 py-1.5 rounded-xl text-xs font-bold bg-red-500/15 text-red-600 dark:text-red-400 border border-red-500/30 hover:bg-red-500/25 transition-all cursor-pointer flex items-center gap-1.5"
+            title="حل الخطأ التجاري: إلغاء تتبع السيريالات لكافة الأصناف دفعة واحدة وجعلها أصناف كميات عادية"
+          >
+            <Layers class="w-3.5 h-3.5" />
+            <span>{{ disablingAllSerials ? 'جاري التحويل...' : 'إلغاء تتبع السيريالات للكل (حل الخطأ)' }}</span>
+          </button>
+
+          <!-- View Mode Toggle (جدول / بطاقات) -->
+          <div class="flex items-center p-1 rounded-xl bg-black/5 dark:bg-white/10 border border-brand-gray/15">
+            <button
+              type="button"
+              @click="setViewMode('table')"
+              class="px-2.5 py-1 rounded-lg text-xs font-bold transition flex items-center gap-1.5 cursor-pointer"
+              :class="viewMode === 'table' ? 'bg-brand-white dark:bg-brand-dark text-brand-dark dark:text-white shadow-xs' : 'text-brand-gray hover:text-brand-dark dark:hover:text-white'"
+              title="عرض جدول منظم ومبسط"
+            >
+              <List class="w-3.5 h-3.5" />
+              <span>جدول</span>
+            </button>
+            <button
+              type="button"
+              @click="setViewMode('grid')"
+              class="px-2.5 py-1 rounded-lg text-xs font-bold transition flex items-center gap-1.5 cursor-pointer"
+              :class="viewMode === 'grid' ? 'bg-brand-white dark:bg-brand-dark text-brand-dark dark:text-white shadow-xs' : 'text-brand-gray hover:text-brand-dark dark:hover:text-white'"
+              title="عرض كروت وبطاقات مرئية"
+            >
+              <LayoutGrid class="w-3.5 h-3.5" />
+              <span>بطاقات</span>
+            </button>
+          </div>
+
+          <span class="text-xs text-brand-gray dark:text-slate-400 font-mono px-1">
+            {{ filteredProducts.length }} صنف
+          </span>
+        </div>
       </div>
     </div>
 
     <!-- Loading Skeleton -->
     <LoadingSkeleton v-if="inventoryStore.loading && !inventoryStore.products.length" type="table" :count="8" />
 
-    <!-- Products DataTable using Reusable OhdaDataTable Component -->
+    <!-- 1. SIMPLIFIED & STREAMLINED TABLE VIEW -->
     <OhdaDataTable
-      v-else
+      v-else-if="viewMode === 'table'"
       :items="filteredProducts"
       :columns="productColumns"
       :loading="inventoryStore.loading"
@@ -219,116 +265,116 @@
         </button>
       </template>
 
-      <!-- Name & Category Slot -->
+      <!-- Name & Meta Slot -->
       <template #name="{ data }">
-        <div>
-          <span class="font-bold text-brand-dark dark:text-white text-xs block">{{ data.name }}</span>
-          <div class="flex flex-wrap items-center gap-1.5 mt-0.5">
-            <span class="text-[10px] text-brand-gray dark:text-slate-400">{{ data.categoryName || 'عام' }}</span>
-            <span
-              v-if="data.missingSerialsCount > 0"
-              class="px-1.5 py-0.5 rounded-md text-[9px] font-bold bg-orange-500/20 text-orange-700 dark:text-orange-300 border border-orange-500/30 cursor-pointer"
-              @click="openSerialsModal(data)"
+        <div class="flex items-center gap-3 py-1">
+          <div class="w-9 h-9 rounded-xl bg-brand-accent/15 text-brand-dark dark:text-brand-accent flex items-center justify-center font-bold text-xs shrink-0 border border-brand-accent/20">
+            <Package class="w-4 h-4 text-brand-accent" />
+          </div>
+          <div class="min-w-0">
+            <span class="font-bold text-brand-dark dark:text-white text-xs block truncate" :title="data.name">{{ data.name }}</span>
+            <div class="flex flex-wrap items-center gap-1.5 mt-1">
+              <span class="px-2 py-0.5 rounded-md text-[10px] font-bold bg-black/5 dark:bg-white/10 text-brand-gray dark:text-slate-300">
+                {{ data.categoryName || 'عام' }}
+              </span>
+              <span class="font-mono text-[10px] px-1.5 py-0.5 rounded bg-brand-soft/60 dark:bg-brand-accent/10 text-brand-accent font-semibold border border-brand-accent/20">
+                {{ data.sku || '-' }}
+              </span>
+              <span class="text-[10px] text-slate-400 font-medium">
+                ({{ data.unit || 'قطعة' }})
+              </span>
+              <span
+                v-if="data.missingSerialsCount > 0"
+                class="px-1.5 py-0.5 rounded-md text-[9px] font-bold bg-orange-500/20 text-orange-700 dark:text-orange-300 border border-orange-500/30 cursor-pointer"
+                @click="openSerialsModal(data)"
+              >
+                ناقص سيريال: {{ data.missingSerialsCount }}
+              </span>
+            </div>
+          </div>
+        </div>
+      </template>
+
+      <!-- Pricing & Margin Slot -->
+      <template #pricing="{ data }">
+        <div class="py-1">
+          <div class="flex items-center gap-1.5 group">
+            <span class="font-mono font-black text-brand-dark dark:text-white text-xs">
+              {{ (data.sellingPrice ?? data.unitPrice ?? 0).toLocaleString() }} ج.م
+            </span>
+            <button
+              type="button"
+              @click="openQuickPriceModal(data)"
+              class="p-0.5 text-brand-accent hover:bg-brand-accent/10 rounded cursor-pointer transition"
+              title="تعديل سريع للسعر"
             >
-              ناقص أرقام تسلسلية: {{ data.missingSerialsCount }}
+              <Edit class="w-3 h-3" />
+            </button>
+          </div>
+          <div class="flex items-center gap-2 mt-0.5 text-[11px] text-brand-gray dark:text-slate-400 font-mono">
+            <span>تكلفة: {{ (data.costPrice ?? data.purchasePrice ?? 0).toLocaleString() }} ج.م</span>
+            <span
+              v-if="(data.sellingPrice || 0) > (data.costPrice || 0) && (data.costPrice || 0) > 0"
+              class="text-[9px] text-emerald-600 dark:text-emerald-400 font-bold bg-emerald-500/10 px-1 py-0.2 rounded"
+            >
+              +{{ Math.round((((data.sellingPrice || 0) - (data.costPrice || 0)) / data.costPrice) * 100) }}%
             </span>
           </div>
         </div>
       </template>
 
-      <!-- SKU Slot -->
-      <template #sku="{ data }">
-        <span class="font-mono text-brand-accent font-semibold select-all text-xs bg-brand-soft/50 dark:bg-brand-accent/10 px-2 py-0.5 rounded-md border border-brand-accent/20">
-          {{ data.sku || '-' }}
-        </span>
-      </template>
-
-      <!-- Unit Slot -->
-      <template #unit="{ data }">
-        <span class="px-2 py-0.5 rounded-md bg-slate-100 dark:bg-white/10 text-slate-700 dark:text-slate-300 font-medium text-[11px]">
-          {{ data.unit || 'قطعة' }}
-        </span>
-      </template>
-
-      <!-- Cost Price Slot -->
-      <template #costPrice="{ data }">
-        <span class="font-mono font-semibold text-brand-gray dark:text-slate-400 text-xs">
-          {{ (data.costPrice ?? data.purchasePrice ?? 0).toLocaleString() }} ج.م
-        </span>
-      </template>
-
-      <!-- Selling Price Slot -->
-      <template #sellingPrice="{ data }">
-        <div class="flex items-center gap-1.5 group">
-          <span class="font-mono font-bold text-brand-dark dark:text-white text-xs">
-            {{ (data.sellingPrice ?? data.unitPrice ?? 0).toLocaleString() }} ج.م
-          </span>
-          <button
-            type="button"
-            @click="openQuickPriceModal(data)"
-            class="opacity-0 group-hover:opacity-100 p-1 text-brand-accent hover:bg-brand-accent/10 rounded cursor-pointer transition"
-            title="تعديل سريع للسعر"
-          >
-            <Edit class="w-3 h-3" />
-          </button>
-        </div>
-      </template>
-
-      <!-- Current Quantity Slot -->
+      <!-- Stock Status Slot -->
       <template #currentQuantity="{ data }">
-        <div class="inline-flex flex-col items-center">
-          <span
-            class="font-mono font-bold text-xs px-2.5 py-0.5 rounded-lg"
-            :class="isLowStock(data) ? 'bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30 font-black' : 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400'"
-          >
-            {{ data.currentQuantity ?? data.quantity ?? 0 }}
-          </span>
-          <span v-if="isLowStock(data)" class="text-[9px] text-amber-600 dark:text-amber-400 font-bold mt-0.5">
-            (منخفض)
+        <div class="flex flex-col items-center py-1">
+          <div class="flex items-center gap-1.5">
+            <span
+              class="w-2 h-2 rounded-full shrink-0"
+              :class="(data.currentQuantity ?? data.quantity ?? 0) <= 0 ? 'bg-red-500 animate-pulse' : (isLowStock(data) ? 'bg-amber-500' : 'bg-emerald-500')"
+            ></span>
+            <span
+              class="font-mono font-black text-xs px-2.5 py-0.5 rounded-lg border"
+              :class="(data.currentQuantity ?? data.quantity ?? 0) <= 0
+                ? 'bg-red-500/15 text-red-600 border-red-500/30'
+                : (isLowStock(data) ? 'bg-amber-500/15 text-amber-600 border-amber-500/30' : 'bg-emerald-500/10 text-emerald-600 border-emerald-500/20')"
+            >
+              {{ data.currentQuantity ?? data.quantity ?? 0 }} {{ data.unit || 'قطعة' }}
+            </span>
+          </div>
+          <span class="text-[10px] text-slate-400 mt-0.5 font-medium">
+            حد الأمان: {{ data.minQuantity ?? data.minThreshold ?? 5 }}
           </span>
         </div>
       </template>
 
-      <!-- Min Quantity Slot -->
-      <template #minQuantity="{ data }">
-        <span class="font-mono text-slate-400 text-xs">{{ data.minQuantity ?? data.minThreshold ?? 5 }}</span>
-      </template>
-
-      <!-- Actions Slot -->
-      <template #actions="{ data }">
-        <div class="flex items-center justify-center gap-1.5">
-          <!-- Serials Button (السيريالات) -->
-          <button
-            v-if="data.trackSerialNumbers || data.missingSerialsCount > 0"
-            type="button"
-            @click="openSerialsModal(data)"
-            class="px-2 py-1 rounded-xl text-xs font-bold transition cursor-pointer flex items-center gap-1 border"
-            :class="data.missingSerialsCount > 0 ? 'bg-orange-500/20 text-orange-700 dark:text-orange-300 border-orange-500/40' : 'bg-emerald-500/10 text-emerald-600 border-emerald-500/25'"
-            title="إدارة وتتبع الأرقام التسلسلية"
-          >
-            <QrCode class="w-3.5 h-3.5" />
-            <span>السيريالات</span>
-          </button>
-
-          <!-- Batches Button (الدفعات والشحنات) -->
+      <!-- Batches & Shelf Location Slot -->
+      <template #batches="{ data }">
+        <div class="flex flex-col items-center gap-1 py-1">
           <button
             type="button"
             @click="openBatchesModal(data)"
-            class="px-2 py-1 rounded-xl bg-blue-500/15 hover:bg-blue-500/25 text-blue-600 dark:text-blue-400 text-xs font-bold transition cursor-pointer flex items-center gap-1 border border-blue-500/25"
+            class="px-2.5 py-1 rounded-xl bg-blue-500/15 hover:bg-blue-500/25 text-blue-600 dark:text-blue-400 text-xs font-bold transition cursor-pointer flex items-center gap-1 border border-blue-500/25"
             title="عرض دفعات وشحنات الصنف ومواقع الرفوف"
           >
             <Layers class="w-3.5 h-3.5" />
             <span>الدفعات</span>
           </button>
+          <span v-if="data.warehouseBinName" class="text-[10px] text-slate-400 font-mono">
+            رف: {{ data.warehouseBinName }}
+          </span>
+        </div>
+      </template>
 
-          <!-- Packages Button (خيارات التعبئة) -->
+      <!-- Actions Slot -->
+      <template #actions="{ data }">
+        <div class="flex items-center justify-center gap-1 py-1">
+          <!-- Edit Product -->
           <button
             type="button"
-            @click="openPackagesModal(data)"
-            class="p-1.5 rounded-xl bg-purple-500/15 hover:bg-purple-500/25 text-purple-600 dark:text-purple-400 transition cursor-pointer border border-purple-500/25"
-            title="خيارات التعبئة والكراتين"
+            @click="openEditModal(data)"
+            class="p-1.5 rounded-xl bg-brand-light dark:bg-white/5 hover:bg-brand-soft text-brand-gray hover:text-brand-accent transition cursor-pointer border border-brand-gray/15"
+            title="تعديل بيانات الصنف"
           >
-            <Boxes class="w-3.5 h-3.5" />
+            <Edit class="w-4 h-4" />
           </button>
 
           <!-- Movements History Button -->
@@ -338,17 +384,29 @@
             class="p-1.5 rounded-xl bg-brand-light dark:bg-white/5 hover:bg-brand-accent/20 text-brand-gray hover:text-brand-accent transition cursor-pointer border border-brand-gray/15"
             title="سجل الحركات السابقة"
           >
-            <History class="w-3.5 h-3.5" />
+            <History class="w-4 h-4" />
           </button>
 
-          <!-- Edit Product -->
+          <!-- Packages Button -->
           <button
             type="button"
-            @click="openEditModal(data)"
-            class="p-1.5 rounded-xl bg-brand-light dark:bg-white/5 hover:bg-brand-soft text-brand-gray hover:text-brand-accent transition cursor-pointer border border-brand-gray/15"
-            title="تعديل بيانات الصنف"
+            @click="openPackagesModal(data)"
+            class="p-1.5 rounded-xl bg-purple-500/15 hover:bg-purple-500/25 text-purple-600 dark:text-purple-400 transition cursor-pointer border border-purple-500/25"
+            title="خيارات التعبئة والكراتين"
           >
-            <Edit class="w-3.5 h-3.5" />
+            <Boxes class="w-4 h-4" />
+          </button>
+
+          <!-- Serials Button (if tracked) -->
+          <button
+            v-if="data.trackSerialNumbers || data.missingSerialsCount > 0"
+            type="button"
+            @click="openSerialsModal(data)"
+            class="p-1.5 rounded-xl text-xs font-bold transition cursor-pointer border"
+            :class="data.missingSerialsCount > 0 ? 'bg-orange-500/20 text-orange-700 dark:text-orange-300 border-orange-500/40' : 'bg-emerald-500/10 text-emerald-600 border-emerald-500/25'"
+            title="الأرقام التسلسلية"
+          >
+            <QrCode class="w-4 h-4" />
           </button>
 
           <!-- Delete Product -->
@@ -358,11 +416,138 @@
             class="p-1.5 rounded-xl bg-red-500/10 hover:bg-red-500/20 text-red-500 transition cursor-pointer border border-red-500/20"
             title="حذف الصنف"
           >
-            <Trash2 class="w-3.5 h-3.5" />
+            <Trash2 class="w-4 h-4" />
           </button>
         </div>
       </template>
     </OhdaDataTable>
+
+    <!-- 2. MODERN CARDS / GRID VIEW -->
+    <div v-else-if="viewMode === 'grid'" class="space-y-4">
+      <div v-if="!filteredProducts.length" class="bg-brand-white dark:bg-white/5 p-12 rounded-2xl border border-brand-gray/10 text-center space-y-3">
+        <Package class="w-12 h-12 text-slate-300 mx-auto" />
+        <h3 class="text-base font-bold text-brand-dark dark:text-white">لا توجد أصناف مطابقة لبحثك</h3>
+        <p class="text-xs text-brand-gray">يمكنك إضافة أصناف جديدة بالضغط على زر إضافة صنف بالأعلى.</p>
+        <button
+          type="button"
+          @click="openAddModal"
+          class="inline-flex items-center gap-2 px-4 py-2 bg-brand-accent text-brand-dark font-bold text-xs rounded-xl shadow-sm cursor-pointer hover:bg-brand-accent/90"
+        >
+          <Plus class="w-4 h-4" />
+          <span>إضافة صنف جديد</span>
+        </button>
+      </div>
+
+      <div v-else class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+        <div
+          v-for="p in filteredProducts"
+          :key="p.id"
+          class="bg-brand-white dark:bg-white/5 rounded-2xl border border-brand-gray/15 p-4 shadow-sm hover:shadow-md transition-all flex flex-col justify-between space-y-3 group"
+        >
+          <!-- Card Header: Category & SKU & Stock Badge -->
+          <div class="flex items-start justify-between gap-2">
+            <div class="flex flex-wrap items-center gap-1.5">
+              <span class="px-2 py-0.5 rounded-md text-[10px] font-bold bg-black/5 dark:bg-white/10 text-brand-gray dark:text-slate-300">
+                {{ p.categoryName || 'عام' }}
+              </span>
+              <span class="font-mono text-[10px] px-1.5 py-0.5 rounded bg-brand-soft/60 dark:bg-brand-accent/10 text-brand-accent font-semibold border border-brand-accent/20">
+                {{ p.sku || '-' }}
+              </span>
+            </div>
+            <span
+              class="w-2.5 h-2.5 rounded-full shrink-0 mt-1"
+              :class="(p.currentQuantity ?? p.quantity ?? 0) <= 0 ? 'bg-red-500 animate-pulse' : (isLowStock(p) ? 'bg-amber-500' : 'bg-emerald-500')"
+              :title="(p.currentQuantity ?? p.quantity ?? 0) <= 0 ? 'نفد الرصيد' : (isLowStock(p) ? 'رصيد منخفض' : 'متوفر')"
+            ></span>
+          </div>
+
+          <!-- Card Body: Title & Unit -->
+          <div>
+            <h3 class="font-bold text-brand-dark dark:text-white text-sm line-clamp-2 group-hover:text-brand-accent transition-colors" :title="p.name">
+              {{ p.name }}
+            </h3>
+            <span class="text-[11px] text-brand-gray dark:text-slate-400 mt-0.5 block">الوحدة: {{ p.unit || 'قطعة' }}</span>
+          </div>
+
+          <!-- Stock Level Visual Gauge -->
+          <div class="space-y-1.5 p-3 rounded-xl bg-black/5 dark:bg-white/5 border border-brand-gray/10">
+            <div class="flex justify-between items-center text-xs">
+              <span class="text-slate-500 font-medium">الرصيد المتاح:</span>
+              <span
+                class="font-mono font-black"
+                :class="(p.currentQuantity ?? p.quantity ?? 0) <= 0 ? 'text-red-500' : (isLowStock(p) ? 'text-amber-500' : 'text-emerald-600 dark:text-emerald-400')"
+              >
+                {{ p.currentQuantity ?? p.quantity ?? 0 }} {{ p.unit || 'قطعة' }}
+              </span>
+            </div>
+            <div class="w-full bg-slate-200 dark:bg-white/10 h-1.5 rounded-full overflow-hidden">
+              <div
+                class="h-full rounded-full transition-all duration-300"
+                :class="(p.currentQuantity ?? p.quantity ?? 0) <= 0 ? 'bg-red-500' : (isLowStock(p) ? 'bg-amber-500' : 'bg-emerald-500')"
+                :style="{ width: Math.min(100, Math.max(10, (((p.currentQuantity ?? p.quantity ?? 0) / Math.max(1, p.minQuantity ?? 5)) * 100))) + '%' }"
+              ></div>
+            </div>
+            <div class="flex justify-between text-[10px] text-slate-400 font-mono">
+              <span>حد الأمان: {{ p.minQuantity ?? 5 }}</span>
+              <span v-if="p.warehouseBinName">رف: {{ p.warehouseBinName }}</span>
+            </div>
+          </div>
+
+          <!-- Price & Profit Margin -->
+          <div class="flex items-center justify-between pt-1 border-t border-brand-gray/10">
+            <div>
+              <span class="text-[10px] text-slate-400 block">سعر البيع</span>
+              <span class="font-mono font-black text-sm text-brand-dark dark:text-white">
+                {{ (p.sellingPrice ?? p.unitPrice ?? 0).toLocaleString() }} ج.م
+              </span>
+            </div>
+            <div class="text-left">
+              <span class="text-[10px] text-slate-400 block">التكلفة</span>
+              <span class="font-mono text-xs text-brand-gray dark:text-slate-400">
+                {{ (p.costPrice ?? p.purchasePrice ?? 0).toLocaleString() }} ج.م
+              </span>
+            </div>
+          </div>
+
+          <!-- Card Actions Footer -->
+          <div class="pt-2 border-t border-brand-gray/10 flex items-center justify-between gap-1.5">
+            <button
+              type="button"
+              @click="openBatchesModal(p)"
+              class="flex-1 py-1.5 px-2 rounded-xl bg-blue-500/10 hover:bg-blue-500/20 text-blue-600 dark:text-blue-400 text-xs font-bold transition cursor-pointer flex items-center justify-center gap-1 border border-blue-500/20"
+              title="عرض الدفعات وتواريخ الصلاحية"
+            >
+              <Layers class="w-3.5 h-3.5" />
+              <span>الدفعات</span>
+            </button>
+            <button
+              type="button"
+              @click="openEditModal(p)"
+              class="p-1.5 rounded-xl bg-brand-light dark:bg-white/5 hover:bg-brand-accent/20 text-brand-gray hover:text-brand-accent transition cursor-pointer border border-brand-gray/15"
+              title="تعديل بيانات الصنف"
+            >
+              <Edit class="w-3.5 h-3.5" />
+            </button>
+            <button
+              type="button"
+              @click="openMovementsHistoryModal(p)"
+              class="p-1.5 rounded-xl bg-brand-light dark:bg-white/5 hover:bg-brand-soft text-brand-gray transition cursor-pointer border border-brand-gray/15"
+              title="سجل الحركات"
+            >
+              <History class="w-3.5 h-3.5" />
+            </button>
+            <button
+              type="button"
+              @click="promptDelete(p)"
+              class="p-1.5 rounded-xl bg-red-500/10 hover:bg-red-500/20 text-red-500 transition cursor-pointer border border-red-500/20"
+              title="حذف الصنف"
+            >
+              <Trash2 class="w-3.5 h-3.5" />
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
 
     <!-- 1. Add / Edit Product Modal using Reusable OhdaModal -->
     <OhdaModal
@@ -1028,6 +1213,20 @@
               {{ savingSerials ? 'جاري الحفظ...' : 'إضافة السيريالات' }}
             </button>
           </div>
+          <div class="mt-2 pt-2 border-t border-orange-500/20 flex items-center justify-between gap-2 flex-wrap">
+            <span class="text-[11px] text-orange-800 dark:text-orange-200">
+              هل قمت بتفعيل السيريالات بالخطأ أثناء الشراء؟ يمكنك فوراً تحويله لصنف كميات عادي:
+            </span>
+            <button
+              type="button"
+              @click="disableSerialTrackingForTarget"
+              :disabled="disablingSerials"
+              class="px-3 py-1.5 rounded-xl bg-red-600 hover:bg-red-700 text-white font-bold text-xs flex items-center gap-1.5 cursor-pointer shadow-sm transition"
+            >
+              <Layers class="w-3.5 h-3.5" />
+              <span>{{ disablingSerials ? 'جاري التحويل...' : 'إلغاء تتبع السيريالات وتحويله لكميات' }}</span>
+            </button>
+          </div>
         </div>
 
         <div class="flex items-center justify-between gap-3">
@@ -1083,7 +1282,19 @@
         </div>
       </div>
       <template #footer="{ close }">
-        <button type="button" @click="close" class="px-5 py-2 rounded-xl bg-brand-light dark:bg-white/10 text-xs font-bold cursor-pointer">إغلاق</button>
+        <div class="flex items-center justify-between w-full gap-2">
+          <button
+            type="button"
+            @click="disableSerialTrackingForTarget"
+            :disabled="disablingSerials"
+            class="px-3.5 py-2 rounded-xl bg-red-500/10 hover:bg-red-500/20 text-red-600 dark:text-red-400 font-bold border border-red-500/30 text-xs flex items-center gap-1.5 cursor-pointer transition-all"
+            title="تحويل الصنف لصنف عادي يباع بالكميات وإلغاء السيريالات المعلقة بالمخزن"
+          >
+            <Layers class="w-3.5 h-3.5" />
+            <span>{{ disablingSerials ? 'جاري التحويل...' : 'تحويل لصنف كميات عادي (إلغاء السيريالات)' }}</span>
+          </button>
+          <button type="button" @click="close" class="px-5 py-2 rounded-xl bg-brand-light dark:bg-white/10 text-xs font-bold cursor-pointer">إغلاق</button>
+        </div>
       </template>
     </OhdaModal>
 
@@ -1126,11 +1337,19 @@ import {
   Sparkles,
   Layers,
   ShieldCheck,
-  QrCode
+  QrCode,
+  LayoutGrid,
+  List
 } from "lucide-vue-next";
 
 const inventoryStore = useOhdaInventoryStore();
 const toastStore = useToastStore();
+
+const viewMode = ref(localStorage.getItem("ohda_products_view_mode") || "table");
+function setViewMode(mode) {
+  viewMode.value = mode;
+  localStorage.setItem("ohda_products_view_mode", mode);
+}
 
 const searchQuery = ref("");
 const selectedCategory = ref(null);
@@ -1139,16 +1358,13 @@ const filterOnlyMissingSerials = ref(false);
 
 const commonUnits = ["قطعة", "لتر", "طقم", "كرتونة", "عبوة", "علبة", "جالون", "متر", "كجم", "برميل"];
 
-// Columns Definition for Reusable OhdaDataTable
+// Columns Definition for Reusable OhdaDataTable (Simplified & balanced)
 const productColumns = [
-  { field: "name", header: "الصنف / المنتج", sortable: true, width: "22%" },
-  { field: "sku", header: "كود الصنف (SKU)", sortable: true, width: "15%" },
-  { field: "unit", header: "الوحدة", align: "center", width: "9%" },
-  { field: "costPrice", header: "سعر التكلفة", sortable: true, width: "12%" },
-  { field: "sellingPrice", header: "سعر البيع", sortable: true, width: "13%" },
-  { field: "currentQuantity", header: "الرصيد المتاح", sortable: true, align: "center", width: "12%" },
-  { field: "minQuantity", header: "حد الطلب", align: "center", width: "8%" },
-  { field: "actions", header: "الإجراءات", align: "center", width: "17%" }
+  { field: "name", header: "الصنف والبيانات", sortable: true, width: "34%" },
+  { field: "pricing", header: "سعر البيع والتكلفة", sortable: true, width: "22%" },
+  { field: "currentQuantity", header: "حالة ورصيد المخزون", sortable: true, align: "center", width: "18%" },
+  { field: "batches", header: "الدفعات والرف", align: "center", width: "12%" },
+  { field: "actions", header: "الإجراءات", align: "center", width: "14%" }
 ];
 
 // Add/Edit Form State
@@ -1233,6 +1449,53 @@ async function submitAddMissingSerials() {
     }
   } finally {
     savingSerials.value = false;
+  }
+}
+
+const disablingSerials = ref(false);
+const disablingAllSerials = ref(false);
+
+async function disableSerialTrackingForTarget() {
+  if (!targetProductForSerials.value) return;
+  const p = targetProductForSerials.value;
+  if (!confirm(`هل أنت متأكد من إلغاء تتبع السيريالات للصنف (${p.name})؟\nسيتم تحويله إلى صنف عادي يباع بالكمية فقط وتصفية السيريالات المعلقة بالمخزن مع الحفاظ على رصيد المخزون وأسعار الشراء بالكامل.`)) {
+    return;
+  }
+  disablingSerials.value = true;
+  try {
+    const res = await apiPost(`/api/Product/${p.id}/disable-serial-tracking`);
+    if (res?.data?.isDone) {
+      toastStore.addSuccessToast(res.data.returnMessage || "تم تحويل الصنف لصنف كميات عادي بنجاح");
+      showSerialsModal.value = false;
+      await inventoryStore.fetchProducts();
+    } else {
+      toastStore.addErrorToast(res?.data?.returnMessage || "تعذر إلغاء تتبع السيريالات");
+    }
+  } catch (err) {
+    toastStore.addErrorToast(err?.response?.data?.returnMessage || err?.message || "حدث خطأ أثناء إلغاء تتبع السيريالات");
+  } finally {
+    disablingSerials.value = false;
+  }
+}
+
+async function disableAllSerialsTrackingBulk() {
+  if (!confirm("هل تريد إلغاء تتبع السيريالات لجميع الأصناف بالفرع دفعة واحدة؟\nسيتم تحويل كافة الأصناف التي كانت تطلب سيريالات إلى أصناف كميات عادية تباع بالعدد مباشرة دون طلب سيريالات، مع الحفاظ على كامل أرصدة المخزون وسجلات الشراء.")) {
+    return;
+  }
+  disablingAllSerials.value = true;
+  try {
+    const res = await apiPost("/api/Product/disable-all-serials-tracking");
+    if (res?.data?.isDone) {
+      toastStore.addSuccessToast(res.data.returnMessage || "تم تحويل جميع الأصناف إلى أصناف كميات عادية بنجاح");
+      filterOnlyMissingSerials.value = false;
+      await inventoryStore.fetchProducts();
+    } else {
+      toastStore.addErrorToast(res?.data?.returnMessage || "تعذر إلغاء تتبع السيريالات للكل");
+    }
+  } catch (err) {
+    toastStore.addErrorToast(err?.response?.data?.returnMessage || err?.message || "حدث خطأ أثناء إلغاء تتبع السيريالات للكل");
+  } finally {
+    disablingAllSerials.value = false;
   }
 }
 

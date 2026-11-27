@@ -244,6 +244,16 @@
             <Printer class="w-3.5 h-3.5" />
           </button>
 
+          <!-- WhatsApp Invoice Button -->
+          <button
+            type="button"
+            @click="sendWhatsAppInvoice(data)"
+            class="p-1.5 rounded-xl bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 transition cursor-pointer border border-emerald-500/20"
+            title="إرسال الفاتورة ورابط PDF للعميل عبر واتساب"
+          >
+            <MessageCircle class="w-3.5 h-3.5" />
+          </button>
+
           <!-- Quick Payment Button (+) -->
           <button
             v-if="data.remainingBalance > 0 && data.status !== 4"
@@ -665,6 +675,26 @@
               إيصال كاشير 80mm
             </button>
           </div>
+
+          <div class="flex items-center gap-2">
+            <button
+              type="button"
+              @click="sendWhatsAppInvoice(targetJobForInvoice)"
+              class="px-3 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer border border-emerald-500/30 bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-700 dark:text-emerald-400 flex items-center gap-1.5 shadow-2xs active:scale-95"
+              title="إرسال الفاتورة مع رابط PDF للعميل عبر واتساب"
+            >
+              <MessageCircle class="w-3.5 h-3.5" />
+              <span>إرسال عبر واتساب</span>
+            </button>
+            <button
+              type="button"
+              @click="printDocument"
+              class="px-3.5 py-1.5 rounded-xl bg-brand-accent hover:bg-brand-accent/90 text-brand-dark font-bold text-xs flex items-center gap-1.5 shadow-xs transition cursor-pointer"
+            >
+              <Printer class="w-3.5 h-3.5" />
+              <span>طباعة</span>
+            </button>
+          </div>
         </div>
 
         <!-- Printable Invoice Area -->
@@ -766,7 +796,7 @@
         </button>
         <button
           type="button"
-          @click="downloadServerPdf(`/api/ReportsPdf/jobcard/${selectedJobForPrint?.id}?paperSize=${invoicePrintMode === 'receipt' ? 'Thermal80mm' : 'A4'}`, `JobCard_${selectedJobForPrint?.jobNumber || 'invoice'}.pdf`)"
+          @click="downloadServerPdf(`/api/ReportsPdf/jobcard/${targetJobForInvoice?.id}?paperSize=${invoicePrintMode === 'receipt' ? 'Thermal80mm' : 'A4'}`, `JobCard_${targetJobForInvoice?.jobNumber || 'invoice'}.pdf`)"
           class="px-4 py-2 rounded-xl text-xs font-bold bg-rose-600/15 text-rose-700 dark:text-rose-300 border border-rose-500/30 flex items-center gap-1.5 cursor-pointer"
         >
           <Download class="w-4 h-4" />
@@ -913,10 +943,11 @@ import { useOhdaJobCardStore } from "../stores/useOhdaJobCardStore";
 import { useOhdaServiceStore } from "../stores/useOhdaServiceStore";
 import { useOhdaInventoryStore } from "../stores/useOhdaInventoryStore";
 import { useToastStore } from "@/stores/toastStore";
+import apiClient from "@/utilities/apiClient";
 import OhdaDataTable from "../components/OhdaDataTable.vue";
 import OhdaModal from "../components/OhdaModal.vue";
 import QrCodeCanvas from "../components/QrCodeCanvas.vue";
-import { downloadServerPdf } from "../utils/pdfHelper";
+import { downloadServerPdf, printServerPdf } from "../utils/pdfHelper";
 import searchField from "@/components/searchField.vue";
 import LoadingSkeleton from "@/components/LoadingSkeleton.vue";
 import { exportToExcelCsv } from "../utils/excelHelper";
@@ -939,6 +970,7 @@ import {
   Coins,
   RefreshCw,
   Download,
+  MessageCircle,
   X
 } from "lucide-vue-next";
 
@@ -1310,13 +1342,42 @@ async function markJobDone(job) {
   try {
     const res = await jobStore.updateStatus(job.id, 2); // 2 = Done
     if (res.success) {
-      toastStore.addSuccessToast("تم تأكيد اكتمال الصيانة وخصم المواد المستخدمة من المخزن");
+      toastStore.addSuccessToast("تم تأكيد اكتمال الصيانة وجاهزية السيارة للاستلام، وإرسال إشعار واتساب للعميل.");
       await inventoryStore.fetchProducts();
     } else {
       toastStore.addErrorToast(res.message || "فشل تحديث الحالة");
     }
   } catch (err) {
     toastStore.addErrorToast("حدث خطأ أثناء تحديث الحالة");
+  }
+}
+
+async function sendWhatsAppInvoice(job) {
+  if (!job || !job.id) return;
+  try {
+    // Automatically trigger PDF download so the user can directly attach the PDF document to the WhatsApp chat!
+    downloadServerPdf(`/api/ReportsPdf/jobcard/${job.id}`, `Invoice_${job.jobNumber || 'receipt'}.pdf`);
+
+    const res = await apiClient.get(`/api/WhatsApp/jobcard/${job.id}/invoice-preview`);
+    if (res.data?.isDone && res.data?.singleObject) {
+      const waUrl = res.data.singleObject.whatsAppUrl;
+      if (waUrl) {
+        window.open(waUrl, "_blank");
+        toastStore.addSuccessToast("تم تنزيل فاتورة PDF وتجهيز محادثة واتساب لإرفاق الفاتورة مباشرة للعميل.");
+        apiClient.post(`/api/WhatsApp/jobcard/${job.id}/invoice-send`).catch(() => {});
+        return;
+      }
+    }
+    if (job.whatsAppInvoiceUrl) {
+      window.open(job.whatsAppInvoiceUrl, "_blank");
+      toastStore.addSuccessToast("تم تنزيل فاتورة PDF وفتح محادثة واتساب للعميل.");
+    }
+  } catch (err) {
+    if (job.whatsAppInvoiceUrl) {
+      window.open(job.whatsAppInvoiceUrl, "_blank");
+    } else {
+      toastStore.addErrorToast("تعذر تجهيز رابط واتساب للفاتورة.");
+    }
   }
 }
 
@@ -1371,7 +1432,16 @@ function openInvoiceModal(job) {
 }
 
 function triggerPrint() {
-  window.print();
+  printDocument();
+}
+
+function printDocument() {
+  if (!targetJobForInvoice.value?.id) return;
+  const paper = invoicePrintMode.value === "receipt" ? "Thermal80mm" : "A4";
+  printServerPdf(
+    `/api/ReportsPdf/jobcard/${targetJobForInvoice.value.id}?paperSize=${paper}`,
+    `Invoice_${targetJobForInvoice.value.jobNumber || "job"}.pdf`
+  );
 }
 
 // Delete

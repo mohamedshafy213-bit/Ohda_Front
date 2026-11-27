@@ -433,6 +433,56 @@
           </div>
         </div>
 
+        <!-- WhatsApp Automated Notifications Settings -->
+        <div class="bg-brand-white dark:bg-white/5 p-6 rounded-2xl border border-brand-gray/10 shadow-sm space-y-4">
+          <div class="flex items-center gap-2.5 border-b border-brand-gray/10 pb-3">
+            <MessageSquare class="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
+            <div>
+              <h2 class="text-sm font-bold text-brand-dark dark:text-white">أتمتة رسائل الواتساب للعملاء</h2>
+              <p class="text-[11px] text-brand-gray">إرسال التنبيهات والفواتير للعملاء آلياً عبر واتساب</p>
+            </div>
+          </div>
+
+          <div class="space-y-3">
+            <div class="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-start gap-2.5 text-xs">
+              <span class="w-2 h-2 rounded-full bg-emerald-500 mt-1.5 shrink-0"></span>
+              <div>
+                <div class="font-bold text-brand-dark dark:text-white">1. تذكير بموعد الحجز (قبل 24 ساعة)</div>
+                <div class="text-[11px] text-brand-gray mt-0.5">يرسل النظام رسالة تذكير تلقائية للعميل بالموعد وتفاصيل السيارة ورابط الورشة.</div>
+              </div>
+            </div>
+
+            <div class="p-3 rounded-xl bg-purple-500/10 border border-purple-500/20 flex items-start gap-2.5 text-xs">
+              <span class="w-2 h-2 rounded-full bg-purple-500 mt-1.5 shrink-0"></span>
+              <div>
+                <div class="font-bold text-brand-dark dark:text-white">2. إشعار انتهاء الصيانة وجاهزية السيارة</div>
+                <div class="text-[11px] text-brand-gray mt-0.5">يتم إشعار العميل فوراً عند نقل أمر الشغل إلى "مكتمل وجاهز للدفع" مع توضيح الحساب.</div>
+              </div>
+            </div>
+
+            <div class="p-3 rounded-xl bg-blue-500/10 border border-blue-500/20 flex items-start gap-2.5 text-xs">
+              <span class="w-2 h-2 rounded-full bg-blue-500 mt-1.5 shrink-0"></span>
+              <div>
+                <div class="font-bold text-brand-dark dark:text-white">3. إرسال الفاتورة الرسمية ورابط PDF</div>
+                <div class="text-[11px] text-brand-gray mt-0.5">عند سداد الحساب وإغلاق الفاتورة، يستلم العميل رسالة واتساب مع رابط مباشر لفتح وتحميل الفاتورة PDF.</div>
+              </div>
+            </div>
+
+            <div class="pt-2 border-t border-brand-gray/10">
+              <label class="block text-xs font-bold text-brand-dark dark:text-slate-200 mb-1">
+                رابط بوابة واتساب السحابية (اختياري للربط الآلي Webhook/API)
+              </label>
+              <input
+                v-model="form.whatsappGatewayUrl"
+                type="text"
+                placeholder="https://api.ultramsg.com/... أو Webhook مخصص"
+                class="w-full px-3.5 py-2.5 rounded-xl text-xs bg-brand-light dark:bg-white/5 border border-brand-gray/25 text-brand-dark dark:text-white focus:outline-none focus:border-brand-accent font-mono"
+              />
+              <div class="text-[10px] text-brand-gray mt-1">إذا لم يتم ضبط رابط سحابي، يوفر النظام أزرار الإرسال المباشر بنقرة واحدة عبر تطبيق/ويب واتساب الرسمي.</div>
+            </div>
+          </div>
+        </div>
+
             <!-- 6. Structured Invoice & Document Settings + Live Preview -->
         <div class="bg-brand-white dark:bg-white/5 p-6 rounded-2xl border border-brand-gray/10 shadow-sm space-y-4">
           <div class="flex items-center gap-2.5 border-b border-brand-gray/10 pb-3">
@@ -603,6 +653,7 @@ const form = ref({
   slogan: "",
   contactPhone: "",
   whatsapp: "",
+  whatsappGatewayUrl: "",
   contactEmail: "",
   address: "",
   taxNumber: "",

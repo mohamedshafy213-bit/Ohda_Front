@@ -507,8 +507,8 @@
     </Dialog>
 
     <!-- ==================== MODAL: 80mm THERMAL RECEIPT WITH QR ==================== -->
-    <Dialog v-model:visible="showReceiptModal" modal header="إيصال فاتورة نقطة البيع (80mm)" class="max-w-sm w-full">
-      <div v-if="receiptData" id="thermalReceipt" class="p-3 bg-white text-black font-mono text-xs space-y-3">
+    <OhdaModal :visible="showReceiptModal" @close="showReceiptModal = false; focusSearch()" title="إيصال فاتورة نقطة البيع (80mm)" subtitle="معاينة الإيصال الحراري وطباعته صامتاً 80mm أو تصدير PDF" maxWidthClass="max-w-sm">
+      <div v-if="receiptData" id="thermalReceipt" class="p-4 bg-white text-black font-mono text-xs space-y-3 rounded-xl border border-gray-200">
         <div class="text-center pb-2 border-b border-dashed border-gray-400">
           <h2 class="text-base font-extrabold">{{ authStore.user?.tenantName || 'مركز خدمة السيارات' }}</h2>
           <p class="text-[11px] font-bold mt-1">{{ receiptData.invoiceNumber }}</p>
@@ -567,7 +567,7 @@
           </button>
         </div>
       </div>
-    </Dialog>
+    </OhdaModal>
   </div>
 </template>
 
@@ -579,8 +579,9 @@ import { useOhdaFinanceStore } from "../stores/useOhdaFinanceStore";
 import { useOhdaAuthStore } from "../stores/useOhdaAuthStore";
 import { normalizeArabic } from "../utils/arabicNormalizer";
 import QrCodeCanvas from "../components/QrCodeCanvas.vue";
-import { downloadServerPdf } from "../utils/pdfHelper";
+import { downloadServerPdf, printServerPdf } from "../utils/pdfHelper";
 import apiClient from "@/utilities/apiClient";
+import OhdaModal from "../components/OhdaModal.vue";
 import Dialog from "primevue/dialog";
 import {
   ShoppingCart, Barcode, Trash2, Printer, Receipt, AlertCircle, RefreshCw, PauseCircle, Download
@@ -986,23 +987,51 @@ async function loadClients() {
 }
 
 function printReceipt() {
-  const printElem = document.getElementById("thermalReceipt");
-  if (!printElem) return;
-
-  const win = window.open("", "_blank", "width=420,height=650");
-  if (!win) {
-    printViaIframe(printElem);
+  if (receiptData.value?.id) {
+    printServerPdf(
+      `/api/ReportsPdf/pos/${receiptData.value.id}?paperSize=Thermal80mm`,
+      `POS_${receiptData.value.invoiceNumber || 'receipt'}.pdf`
+    );
     return;
   }
+  const printElem = document.getElementById("thermalReceipt");
+  if (!printElem) return;
+  printViaIframe(printElem);
+}
 
-  win.document.write(`
+function printViaIframe(printElem) {
+  let iframe = document.getElementById("pos-print-frame");
+  if (!iframe) {
+    iframe = document.createElement("iframe");
+    iframe.id = "pos-print-frame";
+    iframe.style.position = "fixed";
+    iframe.style.right = "0";
+    iframe.style.bottom = "0";
+    iframe.style.width = "0";
+    iframe.style.height = "0";
+    iframe.style.border = "none";
+    document.body.appendChild(iframe);
+  }
+  const doc = iframe.contentWindow.document;
+  doc.open();
+  doc.write(`
     <!DOCTYPE html>
     <html dir="rtl" lang="ar">
     <head>
       <meta charset="utf-8">
       <title>إيصال نقطة البيع - ${receiptData.value?.invoiceNumber || 'POS'}</title>
       <style>
-        @page { size: 80mm auto; margin: 3mm; }
+        @page {
+          size: 80mm auto;
+          margin: 0;
+        }
+        @media print {
+          html, body {
+            width: 80mm !important;
+            margin: 0 auto !important;
+            padding: 3mm 2mm !important;
+          }
+        }
         body {
           font-family: 'Courier New', Courier, monospace, 'Segoe UI', Tahoma, sans-serif;
           font-size: 11px;
@@ -1041,12 +1070,12 @@ function printReceipt() {
     </html>
   `);
 
-  // Convert canvas (QR code) to image in print window
+  // Convert canvas (QR code) to image in print iframe
   const sourceCanvases = printElem.querySelectorAll("canvas");
-  const targetCanvases = win.document.querySelectorAll("canvas");
+  const targetCanvases = doc.querySelectorAll("canvas");
   sourceCanvases.forEach((sc, i) => {
     if (targetCanvases[i]) {
-      const img = win.document.createElement("img");
+      const img = doc.createElement("img");
       img.src = sc.toDataURL("image/png");
       img.style.width = (sc.width || 80) + "px";
       img.style.height = (sc.height || 80) + "px";
@@ -1056,72 +1085,11 @@ function printReceipt() {
     }
   });
 
-  win.document.close();
-  win.focus();
-  setTimeout(() => {
-    win.print();
-    win.close();
-  }, 400);
-}
-
-function printViaIframe(printElem) {
-  let iframe = document.getElementById("pos-print-frame");
-  if (!iframe) {
-    iframe = document.createElement("iframe");
-    iframe.id = "pos-print-frame";
-    iframe.style.position = "fixed";
-    iframe.style.right = "0";
-    iframe.style.bottom = "0";
-    iframe.style.width = "0";
-    iframe.style.height = "0";
-    iframe.style.border = "none";
-    document.body.appendChild(iframe);
-  }
-  const doc = iframe.contentWindow.document;
-  doc.open();
-  doc.write(`
-    <!DOCTYPE html>
-    <html dir="rtl" lang="ar">
-    <head>
-      <meta charset="utf-8">
-      <title>إيصال نقطة البيع</title>
-      <style>
-        @page { size: 80mm auto; margin: 3mm; }
-        body { font-family: 'Courier New', monospace; font-size: 11px; width: 74mm; margin: 0 auto; direction: rtl; }
-        table { width: 100%; border-collapse: collapse; }
-        th, td { padding: 2px 0; }
-        .text-center { text-align: center; }
-        .text-right { text-align: right; }
-        .text-left { text-align: left; }
-        .border-b { border-bottom: 1px dashed #555; }
-        .border-t { border-top: 1px dashed #555; }
-        .font-bold { font-weight: bold; }
-        img { display: block; margin: 4px auto; }
-      </style>
-    </head>
-    <body>
-      ${printElem.innerHTML}
-    </body>
-    </html>
-  `);
-  const sourceCanvases = printElem.querySelectorAll("canvas");
-  const targetCanvases = doc.querySelectorAll("canvas");
-  sourceCanvases.forEach((sc, i) => {
-    if (targetCanvases[i]) {
-      const img = doc.createElement("img");
-      img.src = sc.toDataURL("image/png");
-      img.style.width = (sc.width || 80) + "px";
-      img.style.height = (sc.height || 80) + "px";
-      img.style.margin = "4px auto";
-      img.style.display = "block";
-      targetCanvases[i].parentNode.replaceChild(img, targetCanvases[i]);
-    }
-  });
   doc.close();
   setTimeout(() => {
     iframe.contentWindow.focus();
     iframe.contentWindow.print();
-  }, 400);
+  }, 250);
 }
 
 function formatDate(d) { return d ? new Date(d).toLocaleString("ar-EG", { dateStyle: "short", timeStyle: "short" }) : ""; }

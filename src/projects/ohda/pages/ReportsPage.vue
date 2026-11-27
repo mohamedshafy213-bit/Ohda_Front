@@ -387,7 +387,7 @@
 
 <script setup>
 import { ref, computed, onMounted } from "vue";
-import { downloadServerPdf } from "../utils/pdfHelper";
+import { downloadServerPdf, printServerPdf } from "../utils/pdfHelper";
 import { useOhdaReportsStore } from "../stores/useOhdaReportsStore";
 import {
   BarChart3,
@@ -479,6 +479,7 @@ function exportCurrentTabToExcel() {
 }
 
 function printReport() {
-  window.print();
+  const type = activeTab.value === "bookings" ? "bookings" : "customers-spending";
+  printServerPdf(`/api/ReportsPdf/report/${type}`, `Report_${type}.pdf`);
 }
 </script>

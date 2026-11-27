@@ -274,6 +274,20 @@
               <td class="p-3.5 text-center whitespace-nowrap">
                 <div class="flex items-center justify-center gap-1">
                   <button
+                    @click="openQuickPayModal(emp)"
+                    class="p-1.5 text-emerald-600 hover:bg-emerald-500/10 rounded-lg transition-colors cursor-pointer"
+                    title="صرف الراتب السريع"
+                  >
+                    <Banknote class="w-4 h-4" />
+                  </button>
+                  <button
+                    @click="openJobCardsModal(emp)"
+                    class="p-1.5 text-purple-600 hover:bg-purple-500/10 rounded-lg transition-colors cursor-pointer"
+                    title="ملف أوامر الشغل المنجزة"
+                  >
+                    <FileText class="w-4 h-4" />
+                  </button>
+                  <button
                     @click="openEditEmployeeModal(emp)"
                     class="p-1.5 text-blue-500 hover:bg-blue-500/10 rounded-lg transition-colors cursor-pointer"
                     title="تعديل الموظف"
@@ -329,42 +343,24 @@
                 {{ record.jobTitle }}
               </td>
 
-              <!-- Status Selection Pills -->
-              <td class="p-3.5 text-center whitespace-nowrap">
-                <div class="inline-flex rounded-xl p-1 bg-black/5 dark:bg-white/5 gap-1">
-                  <button
-                    type="button"
-                    @click="record.status = 1"
-                    class="px-2.5 py-1 rounded-lg text-[10px] font-bold transition-all cursor-pointer"
-                    :class="record.status === 1 ? 'bg-emerald-600 text-white shadow-sm' : 'text-slate-600 dark:text-slate-400 hover:text-white'"
-                  >
-                    حاضر
-                  </button>
-                  <button
-                    type="button"
-                    @click="record.status = 3"
-                    class="px-2.5 py-1 rounded-lg text-[10px] font-bold transition-all cursor-pointer"
-                    :class="record.status === 3 ? 'bg-amber-500 text-white shadow-sm' : 'text-slate-600 dark:text-slate-400 hover:text-white'"
-                  >
-                    متأخر
-                  </button>
-                  <button
-                    type="button"
-                    @click="record.status = 2"
-                    class="px-2.5 py-1 rounded-lg text-[10px] font-bold transition-all cursor-pointer"
-                    :class="record.status === 2 ? 'bg-red-500 text-white shadow-sm' : 'text-slate-600 dark:text-slate-400 hover:text-white'"
-                  >
-                    غائب
-                  </button>
-                  <button
-                    type="button"
-                    @click="record.status = 4"
-                    class="px-2.5 py-1 rounded-lg text-[10px] font-bold transition-all cursor-pointer"
-                    :class="record.status === 4 ? 'bg-blue-500 text-white shadow-sm' : 'text-slate-600 dark:text-slate-400 hover:text-white'"
-                  >
-                    إجازة
-                  </button>
-                </div>
+              <!-- Status Dropdown List -->
+              <td class="p-3.5 whitespace-nowrap min-w-[170px]">
+                <select
+                  v-model.number="record.status"
+                  @change="onStatusChange(record)"
+                  class="w-full text-xs font-bold py-1.5 px-2.5 rounded-xl border transition-all cursor-pointer bg-brand-white dark:bg-brand-dark"
+                  :class="{
+                    'border-emerald-500/40 text-emerald-700 dark:text-emerald-300 bg-emerald-500/10': record.status === 1,
+                    'border-amber-500/40 text-amber-700 dark:text-amber-300 bg-amber-500/10': record.status === 3,
+                    'border-red-500/40 text-red-700 dark:text-red-300 bg-red-500/10': record.status === 2,
+                    'border-blue-500/40 text-blue-700 dark:text-blue-300 bg-blue-500/10': record.status === 4
+                  }"
+                >
+                  <option :value="1">🟢 حاضر بالورشة</option>
+                  <option :value="3">🟡 متأخر عن الموعد</option>
+                  <option :value="2">🔴 غائب (لم يحضر)</option>
+                  <option :value="4">🔵 استئذان / إجازة رسمية</option>
+                </select>
               </td>
 
               <!-- Check-In Time -->
@@ -373,7 +369,7 @@
                   type="time"
                   v-model="record.checkInTime"
                   :disabled="record.status === 2 || record.status === 4"
-                  class="p-1 rounded-lg border border-brand-gray/20 dark:border-white/10 bg-transparent text-xs font-mono"
+                  class="p-1 rounded-lg border border-brand-gray/20 dark:border-white/10 bg-transparent text-xs font-mono disabled:opacity-40"
                 />
               </td>
 
@@ -383,22 +379,83 @@
                   type="time"
                   v-model="record.checkOutTime"
                   :disabled="record.status === 2 || record.status === 4"
-                  class="p-1 rounded-lg border border-brand-gray/20 dark:border-white/10 bg-transparent text-xs font-mono"
+                  class="p-1 rounded-lg border border-brand-gray/20 dark:border-white/10 bg-transparent text-xs font-mono disabled:opacity-40"
                 />
               </td>
 
-              <!-- Notes -->
-              <td class="p-3.5">
-                <input
-                  type="text"
-                  v-model="record.notes"
-                  placeholder="سبب التأخير / ملاحظة..."
-                  class="w-full p-1 rounded-lg border border-brand-gray/20 dark:border-white/10 bg-transparent text-xs"
-                />
+              <!-- Notes & Reasons -->
+              <td class="p-3.5 min-w-[240px]">
+                <div class="relative">
+                  <input
+                    type="text"
+                    v-model="record.notes"
+                    :placeholder="
+                      record.status === 2
+                        ? '⚠️ سبب الغياب (اكتب السبب هنا)...'
+                        : record.status === 4
+                        ? 'ℹ️ سبب الاستئذان أو الإجازة...'
+                        : record.status === 3
+                        ? 'سبب التأخير...'
+                        : 'ملاحظة يومية (اختياري)...'
+                    "
+                    class="w-full p-2 rounded-xl border text-xs transition-colors"
+                    :class="
+                      (record.status === 2 || record.status === 4) && !record.notes
+                        ? 'border-amber-500 bg-amber-50/50 dark:bg-amber-950/20 text-brand-dark dark:text-white placeholder:text-amber-600/80 dark:placeholder:text-amber-400/80'
+                        : 'border-brand-gray/20 dark:border-white/10 bg-transparent text-brand-dark dark:text-white'
+                    "
+                  />
+                  <span
+                    v-if="(record.status === 2 || record.status === 4) && !record.notes"
+                    class="absolute left-2 top-2 text-[10px] text-amber-600 dark:text-amber-400 font-bold pointer-events-none"
+                  >
+                    مطلوب السبب
+                  </span>
+                </div>
               </td>
             </tr>
           </tbody>
         </table>
+      </div>
+
+      <!-- Attendance Table Footer Actions & Live Summary -->
+      <div class="p-3.5 bg-black/5 dark:bg-white/5 border-t border-brand-gray/10 flex flex-col sm:flex-row items-center justify-between gap-3">
+        <div class="flex flex-wrap items-center gap-2.5 text-xs">
+          <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 font-bold">
+            <span>حاضر:</span>
+            <span class="font-mono">{{ localAttendance.filter(r => r.status === 1).length }}</span>
+          </span>
+          <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-amber-500/10 text-amber-700 dark:text-amber-300 font-bold">
+            <span>متأخر:</span>
+            <span class="font-mono">{{ localAttendance.filter(r => r.status === 3).length }}</span>
+          </span>
+          <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-red-500/10 text-red-700 dark:text-red-300 font-bold">
+            <span>غائب:</span>
+            <span class="font-mono">{{ localAttendance.filter(r => r.status === 2).length }}</span>
+          </span>
+          <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-blue-500/10 text-blue-700 dark:text-blue-300 font-bold">
+            <span>إجازة / إذن:</span>
+            <span class="font-mono">{{ localAttendance.filter(r => r.status === 4).length }}</span>
+          </span>
+        </div>
+
+        <div class="flex items-center gap-3">
+          <transition name="fade">
+            <div v-if="attendanceSuccessMsg" class="px-3.5 py-1.5 rounded-xl bg-emerald-600 text-white font-bold text-xs flex items-center gap-1.5 shadow-md shadow-emerald-600/20">
+              <CheckCircle2 class="w-4 h-4" />
+              <span>{{ attendanceSuccessMsg }}</span>
+            </div>
+          </transition>
+
+          <Button
+            @click="saveAttendance"
+            :disabled="hrStore.loading"
+            class="!bg-emerald-600 hover:!bg-emerald-700 !text-white !font-bold !rounded-xl !px-5 !py-2 !text-xs flex items-center gap-2 cursor-pointer shadow-sm"
+          >
+            <Check class="w-4 h-4" />
+            <span>{{ hrStore.loading ? 'جاري الحفظ...' : 'حفظ كشف الحضور والانصراف' }}</span>
+          </Button>
+        </div>
       </div>
     </div>
 
@@ -493,6 +550,14 @@
               <!-- Actions -->
               <td class="p-3.5 text-center whitespace-nowrap">
                 <div class="flex items-center justify-center gap-1.5">
+                  <button
+                    @click="openJobCardsModal({ id: p.employeeId, name: p.employeeName, jobTitle: p.jobTitle, baseSalary: p.baseSalary })"
+                    class="p-1.5 text-purple-600 hover:bg-purple-500/10 rounded-lg transition-colors cursor-pointer"
+                    title="ملف أوامر الشغل المنجزة"
+                  >
+                    <FileText class="w-4 h-4" />
+                  </button>
+
                   <button
                     v-if="!p.isPaid"
                     @click="openEditPayrollModal(p)"
@@ -959,6 +1024,247 @@
       entity-label="الموظفين"
       @imported="hrStore.fetchEmployees()"
     />
+
+    <!-- 4. Modal: Quick Pay Employee Salary -->
+    <OhdaModal
+      :visible="showQuickPayModal"
+      @close="showQuickPayModal = false"
+      title="صرف راتب الموظف السريع"
+      description="صرف راتب الموظف واعتماد المصروف وخصمه من الخزينة تلقائياً"
+      :icon="Banknote"
+      max-width="max-w-md"
+    >
+      <form @submit.prevent="submitQuickPay" id="quickPayForm" class="space-y-4 text-xs">
+        <div class="p-3 bg-emerald-500/10 border border-emerald-500/20 rounded-xl text-xs text-emerald-800 dark:text-emerald-300">
+          <div class="flex items-center justify-between font-bold">
+            <span>الموظف: {{ quickPayEmp?.name }}</span>
+            <span class="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/20">{{ quickPayEmp?.jobTitle }}</span>
+          </div>
+          <div class="mt-1 flex items-center justify-between opacity-90">
+            <span>نظام الأجر:</span>
+            <span class="font-bold px-2 py-0.5 rounded text-[10px]" :class="quickPayEmp?.salaryType === 2 ? 'bg-amber-500/20 text-amber-800 dark:text-amber-200' : 'bg-blue-500/20 text-blue-800 dark:text-blue-200'">
+              {{ quickPayEmp?.salaryType === 2 ? 'أجر باليومية' : 'راتب شهري ثابت' }}
+            </span>
+          </div>
+          <div class="mt-1 flex items-center justify-between opacity-90">
+            <span>{{ quickPayEmp?.salaryType === 2 ? 'قيمة اليومية المسجلة:' : 'الراتب الأساسي المسجل:' }}</span>
+            <span class="font-mono font-bold">{{ formatCurrency(quickPayEmp?.baseSalary) }}</span>
+          </div>
+          <div v-if="quickPayEmp?.salaryType === 2" class="mt-2 p-2 rounded-lg bg-emerald-600/10 text-[11px] text-emerald-900 dark:text-emerald-200 leading-relaxed border border-emerald-500/20">
+            💡 <strong>آلية حساب الأجر اليومي:</strong> يقوم النظام بحساب الراتب تلقائياً = (أيام الحضور الفعلي المسجلة بكشف الحضور × قيمة اليومية) + عمولات أوامر الشغل المنجزة.
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block font-semibold mb-1">عن شهر</label>
+            <input
+              type="number"
+              v-model.number="quickPayForm.month"
+              min="1"
+              max="12"
+              required
+              class="w-full text-xs p-2.5 rounded-xl border border-brand-gray/20 dark:border-white/10 bg-transparent text-brand-dark dark:text-white font-mono font-bold"
+            />
+          </div>
+          <div>
+            <label class="block font-semibold mb-1">لسنة</label>
+            <input
+              type="number"
+              v-model.number="quickPayForm.year"
+              min="2020"
+              max="2035"
+              required
+              class="w-full text-xs p-2.5 rounded-xl border border-brand-gray/20 dark:border-white/10 bg-transparent text-brand-dark dark:text-white font-mono font-bold"
+            />
+          </div>
+        </div>
+
+        <div>
+          <label class="block font-semibold mb-1">مبلغ الصرف الفعلي *</label>
+          <input
+            type="number"
+            v-model.number="quickPayForm.amount"
+            min="1"
+            step="50"
+            required
+            class="w-full text-sm p-2.5 rounded-xl border border-brand-gray/20 dark:border-white/10 bg-transparent text-emerald-600 dark:text-emerald-400 font-mono font-bold"
+          />
+        </div>
+
+        <div>
+          <label class="block font-semibold mb-1">طريقة الصرف *</label>
+          <select
+            v-model.number="quickPayForm.paymentMethod"
+            required
+            class="w-full text-xs p-2.5 rounded-xl border border-brand-gray/20 dark:border-white/10 bg-brand-white dark:bg-brand-dark text-brand-dark dark:text-white"
+          >
+            <option :value="1">نقدي (كاش من درج النقدية / الخزينة)</option>
+            <option :value="2">بطاقة بنكية / فيزا</option>
+            <option :value="3">إنستاباي / محفظة إلكترونية</option>
+            <option :value="4">تحويل بنكي</option>
+          </select>
+        </div>
+
+        <div>
+          <label class="block font-semibold mb-1">تاريخ الصرف</label>
+          <input
+            type="date"
+            v-model="quickPayForm.paymentDate"
+            required
+            class="w-full text-xs p-2.5 rounded-xl border border-brand-gray/20 dark:border-white/10 bg-transparent text-brand-dark dark:text-white font-mono"
+          />
+        </div>
+
+        <div>
+          <label class="block font-semibold mb-1">ملاحظات الصرف</label>
+          <input
+            type="text"
+            v-model="quickPayForm.notes"
+            placeholder="ملاحظة أو رقم إيصال..."
+            class="w-full text-xs p-2.5 rounded-xl border border-brand-gray/20 dark:border-white/10 bg-transparent text-brand-dark dark:text-white"
+          />
+        </div>
+      </form>
+
+      <template #footer="{ close }">
+        <button
+          type="button"
+          @click="close"
+          class="px-4 py-2.5 rounded-xl text-xs font-bold text-slate-500 hover:text-slate-800 dark:hover:text-white cursor-pointer"
+        >
+          إلغاء
+        </button>
+        <button
+          type="submit"
+          form="quickPayForm"
+          :disabled="quickPayLoading"
+          class="px-5 py-2.5 rounded-xl text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white cursor-pointer shadow-sm disabled:opacity-50 flex items-center gap-1.5"
+        >
+          <Banknote class="w-4 h-4" />
+          <span>{{ quickPayLoading ? 'جاري الصرف...' : 'تأكيد الصرف وتسجيل المصروف' }}</span>
+        </button>
+      </template>
+    </OhdaModal>
+
+    <!-- 5. Modal: Employee Job Cards File & History -->
+    <OhdaModal
+      :visible="showJobCardsModal"
+      @close="showJobCardsModal = false"
+      :title="`ملف أوامر الشغل للفني: ${selectedJobCardsEmp?.name || ''}`"
+      description="استعراض كافة أوامر الشغل والسيارات المنجزة ومبالغ المصنعيات والعمولات المستحقة"
+      :icon="FileText"
+      max-width="max-w-4xl"
+    >
+      <div v-if="loadingJobCards" class="p-8">
+        <LoadingSkeleton />
+      </div>
+
+      <div v-else-if="jobCardsData" class="space-y-4 text-xs">
+        <!-- Top Metrics Cards -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+          <div class="bg-blue-500/10 border border-blue-500/20 p-3 rounded-xl flex items-center justify-between">
+            <div>
+              <span class="text-[11px] text-blue-700 dark:text-blue-300 block font-semibold">إجمالي أوامر الشغل المنجزة</span>
+              <span class="text-xl font-bold font-mono text-blue-800 dark:text-blue-200">{{ jobCardsData.totalJobsCount }} أمر شغل</span>
+            </div>
+          </div>
+          <div class="bg-purple-500/10 border border-purple-500/20 p-3 rounded-xl flex items-center justify-between">
+            <div>
+              <span class="text-[11px] text-purple-700 dark:text-purple-300 block font-semibold">إجمالي دخل المصنعيات</span>
+              <span class="text-xl font-bold font-mono text-purple-800 dark:text-purple-200">{{ formatCurrency(jobCardsData.totalLaborRevenue) }}</span>
+            </div>
+          </div>
+          <div class="bg-emerald-500/10 border border-emerald-500/20 p-3 rounded-xl flex items-center justify-between">
+            <div>
+              <span class="text-[11px] text-emerald-700 dark:text-emerald-300 block font-semibold">إجمالي العمولات المستحقة للفني</span>
+              <span class="text-xl font-bold font-mono text-emerald-800 dark:text-emerald-200">{{ formatCurrency(jobCardsData.totalCommissionEarned) }}</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Job Cards List Table -->
+        <div v-if="!jobCardsData.jobCards?.length" class="p-8 text-center text-slate-400">
+          لا توجد أوامر شغل مسجلة لهذا الفني في هذا الشهر.
+        </div>
+
+        <div v-else class="overflow-x-auto border border-brand-gray/10 dark:border-white/10 rounded-xl">
+          <table class="w-full text-start border-collapse text-xs">
+            <thead>
+              <tr class="bg-black/5 dark:bg-white/5 border-b border-brand-gray/10 text-brand-gray dark:text-slate-400 font-semibold">
+                <th class="p-2.5 text-start">رقم أمر الشغل</th>
+                <th class="p-2.5 text-start">التاريخ</th>
+                <th class="p-2.5 text-start">السيارة واللوحة</th>
+                <th class="p-2.5 text-start">العميل</th>
+                <th class="p-2.5 text-start">الخدمات المنجزة</th>
+                <th class="p-2.5 text-start">إجمالي المصنعية</th>
+                <th class="p-2.5 text-start">عمولة الفني</th>
+                <th class="p-2.5 text-center">الحالة</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-brand-gray/10 dark:divide-white/5">
+              <tr v-for="job in jobCardsData.jobCards" :key="job.jobCardId" class="hover:bg-black/5 dark:hover:bg-white/5">
+                <td class="p-2.5 font-bold font-mono text-brand-dark dark:text-white whitespace-nowrap">
+                  {{ job.jobNumber }}
+                </td>
+                <td class="p-2.5 font-mono text-slate-500 whitespace-nowrap">
+                  {{ formatDate(job.jobDate) }}
+                </td>
+                <td class="p-2.5 whitespace-nowrap">
+                  <div class="font-bold text-slate-800 dark:text-slate-200">{{ job.carPlate || '—' }}</div>
+                  <div class="text-[10px] text-slate-400">{{ job.carModel || '' }}</div>
+                </td>
+                <td class="p-2.5 whitespace-nowrap">
+                  <div class="text-slate-800 dark:text-slate-200">{{ job.customerName }}</div>
+                  <div class="text-[10px] text-slate-400 font-mono">{{ job.customerPhone || '' }}</div>
+                </td>
+                <td class="p-2.5">
+                  <div class="space-y-0.5">
+                    <div v-for="s in job.services" :key="s.serviceId" class="flex items-center gap-1.5 text-[11px]">
+                      <span class="text-slate-700 dark:text-slate-300 font-medium">• {{ s.serviceName }}</span>
+                      <span class="text-slate-400 font-mono">({{ formatCurrency(s.price) }})</span>
+                      <span v-if="s.commissionAmount > 0" class="text-emerald-600 dark:text-emerald-400 font-mono font-bold">
+                        [عمولة: {{ formatCurrency(s.commissionAmount) }}]
+                      </span>
+                    </div>
+                  </div>
+                </td>
+                <td class="p-2.5 font-mono font-bold text-slate-800 dark:text-slate-200 whitespace-nowrap">
+                  {{ formatCurrency(job.totalLaborAmount) }}
+                </td>
+                <td class="p-2.5 font-mono font-bold text-emerald-600 dark:text-emerald-400 whitespace-nowrap">
+                  {{ formatCurrency(job.totalCommissionAmount) }}
+                </td>
+                <td class="p-2.5 text-center whitespace-nowrap">
+                  <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-500/10 text-blue-600 dark:text-blue-400">
+                    {{ job.statusName }}
+                  </span>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <template #footer="{ close }">
+        <button
+          type="button"
+          @click="close"
+          class="px-4 py-2.5 rounded-xl text-xs font-bold text-slate-500 hover:text-slate-800 dark:hover:text-white cursor-pointer"
+        >
+          إغلاق
+        </button>
+        <button
+          v-if="selectedJobCardsEmp"
+          type="button"
+          @click="downloadEmployeePdf(selectedJobCardsEmp.id, selectedJobCardsEmp.name)"
+          class="px-5 py-2.5 rounded-xl text-xs font-bold bg-purple-600 hover:bg-purple-700 text-white cursor-pointer shadow-sm flex items-center gap-1.5"
+        >
+          <Download class="w-4 h-4" />
+          <span>تنزيل ملف الفني (PDF)</span>
+        </button>
+      </template>
+    </OhdaModal>
   </div>
 </template>
 
@@ -989,8 +1295,11 @@ import {
   Edit2,
   Trash2,
   RefreshCw,
-  SlidersHorizontal
+  SlidersHorizontal,
+  FileText,
+  Download
 } from "lucide-vue-next";
+import { downloadServerPdf } from "../utils/pdfHelper";
 
 const hrStore = useOhdaHRStore();
 const userStore = useOhdaUserPermissionStore();
@@ -1015,6 +1324,24 @@ const selectedPayroll = ref(null);
 const showPayModal = ref(false);
 const showDeleteModal = ref(false);
 const employeeToDelete = ref(null);
+
+const showQuickPayModal = ref(false);
+const quickPayEmp = ref(null);
+const quickPayForm = ref({
+  employeeId: 0,
+  month: now.getMonth() + 1,
+  year: now.getFullYear(),
+  amount: 0,
+  paymentMethod: 1,
+  paymentDate: todayStr,
+  notes: ""
+});
+const quickPayLoading = ref(false);
+
+const showJobCardsModal = ref(false);
+const selectedJobCardsEmp = ref(null);
+const jobCardsData = ref(null);
+const loadingJobCards = ref(false);
 
 const fallbackJobTitles = [
   "فني ميكانيكا",
@@ -1123,21 +1450,38 @@ async function loadAttendance() {
   localAttendance.value = JSON.parse(JSON.stringify(hrStore.attendanceRecords));
 }
 
+const attendanceSuccessMsg = ref("");
+let attendanceTimer = null;
+
+function onStatusChange(record) {
+  if (record.status === 2 || record.status === 4) {
+    record.checkInTime = "";
+    record.checkOutTime = "";
+  } else if (!record.checkInTime) {
+    record.checkInTime = "09:00";
+    record.checkOutTime = "18:00";
+  }
+}
+
 async function saveAttendance() {
   const payload = {
     date: attendanceDate.value ? new Date(attendanceDate.value).toISOString() : new Date().toISOString(),
     records: localAttendance.value.map(r => ({
       employeeId: r.employeeId,
       status: r.status,
-      checkInTime: r.checkInTime,
-      checkOutTime: r.checkOutTime,
-      notes: r.notes
+      checkInTime: r.checkInTime || "",
+      checkOutTime: r.checkOutTime || "",
+      notes: r.notes || ""
     }))
   };
 
   const res = await hrStore.saveAttendanceBatch(payload);
   if (res.success) {
-    alert("تم حفظ كشف الحضور والانصراف بنجاح");
+    attendanceSuccessMsg.value = "تم حفظ كشف الحضور والانصراف بنجاح ✓";
+    if (attendanceTimer) clearTimeout(attendanceTimer);
+    attendanceTimer = setTimeout(() => {
+      attendanceSuccessMsg.value = "";
+    }, 4000);
   } else {
     alert(res.message);
   }
@@ -1301,5 +1645,59 @@ async function submitPaySalary() {
   } else {
     alert(res.message);
   }
+}
+
+function openQuickPayModal(emp) {
+  quickPayEmp.value = emp;
+  quickPayForm.value = {
+    employeeId: emp.id,
+    month: payrollMonth.value || (now.getMonth() + 1),
+    year: payrollYear.value || now.getFullYear(),
+    amount: emp.baseSalary || 0,
+    paymentMethod: 1,
+    paymentDate: todayStr,
+    notes: ""
+  };
+  showQuickPayModal.value = true;
+}
+
+async function submitQuickPay() {
+  if (!quickPayForm.value.amount || quickPayForm.value.amount <= 0) {
+    alert("يرجى إدخال مبلغ الراتب بشكل صحيح.");
+    return;
+  }
+  quickPayLoading.value = true;
+  const res = await hrStore.quickPayEmployee(quickPayForm.value);
+  quickPayLoading.value = false;
+  if (res.success) {
+    alert(res.message);
+    showQuickPayModal.value = false;
+    await hrStore.fetchEmployees();
+    if (activeView.value === "payroll") {
+      await loadPayroll();
+    }
+  } else {
+    alert(res.message);
+  }
+}
+
+async function openJobCardsModal(emp) {
+  selectedJobCardsEmp.value = emp;
+  showJobCardsModal.value = true;
+  loadingJobCards.value = true;
+  jobCardsData.value = null;
+  const res = await hrStore.fetchEmployeeJobCards(emp.id, payrollMonth.value, payrollYear.value);
+  if (res.success) {
+    jobCardsData.value = res.data;
+  } else {
+    alert(res.message || "تعذر جلب ملف أوامر الشغل");
+  }
+  loadingJobCards.value = false;
+}
+
+function downloadEmployeePdf(empId, empName) {
+  const m = payrollMonth.value || (now.getMonth() + 1);
+  const y = payrollYear.value || now.getFullYear();
+  downloadServerPdf(`/api/ReportsPdf/employee-card/${empId}?month=${m}&year=${y}`, `JobCards_${empName}_${m}_${y}.pdf`);
 }
 </script>

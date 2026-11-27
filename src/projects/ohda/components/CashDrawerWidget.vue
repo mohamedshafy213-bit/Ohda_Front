@@ -766,7 +766,7 @@ import {
   Receipt,
   Download
 } from "lucide-vue-next";
-import { downloadServerPdf } from "../utils/pdfHelper";
+import { downloadServerPdf, printServerPdf } from "../utils/pdfHelper";
 
 const financeStore = useOhdaFinanceStore();
 const toast = useToast();
@@ -1026,6 +1026,14 @@ async function openReportById(sessionId) {
 }
 
 function printThermalReceipt() {
+  const reportId = activeReport.value?.id || activeReport.value?.sessionId || activeReport.value?.ShiftId;
+  if (reportId) {
+    printServerPdf(
+      `/api/ReportsPdf/cash-closing/${reportId}?paperSize=Thermal80mm`,
+      `CashClosing_Thermal_${reportId}.pdf`
+    );
+    return;
+  }
   const printContent = document.getElementById("thermal-print-area");
   if (!printContent) return;
   const win = window.open("", "_blank", "width=380,height=600");
@@ -1066,6 +1074,14 @@ function printThermalReceipt() {
 }
 
 function printFullA4Report() {
+  const reportId = activeReport.value?.id || activeReport.value?.sessionId || activeReport.value?.ShiftId;
+  if (reportId) {
+    printServerPdf(
+      `/api/ReportsPdf/cash-closing/${reportId}?paperSize=A4`,
+      `CashClosing_A4_${reportId}.pdf`
+    );
+    return;
+  }
   const printContent = document.getElementById("a4-print-area");
   if (!printContent) return;
   const win = window.open("", "_blank", "width=900,height=800");

@@ -1078,6 +1078,25 @@
           <div>
             <div class="font-bold text-sm text-brand-dark dark:text-white">{{ selectedBooking.clientName }}</div>
             <div class="font-mono text-xs text-brand-gray mt-0.5">{{ selectedBooking.clientPhone }}</div>
+            <div class="flex items-center gap-2 mt-2">
+              <button
+                type="button"
+                @click="openWhatsAppReminder(selectedBooking)"
+                class="px-2.5 py-1 rounded-xl bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-700 dark:text-emerald-400 font-bold text-[11px] flex items-center gap-1.5 transition-all cursor-pointer border border-emerald-500/30 shadow-2xs active:scale-95"
+                title="إرسال رسالة تذكير بالموعد للعميل عبر واتساب"
+              >
+                <MessageCircle class="w-3.5 h-3.5" />
+                <span>تذكير واتساب</span>
+              </button>
+              <span
+                v-if="selectedBooking.reminderSentAt"
+                class="text-[10px] text-emerald-600 dark:text-emerald-400 font-bold flex items-center gap-1"
+                title="تم إرسال تذكير مسبق لهذا الموعد"
+              >
+                <Check class="w-3 h-3 stroke-[3]" />
+                <span>تم التذكير</span>
+              </span>
+            </div>
           </div>
 
           <div class="text-left">
@@ -1478,6 +1497,7 @@ import {
   ChevronDown,
   Check,
   Download,
+  MessageCircle,
   X
 } from "lucide-vue-next";
 
@@ -1487,6 +1507,17 @@ const bookingStore = useOhdaBookingStore();
 const serviceStore = useOhdaServiceStore();
 const clientStore = useOhdaClientStore();
 const lookupStore = useOhdaLookupStore();
+
+// Timezone-safe local YYYY-MM-DD formatter (avoids 1-day UTC shift)
+function toLocalYMD(d) {
+  if (!d) return "";
+  const date = typeof d === "string" ? new Date(d) : d;
+  if (isNaN(date.getTime())) return "";
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
+}
 
 // Common car brands & body types for rapid selection
 const commonCarBrands = [
@@ -1575,7 +1606,7 @@ function onWalkInCarTypeChange(e) {
 // Calendar View State: 'week' (Default) | 'month' | 'day'
 const calendarView = ref("week");
 const currentAnchorDate = ref(new Date());
-const selectedDate = ref(new Date().toISOString().split("T")[0]);
+const selectedDate = ref(toLocalYMD(new Date()));
 
 // Sidebar State
 const sidebarTab = ref("list");
@@ -1670,7 +1701,7 @@ const bookingForm = ref({
   newVehicleModel: "",
   bayId: null,
   technicianEmployeeId: null,
-  bookingDate: new Date().toISOString().split("T")[0],
+  bookingDate: toLocalYMD(new Date()),
   startTime: "09:00",
   durationMinutes: 60,
   allowOverride: false,
@@ -1767,12 +1798,12 @@ const weekDays = computed(() => {
   sunday.setHours(0, 0, 0, 0);
 
   const days = [];
-  const todayStr = new Date().toISOString().split("T")[0];
+  const todayStr = toLocalYMD(new Date());
 
   for (let i = 0; i < 7; i++) {
     const d = new Date(sunday);
     d.setDate(sunday.getDate() + i);
-    const dateStr = d.toISOString().split("T")[0];
+    const dateStr = toLocalYMD(d);
     const isToday = dateStr === todayStr;
     const isWeekend = i === 5; // Friday
 
@@ -1806,13 +1837,13 @@ const monthGridCells = computed(() => {
   const daysInPrevMonth = new Date(year, month, 0).getDate();
 
   const cells = [];
-  const todayStr = new Date().toISOString().split("T")[0];
+  const todayStr = toLocalYMD(new Date());
 
   // 1. Previous Month Padding
   for (let i = firstDayOfWeek - 1; i >= 0; i--) {
     const dayNum = daysInPrevMonth - i;
     const prevDate = new Date(year, month - 1, dayNum);
-    const dateStr = prevDate.toISOString().split("T")[0];
+    const dateStr = toLocalYMD(prevDate);
     cells.push({
       dayNumber: dayNum,
       dateStr,
@@ -1825,7 +1856,7 @@ const monthGridCells = computed(() => {
   // 2. Current Month Days
   for (let dayNum = 1; dayNum <= daysInMonth; dayNum++) {
     const curDate = new Date(year, month, dayNum);
-    const dateStr = curDate.toISOString().split("T")[0];
+    const dateStr = toLocalYMD(curDate);
     cells.push({
       dayNumber: dayNum,
       dateStr,
@@ -1839,7 +1870,7 @@ const monthGridCells = computed(() => {
   const remaining = (7 - (cells.length % 7)) % 7;
   for (let i = 1; i <= remaining; i++) {
     const nextDate = new Date(year, month + 1, i);
-    const dateStr = nextDate.toISOString().split("T")[0];
+    const dateStr = toLocalYMD(nextDate);
     cells.push({
       dayNumber: i,
       dateStr,
@@ -2139,15 +2170,15 @@ async function loadCalendar() {
     sunday.setDate(anchor.getDate() - anchor.getDay());
     const saturday = new Date(sunday);
     saturday.setDate(sunday.getDate() + 6);
-    params.fromDate = sunday.toISOString().split("T")[0];
-    params.toDate = saturday.toISOString().split("T")[0];
+    params.fromDate = toLocalYMD(sunday);
+    params.toDate = toLocalYMD(saturday);
   } else if (calendarView.value === "month") {
     const firstDay = new Date(anchor.getFullYear(), anchor.getMonth(), 1);
     const lastDay = new Date(anchor.getFullYear(), anchor.getMonth() + 1, 0);
     firstDay.setDate(firstDay.getDate() - 7);
     lastDay.setDate(lastDay.getDate() + 7);
-    params.fromDate = firstDay.toISOString().split("T")[0];
-    params.toDate = lastDay.toISOString().split("T")[0];
+    params.fromDate = toLocalYMD(firstDay);
+    params.toDate = toLocalYMD(lastDay);
   }
 
   await bookingStore.fetchBookings(params);
@@ -2168,13 +2199,13 @@ function navigate(direction) {
     d.setDate(d.getDate() + direction);
   }
   currentAnchorDate.value = d;
-  selectedDate.value = d.toISOString().split("T")[0];
+  selectedDate.value = toLocalYMD(d);
   loadCalendar();
 }
 
 function goToToday() {
   currentAnchorDate.value = new Date();
-  selectedDate.value = new Date().toISOString().split("T")[0];
+  selectedDate.value = toLocalYMD(new Date());
   loadCalendar();
 }
 
@@ -2339,6 +2370,44 @@ async function submitCreateBooking() {
 function openBookingDetails(booking) {
   selectedBooking.value = booking;
   showDetailsModal.value = true;
+}
+
+async function openWhatsAppReminder(bk) {
+  if (!bk || !bk.id) return;
+  try {
+    const res = await apiClient.get(`/api/WhatsApp/booking/${bk.id}/preview`);
+    if (res.data?.isDone && res.data?.singleObject) {
+      const waUrl = res.data.singleObject.whatsAppUrl;
+      if (waUrl) {
+        window.open(waUrl, "_blank");
+        bk.reminderSentAt = new Date().toISOString();
+        toast.add({
+          severity: "success",
+          summary: "واتساب",
+          detail: "تم تجهيز رسالة التذكير وفتح واتساب بنجاح.",
+          life: 3000
+        });
+        apiClient.post(`/api/WhatsApp/booking/${bk.id}/send`).catch(() => {});
+        return;
+      }
+    }
+    if (bk.whatsAppReminderUrl) {
+      window.open(bk.whatsAppReminderUrl, "_blank");
+      bk.reminderSentAt = new Date().toISOString();
+    }
+  } catch (err) {
+    if (bk.whatsAppReminderUrl) {
+      window.open(bk.whatsAppReminderUrl, "_blank");
+      bk.reminderSentAt = new Date().toISOString();
+    } else {
+      toast.add({
+        severity: "error",
+        summary: "خطأ",
+        detail: "تعذر فتح رابط تذكير الواتساب.",
+        life: 3000
+      });
+    }
+  }
 }
 
 async function changeStatus(id, newStatus) {

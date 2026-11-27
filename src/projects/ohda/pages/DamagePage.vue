@@ -162,6 +162,14 @@
                     <Download class="w-4 h-4" />
                   </button>
                   <button
+                    type="button"
+                    @click="printServerPdf(`/api/ReportsPdf/damage/${d.id}`, `Damage_${d.documentNumber}.pdf`)"
+                    class="p-1 rounded-lg text-brand-dark dark:text-brand-accent hover:bg-black/5 dark:hover:bg-white/10 cursor-pointer"
+                    title="طباعة سند التالف PDF"
+                  >
+                    <Printer class="w-4 h-4" />
+                  </button>
+                  <button
                     v-if="d.status === 1 && isManagerOrAdmin"
                     type="button"
                     @click="approveDamage(d)"
@@ -370,7 +378,7 @@ import { useOhdaInventoryStore } from "../stores/useOhdaInventoryStore";
 import { useOhdaAuthStore } from "../stores/useOhdaAuthStore";
 import OhdaModal from "../components/OhdaModal.vue";
 import { AlertTriangle, Plus, Clock, Printer, Download } from "lucide-vue-next";
-import { downloadServerPdf } from "../utils/pdfHelper";
+import { downloadServerPdf, printServerPdf } from "../utils/pdfHelper";
 
 const toast = useToast();
 const inventoryStore = useOhdaInventoryStore();

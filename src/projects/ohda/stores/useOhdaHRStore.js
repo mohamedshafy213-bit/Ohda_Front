@@ -279,6 +279,60 @@ export const useOhdaHRStore = defineStore("ohdaHR", {
       } finally {
         this.loading = false;
       }
+    },
+
+    async quickPayEmployee(payload) {
+      this.loading = true;
+      try {
+        const res = await apiPost("/api/Employee/quick-pay", payload);
+        if (res?.data?.isDone) {
+          return {
+            success: true,
+            message: res?.data?.returnMessage || "تم صرف الراتب وتسجيل المصروف بنجاح",
+            data: res.data?.singleObject
+          };
+        }
+        return {
+          success: false,
+          message: res?.data?.returnMessage || "فشل صرف الراتب"
+        };
+      } catch (err) {
+        return {
+          success: false,
+          message: err?.response?.data?.returnMessage || err.message || "حدث خطأ أثناء صرف الراتب"
+        };
+      } finally {
+        this.loading = false;
+      }
+    },
+
+    async fetchEmployeeJobCards(employeeId, month = null, year = null) {
+      this.loading = true;
+      try {
+        let url = `/api/Employee/${employeeId}/jobcards-history`;
+        const params = [];
+        if (month) params.push(`month=${month}`);
+        if (year) params.push(`year=${year}`);
+        if (params.length) url += `?${params.join("&")}`;
+        const res = await apiGet(url);
+        if (res?.data?.isDone) {
+          return {
+            success: true,
+            data: res.data?.singleObject
+          };
+        }
+        return {
+          success: false,
+          message: res?.data?.returnMessage || "تعذر جلب ملف أوامر الشغل"
+        };
+      } catch (err) {
+        return {
+          success: false,
+          message: err?.response?.data?.returnMessage || err.message || "حدث خطأ أثناء جلب ملف أوامر الشغل"
+        };
+      } finally {
+        this.loading = false;
+      }
     }
   }
 });

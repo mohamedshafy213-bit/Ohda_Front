@@ -806,6 +806,9 @@
       </div>
 
       <template #footer="{ close }">
+        <button type="button" @click="close" class="px-5 py-2 bg-brand-light dark:bg-white/10 rounded-xl text-xs font-semibold cursor-pointer">
+          إغلاق
+        </button>
         <button
           v-if="selectedPurchase?.id"
           type="button"
@@ -814,8 +817,14 @@
         >
           تنزيل PDF
         </button>
-        <button type="button" @click="close" class="px-5 py-2 bg-brand-light dark:bg-white/10 rounded-xl text-xs font-semibold cursor-pointer">
-          إغلاق
+        <button
+          v-if="selectedPurchase?.id"
+          type="button"
+          @click="printServerPdf(`/api/ReportsPdf/purchase/${selectedPurchase.id}`, `Purchase_${selectedPurchase.invoiceNumber}.pdf`)"
+          class="px-5 py-2 bg-brand-accent text-brand-dark rounded-xl text-xs font-bold flex items-center gap-1.5 cursor-pointer shadow-sm hover:bg-brand-accent/90"
+        >
+          <Printer class="w-4 h-4" />
+          <span>طباعة الفاتورة</span>
         </button>
       </template>
     </OhdaModal>
@@ -870,7 +879,7 @@ import { apiGet } from "@/utilities/fetchApi";
 import OhdaDataTable from "../components/OhdaDataTable.vue";
 import OhdaModal from "../components/OhdaModal.vue";
 import ExcelImportModal from "../components/ExcelImportModal.vue";
-import { downloadServerPdf } from "../utils/pdfHelper";
+import { downloadServerPdf, printServerPdf } from "../utils/pdfHelper";
 import { exportToExcelCsv } from "../utils/excelHelper";
 import {
   ShoppingBag,

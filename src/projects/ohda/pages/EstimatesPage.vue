@@ -692,6 +692,15 @@
           إغلاق
         </button>
         <button
+          v-if="previewEstimate?.id"
+          type="button"
+          @click="downloadServerPdf(`/api/ReportsPdf/estimate/${previewEstimate.id}`, `Estimate_${previewEstimate.estimateNumber || 'quote'}.pdf`)"
+          class="px-4 py-2 rounded-xl text-xs font-bold bg-rose-600/15 text-rose-700 dark:text-rose-300 border border-rose-500/30 flex items-center gap-1.5 cursor-pointer"
+        >
+          <Download class="w-4 h-4" />
+          <span>تنزيل PDF</span>
+        </button>
+        <button
           type="button"
           @click="triggerPrint"
           class="px-5 py-2 rounded-xl text-xs font-bold bg-brand-accent text-brand-dark flex items-center gap-2 cursor-pointer shadow-sm hover:bg-brand-accent/90"
@@ -748,6 +757,7 @@ import { useOhdaConfirmStore } from "../stores/useOhdaConfirmStore";
 import { useToastStore } from "@/stores/toastStore";
 import OhdaDataTable from "../components/OhdaDataTable.vue";
 import OhdaModal from "../components/OhdaModal.vue";
+import { downloadServerPdf, printServerPdf } from "../utils/pdfHelper";
 import searchField from "@/components/searchField.vue";
 import LoadingSkeleton from "@/components/LoadingSkeleton.vue";
 
@@ -760,6 +770,7 @@ import {
   Clock,
   DollarSign,
   Printer,
+  Download,
   ArrowRightCircle,
   Send,
   Check,
@@ -1095,7 +1106,11 @@ function openPreviewModal(estimate) {
 }
 
 function triggerPrint() {
-  window.print();
+  if (!previewEstimate.value?.id) return;
+  printServerPdf(
+    `/api/ReportsPdf/estimate/${previewEstimate.value.id}`,
+    `Estimate_${previewEstimate.value.estimateNumber || "quote"}.pdf`
+  );
 }
 
 // Delete
