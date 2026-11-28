@@ -73,9 +73,10 @@ export const useOhdaBranchStore = defineStore("ohdaBranch", {
       }
     },
 
-    async fetchMyQuota() {
+    async fetchMyQuota(branchId = null) {
       try {
-        const res = await apiGet("/api/Branches/my-quota");
+        const url = branchId ? `/api/Branches/my-quota?branchId=${branchId}` : "/api/Branches/my-quota";
+        const res = await apiGet(url);
         if (res?.data?.isDone && res?.data?.singleObject) {
           this.myQuota = res.data.singleObject;
         }
@@ -101,7 +102,14 @@ export const useOhdaBranchStore = defineStore("ohdaBranch", {
           message: res?.data?.returnMessage || "فشل إنشاء الفرع"
         };
       } catch (err) {
-        const msg = err?.response?.data?.returnMessage || err.message || "حدث خطأ أثناء إنشاء الفرع";
+        const errData = err?.response?.data;
+        let msg = errData?.returnMessage || errData?.message;
+        if (!msg && errData?.errors) {
+          msg = Object.values(errData.errors).flat().join(" | ");
+        }
+        if (!msg) {
+          msg = errData?.title || err.message || "حدث خطأ أثناء إنشاء الفرع";
+        }
         return { success: false, message: msg };
       } finally {
         this.loading = false;

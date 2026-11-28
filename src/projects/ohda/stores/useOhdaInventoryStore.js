@@ -430,6 +430,10 @@ export const useOhdaInventoryStore = defineStore("ohdaInventory", {
     // ------------------------------------
     // Excel Import & Export (/api/Excel/*)
     // ------------------------------------
+    exportExcel(entityName = "products") {
+      return this.exportToExcel(entityName);
+    },
+
     async exportToExcel(entityName) {
       try {
         const res = await apiGet(`/api/Excel/export/${entityName}`, { responseType: 'blob' });

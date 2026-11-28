@@ -184,6 +184,19 @@
       <!-- Search Field & View Mode Toggle -->
       <div class="bg-brand-white dark:bg-white/5 border border-brand-gray/10 p-3 rounded-2xl shadow-sm flex flex-wrap items-center justify-between gap-3">
         <searchField v-model="searchQuery" placeholder="ابحث باسم الصنف، الكود SKU، أو الباركود..." class="flex-1 min-w-[220px]" />
+
+        <!-- Category Dropdown Filter with Search -->
+        <div class="w-full sm:w-56">
+          <Select
+            v-model="selectedCategory"
+            :options="categoryFilterOptions"
+            optionLabel="label"
+            optionValue="value"
+            placeholder="بحث وتصفية بالتصنيف..."
+            filter
+            class="w-full text-xs"
+          />
+        </div>
         
         <div class="flex items-center gap-2 flex-wrap">
           <button
@@ -580,16 +593,15 @@
             <label class="block font-semibold text-brand-dark dark:text-white mb-1.5">
               التصنيف / الفئة <span class="text-red-500">*</span>
             </label>
-            <select
+            <Select
               v-model="form.categoryId"
-              required
-              class="w-full px-3.5 py-2.5 rounded-xl border border-brand-gray/25 bg-brand-light/50 dark:bg-brand-dark text-brand-dark dark:text-white text-xs font-medium focus:border-brand-accent transition-all"
-            >
-              <option :value="null" disabled>اختر التصنيف...</option>
-              <option v-for="cat in inventoryStore.categories" :key="cat.id" :value="cat.id">
-                {{ cat.name }}
-              </option>
-            </select>
+              :options="inventoryStore.categories"
+              optionLabel="name"
+              optionValue="id"
+              placeholder="ابحث واختر التصنيف..."
+              filter
+              class="w-full text-xs font-medium"
+            />
           </div>
 
           <!-- Unit -->
@@ -597,12 +609,13 @@
             <label class="block font-semibold text-brand-dark dark:text-white mb-1.5">
               وحدة القياس <span class="text-red-500">*</span>
             </label>
-            <select
+            <Select
               v-model="form.unit"
-              class="w-full px-3.5 py-2.5 rounded-xl border border-brand-gray/25 bg-brand-light/50 dark:bg-white/5 text-brand-dark dark:text-white text-xs font-medium focus:border-brand-accent transition-all cursor-pointer"
-            >
-              <option v-for="u in commonUnits" :key="u" :value="u">{{ u }}</option>
-            </select>
+              :options="commonUnits"
+              placeholder="ابحث واختر وحدة القياس..."
+              filter
+              class="w-full text-xs font-medium"
+            />
           </div>
 
           <!-- Cost Price -->
@@ -635,34 +648,118 @@
             />
           </div>
 
-          <!-- Quantity Note (Strict Document-Only) -->
+          <!-- Quantity Note (Allows initial quantity entry if current stock is 0 or new product) -->
           <div class="sm:col-span-2 p-3 bg-brand-light/70 dark:bg-white/5 rounded-xl border border-brand-gray/15">
-            <div class="flex items-center justify-between">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
               <div>
                 <span class="block font-semibold text-brand-dark dark:text-white text-xs">
-                  {{ isEditing ? 'رصيد المخزون الحالي' : 'رصيد المخزون الأولي' }}
+                  {{ isEditing ? 'رصيد المخزون الحالي' : 'رصيد المخزون الأولي (رصيد أول المدة)' }}
                 </span>
                 <span class="text-[11px] text-slate-500 dark:text-slate-400">
-                  {{ isEditing ? 'الرصيد يتم حسابه تلقائياً من دفعات فواتير المشتريات والمبيعات' : 'الأصناف الجديدة تبدأ برصيد صفر. يتم تسجيل رصيد المخزون والتكلفة عبر فواتير المشتريات فقط.' }}
+                  {{ isEditing && form.currentQuantity > 0 ? 'الرصيد يتم حسابه ومتابعته تلقائياً من دفعات فواتير المشتريات والمبيعات' : 'يمكنك تحديد كمية البداية (رصيد أول المدة) مباشرة وسيتم قيدها في المخزن.' }}
                 </span>
               </div>
-              <div class="text-end">
+              <div v-if="isEditing && form.currentQuantity > 0" class="text-end">
                 <span class="font-mono font-bold text-sm text-brand-accent px-3 py-1 bg-brand-accent/10 rounded-lg border border-brand-accent/20">
-                  {{ form.currentQuantity || 0 }} {{ form.unit }}
+                  {{ form.currentQuantity }} {{ form.unit }}
                 </span>
+              </div>
+              <div v-else class="w-36">
+                <div class="relative">
+                  <input
+                    v-model.number="form.currentQuantity"
+                    type="number"
+                    min="0"
+                    step="any"
+                    placeholder="0"
+                    class="w-full px-3 py-1.5 rounded-lg border border-brand-accent/40 bg-white dark:bg-brand-dark text-brand-dark dark:text-white font-mono text-xs font-bold focus:border-brand-accent text-center"
+                  />
+                  <span class="absolute start-2 top-1.5 text-[10px] text-brand-gray">{{ form.unit }}</span>
+                </div>
               </div>
             </div>
           </div>
 
-          <!-- Default Shelf Location -->
-          <div>
-            <label class="block font-semibold text-brand-dark dark:text-white mb-1.5">موقع الرف الافتراضي</label>
-            <input
-              v-model="form.defaultShelfLocation"
-              type="text"
-              placeholder="مثال: رف A-12، عمود 3، مخزن الزيوت..."
-              class="w-full px-3.5 py-2.5 rounded-xl border border-brand-gray/25 bg-brand-light/50 dark:bg-white/5 text-brand-dark dark:text-white text-xs focus:border-brand-accent transition-all"
-            />
+          <!-- Warehouse & Shelf Cascading Selection -->
+          <div class="sm:col-span-2 p-3.5 bg-brand-light/40 dark:bg-white/5 rounded-2xl border border-brand-gray/15 space-y-2.5">
+            <div class="flex items-center justify-between">
+              <label class="block font-bold text-brand-dark dark:text-white text-xs flex items-center gap-1.5">
+                <Building2 class="w-4 h-4 text-brand-accent" />
+                <span>مكان التخزين (المستودع والرف الافتراضي)</span>
+              </label>
+              <router-link
+                to="/ohda/warehouse-bins"
+                target="_blank"
+                class="text-[11px] text-brand-accent hover:underline flex items-center gap-1 font-semibold"
+              >
+                <span>إدارة المخازن والأرفف</span>
+                <span>↗</span>
+              </router-link>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 items-start">
+              <!-- Field 1: Choose Warehouse with search -->
+              <div>
+                <label class="block text-[11px] font-semibold text-brand-gray dark:text-slate-300 mb-1">
+                  1. اختر المستودع / المخزن
+                </label>
+                <Select
+                  v-model="selectedWarehouseId"
+                  :options="warehouseSelectOptions"
+                  optionLabel="label"
+                  optionValue="value"
+                  placeholder="ابحث واختر المستودع..."
+                  filter
+                  @change="onWarehouseSelectionChange"
+                  class="w-full text-xs"
+                />
+              </div>
+
+              <!-- Field 2: Opens beside it when warehouse is chosen! -->
+              <div v-if="selectedWarehouseId">
+                <div class="flex items-center justify-between mb-1">
+                  <label class="block text-[11px] font-semibold text-brand-gray dark:text-slate-300">
+                    2. الرف داخل {{ selectedWarehouseName }}
+                  </label>
+                  <button
+                    type="button"
+                    @click="toggleCustomShelfMode"
+                    class="text-[10px] text-brand-accent font-bold hover:underline cursor-pointer"
+                  >
+                    {{ isCustomShelfMode ? 'اختر من الأرفف المتاحة' : '+ كتابة رف جديد' }}
+                  </button>
+                </div>
+
+                <!-- Select existing shelf with search -->
+                <Select
+                  v-if="!isCustomShelfMode"
+                  v-model="selectedShelfName"
+                  :options="shelvesForSelectedWarehouse"
+                  optionLabel="label"
+                  optionValue="value"
+                  placeholder="ابحث واختر الرف..."
+                  filter
+                  @change="syncDefaultShelfLocation"
+                  class="w-full text-xs"
+                />
+
+                <!-- Or type a new shelf name -->
+                <div v-else>
+                  <input
+                    v-model="customShelfText"
+                    type="text"
+                    @input="syncDefaultShelfLocation"
+                    placeholder="اكتب اسم الرف (مثال: رف B-04)..."
+                    class="w-full px-3.5 py-2.5 rounded-xl border border-brand-accent/40 bg-white dark:bg-brand-dark text-brand-dark dark:text-white text-xs focus:border-brand-accent transition-all"
+                  />
+                </div>
+              </div>
+
+              <!-- Placeholder when no warehouse selected yet -->
+              <div v-else class="flex items-center justify-center p-3 rounded-xl border border-dashed border-brand-gray/25 bg-brand-light/30 dark:bg-white/5 text-brand-gray dark:text-slate-400 text-[11px] text-center min-h-[58px]">
+                <span>اختر المستودع أولاً لتحديد أو كتابة الرف التابع له 👈</span>
+              </div>
+            </div>
           </div>
 
           <!-- Min Threshold -->
@@ -739,15 +836,16 @@
           <!-- Supplier (Optional) -->
           <div class="sm:col-span-2">
             <label class="block font-semibold text-brand-dark dark:text-white mb-1.5">المورد المفضل (اختياري)</label>
-            <select
+            <Select
               v-model="form.supplierId"
-              class="w-full px-3.5 py-2.5 rounded-xl border border-brand-gray/25 bg-brand-light/50 dark:bg-brand-dark text-brand-dark dark:text-white text-xs font-medium focus:border-brand-accent transition-all"
-            >
-              <option :value="null">اختر المورد...</option>
-              <option v-for="s in inventoryStore.suppliers" :key="s.id" :value="s.id">
-                {{ s.name }}
-              </option>
-            </select>
+              :options="supplierSelectOptions"
+              optionLabel="label"
+              optionValue="value"
+              placeholder="ابحث واختر المورد..."
+              filter
+              showClear
+              class="w-full text-xs font-medium"
+            />
           </div>
 
           <!-- Description (Optional, Full Width) -->
@@ -1387,6 +1485,7 @@
 <script setup>
 import { ref, computed, onMounted } from "vue";
 import { useOhdaInventoryStore } from "../stores/useOhdaInventoryStore";
+import { useOhdaWarehouseBinStore } from "../stores/useOhdaWarehouseBinStore";
 import { useToastStore } from "@/stores/toastStore";
 import OhdaDataTable from "../components/OhdaDataTable.vue";
 import OhdaModal from "../components/OhdaModal.vue";
@@ -1412,6 +1511,7 @@ import {
   RefreshCw,
   Sparkles,
   Layers,
+  Building2,
   ShieldCheck,
   QrCode,
   LayoutGrid,
@@ -1419,6 +1519,7 @@ import {
 } from "lucide-vue-next";
 
 const inventoryStore = useOhdaInventoryStore();
+const binStore = useOhdaWarehouseBinStore();
 const toastStore = useToastStore();
 
 const viewMode = ref(localStorage.getItem("ohda_products_view_mode") || "table");
@@ -1713,9 +1814,146 @@ onMounted(async () => {
   await Promise.all([
     inventoryStore.fetchProducts(),
     inventoryStore.fetchCategories(),
-    inventoryStore.fetchSuppliers()
+    inventoryStore.fetchSuppliers(),
+    binStore.fetchBins(),
+    binStore.fetchDepartments()
   ]);
 });
+
+function getDeptIconForShelf(name) {
+  if (!name) return "📦";
+  const lower = name.toLowerCase();
+  if (lower.includes("زيت") || lower.includes("زيوت") || lower.includes("سوائل") || lower.includes("oil")) return "🛢️";
+  if (lower.includes("قطع") || lower.includes("غيار") || lower.includes("spare") || lower.includes("parts")) return "⚙️";
+  if (lower.includes("فلتر") || lower.includes("فلاتر")) return "🧯";
+  return "📦";
+}
+
+// Cascading Warehouse & Shelf State
+const selectedWarehouseId = ref(null);
+const selectedShelfName = ref("");
+const customShelfText = ref("");
+const isCustomShelfMode = ref(false);
+
+const warehouseSelectOptions = computed(() => {
+  const depts = binStore.departments || [];
+  return depts.map(d => ({
+    value: d.id,
+    label: `${getDeptIconForShelf(d.name)} ${d.name}`
+  }));
+});
+
+const selectedWarehouseName = computed(() => {
+  if (!selectedWarehouseId.value) return "";
+  const dept = binStore.departments?.find(d => d.id === selectedWarehouseId.value);
+  return dept?.name || "المستودع المختار";
+});
+
+const shelvesForSelectedWarehouse = computed(() => {
+  if (!selectedWarehouseId.value) return [];
+  const deptBins = (binStore.bins || []).filter(b => b.departmentId === selectedWarehouseId.value);
+  const options = deptBins.map(b => ({
+    value: b.name || b.code,
+    label: `${b.name} (${b.code}) - سعة شاغرة: ${b.remainingCapacity != null ? b.remainingCapacity : Math.max(0, (b.capacity || 0) - (b.itemsCount || 0))}`
+  }));
+  options.unshift({
+    value: "الرف الرئيسي",
+    label: "📌 الرف الرئيسي (افتراضي)"
+  });
+  return options;
+});
+
+const supplierSelectOptions = computed(() => {
+  return (inventoryStore.suppliers || []).map(s => ({
+    value: s.id,
+    label: s.companyName || s.name
+  }));
+});
+
+const categoryFilterOptions = computed(() => {
+  const list = (inventoryStore.categories || []).map(c => ({
+    value: c.id,
+    label: `${c.name} (${countProductsInCategory(c.id)})`
+  }));
+  list.unshift({
+    value: null,
+    label: `جميع التصنيفات (${inventoryStore.products.length})`
+  });
+  return list;
+});
+
+function onWarehouseSelectionChange() {
+  const deptBins = (binStore.bins || []).filter(b => b.departmentId === selectedWarehouseId.value);
+  if (deptBins.length > 0) {
+    selectedShelfName.value = deptBins[0].name || deptBins[0].code;
+  } else {
+    selectedShelfName.value = "الرف الرئيسي";
+  }
+  isCustomShelfMode.value = false;
+  customShelfText.value = "";
+  syncDefaultShelfLocation();
+}
+
+function toggleCustomShelfMode() {
+  isCustomShelfMode.value = !isCustomShelfMode.value;
+  syncDefaultShelfLocation();
+}
+
+function syncDefaultShelfLocation() {
+  if (!selectedWarehouseId.value) {
+    form.value.defaultShelfLocation = "";
+    return;
+  }
+  const wName = selectedWarehouseName.value;
+  const sName = isCustomShelfMode.value
+    ? (customShelfText.value?.trim() || "الرف الرئيسي")
+    : (selectedShelfName.value || "الرف الرئيسي");
+  form.value.defaultShelfLocation = `[${wName}] ${sName}`;
+}
+
+function initShelfSelection(locationStr) {
+  isCustomShelfMode.value = false;
+  customShelfText.value = "";
+
+  if (!locationStr || !locationStr.trim()) {
+    selectedWarehouseId.value = binStore.departments?.[0]?.id || null;
+    selectedShelfName.value = "الرف الرئيسي";
+    syncDefaultShelfLocation();
+    return;
+  }
+
+  const str = locationStr.trim();
+  const bracketMatch = str.match(/^\[(.*?)\]\s*(.*)$/);
+  if (bracketMatch) {
+    const wName = bracketMatch[1].trim();
+    const sName = bracketMatch[2].trim();
+    const dept = binStore.departments?.find(d => d.name.trim() === wName);
+    if (dept) {
+      selectedWarehouseId.value = dept.id;
+      const binExists = (binStore.bins || []).some(
+        b => b.departmentId === dept.id && (b.name === sName || b.code === sName)
+      );
+      if (binExists || sName === "الرف الرئيسي") {
+        selectedShelfName.value = sName;
+      } else {
+        isCustomShelfMode.value = true;
+        customShelfText.value = sName;
+      }
+      return;
+    }
+  }
+
+  const matchedBin = (binStore.bins || []).find(b => b.name === str || b.code === str);
+  if (matchedBin && matchedBin.departmentId) {
+    selectedWarehouseId.value = matchedBin.departmentId;
+    selectedShelfName.value = matchedBin.name || matchedBin.code;
+    return;
+  }
+
+  selectedWarehouseId.value = binStore.departments?.[0]?.id || null;
+  isCustomShelfMode.value = true;
+  customShelfText.value = str;
+}
 
 // Computed Metrics
 const totalQuantitySum = computed(() => {
@@ -1799,6 +2037,7 @@ function openAddModal() {
     defaultShelfLocation: ""
   };
   generateSku();
+  initShelfSelection("");
   showModal.value = true;
 }
 
@@ -1822,6 +2061,7 @@ function openEditModal(product) {
     hasExpiryDate: Boolean(product.hasExpiryDate),
     defaultShelfLocation: product.defaultShelfLocation || ""
   };
+  initShelfSelection(product.defaultShelfLocation || "");
   showModal.value = true;
 }
 
@@ -1850,6 +2090,7 @@ async function saveProduct() {
 
   saving.value = true;
   try {
+    const targetQty = Number(form.value.currentQuantity) || 0;
     const payload = {
       name: form.value.name.trim(),
       categoryId: form.value.categoryId,
@@ -1858,8 +2099,9 @@ async function saveProduct() {
       purchasePrice: form.value.costPrice || 0,
       sellingPrice: form.value.sellingPrice || 0,
       unitPrice: form.value.sellingPrice || 0,
-      currentQuantity: 0, // Strict rule: new definitions have 0 stock
-      amount: 0,
+      initialQuantity: targetQty,
+      currentQuantity: targetQty,
+      amount: targetQty,
       minQuantity: form.value.minQuantity || 5,
       minThreshold: form.value.minQuantity || 5,
       sku: form.value.sku?.trim() || null,
@@ -1875,7 +2117,7 @@ async function saveProduct() {
     let res;
     if (isEditing.value) {
       payload.id = editingId.value;
-      payload.currentQuantity = form.value.currentQuantity; // preserve existing read-only value
+      payload.currentQuantity = targetQty;
       res = await inventoryStore.updateProduct(editingId.value, payload);
     } else {
       res = await inventoryStore.addProduct(payload);
@@ -1997,7 +2239,11 @@ async function executeDeleteProduct() {
 
 // Excel Actions
 function exportExcel() {
-  inventoryStore.exportExcel("products");
+  if (typeof inventoryStore.exportExcel === 'function') {
+    inventoryStore.exportExcel("products");
+  } else if (typeof inventoryStore.exportToExcel === 'function') {
+    inventoryStore.exportToExcel("products");
+  }
 }
 
 function downloadTemplate() {

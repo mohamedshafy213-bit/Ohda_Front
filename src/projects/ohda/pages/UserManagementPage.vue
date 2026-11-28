@@ -1199,7 +1199,8 @@ async function handleBranchFilterChange() {
   if (authStore.isSuperAdmin) {
     await Promise.all([
       userStore.fetchUsers(selectedBranchFilter.value),
-      groupStore.fetchUserGroups(selectedBranchFilter.value)
+      groupStore.fetchUserGroups(selectedBranchFilter.value),
+      branchStore.fetchMyQuota(selectedBranchFilter.value > 0 ? selectedBranchFilter.value : null)
     ]);
   }
 }

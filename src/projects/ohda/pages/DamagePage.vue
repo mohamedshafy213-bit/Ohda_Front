@@ -259,17 +259,16 @@
       <form @submit.prevent="submitCreateDamage" id="createDamageForm" class="space-y-4 text-xs">
         <div>
           <label class="block font-semibold mb-1">اختر الصنف *</label>
-          <select
+          <Select
             v-model="form.productId"
-            required
+            :options="productDamageOptions"
+            optionLabel="label"
+            optionValue="value"
             @change="onProductSelected"
-            class="w-full p-2.5 rounded-xl border border-brand-gray/20 dark:border-white/10 bg-transparent text-brand-dark dark:text-white"
-          >
-            <option value="" disabled>اختر الصنف...</option>
-            <option v-for="p in productsWithStock" :key="p.id" :value="p.id" class="bg-white dark:bg-slate-800">
-              {{ p.name }} (رصيد: {{ p.currentQuantity }} {{ p.unit }})
-            </option>
-          </select>
+            placeholder="ابحث واختر الصنف..."
+            filter
+            class="w-full text-xs font-semibold"
+          />
         </div>
 
         <div v-if="productBatches.length > 0">
@@ -408,6 +407,12 @@ const form = ref({
 });
 
 const productsWithStock = computed(() => (inventoryStore.products || []).filter(p => p.currentQuantity > 0));
+const productDamageOptions = computed(() => {
+  return productsWithStock.value.map(p => ({
+    value: p.id,
+    label: `${p.name} (رصيد: ${p.currentQuantity} ${p.unit})`
+  }));
+});
 const selectedProduct = computed(() => (inventoryStore.products || []).find(p => p.id === form.value.productId));
 const selectedBatch = computed(() => productBatches.value.find(b => b.id === form.value.batchId));
 

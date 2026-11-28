@@ -50,8 +50,53 @@ export const useOhdaWarehouseBinStore = defineStore("ohdaWarehouseBin", {
         const res = await apiGet("/api/Department");
         const list = res?.data?.objects || res?.data?.singleObject || [];
         this.departments = list;
+        return list;
       } catch (error) {
         console.error("Error fetching departments:", error);
+        return [];
+      }
+    },
+
+    async createDepartment(data) {
+      try {
+        const res = await apiPost("/api/Department", data);
+        if (res?.data?.isDone) {
+          await this.fetchDepartments();
+          return { success: true, message: res?.data?.returnMessage || "تمت إضافة المستودع/المخزن بنجاح" };
+        }
+        return { success: false, message: res?.data?.returnMessage || "فشل إضافة المستودع" };
+      } catch (error) {
+        console.error("Error creating department:", error);
+        return { success: false, message: error?.response?.data?.returnMessage || error?.message || "حدث خطأ أثناء إضافة المستودع" };
+      }
+    },
+
+    async updateDepartment(id, data) {
+      try {
+        const res = await apiPut(`/api/Department/${id}`, data);
+        if (res?.data?.isDone) {
+          await this.fetchDepartments();
+          return { success: true, message: res?.data?.returnMessage || "تم تحديث المستودع بنجاح" };
+        }
+        return { success: false, message: res?.data?.returnMessage || "فشل تحديث المستودع" };
+      } catch (error) {
+        console.error("Error updating department:", error);
+        return { success: false, message: error?.response?.data?.returnMessage || error?.message || "حدث خطأ أثناء تحديث المستودع" };
+      }
+    },
+
+    async deleteDepartment(id) {
+      try {
+        const res = await apiDelete(`/api/Department/${id}`);
+        if (res?.data?.isDone) {
+          await this.fetchDepartments();
+          await this.fetchBins();
+          return { success: true, message: res?.data?.returnMessage || "تم حذف المستودع بنجاح" };
+        }
+        return { success: false, message: res?.data?.returnMessage || "فشل حذف المستودع" };
+      } catch (error) {
+        console.error("Error deleting department:", error);
+        return { success: false, message: error?.response?.data?.returnMessage || error?.message || "حدث خطأ أثناء حذف المستودع" };
       }
     },
 
