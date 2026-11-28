@@ -272,18 +272,13 @@
             </select>
           </div>
 
-          <!-- Financial Account / Due Date -->
-          <div v-if="createForm.paymentType !== 2">
-            <label class="block font-bold text-brand-dark dark:text-white mb-1">الخزينة / الحساب المالي</label>
-            <select
-              v-model="createForm.financialAccountId"
-              class="w-full bg-brand-light dark:bg-white/5 border border-brand-gray/25 rounded-xl px-3 py-2 text-xs text-brand-dark dark:text-white"
-            >
-              <option value="" class="bg-white dark:bg-slate-800">الخزينة النقدية الرئيسية</option>
-              <option v-for="acc in financeStore.accounts" :key="acc.id" :value="acc.id" class="bg-white dark:bg-slate-800">
-                {{ acc.name }} ({{ formatCurrency(acc.currentBalance) }} ج.م)
-              </option>
-            </select>
+          <div v-if="createForm.paymentType !== 2" class="sm:col-span-2">
+            <MultiPaymentMethodSelector
+              v-model="createForm.splits"
+              :total-amount="Number(createForm.paidAmount) || 0"
+              @update:valid="isPurchaseSplitValid = $event"
+              label="توزيع طرق سداد فاتورة المشتريات (كاش / بنك / إنستاباي)"
+            />
           </div>
 
           <div v-if="createForm.paymentType === 2 || createForm.paymentType === 3">
@@ -878,6 +873,7 @@ import { normalizeArabic } from "../utils/arabicNormalizer";
 import { apiGet } from "@/utilities/fetchApi";
 import OhdaDataTable from "../components/OhdaDataTable.vue";
 import OhdaModal from "../components/OhdaModal.vue";
+import MultiPaymentMethodSelector from "../components/MultiPaymentMethodSelector.vue";
 import ExcelImportModal from "../components/ExcelImportModal.vue";
 import { downloadServerPdf, printServerPdf } from "../utils/pdfHelper";
 import { exportToExcelCsv } from "../utils/excelHelper";
@@ -969,6 +965,8 @@ function createEmptyLine() {
   };
 }
 
+const isPurchaseSplitValid = ref(true);
+
 const createForm = ref({
   supplierId: "",
   supplierInvoiceNumber: "",
@@ -979,6 +977,7 @@ const createForm = ref({
   discountAmount: 0,
   paymentType: 1,
   paidAmount: 0,
+  splits: [],
   financialAccountId: "",
   invoiceImageUrl: "",
   notes: "",
@@ -1354,6 +1353,7 @@ async function submitCreatePurchase(isDraft = false) {
     discountAmount: Number(createForm.value.discountAmount) || 0,
     paymentType: createForm.value.paymentType,
     paidAmount: Number(createForm.value.paidAmount) || 0,
+    splits: createForm.value.splits || [],
     financialAccountId: createForm.value.financialAccountId ? parseInt(createForm.value.financialAccountId) : null,
     invoiceImageUrl: createForm.value.invoiceImageUrl || null,
     notes: createForm.value.notes || null,

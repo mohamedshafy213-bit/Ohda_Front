@@ -923,26 +923,38 @@
         <div class="p-3 bg-emerald-500/10 border border-emerald-500/20 rounded-xl text-xs text-emerald-800 dark:text-emerald-300">
           <div class="flex items-center justify-between font-bold">
             <span>الموظف: {{ selectedPayroll?.employeeName }}</span>
-            <span class="font-mono text-sm">{{ formatCurrency(selectedPayroll?.netSalary) }}</span>
+            <span class="font-mono text-sm font-bold text-emerald-700 dark:text-emerald-300">{{ formatCurrency(payForm.amount ?? selectedPayroll?.netSalary) }}</span>
+          </div>
+          <div class="mt-1 flex items-center justify-between opacity-90 text-[11px]">
+            <span>نظام الأجر: {{ selectedPayroll?.salaryType === 2 ? 'أجر باليومية' : 'راتب شهري ثابت' }}</span>
+            <span v-if="selectedPayroll?.salaryType === 2">({{ selectedPayroll?.daysWorked || 0 }} يوم حضور مسجل)</span>
           </div>
           <p class="text-[11px] text-slate-500 dark:text-slate-400 mt-1">
-            سيتم تعليم الراتب كمدفوع، وتسجيل قيد مصروف تلقائي بحساب الرواتب والأجور.
+            سيتم تعليم الراتب كمدفوع، وتسجيل قيد مصروف تلقائي بحساب الرواتب والأجور وخصم المبلغ من الخزينة.
           </p>
         </div>
 
         <div>
-          <label class="block font-semibold mb-1">طريقة الصرف *</label>
-          <select
-            v-model="payForm.paymentMethod"
+          <label class="block font-semibold mb-1">المبلغ المطلوب صرفه *</label>
+          <input
+            type="number"
+            v-model.number="payForm.amount"
+            min="1"
+            step="50"
             required
-            class="w-full text-xs p-2.5 rounded-xl border border-brand-gray/20 dark:border-white/10 bg-transparent text-brand-dark dark:text-white focus:border-brand-accent transition-all"
-          >
-            <option :value="1" class="bg-white dark:bg-slate-800">نقدي من الخزينة (كاش)</option>
-            <option :value="3" class="bg-white dark:bg-slate-800">إنستاباي / محفظة إلكترونية</option>
-            <option :value="4" class="bg-white dark:bg-slate-800">تحويل بنكي</option>
-            <option :value="2" class="bg-white dark:bg-slate-800">بطاقة بنكية / فيزا</option>
-          </select>
+            class="w-full text-sm p-2.5 rounded-xl border border-brand-gray/20 dark:border-white/10 bg-transparent text-emerald-600 dark:text-emerald-400 font-mono font-bold"
+          />
+          <p v-if="selectedPayroll?.netSalary === 0" class="text-[10px] text-amber-600 dark:text-amber-400 mt-1">
+            💡 ملاحظة: الصافي المحسوب 0 ج.م بسبب عدم تسجيل أيام حضور بكشف الحضور لهذا الشهر، يمكنك كتابة المبلغ المراد صرفه باليد مباشرة وسيتم اعتماده.
+          </p>
         </div>
+
+        <MultiPaymentMethodSelector
+          v-model="payForm.splits"
+          :total-amount="Number(payForm.amount) || 0"
+          @update:valid="isSalarySplitValid = $event"
+          label="طرق صرف الراتب (كاش / فيزا / إنستاباي)"
+        />
 
         <div>
           <label class="block font-semibold mb-1">تاريخ الصرف *</label>
@@ -1092,19 +1104,12 @@
           />
         </div>
 
-        <div>
-          <label class="block font-semibold mb-1">طريقة الصرف *</label>
-          <select
-            v-model.number="quickPayForm.paymentMethod"
-            required
-            class="w-full text-xs p-2.5 rounded-xl border border-brand-gray/20 dark:border-white/10 bg-brand-white dark:bg-brand-dark text-brand-dark dark:text-white"
-          >
-            <option :value="1">نقدي (كاش من درج النقدية / الخزينة)</option>
-            <option :value="2">بطاقة بنكية / فيزا</option>
-            <option :value="3">إنستاباي / محفظة إلكترونية</option>
-            <option :value="4">تحويل بنكي</option>
-          </select>
-        </div>
+        <MultiPaymentMethodSelector
+          v-model="quickPayForm.splits"
+          :total-amount="Number(quickPayForm.amount) || 0"
+          @update:valid="isQuickSalarySplitValid = $event"
+          label="طرق صرف الراتب (كاش / فيزا / إنستاباي)"
+        />
 
         <div>
           <label class="block font-semibold mb-1">تاريخ الصرف</label>
@@ -1275,6 +1280,7 @@ import { useOhdaUserPermissionStore } from "../stores/useOhdaUserPermissionStore
 import { useOhdaLookupStore } from "../stores/useOhdaLookupStore";
 import { filterPhone, filterNationalId, isValidPhone, isValidNationalIdNumber, allowOnlyNumbers } from "@/utilities/validations";
 import OhdaModal from "../components/OhdaModal.vue";
+import MultiPaymentMethodSelector from "../components/MultiPaymentMethodSelector.vue";
 import ExcelImportModal from "../components/ExcelImportModal.vue";
 import LoadingSkeleton from "@/components/LoadingSkeleton.vue";
 import EmptyState from "@/components/EmptyState.vue";
@@ -1325,6 +1331,9 @@ const showPayModal = ref(false);
 const showDeleteModal = ref(false);
 const employeeToDelete = ref(null);
 
+const isSalarySplitValid = ref(true);
+const isQuickSalarySplitValid = ref(true);
+
 const showQuickPayModal = ref(false);
 const quickPayEmp = ref(null);
 const quickPayForm = ref({
@@ -1333,6 +1342,7 @@ const quickPayForm = ref({
   year: now.getFullYear(),
   amount: 0,
   paymentMethod: 1,
+  splits: [],
   paymentDate: todayStr,
   notes: ""
 });
@@ -1406,7 +1416,9 @@ const payrollForm = ref({
 
 const payForm = ref({
   payrollId: null,
+  amount: 0,
   paymentMethod: 1,
+  splits: [],
   paymentDate: todayStr,
   notes: ""
 });
@@ -1628,9 +1640,14 @@ async function submitPayrollItem() {
 
 function openPayModal(p) {
   selectedPayroll.value = p;
+  const initialAmount = (p.netSalary && p.netSalary > 0)
+    ? p.netSalary
+    : (p.baseSalary && p.baseSalary > 0 ? p.baseSalary : (p.dailyRate || 300));
   payForm.value = {
     payrollId: p.id,
+    amount: initialAmount,
     paymentMethod: 1,
+    splits: [{ method: 1, amount: initialAmount }],
     paymentDate: todayStr,
     notes: ""
   };
@@ -1638,7 +1655,15 @@ function openPayModal(p) {
 }
 
 async function submitPaySalary() {
-  const res = await hrStore.paySalary(payForm.value);
+  if (!isSalarySplitValid.value) {
+    alert("توزيع مبالغ طرق الدفع غير مطابق لإجمالي صافي الراتب.");
+    return;
+  }
+  const payload = {
+    ...payForm.value,
+    paymentMethod: payForm.value.splits?.[0]?.method || payForm.value.paymentMethod || 1
+  };
+  const res = await hrStore.paySalary(payload);
   if (res.success) {
     showPayModal.value = false;
     await loadPayroll();
@@ -1649,12 +1674,14 @@ async function submitPaySalary() {
 
 function openQuickPayModal(emp) {
   quickPayEmp.value = emp;
+  const initAmt = emp.baseSalary || 0;
   quickPayForm.value = {
     employeeId: emp.id,
     month: payrollMonth.value || (now.getMonth() + 1),
     year: payrollYear.value || now.getFullYear(),
-    amount: emp.baseSalary || 0,
+    amount: initAmt,
     paymentMethod: 1,
+    splits: [{ method: 1, amount: initAmt }],
     paymentDate: todayStr,
     notes: ""
   };
@@ -1666,8 +1693,16 @@ async function submitQuickPay() {
     alert("يرجى إدخال مبلغ الراتب بشكل صحيح.");
     return;
   }
+  if (!isQuickSalarySplitValid.value) {
+    alert("توزيع مبالغ طرق الدفع غير مطابق لمبلغ الراتب المطلوب صرفه.");
+    return;
+  }
   quickPayLoading.value = true;
-  const res = await hrStore.quickPayEmployee(quickPayForm.value);
+  const payload = {
+    ...quickPayForm.value,
+    paymentMethod: quickPayForm.value.splits?.[0]?.method || quickPayForm.value.paymentMethod || 1
+  };
+  const res = await hrStore.quickPayEmployee(payload);
   quickPayLoading.value = false;
   if (res.success) {
     alert(res.message);

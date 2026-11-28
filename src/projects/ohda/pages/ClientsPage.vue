@@ -1163,32 +1163,12 @@
           />
         </div>
 
-        <div class="grid grid-cols-2 gap-3">
-          <div>
-            <label class="block font-semibold text-brand-dark dark:text-white mb-1.5">طريقة الدفع</label>
-            <select
-              v-model="paymentForm.paymentMethod"
-              class="w-full px-3 py-2 rounded-xl border border-brand-gray/25 bg-brand-light/50 dark:bg-white/5 text-xs text-brand-dark dark:text-white"
-            >
-              <option :value="1">نقدي (كاش)</option>
-              <option :value="2">بطاقة بنكية (فيزا)</option>
-              <option :value="3">إنستاباي (InstaPay)</option>
-              <option :value="4">تحويل بنكي</option>
-            </select>
-          </div>
-
-          <div>
-            <label class="block font-semibold text-brand-dark dark:text-white mb-1.5">الخزينة المودع بها</label>
-            <select
-              v-model="paymentForm.financialAccountId"
-              class="w-full px-3 py-2 rounded-xl border border-brand-gray/25 bg-brand-light/50 dark:bg-white/5 text-xs text-brand-dark dark:text-white"
-            >
-              <option v-for="acc in financeAccounts" :key="acc.id" :value="acc.id">
-                {{ acc.name }}
-              </option>
-            </select>
-          </div>
-        </div>
+        <MultiPaymentMethodSelector
+          v-model="paymentForm.splits"
+          :total-amount="Number(paymentForm.amount) || 0"
+          @update:valid="isClientPaymentValid = $event"
+          label="طرق التحصيل والسداد (تحديد متعدد وتوزيع المبالغ)"
+        />
 
         <div>
           <label class="block font-semibold text-brand-dark dark:text-white mb-1.5">رقم الإيصال / المرجع (اختياري)</label>
@@ -1241,6 +1221,7 @@ import { useOhdaFinanceStore } from "../stores/useOhdaFinanceStore";
 import { useOhdaJobCardStore } from "../stores/useOhdaJobCardStore";
 import { useOhdaConfirmStore } from "../stores/useOhdaConfirmStore";
 import OhdaModal from "../components/OhdaModal.vue";
+import MultiPaymentMethodSelector from "../components/MultiPaymentMethodSelector.vue";
 import OhdaDataTable from "../components/OhdaDataTable.vue";
 import ExcelImportModal from "../components/ExcelImportModal.vue";
 import { exportToExcelCsv } from "../utils/excelHelper";
@@ -1363,10 +1344,12 @@ const vehicleForm = ref({
   notes: ""
 });
 
+const isClientPaymentValid = ref(true);
 const paymentForm = ref({
   clientId: null,
   amount: 0,
   paymentMethod: 1,
+  splits: [],
   financialAccountId: null,
   reference: "",
   notes: ""
@@ -1663,10 +1646,12 @@ async function confirmDeleteVehicle(v) {
 
 function openPaymentModal(client) {
   payingClient.value = client;
+  const initAmt = client.currentBalance > 0 ? client.currentBalance : 0;
   paymentForm.value = {
     clientId: client.id,
-    amount: client.currentBalance > 0 ? client.currentBalance : 0,
+    amount: initAmt,
     paymentMethod: 1,
+    splits: [{ method: 1, amount: initAmt }],
     financialAccountId: financeAccounts.value[0]?.id || null,
     reference: "",
     notes: ""
@@ -1675,9 +1660,22 @@ function openPaymentModal(client) {
 }
 
 async function submitPaymentForm() {
+  if (!isClientPaymentValid.value) {
+    toast.add({
+      severity: "warn",
+      summary: "تنبيه",
+      detail: "توزيع مبالغ طرق الدفع غير مطابق لإجمالي المبلغ المحصل.",
+      life: 3500
+    });
+    return;
+  }
   submitting.value = true;
   try {
-    const res = await clientStore.recordPayment(paymentForm.value);
+    const payload = {
+      ...paymentForm.value,
+      paymentMethod: paymentForm.value.splits?.[0]?.method || paymentForm.value.paymentMethod || 1
+    };
+    const res = await clientStore.recordPayment(payload);
     if (res.success) {
       toast.add({
         severity: "success",

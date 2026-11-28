@@ -360,6 +360,16 @@
               📒 آجل على العميل [F7]
             </button>
           </div>
+
+          <!-- Split Payment Button (Cash + Card/Bank) -->
+          <button
+            type="button"
+            @click="openSplitPaymentModal"
+            :disabled="cartItems.length === 0 || posStore.loading"
+            class="w-full mt-2 py-2.5 rounded-2xl bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold text-xs cursor-pointer shadow-sm disabled:opacity-40 flex items-center justify-center gap-2"
+          >
+            <span>⚖️ دفع مجزأ (جزء كاش + جزء فيزا / بنك)</span>
+          </button>
         </div>
       </div>
     </div>
@@ -449,6 +459,35 @@
             class="px-5 py-2 rounded-xl bg-emerald-600 text-white font-extrabold cursor-pointer disabled:opacity-40"
           >
             تأكيد وحفظ الفاتورة ✓
+          </button>
+        </div>
+      </div>
+    </Dialog>
+
+    <!-- ==================== MODAL: SPLIT PAYMENT (CASH + BANK) ==================== -->
+    <Dialog v-model:visible="showSplitModal" modal header="دفع مجزأ (كاش + فيزا / بنك)" class="max-w-md w-full">
+      <div class="space-y-4 text-xs">
+        <div class="p-3 rounded-xl bg-brand-light dark:bg-white/5 flex justify-between items-center font-bold">
+          <span>إجمالي الفاتورة المطلوب:</span>
+          <span class="font-mono text-lg text-brand-accent">{{ netTotal.toFixed(2) }} ج.م</span>
+        </div>
+
+        <MultiPaymentMethodSelector
+          v-model="posSplits"
+          :total-amount="netTotal"
+          @update:valid="isPosSplitValid = $event"
+          label="توزيع طرق سداد الفاتورة (كاش / فيزا / إنستاباي / بنك)"
+        />
+
+        <div class="flex justify-end gap-2 pt-2">
+          <button type="button" @click="showSplitModal = false" class="px-4 py-2 rounded-xl border font-bold cursor-pointer">إلغاء</button>
+          <button
+            type="button"
+            @click="confirmSplitSale"
+            :disabled="!isPosSplitValid || posStore.loading"
+            class="px-5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold cursor-pointer disabled:opacity-40"
+          >
+            تأكيد السداد وتوليد الفاتورة ✓
           </button>
         </div>
       </div>
@@ -582,6 +621,7 @@ import QrCodeCanvas from "../components/QrCodeCanvas.vue";
 import { downloadServerPdf, printServerPdf } from "../utils/pdfHelper";
 import apiClient from "@/utilities/apiClient";
 import OhdaModal from "../components/OhdaModal.vue";
+import MultiPaymentMethodSelector from "../components/MultiPaymentMethodSelector.vue";
 import Dialog from "primevue/dialog";
 import {
   ShoppingCart, Barcode, Trash2, Printer, Receipt, AlertCircle, RefreshCw, PauseCircle, Download
@@ -609,6 +649,11 @@ const invoiceSearchQuery = ref("");
 // Modals
 const showCashModal = ref(false);
 const cashReceived = ref(0);
+const showSplitModal = ref(false);
+const posSplits = ref([]);
+const isPosSplitValid = ref(true);
+const splitCashAmount = ref(0);
+const splitBankAmount = ref(0);
 const showReceiptModal = ref(false);
 const receiptData = ref(null);
 const lastReceipt = ref(null);
@@ -902,6 +947,57 @@ const cashChangeDue = computed(() => (cashReceived.value || 0) - netTotal.value)
 function openCashPaymentModal() {
   cashReceived.value = netTotal.value;
   showCashModal.value = true;
+}
+
+function openSplitPaymentModal() {
+  const half = Math.round((netTotal.value / 2) * 100) / 100;
+  posSplits.value = [
+    { method: 1, amount: half },
+    { method: 2, amount: Math.round((netTotal.value - half) * 100) / 100 }
+  ];
+  showSplitModal.value = true;
+}
+
+async function confirmSplitSale() {
+  if (!isPosSplitValid.value) {
+    toast.add({ severity: "warn", summary: "تنبيه", detail: "مجموع مبالغ طرق الدفع يجب أن يساوي إجمالي الفاتورة تماماً.", life: 3000 });
+    return;
+  }
+  showSplitModal.value = false;
+  const cashPart = posSplits.value.find(s => s.method === 1)?.amount || 0;
+  const bankPart = posSplits.value.filter(s => s.method !== 1).reduce((s, it) => s + it.amount, 0);
+
+  const payload = {
+    clientId: selectedClientId.value,
+    paymentMethod: 1,
+    splitCashAmount: cashPart,
+    splitBankAmount: bankPart,
+    splits: posSplits.value,
+    discountAmount: Number(overallDiscount.value) || 0,
+    items: cartItems.value.map(it => ({
+      productId: it.productId,
+      packageId: it.packageId,
+      unitName: it.unitName,
+      packageMultiplier: it.packageMultiplier || 1,
+      quantity: it.quantity,
+      unitPrice: it.unitPrice,
+      discount: it.discount || 0,
+      serialNumbers: it.serialNumbers || []
+    })),
+    notes: `سداد متعدد: ${posSplits.value.map(s => `${s.amount} ج.م`).join(" + ")}`
+  };
+
+  const res = await posStore.createSale(payload);
+  if (res.success) {
+    toast.add({ severity: "success", summary: "تمت العملية", detail: "تم تسجيل الفاتورة وسدادها مجزأ بنجاح", life: 3000 });
+    clearCart();
+    lastReceipt.value = res.invoice;
+    receiptData.value = res.invoice;
+    showReceiptModal.value = true;
+    await posStore.fetchCatalog();
+  } else {
+    toast.add({ severity: "error", summary: "خطأ", detail: res.message, life: 4500 });
+  }
 }
 
 async function confirmCashSale() {

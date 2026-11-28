@@ -587,7 +587,7 @@
           </div>
 
           <!-- Initial Payment (Only for new jobs) -->
-          <div v-if="!isEditing" class="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2 border-t border-brand-gray/10">
+          <div v-if="!isEditing" class="space-y-3 pt-2 border-t border-brand-gray/10">
             <div>
               <label class="block font-semibold mb-1">المسدد نقداً / مقدماً الآن (ج.م)</label>
               <input
@@ -599,17 +599,12 @@
               />
             </div>
 
-            <div>
-              <label class="block font-semibold mb-1">طريقة الدفع</label>
-              <select
-                v-model="form.paymentMethod"
-                class="w-full px-3.5 py-2.5 rounded-xl border border-brand-gray/25 bg-white dark:bg-brand-dark text-brand-dark dark:text-white text-xs focus:border-brand-accent transition-all"
-              >
-                <option v-for="opt in paymentMethodOptions" :key="opt.value" :value="opt.value">
-                  {{ opt.label }}
-                </option>
-              </select>
-            </div>
+            <MultiPaymentMethodSelector
+              v-if="form.initialPaidAmount > 0"
+              v-model="form.splits"
+              :total-amount="form.initialPaidAmount || 0"
+              label="توزيع طرق سداد الدفعة المقدمة (متعدد)"
+            />
           </div>
         </div>
 
@@ -847,17 +842,12 @@
           />
         </div>
 
-        <div>
-          <label class="block font-semibold mb-1.5">طريقة الدفع</label>
-          <select
-            v-model="paymentForm.paymentMethod"
-            class="w-full px-3.5 py-2.5 rounded-xl border border-brand-gray/25 bg-white dark:bg-brand-dark text-xs text-brand-dark dark:text-white focus:border-brand-accent transition-all"
-          >
-            <option v-for="opt in paymentMethodOptions" :key="opt.value" :value="opt.value">
-              {{ opt.label }}
-            </option>
-          </select>
-        </div>
+        <!-- Multi Payment Method & Split Distribution -->
+        <MultiPaymentMethodSelector
+          v-model="paymentForm.splits"
+          :total-amount="paymentForm.amount || 0"
+          @update:valid="isPaymentSplitValid = $event"
+        />
 
         <div>
           <label class="block font-semibold mb-1.5">رقم الإيصال / الحوالة (اختياري)</label>
@@ -946,6 +936,7 @@ import { useToastStore } from "@/stores/toastStore";
 import apiClient from "@/utilities/apiClient";
 import OhdaDataTable from "../components/OhdaDataTable.vue";
 import OhdaModal from "../components/OhdaModal.vue";
+import MultiPaymentMethodSelector from "../components/MultiPaymentMethodSelector.vue";
 import QrCodeCanvas from "../components/QrCodeCanvas.vue";
 import { downloadServerPdf, printServerPdf } from "../utils/pdfHelper";
 import searchField from "@/components/searchField.vue";
@@ -1060,9 +1051,11 @@ const invoicePrintMode = ref("a4"); // "a4" or "receipt"
 const showPaymentModal = ref(false);
 const targetJobForPayment = ref(null);
 const savingPayment = ref(false);
+const isPaymentSplitValid = ref(true);
 const paymentForm = ref({
   amount: 0,
   paymentMethod: 1,
+  splits: [],
   reference: "",
   notes: ""
 });
@@ -1387,6 +1380,7 @@ function openPaymentModal(job) {
   paymentForm.value = {
     amount: job.remainingBalance || 0,
     paymentMethod: 1, // Cash default
+    splits: [{ method: 1, amount: job.remainingBalance || 0 }],
     reference: "",
     notes: ""
   };
@@ -1399,13 +1393,18 @@ async function submitPayment() {
     toastStore.addErrorToast("المبلغ يجب أن يكون أكبر من صفر");
     return;
   }
+  if (!isPaymentSplitValid.value) {
+    toastStore.addErrorToast("توزيع مبالغ طرق الدفع غير مطابق لإجمالي المبلغ المدفوع");
+    return;
+  }
 
   savingPayment.value = true;
   try {
     const payload = {
       jobCardId: targetJobForPayment.value.id,
       amount: paymentForm.value.amount,
-      paymentMethod: paymentForm.value.paymentMethod,
+      paymentMethod: paymentForm.value.splits?.[0]?.method || paymentForm.value.paymentMethod || 1,
+      splits: paymentForm.value.splits || [],
       reference: paymentForm.value.reference?.trim() || null,
       notes: paymentForm.value.notes?.trim() || null
     };

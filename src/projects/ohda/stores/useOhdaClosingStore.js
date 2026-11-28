@@ -15,14 +15,19 @@ export const useOhdaClosingStore = defineStore("ohdaClosing", {
   },
 
   actions: {
-    async fetchPreview(month = null, year = null) {
+    async fetchPreview(month = null, year = null, fromDate = null, toDate = null) {
       this.loading = true;
       try {
         const now = new Date();
         const m = month || (now.getMonth() + 1);
         const y = year || now.getFullYear();
 
-        const res = await apiGet(`/api/MonthClosing/preview?month=${m}&year=${y}`);
+        let url = `/api/MonthClosing/preview?month=${m}&year=${y}`;
+        if (fromDate && toDate) {
+          url += `&fromDate=${encodeURIComponent(fromDate)}&toDate=${encodeURIComponent(toDate)}`;
+        }
+
+        const res = await apiGet(url);
         if (res?.data?.isDone && res?.data?.singleObject) {
           this.preview = res.data.singleObject;
           return this.preview;

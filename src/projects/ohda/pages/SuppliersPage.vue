@@ -279,33 +279,11 @@
           />
         </div>
 
-        <div class="grid grid-cols-2 gap-3">
-          <div>
-            <label class="block text-xs font-semibold text-brand-dark dark:text-white mb-1.5">طريقة الصرف</label>
-            <select
-              v-model="paymentForm.paymentMethod"
-              class="w-full bg-brand-light dark:bg-white/5 border border-brand-gray/25 rounded-xl px-3 py-2 text-xs text-brand-dark dark:text-white"
-            >
-              <option :value="1">نقدي (كاش)</option>
-              <option :value="2">شيك بنكي</option>
-              <option :value="3">محفظة إنستاباي</option>
-              <option :value="4">تحويل بنكي</option>
-            </select>
-          </div>
-
-          <div>
-            <label class="block text-xs font-semibold text-brand-dark dark:text-white mb-1.5">الصرف من خزينة</label>
-            <select
-              v-model="paymentForm.financialAccountId"
-              class="w-full bg-brand-light dark:bg-white/5 border border-brand-gray/25 rounded-xl px-3 py-2 text-xs text-brand-dark dark:text-white"
-            >
-              <option value="">الخزينة الرئيسية</option>
-              <option v-for="acc in financeStore.accounts" :key="acc.id" :value="acc.id">
-                {{ acc.name }}
-              </option>
-            </select>
-          </div>
-        </div>
+        <MultiPaymentMethodSelector
+          v-model="paymentForm.splits"
+          :total-amount="Number(paymentForm.amount) || 0"
+          @update:valid="isSupplierPaymentValid = $event"
+        />
 
         <div>
           <label class="block text-xs font-semibold text-brand-dark dark:text-white mb-1.5">رقم السند / الشيك (اختياري)</label>
@@ -451,6 +429,7 @@ import { useOhdaConfirmStore } from "../stores/useOhdaConfirmStore";
 import OhdaDataTable from "../components/OhdaDataTable.vue";
 import { filterPhone, isValidPhone, allowOnlyNumbers } from "@/utilities/validations";
 import OhdaModal from "../components/OhdaModal.vue";
+import MultiPaymentMethodSelector from "../components/MultiPaymentMethodSelector.vue";
 import ExcelImportModal from "../components/ExcelImportModal.vue";
 import { exportToExcelCsv } from "../utils/excelHelper";
 import {
@@ -598,9 +577,11 @@ const form = ref({
   initialBalance: 0
 });
 
+const isSupplierPaymentValid = ref(true);
 const paymentForm = ref({
   amount: 0,
   paymentMethod: 1,
+  splits: [],
   financialAccountId: "",
   reference: "",
   notes: ""
@@ -666,9 +647,11 @@ async function saveSupplier() {
 
 function openPaymentModal(s) {
   targetSupplier.value = s;
+  const initAmt = s.currentBalance > 0 ? s.currentBalance : 0;
   paymentForm.value = {
-    amount: s.currentBalance > 0 ? s.currentBalance : 0,
+    amount: initAmt,
     paymentMethod: 1,
+    splits: [{ method: 1, amount: initAmt }],
     financialAccountId: "",
     reference: "",
     notes: ""
@@ -681,12 +664,17 @@ async function submitPaymentForm() {
     toast.add({ severity: "warn", summary: "تنبيه", detail: "يرجى إدخال مبلغ سداد أكبر من صفر", life: 3000 });
     return;
   }
+  if (!isSupplierPaymentValid.value) {
+    toast.add({ severity: "warn", summary: "تنبيه", detail: "توزيع مبالغ طرق الدفع غير مطابق للمبلغ المسدد للمورد.", life: 3500 });
+    return;
+  }
 
   submitting.value = true;
   const res = await inventoryStore.recordSupplierPayment({
     supplierId: targetSupplier.value.id,
     amount: paymentForm.value.amount,
-    paymentMethod: paymentForm.value.paymentMethod,
+    paymentMethod: paymentForm.value.splits?.[0]?.method || paymentForm.value.paymentMethod || 1,
+    splits: paymentForm.value.splits || [],
     financialAccountId: paymentForm.value.financialAccountId ? parseInt(paymentForm.value.financialAccountId) : null,
     reference: paymentForm.value.reference,
     notes: paymentForm.value.notes

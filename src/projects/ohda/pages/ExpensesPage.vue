@@ -548,19 +548,12 @@
             />
           </div>
 
-          <div>
-            <label class="block font-semibold mb-1">طريقة الدفع *</label>
-            <select
-              v-model="generalForm.paymentMethod"
-              required
-              class="w-full p-2.5 rounded-xl border border-brand-gray/20 dark:border-white/10 bg-transparent text-brand-dark dark:text-white text-xs"
-            >
-              <option :value="1" class="bg-white dark:bg-slate-800">كاش (الخزينة النقدية)</option>
-              <option :value="2" class="bg-white dark:bg-slate-800">بطاقة بنكية / فيزا</option>
-              <option :value="3" class="bg-white dark:bg-slate-800">إنستاباي (InstaPay)</option>
-              <option :value="4" class="bg-white dark:bg-slate-800">تحويل بنكي</option>
-              <option :value="5" class="bg-white dark:bg-slate-800">أخرى</option>
-            </select>
+          <div class="sm:col-span-2">
+            <MultiPaymentMethodSelector
+              v-model="generalForm.splits"
+              :total-amount="Number(generalForm.amount) || 0"
+              @update:valid="isExpenseSplitValid = $event"
+            />
           </div>
 
           <div>
@@ -753,6 +746,7 @@ import { useOhdaExpenseStore } from "../stores/useOhdaExpenseStore";
 import { useOhdaConfirmStore } from "../stores/useOhdaConfirmStore";
 import OhdaDataTable from "../components/OhdaDataTable.vue";
 import OhdaModal from "../components/OhdaModal.vue";
+import MultiPaymentMethodSelector from "../components/MultiPaymentMethodSelector.vue";
 import LoadingSkeleton from "@/components/LoadingSkeleton.vue";
 import { exportToExcelCsv } from "../utils/excelHelper";
 import {
@@ -819,11 +813,14 @@ const uploadingGeneralReceipt = ref(false);
 
 const todayStr = new Date().toISOString().split("T")[0];
 
+const isExpenseSplitValid = ref(true);
+
 const generalForm = ref({
   expenseType: 3,
   amount: null,
   expenseDate: todayStr,
   paymentMethod: 1,
+  splits: [],
   supplierName: "",
   invoiceNumber: "",
   receiptAttachmentPath: "",
@@ -1064,11 +1061,16 @@ async function deleteFixedTemplate(tpl) {
 }
 
 async function submitGeneralExpense() {
+  if (!isExpenseSplitValid.value) {
+    toast.add({ severity: "warn", summary: "تنبيه", detail: "مجموع مبالغ طرق الدفع يجب أن يساوي إجمالي المصروف تماماً.", life: 3500 });
+    return;
+  }
   const res = await expenseStore.addExpense({
     expenseType: generalForm.value.expenseType,
     amount: Number(generalForm.value.amount),
     expenseDate: generalForm.value.expenseDate ? new Date(generalForm.value.expenseDate).toISOString() : new Date().toISOString(),
-    paymentMethod: generalForm.value.paymentMethod,
+    paymentMethod: generalForm.value.splits?.[0]?.method || generalForm.value.paymentMethod || 1,
+    splits: generalForm.value.splits || [],
     supplierName: generalForm.value.supplierName,
     invoiceNumber: generalForm.value.invoiceNumber,
     receiptAttachmentPath: generalForm.value.receiptAttachmentPath,

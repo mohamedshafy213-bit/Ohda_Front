@@ -64,6 +64,8 @@ declare module 'vue' {
     ProfilePictureUpload: typeof import('./src/components/ProfilePictureUpload.vue')['default']
     RichText: typeof import('./src/components/RichText.vue')['default']
     RichTextPreview: typeof import('./src/components/RichTextPreview.vue')['default']
+    RouterLink: typeof import('vue-router')['RouterLink']
+    RouterView: typeof import('vue-router')['RouterView']
     SearchField: typeof import('./src/components/searchField.vue')['default']
     SecondaryButton: typeof import('./src/volt/SecondaryButton.vue')['default']
     Select: typeof import('./src/volt/Select.vue')['default']

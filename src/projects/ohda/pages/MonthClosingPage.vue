@@ -17,7 +17,7 @@
         <!-- Month Picker -->
         <select
           v-model.number="selectedMonth"
-          @change="loadMonthData"
+          @change="onMonthOrYearChange"
           class="text-xs p-2 rounded-xl border border-brand-gray/20 dark:border-white/10 bg-transparent text-brand-dark dark:text-white font-bold"
         >
           <option v-for="m in 12" :key="m" :value="m" class="bg-white dark:bg-slate-800">شهر {{ m }}</option>
@@ -26,7 +26,7 @@
         <!-- Year Picker -->
         <select
           v-model.number="selectedYear"
-          @change="loadMonthData"
+          @change="onMonthOrYearChange"
           class="text-xs p-2 rounded-xl border border-brand-gray/20 dark:border-white/10 bg-transparent text-brand-dark dark:text-white font-mono font-bold"
         >
           <option :value="2025" class="bg-white dark:bg-slate-800">2025</option>
@@ -34,9 +34,30 @@
           <option :value="2027" class="bg-white dark:bg-slate-800">2027</option>
         </select>
 
+        <!-- Custom Date Range Picker by Day -->
+        <div class="flex items-center gap-1 bg-black/5 dark:bg-white/5 px-2 py-1 rounded-xl border border-brand-gray/20 dark:border-white/10 text-xs">
+          <CalendarDays class="w-3.5 h-3.5 text-brand-gray dark:text-slate-400 shrink-0" />
+          <span class="text-[11px] text-slate-500 font-medium">من:</span>
+          <input
+            type="date"
+            v-model="customStartDate"
+            @change="loadMonthData"
+            class="bg-transparent text-xs p-1 font-mono text-brand-dark dark:text-white rounded border border-transparent hover:border-brand-gray/20 focus:border-brand-accent transition-colors"
+            title="تاريخ بداية الفترة المحسوبة"
+          />
+          <span class="text-[11px] text-slate-500 font-medium">إلى:</span>
+          <input
+            type="date"
+            v-model="customEndDate"
+            @change="loadMonthData"
+            class="bg-transparent text-xs p-1 font-mono text-brand-dark dark:text-white rounded border border-transparent hover:border-brand-gray/20 focus:border-brand-accent transition-colors"
+            title="تاريخ نهاية الفترة المحسوبة (تحديد دقيق باليوم)"
+          />
+        </div>
+
         <!-- Print Report -->
         <Button
-          @click="downloadServerPdf(`/api/ReportsPdf/month-closing/${selectedYear}/${selectedMonth}`, `MonthClosing_${selectedYear}_${selectedMonth}.pdf`)"
+          @click="downloadPdfReport"
           class="!bg-rose-600/15 hover:!bg-rose-600/25 !text-rose-700 dark:!text-rose-300 !border !border-rose-500/30 !font-bold !rounded-xl !px-3.5 !py-2 !text-xs flex items-center gap-1.5 cursor-pointer"
         >
           <Printer class="w-4 h-4" />
@@ -323,6 +344,182 @@
             <div class="flex justify-between items-center py-1">
               <span class="text-slate-600 dark:text-slate-300">خسائر التوالف وهالك الصلاحية:</span>
               <span class="font-mono font-bold text-rose-600">{{ formatCurrency(closingStore.preview?.totalDamageLoss) }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Visual Analytics: Pie Chart & Bar Chart (الرسوم البيانية التوضيحية للشهر) -->
+    <div class="bg-brand-white dark:bg-white/5 p-6 rounded-2xl border border-brand-gray/10 shadow-sm space-y-6">
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-brand-gray/10 pb-4">
+        <div>
+          <h2 class="text-base font-bold text-brand-dark dark:text-white flex items-center gap-2">
+            <PieChart class="w-5 h-5 text-purple-600" />
+            <span>الرسوم البيانية التوضيحية وتوزيع التدفقات المالية للشهر</span>
+          </h2>
+          <p class="text-xs text-brand-gray dark:text-slate-400 mt-0.5">
+            رسم بياني دائري (Pie/Donut Chart) يوضح توزيع الالتزامات والمصروفات + رسم شريطي (Bar Chart) لمقارنة الوارد والمنصرف
+          </p>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
+        <!-- 1. Pie / Donut Chart: Outflows Breakdown -->
+        <div class="bg-black/5 dark:bg-white/5 p-5 rounded-2xl border border-brand-gray/10 space-y-4">
+          <div class="flex items-center justify-between border-b border-brand-gray/10 pb-2.5">
+            <span class="text-xs font-bold text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
+              <PieChart class="w-4 h-4 text-rose-500" />
+              <span>توزيع المصروفات والمنصرف المالي (Pie Chart)</span>
+            </span>
+            <span class="font-mono text-xs font-bold text-rose-600">
+              {{ formatCurrency(closingStore.preview?.totalOutflows) }}
+            </span>
+          </div>
+
+          <div v-if="!outflowsChartData.length" class="p-8 text-center text-xs text-slate-400">
+            لا توجد مصروفات أو مشتريات مسجلة لهذه الفترة.
+          </div>
+
+          <div v-else class="flex flex-col sm:flex-row items-center gap-6">
+            <!-- SVG Donut Chart -->
+            <div class="relative shrink-0 w-44 h-44 flex items-center justify-center">
+              <svg viewBox="0 0 100 100" class="w-full h-full transform -rotate-90">
+                <path
+                  v-for="(slice, sIdx) in outflowsChartData"
+                  :key="sIdx"
+                  :d="getSvgDonutPath(50, 50, 46, 28, slice.startAngle, slice.endAngle)"
+                  :fill="slice.color"
+                  class="transition-all duration-300 hover:opacity-85 cursor-pointer"
+                >
+                  <title>{{ slice.label }}: {{ formatCurrency(slice.amount) }} ({{ slice.percentage }}%)</title>
+                </path>
+              </svg>
+              <!-- Center Text in Donut -->
+              <div class="absolute inset-0 flex flex-col items-center justify-center text-center pointer-events-none">
+                <span class="text-[10px] text-slate-400">إجمالي المنصرف</span>
+                <span class="text-xs font-bold font-mono text-brand-dark dark:text-white">{{ formatCurrency(closingStore.preview?.totalOutflows) }}</span>
+              </div>
+            </div>
+
+            <!-- Legend & Percentages List -->
+            <div class="flex-1 w-full space-y-2">
+              <div
+                v-for="(slice, lIdx) in outflowsChartData"
+                :key="lIdx"
+                class="flex items-center justify-between text-xs p-1.5 rounded-lg hover:bg-black/5 dark:hover:bg-white/5 transition-colors"
+              >
+                <div class="flex items-center gap-2">
+                  <span class="w-3 h-3 rounded-full shrink-0" :style="{ backgroundColor: slice.color }"></span>
+                  <span class="text-slate-700 dark:text-slate-300">{{ slice.label }}</span>
+                </div>
+                <div class="flex items-center gap-2 font-mono">
+                  <span class="font-bold text-slate-900 dark:text-slate-100">{{ formatCurrency(slice.amount) }}</span>
+                  <span class="text-[10px] text-slate-400 bg-black/5 dark:bg-white/10 px-1.5 py-0.5 rounded">
+                    {{ slice.percentage }}%
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 2. Bar Chart: Inflows vs Outflows Comparative Flow -->
+        <div class="bg-black/5 dark:bg-white/5 p-5 rounded-2xl border border-brand-gray/10 space-y-4">
+          <div class="flex items-center justify-between border-b border-brand-gray/10 pb-2.5">
+            <span class="text-xs font-bold text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
+              <Coins class="w-4 h-4 text-emerald-500" />
+              <span>مقارنة التدفق المالي والسيولة (Bar Chart)</span>
+            </span>
+            <span
+              class="font-mono text-xs font-bold px-2 py-0.5 rounded-full"
+              :class="(closingStore.preview?.netOperatingCashFlow ?? 0) >= 0 ? 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-300' : 'bg-red-500/10 text-red-700 dark:text-red-300'"
+            >
+              صافي: {{ formatCurrency(closingStore.preview?.netOperatingCashFlow) }}
+            </span>
+          </div>
+
+          <div v-if="cashFlowBarData" class="space-y-4">
+            <!-- Bars Visual Representation -->
+            <div class="space-y-3 pt-2">
+              <!-- Bar 1: Inflow -->
+              <div>
+                <div class="flex justify-between items-center text-xs mb-1">
+                  <span class="text-emerald-700 dark:text-emerald-400 font-bold flex items-center gap-1">
+                    <ArrowDownLeft class="w-3.5 h-3.5" />
+                    <span>إجمالي الوارد والتحصيلات</span>
+                  </span>
+                  <span class="font-mono font-bold text-emerald-700 dark:text-emerald-300">
+                    {{ formatCurrency(cashFlowBarData.inflows) }}
+                  </span>
+                </div>
+                <div class="w-full h-5 bg-black/10 dark:bg-white/10 rounded-lg overflow-hidden flex items-center">
+                  <div
+                    class="h-full bg-emerald-500 transition-all duration-500 rounded-lg"
+                    :style="{ width: `${cashFlowBarData.inflowsHeightPct}%` }"
+                  ></div>
+                </div>
+              </div>
+
+              <!-- Bar 2: Outflow -->
+              <div>
+                <div class="flex justify-between items-center text-xs mb-1">
+                  <span class="text-rose-700 dark:text-rose-400 font-bold flex items-center gap-1">
+                    <ArrowUpRight class="w-3.5 h-3.5" />
+                    <span>إجمالي المنصرف والالتزامات</span>
+                  </span>
+                  <span class="font-mono font-bold text-rose-700 dark:text-rose-300">
+                    {{ formatCurrency(cashFlowBarData.outflows) }}
+                  </span>
+                </div>
+                <div class="w-full h-5 bg-black/10 dark:bg-white/10 rounded-lg overflow-hidden flex items-center">
+                  <div
+                    class="h-full bg-rose-500 transition-all duration-500 rounded-lg"
+                    :style="{ width: `${cashFlowBarData.outflowsHeightPct}%` }"
+                  ></div>
+                </div>
+              </div>
+
+              <!-- Bar 3: Net Cash Result -->
+              <div>
+                <div class="flex justify-between items-center text-xs mb-1">
+                  <span class="font-bold flex items-center gap-1" :class="cashFlowBarData.net >= 0 ? 'text-sky-700 dark:text-sky-400' : 'text-red-700 dark:text-red-400'">
+                    <CheckCircle2 v-if="cashFlowBarData.net >= 0" class="w-3.5 h-3.5" />
+                    <AlertTriangle v-else class="w-3.5 h-3.5" />
+                    <span>{{ cashFlowBarData.net >= 0 ? 'فائض السيولة المحقق (موجب)' : 'عجز السيولة النقدية (سالب)' }}</span>
+                  </span>
+                  <span class="font-mono font-bold" :class="cashFlowBarData.net >= 0 ? 'text-sky-700 dark:text-sky-300' : 'text-red-700 dark:text-red-300'">
+                    {{ formatCurrency(cashFlowBarData.net) }}
+                  </span>
+                </div>
+                <div class="w-full h-5 bg-black/10 dark:bg-white/10 rounded-lg overflow-hidden flex items-center">
+                  <div
+                    class="h-full transition-all duration-500 rounded-lg"
+                    :class="cashFlowBarData.net >= 0 ? 'bg-sky-500' : 'bg-red-500'"
+                    :style="{ width: `${cashFlowBarData.netHeightPct}%` }"
+                  ></div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Inflows Channels Breakdown Mini-Pills -->
+            <div class="pt-2 border-t border-brand-gray/10 grid grid-cols-2 sm:grid-cols-4 gap-2 text-[11px]">
+              <div class="p-2 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-center">
+                <span class="text-slate-500 dark:text-slate-400 block text-[10px]">أوامر شغل</span>
+                <span class="font-mono font-bold text-emerald-700 dark:text-emerald-300">{{ formatCurrency(cashFlowBarData.jobCardsIncome) }}</span>
+              </div>
+              <div class="p-2 rounded-xl bg-blue-500/10 border border-blue-500/20 text-center">
+                <span class="text-slate-500 dark:text-slate-400 block text-[10px]">مبيعات POS</span>
+                <span class="font-mono font-bold text-blue-700 dark:text-blue-300">{{ formatCurrency(cashFlowBarData.posSales) }}</span>
+              </div>
+              <div class="p-2 rounded-xl bg-purple-500/10 border border-purple-500/20 text-center">
+                <span class="text-slate-500 dark:text-slate-400 block text-[10px]">سدادات عملاء</span>
+                <span class="font-mono font-bold text-purple-700 dark:text-purple-300">{{ formatCurrency(cashFlowBarData.clientPayments) }}</span>
+              </div>
+              <div class="p-2 rounded-xl bg-amber-500/10 border border-amber-500/20 text-center">
+                <span class="text-slate-500 dark:text-slate-400 block text-[10px]">مسترد موردين</span>
+                <span class="font-mono font-bold text-amber-700 dark:text-amber-300">{{ formatCurrency(cashFlowBarData.supplierReturns) }}</span>
+              </div>
             </div>
           </div>
         </div>
@@ -749,7 +946,13 @@
                 {{ formatCurrency(emp.totalLaborRevenue) }}
               </td>
               <td class="py-2.5 px-3 font-mono text-left text-brand-gray dark:text-slate-300">
-                {{ formatCurrency(emp.baseSalary) }}
+                <div class="font-bold text-slate-800 dark:text-slate-200">{{ formatCurrency(emp.baseSalary) }}</div>
+                <div v-if="emp.salaryType === 2" class="text-[9px] text-amber-600 dark:text-amber-400 font-sans">
+                  أجر باليومية ({{ emp.daysAttended }} يوم × {{ formatCurrency(emp.dailyRate || emp.baseSalary) }})
+                </div>
+                <div v-else class="text-[9px] text-blue-600 dark:text-blue-400 font-sans">
+                  راتب شهري ثابت
+                </div>
               </td>
               <td class="py-2.5 px-3 font-mono font-bold text-left text-emerald-600 dark:text-emerald-400">
                 {{ formatCurrency(emp.totalCommissionEarned) }}
@@ -1037,7 +1240,28 @@ const quickPayLoading = ref(false);
 const now = new Date();
 const selectedMonth = ref(now.getMonth() + 1);
 const selectedYear = ref(now.getFullYear());
+const customStartDate = ref("");
+const customEndDate = ref("");
 const fixedMonthlyRows = ref([]);
+
+function initDatesForMonth(m, y) {
+  const pad = (n) => String(n).padStart(2, "0");
+  const lastDay = new Date(y, m, 0).getDate();
+  customStartDate.value = `${y}-${pad(m)}-01`;
+  const isCurrentMonth = y === now.getFullYear() && m === (now.getMonth() + 1);
+  if (isCurrentMonth) {
+    customEndDate.value = now.toISOString().split("T")[0];
+  } else {
+    customEndDate.value = `${y}-${pad(m)}-${pad(lastDay)}`;
+  }
+}
+
+initDatesForMonth(selectedMonth.value, selectedYear.value);
+
+function onMonthOrYearChange() {
+  initDatesForMonth(selectedMonth.value, selectedYear.value);
+  loadMonthData();
+}
 
 const showCloseModal = ref(false);
 const showReopenModal = ref(false);
@@ -1050,10 +1274,83 @@ onMounted(async () => {
 
 async function loadMonthData() {
   await Promise.all([
-    closingStore.fetchPreview(selectedMonth.value, selectedYear.value),
+    closingStore.fetchPreview(selectedMonth.value, selectedYear.value, customStartDate.value, customEndDate.value),
     loadFixedRows()
   ]);
 }
+
+// Outflows Donut / Pie Chart Data
+const outflowsChartData = computed(() => {
+  const p = closingStore.preview;
+  if (!p) return [];
+  const items = [
+    { label: "مشتريات بضاعة وقطع غيار", amount: p.totalPurchases || 0, color: "#f43f5e" },
+    { label: "مصروفات عامة وتشغيلية", amount: p.totalOperatingExpenses || 0, color: "#f59e0b" },
+    { label: "رواتب ومستحقات العاملين", amount: p.totalSalaries || 0, color: "#8b5cf6" },
+    { label: "خسائر التوالف وهالك الصلاحية", amount: p.totalDamageLoss || 0, color: "#ef4444" },
+    { label: "مرتجعات مبيعات مستردة", amount: p.totalClientReturns || 0, color: "#06b6d4" }
+  ].filter(i => i.amount > 0);
+
+  const total = items.reduce((sum, i) => sum + i.amount, 0);
+  if (total === 0) return [];
+
+  let accumulatedAngle = 0;
+  return items.map(item => {
+    const percentage = (item.amount / total) * 100;
+    const angle = (item.amount / total) * 360;
+    const startAngle = accumulatedAngle;
+    accumulatedAngle += angle;
+    return {
+      ...item,
+      percentage: Math.round(percentage * 10) / 10,
+      startAngle,
+      endAngle: accumulatedAngle
+    };
+  });
+});
+
+function getSvgDonutPath(cx, cy, rOuter, rInner, startAngle, endAngle) {
+  const angleDelta = Math.min(359.99, endAngle - startAngle);
+  const rad = (deg) => ((deg - 90) * Math.PI) / 180;
+  const startRad = rad(startAngle);
+  const endRad = rad(startAngle + angleDelta);
+
+  const x1 = cx + rOuter * Math.cos(startRad);
+  const y1 = cy + rOuter * Math.sin(startRad);
+  const x2 = cx + rOuter * Math.cos(endRad);
+  const y2 = cy + rOuter * Math.sin(endRad);
+
+  const x3 = cx + rInner * Math.cos(endRad);
+  const y3 = cy + rInner * Math.sin(endRad);
+  const x4 = cx + rInner * Math.cos(startRad);
+  const y4 = cy + rInner * Math.sin(startRad);
+
+  const largeArc = angleDelta > 180 ? 1 : 0;
+  return `M ${x1} ${y1} A ${rOuter} ${rOuter} 0 ${largeArc} 1 ${x2} ${y2} L ${x3} ${y3} A ${rInner} ${rInner} 0 ${largeArc} 0 ${x4} ${y4} Z`;
+}
+
+// Inflows & Cash Flow Bar Chart Data
+const cashFlowBarData = computed(() => {
+  const p = closingStore.preview;
+  if (!p) return null;
+  const inflows = p.totalInflows || p.totalCollected || 0;
+  const outflows = p.totalOutflows || p.totalOutcome || 0;
+  const net = p.netOperatingCashFlow ?? (inflows - outflows);
+  const maxVal = Math.max(inflows, outflows, Math.abs(net), 1);
+
+  return {
+    inflows,
+    outflows,
+    net,
+    inflowsHeightPct: Math.round((inflows / maxVal) * 100),
+    outflowsHeightPct: Math.round((outflows / maxVal) * 100),
+    netHeightPct: Math.round((Math.abs(net) / maxVal) * 100),
+    jobCardsIncome: p.totalJobCardsIncome || p.totalCollected || 0,
+    posSales: p.totalPosSales || 0,
+    clientPayments: p.totalClientPayments || 0,
+    supplierReturns: p.totalSupplierReturns || 0
+  };
+});
 
 async function loadFixedRows() {
   const rows = await expenseStore.fetchFixedMonthlyStatus(selectedMonth.value, selectedYear.value);
@@ -1136,9 +1433,18 @@ function getExpenseBarColor(type) {
   }
 }
 
+function downloadPdfReport() {
+  const from = customStartDate.value ? `?fromDate=${encodeURIComponent(customStartDate.value)}&toDate=${encodeURIComponent(customEndDate.value)}` : "";
+  downloadServerPdf(
+    `/api/ReportsPdf/month-closing/${selectedYear.value}/${selectedMonth.value}${from}`,
+    `MonthClosing_${selectedYear.value}_${selectedMonth.value}.pdf`
+  );
+}
+
 function triggerPrint() {
+  const from = customStartDate.value ? `?fromDate=${encodeURIComponent(customStartDate.value)}&toDate=${encodeURIComponent(customEndDate.value)}` : "";
   printServerPdf(
-    `/api/ReportsPdf/month-closing/${selectedYear.value}/${selectedMonth.value}`,
+    `/api/ReportsPdf/month-closing/${selectedYear.value}/${selectedMonth.value}${from}`,
     `MonthClosing_${selectedYear.value}_${selectedMonth.value}.pdf`
   );
 }
